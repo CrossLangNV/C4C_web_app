@@ -20,7 +20,9 @@
 </div>
 <ul class="search-results list-group list-group-flush">
     {% for result in results %}
-    <li class="list-group-item">{{ result }}</li>
+    <li class="list-group-item">
+        {{ result|safe }}
+    </li>
     {% endfor %}
 </ul>
 {%elif not search_term %}
