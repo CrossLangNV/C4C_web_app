@@ -12,5 +12,5 @@ services:
       - "5432:5432"
     environment:
       - POSTGRES_PASSWORD=django
-      - POSTGRES_DB=django
+      - POSTGRES_DB=imdb
       - POSTGRES_USER=django
