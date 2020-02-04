@@ -14,3 +14,8 @@ services:
       - POSTGRES_PASSWORD=django
       - POSTGRES_DB=imdb
       - POSTGRES_USER=django
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+volumes:
+  postgres:
