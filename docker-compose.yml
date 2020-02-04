@@ -1,0 +1,16 @@
+version: '3'
+services:
+  solr-demo:
+    image: solr:8-slim
+    ports:
+      - "8983:8983"
+    command: solr-demo
+
+  postgres:
+    image: postgres:alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=django
+      - POSTGRES_DB=django
+      - POSTGRES_USER=django
