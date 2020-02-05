@@ -15,7 +15,7 @@ Load the example films data (following https://lucene.apache.org/solr/guide/8_4/
 1. Create the "name" field
 2. Create the "catchall" copy field
 3. Index sample film data
-```bash
+```
 bin/post -c films example/films/films.json
 ```
 
