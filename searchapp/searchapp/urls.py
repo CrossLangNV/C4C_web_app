@@ -20,4 +20,5 @@ from demo import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.search_index, name='search_view'),
+    path('api/films/', views.FilmList.as_view(), name='film-list'),
 ]
