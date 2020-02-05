@@ -1,29 +1,36 @@
 version: '3'
 services:
+  django:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./secrets/django-docker.env
+    volumes:
+      - .:/django
+    command: bash -c "python searchapp/manage.py makemigrations &&
+      python searchapp/manage.py migrate && python searchapp/manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      - postgres
+      - solr
+
   solr:
     image: solr:8-slim
     ports:
       - "8983:8983"
-    environment:
-      - SOLR_OPTS=-Ddataimporter.datasource.url=jdbc:postgresql://postgres:5432/imdb -Ddataimporter.datasource.user=django -Ddataimporter.datasource.password=django
     volumes:
-      - ./solr/solrconfig.xml:/opt/solr/server/solr/configsets/_default/conf/solrconfig.xml
-      - ./solr/data-config.xml:/opt/solr/server/solr/configsets/_default/conf/data-config.xml
-      - ./solr/postgresql-42.2.9.jar:/opt/solr/contrib/dataimporthandler/lib/postgresql-42.2.9.jar
-    command: solr-precreate imdb
-    depends_on:
-      - postgres
+      - solr:/var/solr
+    command: solr-precreate films
 
   postgres:
     image: postgres:alpine
     ports:
       - "5432:5432"
-    environment:
-      - POSTGRES_PASSWORD=django
-      - POSTGRES_DB=imdb
-      - POSTGRES_USER=django
+    env_file:
+      - ./secrets/django-docker.env
     volumes:
       - postgres:/var/lib/postgresql/data
 
 volumes:
+  solr:
   postgres:

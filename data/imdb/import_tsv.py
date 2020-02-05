@@ -4,16 +4,16 @@ should be in the same path as import_tsv.py script.
 """
 import psycopg2
 import time
-import io
+import os
 
 st = time.time()
 
 connection = psycopg2.connect(
-    host='localhost',
-    dbname='imdb',
-    port='5432',
-    user='django',
-    password='django'
+    host=os.environ['POSTGRES_HOST'],
+    dbname=os.environ['POSTGRES_DB'],
+    port=os.environ['POSTGRES_PORT'],
+    user=os.environ['POSTGRES_USER'],
+    password=os.environ['POSTGRES_PASSWORD']
 )
 cursor = connection.cursor()
 

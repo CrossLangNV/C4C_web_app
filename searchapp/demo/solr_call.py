@@ -1,23 +1,28 @@
 import pysolr
+import os
 
 
-def solr_search(name="", cat=""):
-    client = pysolr.Solr('http://localhost:8983/solr/demo')
-    search = get_results(client.search('name:' + name,
-                                       **{'rows': 100, 'hl': 'on', 'hl.fl': 'name',
+def solr_search(core="", term=""):
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    search = get_results(client.search(term,
+                                       **{'rows': 100, 'hl': 'on', 'hl.fl': '*',
                                           'hl.simple.pre': '<span class="highlight">',
                                           'hl.simple.post': '</span>'}))
     return search
 
 
 def get_results(response):
-    # parse
     results = []
-    for result in response:
-        result['name'] = response.highlighting[result['id']]['name']
-        results.append(result)
+    # iterate over docs
+    for doc in response:
+        # iterate over every key in single doc dictionary
+        for key in doc:
+            if key in response.highlighting[doc['id']]:
+                doc[key] = response.highlighting[doc['id']][key]
+        results.append(doc)
     return results
 
 
 if __name__ == '__main__':
-    print("Search demo | name = game:\n", solr_search(name="game"))
+    term = "film"
+    print("Search films | term = " + term + ":\n", solr_search(core="films", term=term))
