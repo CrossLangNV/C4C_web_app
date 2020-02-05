@@ -21,4 +21,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.search_index, name='search_view'),
     path('api/films/', views.FilmList.as_view(), name='film-list'),
+    path('api/films/<search_term>', views.Film.as_view(), name='film-search'),
 ]

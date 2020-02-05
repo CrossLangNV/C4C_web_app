@@ -24,3 +24,15 @@ class FilmList(APIView):
         """
         films = solr_search(core="films", term="*")
         return Response(films)
+
+class Film(APIView):
+    """
+    Search for a film.
+    """
+    def get(self, request, search_term, format=None):
+        """
+        Return a list of found films.
+        """
+        films = solr_search(core="films", term=search_term)
+        return Response(films)
+
