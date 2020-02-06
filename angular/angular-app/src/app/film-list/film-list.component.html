@@ -1,0 +1,12 @@
+<h2>Films</h2>
+
+  <ul>
+    <li *ngFor="let film of films$ | async">
+      <ul>
+        <li>Title: {{ film.name }}</li>
+        <li>Directed by: {{ film.directed_by }}</li>
+        <li>Genre: {{ film.genre }}</li>
+        <li>Release data: {{ film.initial_release_date }}</li>
+      </ul>
+    </li>
+  </ul>
