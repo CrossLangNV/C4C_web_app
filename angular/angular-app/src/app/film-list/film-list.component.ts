@@ -66,7 +66,7 @@ export class FilmListComponent implements OnInit {
   >;
 
   page = 1;
-  pageSize = 50;
+  pageSize = 10;
   cachedFilmsBeforeSort = [];
   cachedFilms = [];
   searchTerm = '';
