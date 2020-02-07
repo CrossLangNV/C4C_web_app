@@ -8,12 +8,10 @@ import {
   QueryList,
   ViewChildren
 } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import {
   debounceTime,
-  distinctUntilChanged,
-  switchMap,
-  subscribeOn
+  distinctUntilChanged
 } from 'rxjs/operators';
 import { Film } from '../film';
 import { ApiService } from '../api.service';
@@ -62,6 +60,7 @@ export class FilmListComponent implements OnInit {
 
   page = 1;
   pageSize = 50;
+  cachedFilmsBeforeSort = [];
   cachedFilms = [];
   searchTerm = '';
   searchTermChanged: Subject<string> = new Subject<string>();
@@ -71,7 +70,8 @@ export class FilmListComponent implements OnInit {
 
   ngOnInit() {
     this.apiService.getFilms().subscribe(films => {
-      this.cachedFilms = films as Film[];
+      this.cachedFilmsBeforeSort = films as Film[];
+      this.cachedFilms = [...this.cachedFilmsBeforeSort];
       this.collectionSize = this.cachedFilms.length;
     });
     this.searchTermChanged
@@ -79,7 +79,8 @@ export class FilmListComponent implements OnInit {
       .subscribe(model => {
         this.searchTerm = model;
         this.apiService.searchFilms(this.searchTerm).subscribe(films => {
-          this.cachedFilms = films as Film[];
+          this.cachedFilmsBeforeSort = films as Film[];
+          this.cachedFilms = [...this.cachedFilmsBeforeSort];
           this.collectionSize = this.cachedFilms.length;
         });
       });
@@ -110,9 +111,7 @@ export class FilmListComponent implements OnInit {
 
     // sorting films
     if (direction === '') {
-      this.apiService.getFilms().subscribe(films => {
-        this.cachedFilms = films as Film[];
-      });
+      this.cachedFilms = [...this.cachedFilmsBeforeSort];
     } else {
       this.cachedFilms = this.cachedFilms.sort((a, b) => {
         const res = compare(a[column], b[column]);
