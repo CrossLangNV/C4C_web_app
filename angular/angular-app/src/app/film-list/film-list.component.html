@@ -1,4 +1,10 @@
-<h2>Films</h2>
+<div class="form-group">
+  <label for="FilmName">Search for:</label>
+  <input id="FilmName" type="text" name="FilmName" class="form-control" [(ngModel)]="searchTerm"
+    (ngModelChange)="onSearch($event)" />
+</div>
+
+<h3>Films</h3>
 
 <table class="table table-striped">
   <thead>
@@ -11,10 +17,10 @@
   </thead>
   <tbody>
     <tr *ngFor="let film of films">
-      <td>{{ film.name }}</td>
-      <td>{{ film.directed_by }}</td>
-      <td>{{ film.genre }}</td>
-      <td>{{ film.initial_release_date | date }}</td>
+      <td [innerHTML]="film.name"></td>
+      <td [innerHTML]="film.directed_by"></td>
+      <td [innerHTML]="film.genre"></td>
+      <td [innerHTML]="film.initial_release_date | date"></td>
     </tr>
   </tbody>
 </table>

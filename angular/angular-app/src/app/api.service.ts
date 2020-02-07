@@ -14,4 +14,8 @@ export class ApiService {
   public getFilms(): Observable<Film[]> {
     return this.http.get<Film[]>(`${this.API_URL}/films`);
   }
+
+  public searchFilms(term: string): Observable<Film[]> {
+    return this.http.get<Film[]>(`${this.API_URL}/films/${term}`);
+  }
 }
