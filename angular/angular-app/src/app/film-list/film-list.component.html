@@ -2,6 +2,16 @@
   <label for="FilmName">Search for:</label>
   <input id="FilmName" type="text" name="FilmName" class="form-control" [(ngModel)]="searchTerm"
     (ngModelChange)="onSearch($event)" />
+  <label [ngPlural]="collectionSize">
+    <ng-template ngPluralCase="=0">
+    </ng-template>
+    <ng-template ngPluralCase="=1">
+      {{collectionSize}} matching film found
+    </ng-template>
+    <ng-template ngPluralCase="other">
+      {{ collectionSize }} matching films found
+    </ng-template>
+  </label>
 </div>
 
 <h3>Films</h3>
