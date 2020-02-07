@@ -9,10 +9,7 @@ import {
   ViewChildren
 } from '@angular/core';
 import { Subject } from 'rxjs';
-import {
-  debounceTime,
-  distinctUntilChanged
-} from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Film } from '../film';
 import { ApiService } from '../api.service';
 
@@ -22,7 +19,17 @@ const rotate: { [key: string]: SortDirection } = {
   desc: '',
   '': 'asc'
 };
-export const compare = (v1, v2) => (v1 < v2 ? -1 : v1 > v2 ? 1 : 0);
+export const compare = (v1, v2) => {
+  if (v1 === v2) {
+    return 0;
+  } else if (v1 === null || v1 === undefined) {
+    return 1;
+  } else if (v2 === null || v2 === undefined) {
+    return -1;
+  } else {
+    return v1 < v2 ? -1 : 1;
+  }
+};
 
 export interface SortEvent {
   column: string;
