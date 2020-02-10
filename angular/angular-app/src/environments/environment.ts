@@ -3,7 +3,8 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  ANGULAR_PRODUCTION: false,
+  ANGULAR_DJANGO_API_URL: 'http://localhost:8000/api'
 };
 
 /*

@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Film } from './film';
+import { Environment } from '../environments/environment-variables';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  API_URL = 'http://localhost:8000/api';
+  API_URL = Environment.ANGULAR_DJANGO_API_URL;
 
   constructor(private http: HttpClient) { }
 
