@@ -4,7 +4,8 @@ import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 import { AppModule } from './app/app.module';
 import { Environment } from './environments/environment-variables';
 
-if (Environment.ANGULAR_PRODUCTION) {
+// working with system environment variables that are strings
+if (Environment.ANGULAR_PRODUCTION === 'true') {
   enableProdMode();
 }
 
