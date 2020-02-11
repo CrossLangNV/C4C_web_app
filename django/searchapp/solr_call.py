@@ -32,6 +32,9 @@ def get_results_highlighted(response):
         results.append(doc)
     return results
 
+def solr_add(core="", docs=[]):
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    client.add(docs, commit=True)
 
 if __name__ == '__main__':
     term = "film"

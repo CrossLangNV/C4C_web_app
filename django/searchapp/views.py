@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
-from .solr_call import solr_search, solr_search_id
+from .solr_call import solr_search, solr_search_id, solr_add
 from django.contrib.auth import login, logout
+import uuid
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -42,7 +43,30 @@ def website_detail(request, id):
 @login_required(login_url='login')
 def document_create(request, website_id):
     form = CreateDocument()
-    return render(request, 'document_create.html', {'form': form})
+    if request.method == 'POST':
+        form = CreateDocument(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            # cd contains form data as dictionary
+            generated_doc_id = uuid.uuid4()
+            new_document = Document.objects.create(
+                id = generated_doc_id,
+                title = cd.get('title'),
+                date = cd.get('date'),
+                acceptance_state = cd.get('acceptance_state'),
+                url = cd.get('url'),
+                website = Website.objects.get(pk=website_id)
+            )
+            new_document.save()
+            # add and index to Solr
+            solr_doc = {
+                "id": str(generated_doc_id),
+                "content": [cd.get('content')]
+            }
+            solr_add(core="documents", docs=[solr_doc])
+            return redirect('website', id = website_id)
+
+    return render(request, 'document_create.html', {'form': form, 'website_id': website_id})
 
 @login_required(login_url='login')
 def document_list(request):
@@ -66,7 +90,7 @@ def login_view(request):
 def logout_view(request):
     if request.method == 'POST':
         logout(request)
-        return  redirect('websites')
+        return redirect('websites')
 
 class FilmList(APIView):
     """
