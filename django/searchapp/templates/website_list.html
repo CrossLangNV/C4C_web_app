@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Website list</h2>
+<ul class="list-group list-group-flush">
+    {% for website in websites %}
+        <li class="list-group-item">
+            <a href="{% url 'website' id=website.id %}">{{ website.name }}</a>
+            <p>{{ website.content }}</p>
+            <p>{{ website.url }}</p>
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

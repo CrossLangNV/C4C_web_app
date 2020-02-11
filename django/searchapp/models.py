@@ -9,10 +9,18 @@ class Website(models.Model):
     def __str__(self):
         return self.name
 
+class AcceptanceState(models.TextChoices):
+    UNVALIDATED = 'Unvalidated',
+    ACCEPTED = 'Accepted',
+    REJECTED = 'Rejected'
+
 class Document(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=150)
     date = models.DateField()
+    acceptance_state = models.CharField(max_length=20,
+                                 choices=AcceptanceState.choices,
+                                 default=AcceptanceState.UNVALIDATED)
     url = models.CharField(max_length=150)
     website = models.ForeignKey('Website', on_delete=models.CASCADE)
 

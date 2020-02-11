@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div>
+    {% for doc in documents %}
+        <div>
+            <h3>{{ doc.title }}</h3>
+            <p>{{ doc.date }}</p>
+            <p>{{ doc.url }}</p>
+            <p>from: {{ doc.website }}</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

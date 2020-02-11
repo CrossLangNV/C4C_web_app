@@ -1,9 +1,17 @@
-from django.shortcuts import render
-from .solr_call import solr_search
+from django.shortcuts import render, redirect
+from .solr_call import solr_search, solr_search_id
+from django.contrib.auth import login, logout
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from .models import Document, Website
+from .forms import CreateDocument
+
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.decorators import login_required
+
+@login_required(login_url='login')
 def search_index(request):
     search_term = "*"
     if request.GET.get('term'):
@@ -13,6 +21,52 @@ def search_index(request):
     print(results)
     context = {'results': results, 'count': len(results), 'search_term': search_term}
     return render(request, 'index.html', context)
+
+@login_required(login_url='login')
+def website_list(request):
+    websites = Website.objects.all()
+
+    return render(request, 'website_list.html', {'websites': websites})
+
+@login_required(login_url='login')
+def website_detail(request, id):
+    website = Website.objects.get(pk=id)
+    documents = Document.objects.all().filter(website = id)
+    for doc in documents:
+        found_solr_docs = solr_search_id('documents', str(doc.id))
+        if len(found_solr_docs) > 0:
+            doc.solr_data = found_solr_docs[0]
+
+    return render(request, 'website_detail.html', {'website': website, 'documents': documents})
+
+@login_required(login_url='login')
+def document_create(request, website_id):
+    form = CreateDocument()
+    return render(request, 'document_create.html', {'form': form})
+
+@login_required(login_url='login')
+def document_list(request):
+    documents = Document.objects.all().order_by('date')
+    for doc in documents:
+        doc.solr_data = solr_search_id('documents', str(doc.id))
+
+    return render(request, 'document_list.html', {'documents': documents})
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('websites')
+    elif request.method == 'GET':
+        form = AuthenticationForm()
+    return render(request, 'login.html', {'form': form})
+
+def logout_view(request):
+    if request.method == 'POST':
+        logout(request)
+        return  redirect('websites')
 
 class FilmList(APIView):
     """

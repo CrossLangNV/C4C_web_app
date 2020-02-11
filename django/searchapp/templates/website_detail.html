@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>{{ website.name }}</h2>
+    <p>{{ website.content }}</p>
+    <p><a href="{{ doc.url }}">{{ website.url }}</a></p>
+    <h3>Documents:</h3>
+    <ul class="list-group list-group-flush">
+    {% for doc in documents %}
+        <li class="list-group-item">
+            <h3>{{ doc.title }}</h3>
+            <p>{{ doc.date }}</p>
+            <p><a href="{{ doc.url }}">{{ doc.url }}</a></p>
+            <div>
+                <p>{{ doc.solr_data.content.0 }}</p>
+            </div>
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

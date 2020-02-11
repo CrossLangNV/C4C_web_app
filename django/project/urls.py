@@ -20,6 +20,14 @@ from searchapp import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.search_index, name='search_view'),
+    path('documents', views.document_list, name='documents'),
+    path('websites', views.website_list, name='websites'),
+    path('websites/<id>', views.website_detail, name='website'),
+    path('websites/<website_id>/create', views.document_create, name='create_document'),
+
+    path('login', views.login_view, name='login'),
+    path('logout', views.logout_view, name='logout'),
+
     path('api/films/', views.FilmList.as_view(), name='film-list'),
-    path('api/films/<search_term>', views.Film.as_view(), name='film-search'),
+    path('api/films/<search_term>', views.Film.as_view(), name='film-search')
 ]
