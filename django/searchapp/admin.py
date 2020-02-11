@@ -1,3 +1,5 @@
 from django.contrib import admin
+from .models import Website, Document
 
-# Register your models here.
+admin.site.register(Website)
+admin.site.register(Document)
