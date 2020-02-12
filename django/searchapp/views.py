@@ -12,6 +12,7 @@ from .forms import CreateDocument
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 
+
 @login_required(login_url='login')
 def search_index(request):
     search_term = "*"
@@ -23,16 +24,18 @@ def search_index(request):
     context = {'results': results, 'count': len(results), 'search_term': search_term}
     return render(request, 'index.html', context)
 
+
 @login_required(login_url='login')
 def website_list(request):
     websites = Website.objects.all()
 
     return render(request, 'website_list.html', {'websites': websites})
 
+
 @login_required(login_url='login')
 def website_detail(request, id):
     website = Website.objects.get(pk=id)
-    documents = Document.objects.all().filter(website = id)
+    documents = Document.objects.all().filter(website=id)
     for doc in documents:
         found_solr_docs = solr_search_id('documents', str(doc.id))
         if len(found_solr_docs) > 0:
@@ -40,9 +43,11 @@ def website_detail(request, id):
 
     return render(request, 'website_detail.html', {'website': website, 'documents': documents})
 
+
 @login_required(login_url='login')
 def document_create(request, website_id):
     form = CreateDocument()
+    website = Website.objects.get(pk=website_id)
     if request.method == 'POST':
         form = CreateDocument(request.POST)
         if form.is_valid():
@@ -50,12 +55,12 @@ def document_create(request, website_id):
             # cd contains form data as dictionary
             generated_doc_id = uuid.uuid4()
             new_document = Document.objects.create(
-                id = generated_doc_id,
-                title = cd.get('title'),
-                date = cd.get('date'),
-                acceptance_state = cd.get('acceptance_state'),
-                url = cd.get('url'),
-                website = Website.objects.get(pk=website_id)
+                id=generated_doc_id,
+                title=cd.get('title'),
+                date=cd.get('date'),
+                acceptance_state=cd.get('acceptance_state'),
+                url=cd.get('url'),
+                website=website
             )
             new_document.save()
             # add and index to Solr
@@ -64,9 +69,11 @@ def document_create(request, website_id):
                 "content": [cd.get('content')]
             }
             solr_add(core="documents", docs=[solr_doc])
-            return redirect('website', id = website_id)
+            return redirect('website', id=website_id)
 
-    return render(request, 'document_create.html', {'form': form, 'website_id': website_id})
+    return render(request, 'document_create.html',
+                  {'form': form, 'website_id': website_id, 'website_name': website.name})
+
 
 @login_required(login_url='login')
 def document_list(request):
@@ -75,6 +82,7 @@ def document_list(request):
         doc.solr_data = solr_search_id('documents', str(doc.id))
 
     return render(request, 'document_list.html', {'documents': documents})
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -87,15 +95,18 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'login.html', {'form': form})
 
+
 def logout_view(request):
     if request.method == 'POST':
         logout(request)
         return redirect('websites')
 
+
 class FilmList(APIView):
     """
     View all films.
     """
+
     def get(self, request, format=None):
         """
         Return a list of all films.
@@ -103,14 +114,15 @@ class FilmList(APIView):
         films = solr_search(core="films", term="*")
         return Response(films)
 
+
 class Film(APIView):
     """
     Search for a film.
     """
+
     def get(self, request, search_term, format=None):
         """
         Return a list of found films.
         """
         films = solr_search(core="films", term=search_term)
         return Response(films)
-

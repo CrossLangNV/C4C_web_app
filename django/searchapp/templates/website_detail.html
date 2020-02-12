@@ -6,6 +6,9 @@
     <p>{{ website.content }}</p>
     <p><a href="{{ doc.url }}">{{ website.url }}</a></p>
     <h3>Documents:</h3>
+    <div class="create-document my-2">
+        <a href="{% url 'create_document' website_id=website.id %}" class="btn btn-info" role="button">Add document</a>
+    </div>
     <ul class="list-group list-group-flush">
     {% for doc in documents %}
         <li class="list-group-item">
