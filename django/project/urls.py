@@ -22,6 +22,7 @@ urlpatterns = [
     path('', views.search_index, name='search_view'),
     path('documents', views.document_list, name='documents'),
     path('websites', views.website_list, name='websites'),
+    path('websites/create', views.website_create, name='create_website'),
     path('websites/<id>', views.website_detail, name='website'),
     path('websites/<website_id>/create', views.document_create, name='create_document'),
 

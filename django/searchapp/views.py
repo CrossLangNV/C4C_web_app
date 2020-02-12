@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .models import Document, Website
-from .forms import CreateDocument
+from .forms import CreateDocument, CreateWebsite
 
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
@@ -73,6 +73,25 @@ def document_create(request, website_id):
 
     return render(request, 'document_create.html',
                   {'form': form, 'website_id': website_id, 'website_name': website.name})
+
+
+@login_required(login_url='login')
+def website_create(request):
+    form = CreateWebsite()
+    if request.method == 'POST':
+        form = CreateWebsite(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            # cd contains form data as dictionary
+            new_website = Website.objects.create(
+                name = cd.get('name'),
+                url = cd.get('url'),
+                content = cd.get('content')
+            )
+            new_website.save()
+            return redirect('websites')
+
+    return render(request, 'website_create.html', {'form': form})
 
 
 @login_required(login_url='login')
