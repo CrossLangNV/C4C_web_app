@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% load crispy_forms_tags %}
+
 {% block content %}
 <div>
     <h2>{{ website_name }}</h2>
@@ -7,7 +9,7 @@
     <div class="my-4">
         <form class="form" action="{% url 'create_document' website_id=website_id %}" method="post">
             {% csrf_token %}
-            {{ form.as_p }}
+            {{ form | crispy }}
             <button class="btn btn-primary" type="submit">Add</button>
         </form>
     </div>
