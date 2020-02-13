@@ -14,21 +14,25 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
+from django.contrib.auth.decorators import login_required
 from django.urls import path
 from searchapp import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.search_index, name='search_view'),
-    path('documents', views.document_list, name='documents'),
-    path('websites', views.website_list, name='websites'),
-    path('websites/create', views.website_create, name='create_website'),
-    path('websites/<id>', views.website_detail, name='website'),
-    path('websites/<website_id>/create', views.document_create, name='create_document'),
 
-    path('login', views.login_view, name='login'),
-    path('logout', views.logout_view, name='logout'),
+    path('website/', login_required(views.WebsiteListView.as_view(), login_url='login'), name='websites'),
+    path('website/create/', login_required(views.WebsiteCreateView.as_view(), login_url='login'),
+         name='create_website'),
+    path('website/<int:pk>/', login_required(views.WebsiteDetailView.as_view(), login_url='login'), name='website'),
+    path('website/<int:pk>/create/', login_required(views.DocumentCreateView.as_view(), login_url='login'),
+         name='create_document'),
+
+    path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
     path('api/films/', views.FilmList.as_view(), name='film-list'),
-    path('api/films/<search_term>', views.Film.as_view(), name='film-search')
+    path('api/films/<search_term>/', views.Film.as_view(), name='film-search')
 ]

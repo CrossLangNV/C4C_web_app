@@ -1,15 +1,14 @@
-from django.shortcuts import render, redirect
-from .solr_call import solr_search, solr_search_id, solr_add
-from django.contrib.auth import login, logout
-import uuid
+from django.shortcuts import render
+from django.urls import reverse_lazy
+from .solr_call import solr_search, solr_search_id
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from .models import Document, Website
-from .forms import CreateDocument, CreateWebsite
+from .forms import DocumentForm, WebsiteForm
 
-from django.contrib.auth.forms import AuthenticationForm
+from django.views.generic import ListView, DetailView, CreateView
 from django.contrib.auth.decorators import login_required
 
 
@@ -25,100 +24,53 @@ def search_index(request):
     return render(request, 'index.html', context)
 
 
-@login_required(login_url='login')
-def website_list(request):
-    websites = Website.objects.all()
-
-    return render(request, 'website_list.html', {'websites': websites})
-
-
-@login_required(login_url='login')
-def website_detail(request, id):
-    website = Website.objects.get(pk=id)
-    documents = Document.objects.all().filter(website=id)
-    for doc in documents:
-        found_solr_docs = solr_search_id('documents', str(doc.id))
-        if len(found_solr_docs) > 0:
-            doc.solr_data = found_solr_docs[0]
-
-    return render(request, 'website_detail.html', {'website': website, 'documents': documents})
+class WebsiteListView(ListView):
+    model = Website
+    template_name = 'website_list.html'
+    context_object_name = 'websites'
 
 
-@login_required(login_url='login')
-def document_create(request, website_id):
-    form = CreateDocument()
-    website = Website.objects.get(pk=website_id)
-    if request.method == 'POST':
-        form = CreateDocument(request.POST)
-        if form.is_valid():
-            cd = form.cleaned_data
-            # cd contains form data as dictionary
-            generated_doc_id = uuid.uuid4()
-            new_document = Document.objects.create(
-                id=generated_doc_id,
-                title=cd.get('title'),
-                date=cd.get('date'),
-                acceptance_state=cd.get('acceptance_state'),
-                url=cd.get('url'),
-                website=website
-            )
-            new_document.save()
-            # add and index to Solr
-            solr_doc = {
-                "id": str(generated_doc_id),
-                "content": [cd.get('content')]
-            }
-            solr_add(core="documents", docs=[solr_doc])
-            return redirect('website', id=website_id)
+class WebsiteDetailView(DetailView):
+    model = Website
+    template_name = 'website_detail.html'
+    context_object_name = 'website'
 
-    return render(request, 'document_create.html',
-                  {'form': form, 'website_id': website_id, 'website_name': website.name})
+    def get_context_data(self, **kwargs):
+        # call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        # add in the Solr data to documents
+        documents = Document.objects.filter(website=self.kwargs['pk'])
+        for doc in documents:
+            solr_data = solr_search_id('documents', str(doc.id))
+            if solr_data:
+                doc.solr_data = solr_search_id('documents', str(doc.id))[0]
+        # add to context to be used in template
+        context['documents'] = documents
+        return context
 
 
-@login_required(login_url='login')
-def website_create(request):
-    form = CreateWebsite()
-    if request.method == 'POST':
-        form = CreateWebsite(request.POST)
-        if form.is_valid():
-            cd = form.cleaned_data
-            # cd contains form data as dictionary
-            new_website = Website.objects.create(
-                name = cd.get('name'),
-                url = cd.get('url'),
-                content = cd.get('content')
-            )
-            new_website.save()
-            return redirect('websites')
+class DocumentCreateView(CreateView):
+    model = Document
+    form_class = DocumentForm
+    template_name = "document_create.html"
 
-    return render(request, 'website_create.html', {'form': form})
+    def dispatch(self, request, *args, **kwargs):
+        self.website = Website.objects.get(pk=kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse_lazy('website', kwargs={'pk': self.website.id})
+
+    def form_valid(self, form):
+        form.instance.website = self.website
+        return super().form_valid(form)
 
 
-@login_required(login_url='login')
-def document_list(request):
-    documents = Document.objects.all().order_by('date')
-    for doc in documents:
-        doc.solr_data = solr_search_id('documents', str(doc.id))
-
-    return render(request, 'document_list.html', {'documents': documents})
-
-
-def login_view(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            return redirect('websites')
-    elif request.method == 'GET':
-        form = AuthenticationForm()
-    return render(request, 'login.html', {'form': form})
-
-
-def logout_view(request):
-    if request.method == 'POST':
-        logout(request)
-        return redirect('websites')
+class WebsiteCreateView(CreateView):
+    model = Website
+    form_class = WebsiteForm
+    success_url = reverse_lazy('websites')
+    template_name = "website_create.html"
 
 
 class FilmList(APIView):

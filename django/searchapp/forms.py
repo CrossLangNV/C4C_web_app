@@ -1,18 +1,14 @@
 from django import forms
-from .models import AcceptanceState
+from .models import Website, Document
 
 
-class CreateDocument(forms.Form):
-    title = forms.CharField(max_length=150)
-    date = forms.DateField(widget=forms.TextInput(
-        attrs={'type': 'date'}
-    ))
-    acceptance_state = forms.ChoiceField(choices=AcceptanceState.choices)
-    url = forms.CharField(max_length=150)
-    content = forms.CharField(widget=forms.Textarea)
+class DocumentForm(forms.ModelForm):
+    class Meta:
+        model = Document
+        fields = ['title', 'date', 'acceptance_state', 'url', 'content']
 
 
-class CreateWebsite(forms.Form):
-    name = forms.CharField(max_length=32)
-    url = forms.CharField(max_length=100)
-    content = forms.CharField(widget=forms.Textarea)
+class WebsiteForm(forms.ModelForm):
+    class Meta:
+        model = Website
+        fields = ['name', 'url', 'content']

@@ -15,6 +15,7 @@ class AcceptanceState(models.TextChoices):
     REJECTED = 'Rejected'
 
 class Document(models.Model):
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=150)
     date = models.DateField()
@@ -23,7 +24,14 @@ class Document(models.Model):
                                  default=AcceptanceState.UNVALIDATED)
     url = models.CharField(max_length=150)
     website = models.ForeignKey('Website', on_delete=models.CASCADE)
+    content = models.TextField(default="")
 
     def __str__(self):
         return self.title
+
+    # def save(self, force_insert=False, force_update=False, using=None,
+    #          update_fields=None):
+        # saver = SolrSaver()
+        # saver.save()
+        # self.save()
 
