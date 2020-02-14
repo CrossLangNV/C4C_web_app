@@ -19,8 +19,7 @@ from django.urls import path
 from searchapp import views
 
 urlpatterns = [
-    path('films/', login_required(views.FilmSearchView.as_view(), login_url='login'), name='films'),
-
+    path('', login_required(views.WebsiteListView.as_view(), login_url='login'), name='websites'),
     path('website/', login_required(views.WebsiteListView.as_view(), login_url='login'), name='websites'),
     path('website/create/', login_required(views.WebsiteCreateView.as_view(), login_url='login'),
          name='create_website'),
@@ -31,6 +30,7 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='searchapp/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
+    path('films/', login_required(views.FilmSearchView.as_view(), login_url='login'), name='films'),
     path('api/films/', views.FilmList.as_view(), name='film-list'),
     path('api/films/<search_term>/', views.Film.as_view(), name='film-search')
 ]
