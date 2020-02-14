@@ -8,20 +8,22 @@ from rest_framework.response import Response
 from .models import Document, Website
 from .forms import DocumentForm, WebsiteForm
 
-from django.views.generic import ListView, DetailView, CreateView
-from django.contrib.auth.decorators import login_required
+from django.views.generic import ListView, DetailView, CreateView, TemplateView
 
 
-@login_required(login_url='login')
-def search_index(request):
+class FilmSearchView(TemplateView):
+    template_name = "searchapp/index.html"
     search_term = "*"
-    if request.GET.get('term'):
-        search_term = request.GET['term']
+    results = []
 
-    results = solr_search(core="films", term=search_term)
-    print(results)
-    context = {'results': results, 'count': len(results), 'search_term': search_term}
-    return render(request, 'index.html', context)
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('term'):
+            self.search_term = request.GET['term']
+
+        self.results = solr_search(core="films", term=self.search_term)
+        print(self.results)
+        context = {'results': self.results, 'count': len(self.results), 'search_term': self.search_term}
+        return render(request, self.template_name, context)
 
 
 class WebsiteListView(ListView):
@@ -32,7 +34,7 @@ class WebsiteListView(ListView):
 
 class WebsiteDetailView(DetailView):
     model = Website
-    template_name = 'website_detail.html'
+    template_name = 'searchapp/website_detail.html'
     context_object_name = 'website'
 
     def get_context_data(self, **kwargs):
@@ -52,7 +54,7 @@ class WebsiteDetailView(DetailView):
 class DocumentCreateView(CreateView):
     model = Document
     form_class = DocumentForm
-    template_name = "document_create.html"
+    template_name = "searchapp/document_create.html"
 
     def dispatch(self, request, *args, **kwargs):
         self.website = Website.objects.get(pk=kwargs['pk'])
@@ -70,7 +72,7 @@ class WebsiteCreateView(CreateView):
     model = Website
     form_class = WebsiteForm
     success_url = reverse_lazy('websites')
-    template_name = "website_create.html"
+    template_name = "searchapp/website_create.html"
 
 
 class FilmList(APIView):
