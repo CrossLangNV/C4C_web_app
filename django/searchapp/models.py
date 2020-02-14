@@ -34,7 +34,12 @@ class Document(models.Model):
         # add and index content to Solr
         solr_doc = {
             "id": str(self.id),
-            "content": [self.content]
+            "title": self.title,
+            "date": self.date,
+            "acceptance_state": self.acceptance_state,
+            "url": self.url,
+            "website": self.website,
+            "content": self.content
         }
         solr_add(core="documents", docs=[solr_doc])
         # clear document content so it doesn't get saved to django db

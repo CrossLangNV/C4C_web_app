@@ -28,16 +28,16 @@ class FilmSearchView(TemplateView):
 
 class DocumentSearchView(TemplateView):
     template_name = "searchapp/document_search.html"
-    document_id = "*"
+    search_term = "*"
     results = []
 
     def get(self, request, *args, **kwargs):
-        if request.GET.get('id'):
-            self.document_id = request.GET['id']
+        if request.GET.get('term'):
+            self.search_term = request.GET['term']
 
-        self.results = solr_search_id(core="documents", id=self.document_id)
+        self.results = solr_search(core="documents", term=self.search_term)
         print(self.results)
-        context = {'results': self.results, 'count': len(self.results), 'document_id': self.document_id,
+        context = {'results': self.results, 'count': len(self.results), 'search_term': self.search_term,
                    'nav': 'documents'}
         return render(request, self.template_name, context)
 
