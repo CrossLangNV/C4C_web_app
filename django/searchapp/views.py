@@ -67,7 +67,7 @@ class DocumentCreateView(CreateView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        return reverse_lazy('website', kwargs={'pk': self.website.id})
+        return reverse_lazy('searchapp:website', kwargs={'pk': self.website.id})
 
     def form_valid(self, form):
         form.instance.website = self.website
@@ -77,7 +77,7 @@ class DocumentCreateView(CreateView):
 class WebsiteCreateView(CreateView):
     model = Website
     form_class = WebsiteForm
-    success_url = reverse_lazy('websites')
+    success_url = reverse_lazy('searchapp:websites')
     template_name = "searchapp/website_create.html"
 
 
