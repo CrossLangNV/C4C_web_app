@@ -1,5 +1,6 @@
 from django.db import models
 import uuid
+from .solr_call import solr_add
 
 class Website(models.Model):
     name = models.CharField(max_length=32)
@@ -29,9 +30,14 @@ class Document(models.Model):
     def __str__(self):
         return self.title
 
-    # def save(self, force_insert=False, force_update=False, using=None,
-    #          update_fields=None):
-        # saver = SolrSaver()
-        # saver.save()
-        # self.save()
+    def save(self, *args, **kwargs):
+        # add and index content to Solr
+        solr_doc = {
+            "id": str(self.id),
+            "content": [self.content]
+        }
+        solr_add(core="documents", docs=[solr_doc])
+        # clear document content so it doesn't get saved to django db
+        self.content = ''
+        super().save(*args, **kwargs)
 
