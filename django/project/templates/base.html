@@ -13,8 +13,23 @@
 </head>
 <body>
 <div class="container">
-    <nav class="nav">
-        <form class="logout-link" action="{% url 'logout' %}" method="post">
+    <nav class="nav navbar-expand-lg navbar-light bg-light mb-4 p-4">
+        <a class="navbar-brand" href="#">Catalogue Manager</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
+                aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+            <div class="navbar-nav">
+                <a class="nav-item nav-link {% if nav == 'websites' %}active{% endif %}"
+                   href="{% url 'searchapp:websites' %}">Home</a>
+                <a class="nav-item nav-link {% if nav == 'websites' %}active{% endif %}" href="{% url 'searchapp:websites' %}">Websites</a>
+                <a class="nav-item nav-link {% if nav == 'films' %}active{% endif %}"
+                   href="{% url 'searchapp:films' %}">Films</a>
+                <a class="nav-item nav-link disabled" href="#">Disabled</a>
+            </div>
+        </div>
+        <form class="logout-link" action="{% url 'searchapp:logout' %}" method="post">
             {% csrf_token %}
             <button class="btn btn-link" type="submit">Logout</button>
         </form>

@@ -7,7 +7,7 @@
     <h2>{{ view.website.name }}</h2>
     <h3>Add document</h3>
     <div class="my-4">
-        <form class="form" action="{% url 'create_document' view.website.id %}" method="post">
+        <form class="form" action="{% url 'searchapp:create_document' view.website.id %}" method="post">
             {% csrf_token %}
             {{ form | crispy }}
             <button class="btn btn-primary" type="submit">Add</button>

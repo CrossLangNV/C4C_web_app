@@ -3,12 +3,12 @@
 {% block content %}
 <h2>Website list</h2>
 <div class="create-website my-2">
-    <a href="{% url 'create_website' %}" class="btn btn-info" role="button">Add website</a>
+    <a href="{% url 'searchapp:create_website' %}" class="btn btn-info" role="button">Add website</a>
 </div>
 <ul class="list-group list-group-flush">
     {% for website in websites %}
         <li class="list-group-item">
-            <a href="{% url 'website' pk=website.id %}">{{ website.name }}</a>
+            <a href="{% url 'searchapp:website' pk=website.id %}">{{ website.name }}</a>
             <p>{{ website.content }}</p>
             <p>{{ website.url }}</p>
         </li>

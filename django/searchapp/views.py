@@ -22,7 +22,8 @@ class FilmSearchView(TemplateView):
 
         self.results = solr_search(core="films", term=self.search_term)
         print(self.results)
-        context = {'results': self.results, 'count': len(self.results), 'search_term': self.search_term}
+        context = {'results': self.results, 'count': len(self.results), 'search_term': self.search_term,
+                   'nav': 'films'}
         return render(request, self.template_name, context)
 
 
@@ -30,6 +31,11 @@ class WebsiteListView(ListView):
     model = Website
     template_name = 'website_list.html'
     context_object_name = 'websites'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['nav'] = 'websites'
+        return context
 
 
 class WebsiteDetailView(DetailView):

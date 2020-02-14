@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'crispy_forms',
-    'searchapp.apps.SearchAppConfig',
+    'searchapp',
 ]
 
 MIDDLEWARE = [
@@ -129,5 +129,5 @@ STATIC_URL = '/static/'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
-LOGIN_REDIRECT_URL = 'websites'
-LOGOUT_REDIRECT_URL = 'login'
+LOGIN_REDIRECT_URL = 'searchapp:websites'
+LOGOUT_REDIRECT_URL = 'searchapp:login'
