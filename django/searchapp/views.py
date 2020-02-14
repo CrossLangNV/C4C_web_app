@@ -12,7 +12,7 @@ from django.views.generic import ListView, DetailView, CreateView, TemplateView
 
 
 class FilmSearchView(TemplateView):
-    template_name = "searchapp/index.html"
+    template_name = "searchapp/film_search.html"
     search_term = "*"
     results = []
 
