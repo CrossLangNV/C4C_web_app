@@ -14,16 +14,14 @@
 <body>
 <div class="container">
     <nav class="nav navbar-expand-lg navbar-light bg-light mb-4 p-4">
-        <a class="navbar-brand" href="#">Catalogue Manager <span class="text-danger">(concept)</span></a>
+        <a class="navbar-brand" href="{% url 'searchapp:websites' %}">Catalogue Manager <span class="text-danger">(concept)</span></a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
                 aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
             <div class="navbar-nav">
-                <a class="nav-item nav-link {% if nav == 'websites' %}active{% endif %}"
-                   href="{% url 'searchapp:websites' %}">Home</a>
-                <a class="nav-item nav-link {% if nav == 'websites' %}active{% endif %}" href="{% url 'searchapp:websites' %}">Websites</a>
+                <a class="nav-item nav-link {% if nav == 'websites' %}active{% endif %}" href="{% url 'searchapp:websites' %}">Browse data</a>
                 <a class="nav-item nav-link {% if nav == 'documents' %}active{% endif %}"
                    href="{% url 'searchapp:document_search' %}">Document search</a>
                 <a class="nav-item nav-link {% if nav == 'films' %}active{% endif %}"
