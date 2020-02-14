@@ -19,18 +19,20 @@ from django.urls import path
 from searchapp import views
 
 urlpatterns = [
-    path('', login_required(views.WebsiteListView.as_view(), login_url='login'), name='websites'),
-    path('website/', login_required(views.WebsiteListView.as_view(), login_url='login'), name='websites'),
-    path('website/create/', login_required(views.WebsiteCreateView.as_view(), login_url='login'),
+    path('', login_required(views.WebsiteListView.as_view(), login_url='searchapp:login'), name='websites'),
+    path('website/', login_required(views.WebsiteListView.as_view(), login_url='searchapp:login'), name='websites'),
+    path('website/create/', login_required(views.WebsiteCreateView.as_view(), login_url='searchapp:login'),
          name='create_website'),
-    path('website/<int:pk>/', login_required(views.WebsiteDetailView.as_view(), login_url='login'), name='website'),
-    path('website/<int:pk>/create/', login_required(views.DocumentCreateView.as_view(), login_url='login'),
+    path('website/<int:pk>/', login_required(views.WebsiteDetailView.as_view(), login_url='searchapp:login'), name='website'),
+    path('website/<int:pk>/create/', login_required(views.DocumentCreateView.as_view(), login_url='searchapp:login'),
          name='create_document'),
+
+    path('document/', login_required(views.DocumentSearchView.as_view(), login_url='searchapp:login'), name='document_search'),
 
     path('login/', auth_views.LoginView.as_view(template_name='searchapp/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
-    path('films/', login_required(views.FilmSearchView.as_view(), login_url='login'), name='films'),
+    path('films/', login_required(views.FilmSearchView.as_view(), login_url='searchapp:login'), name='films'),
     path('api/films/', views.FilmList.as_view(), name='film-list'),
     path('api/films/<search_term>/', views.Film.as_view(), name='film-search')
 ]

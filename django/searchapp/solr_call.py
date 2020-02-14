@@ -12,7 +12,7 @@ def solr_search(core="", term=""):
 
 def solr_search_id(core="", id=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    search = get_results(client.search('id:' + id))
+    search = get_results(client.search('id:' + id, **{'rows': 10000}))
     return search
 
 def get_results(response):

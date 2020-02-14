@@ -14,7 +14,7 @@
 <body>
 <div class="container">
     <nav class="nav navbar-expand-lg navbar-light bg-light mb-4 p-4">
-        <a class="navbar-brand" href="#">Catalogue Manager</a>
+        <a class="navbar-brand" href="#">Catalogue Manager <span class="text-danger">(concept)</span></a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup"
                 aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -24,9 +24,10 @@
                 <a class="nav-item nav-link {% if nav == 'websites' %}active{% endif %}"
                    href="{% url 'searchapp:websites' %}">Home</a>
                 <a class="nav-item nav-link {% if nav == 'websites' %}active{% endif %}" href="{% url 'searchapp:websites' %}">Websites</a>
+                <a class="nav-item nav-link {% if nav == 'documents' %}active{% endif %}"
+                   href="{% url 'searchapp:document_search' %}">Document search</a>
                 <a class="nav-item nav-link {% if nav == 'films' %}active{% endif %}"
-                   href="{% url 'searchapp:films' %}">Films</a>
-                <a class="nav-item nav-link disabled" href="#">Disabled</a>
+                   href="{% url 'searchapp:films' %}">Film search</a>
             </div>
         </div>
         <form class="logout-link" action="{% url 'searchapp:logout' %}" method="post">

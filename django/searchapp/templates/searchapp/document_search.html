@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Film search</h2>
+<h2>Document search</h2>
 <nav class="navbar">
     <form class="form-inline">
         <input
                 class="form-control mr-sm-2"
                 type="search" placeholder="Name"
                 aria-label="Name"
-                name='term'
+                name='id'
                 value="">
         <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
     </form>
@@ -25,7 +25,7 @@
     </li>
     {% endfor %}
 </ul>
-{%elif not search_term %}
+{%elif not document_id %}
 <p>Insert your search here.</p>
 {%elif not results %}
 <p>No results found.</p>

@@ -26,6 +26,21 @@ class FilmSearchView(TemplateView):
                    'nav': 'films'}
         return render(request, self.template_name, context)
 
+class DocumentSearchView(TemplateView):
+    template_name = "searchapp/document_search.html"
+    document_id = "*"
+    results = []
+
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('id'):
+            self.document_id = request.GET['id']
+
+        self.results = solr_search_id(core="documents", id=self.document_id)
+        print(self.results)
+        context = {'results': self.results, 'count': len(self.results), 'document_id': self.document_id,
+                   'nav': 'documents'}
+        return render(request, self.template_name, context)
+
 
 class WebsiteListView(ListView):
     model = Website
