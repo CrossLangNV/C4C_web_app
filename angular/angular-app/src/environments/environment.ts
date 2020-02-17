@@ -4,7 +4,7 @@
 
 export const environment = {
   ANGULAR_PRODUCTION: 'false',
-  ANGULAR_DJANGO_API_URL: 'http://localhost:8000/api'
+  ANGULAR_DJANGO_API_URL: 'http://localhost:8000/searchapp/api'
 };
 
 /*
