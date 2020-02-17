@@ -25,9 +25,9 @@
     </li>
     {% endfor %}
 </ul>
-{%elif not search_term %}
+{% elif not search_term %}
 <p>Insert your search here.</p>
-{%elif not results %}
+{% elif not results %}
 <p>No results found.</p>
 {% endif %}
 {% endblock %}

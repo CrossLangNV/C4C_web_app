@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  creationTimestamp: null
+  labels:
+    io.kompose.service: solr
+  name: solr
+spec:
+  rules:
+  - host: solr.ctlg-manager.95.216.185.26.xip.io
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: solr
+          servicePort: 8983
+  tls:
+    - hosts:
+      - solr.ctlg-manager.95.216.185.26.xip.io
+      secretName: solr-certificate
+status:
+  loadBalancer: {}

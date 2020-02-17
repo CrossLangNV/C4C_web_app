@@ -1,0 +1,40 @@
+version: '3'
+services:
+  django:
+    image: docker.crosslang.com/ctlg-manager/django
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./secrets/django-docker.env
+    command: bash -c "python manage.py makemigrations &&
+      python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    labels:
+      kompose.service.expose: "django.localhost"
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+      kompose.service.expose.tls-secret: "django-certificate"
+
+  solr:
+    image: solr:8-slim
+    ports:
+      - "8983:8983"
+    volumes:
+      - solr:/var/solr
+    command: solr-precreate documents
+    labels:
+      kompose.volume.size: 1Gi
+
+  postgres:
+    image: postgres:alpine
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./secrets/django-docker.env
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    labels:
+      kompose.volume.size: 1Gi
+
+volumes:
+  solr:
+  postgres:
