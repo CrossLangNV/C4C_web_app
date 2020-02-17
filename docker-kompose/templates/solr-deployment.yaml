@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose-windows-amd64 -f docker-kompose.yml convert -c
+    kompose.version: 1.19.0 (f63a961c)
+    kompose.volume.size: 1Gi
+  creationTimestamp: null
+  labels:
+    io.kompose.service: solr
+  name: solr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: solr
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose-windows-amd64 -f docker-kompose.yml convert -c
+        kompose.version: 1.19.0 (f63a961c)
+        kompose.volume.size: 1Gi
+      creationTimestamp: null
+      labels:
+        io.kompose.service: solr
+    spec:
+      securityContext:
+        fsGroup: 8983
+      containers:
+      - args:
+        - bash
+        - -c
+        - solr-precreate documents
+        image: solr:8-slim
+        name: solr
+        ports:
+        - containerPort: 8983
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/solr
+          name: solr
+      restartPolicy: Always
+      volumes:
+      - name: solr
+        persistentVolumeClaim:
+          claimName: solr
+status: {}
