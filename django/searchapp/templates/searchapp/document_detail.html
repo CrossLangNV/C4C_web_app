@@ -12,4 +12,7 @@
 <div class="update-document my-2">
     <a href="{% url 'searchapp:update_document' document.id %}" class="btn btn-info" role="button">Update</a>
 </div>
+<div class="delete-document my-2">
+    <a href="{% url 'searchapp:delete_document' document.id %}" class="btn btn-danger" role="button">Delete</a>
+</div>
 {% endblock %}

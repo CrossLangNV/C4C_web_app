@@ -25,6 +25,8 @@ urlpatterns = [
          name='create_website'),
     path('website/<int:pk>/update/', login_required(views.WebsiteUpdateView.as_view(), login_url='searchapp:login'),
          name='update_website'),
+    path('website/<int:pk>/delete/', login_required(views.WebsiteDeleteView.as_view(), login_url='searchapp:login'),
+         name='delete_website'),
     path('website/<int:pk>/', login_required(views.WebsiteDetailView.as_view(), login_url='searchapp:login'),
          name='website'),
     path('website/<int:pk>/create/', login_required(views.DocumentCreateView.as_view(), login_url='searchapp:login'),
@@ -36,6 +38,8 @@ urlpatterns = [
          name='document'),
     path('document/<uuid:pk>/update/', login_required(views.DocumentUpdateView.as_view(), login_url='searchapp:login'),
          name='update_document'),
+    path('document/<uuid:pk>/delete/', login_required(views.DocumentDeleteView.as_view(), login_url='searchapp:login'),
+         name='delete_document'),
 
     path('login/', auth_views.LoginView.as_view(template_name='searchapp/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
