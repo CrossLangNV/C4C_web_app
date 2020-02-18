@@ -8,7 +8,7 @@
 <ul class="list-group list-group-flush">
     {% for website in websites %}
         <li class="list-group-item">
-            <a href="{% url 'searchapp:website' pk=website.id %}">{{ website.name }}</a>
+            <h3><a href="{% url 'searchapp:website' pk=website.id %}">{{ website.name }}</a></h3>
             <p>{{ website.content }}</p>
             <p>{{ website.url }}</p>
         </li>

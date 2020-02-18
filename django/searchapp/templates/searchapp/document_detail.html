@@ -2,14 +2,14 @@
 
 {% block content %}
 
+<h2>{{ document.title }}</h2>
+<p>{{ document.date }}</p>
+<p>Acceptance state: {{ document.acceptance_state }}</p>
+<p><a href="{{ document.url }}">{{ document.url }}</a></p>
 <div>
-    {% for doc in documents %}
-        <div>
-            <h3>{{ doc.title }}</h3>
-            <p>{{ doc.date }}</p>
-            <p>{{ doc.url }}</p>
-            <p>from: {{ doc.website }}</p>
-        </div>
-    {% endfor %}
+    <p>{{ document.solr_data.content.0 }}</p>
+</div>
+<div class="update-document my-2">
+    <a href="{% url 'searchapp:update_document' document.id %}" class="btn btn-info" role="button">Update</a>
 </div>
 {% endblock %}

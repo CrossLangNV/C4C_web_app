@@ -12,7 +12,7 @@
     <ul class="list-group list-group-flush">
     {% for doc in documents %}
         <li class="list-group-item">
-            <h3>{{ doc.title }}</h3>
+            <h3><a href="{% url 'searchapp:document' pk=doc.id %}">{{ doc.title }}</a></h3>
             <p>{{ doc.date }}</p>
             <p>Acceptance state: {{ doc.acceptance_state }}</p>
             <p><a href="{{ doc.url }}">{{ doc.url }}</a></p>
