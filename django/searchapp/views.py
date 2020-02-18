@@ -126,6 +126,16 @@ class DocumentCreateView(CreateView):
         return super().form_valid(form)
 
 
+class WebsiteUpdateView(UpdateView):
+    model = Website
+    form_class = WebsiteForm
+    template_name = "searchapp/website_update.html"
+    context_object_name = 'website'
+
+    def get_success_url(self):
+        return reverse_lazy('searchapp:website', kwargs={'pk': self.kwargs['pk']})
+
+
 class WebsiteCreateView(CreateView):
     model = Website
     form_class = WebsiteForm
