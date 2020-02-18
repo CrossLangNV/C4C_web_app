@@ -67,7 +67,7 @@ class WebsiteDetailView(DetailView):
         for doc in documents:
             solr_data = solr_search_id('documents', str(doc.id))
             if solr_data:
-                doc.solr_data = solr_search_id('documents', str(doc.id))[0]
+                doc.solr_data = solr_data[0]
         # add to context to be used in template
         context['documents'] = documents
         return context
@@ -85,7 +85,7 @@ class DocumentDetailView(DetailView):
         document = Document.objects.get(id=self.kwargs['pk'])
         solr_data = solr_search_id('documents', str(document.id))
         if solr_data:
-            document.solr_data = solr_search_id('documents', str(document.id))[0]
+            document.solr_data = solr_data[0]
         # add to context to be used in template
         context['document'] = document
         return context
@@ -97,8 +97,17 @@ class DocumentUpdateView(UpdateView):
     template_name = 'searchapp/document_update.html'
     context_object_name = 'document'
 
+    def get_initial(self):
+        initial = super().get_initial()
+        document = Document.objects.get(id=self.kwargs['pk'])
+        solr_data = solr_search_id('documents', str(document.id))
+        if solr_data:
+            initial['content'] = solr_data[0]['content'][0]
+        return initial
+
     def get_success_url(self):
         return reverse_lazy('searchapp:document', kwargs={'pk': self.kwargs['pk']})
+
 
 class DocumentCreateView(CreateView):
     model = Document
