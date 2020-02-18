@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from .models import Document, Website
 from .forms import DocumentForm, WebsiteForm
 
-from django.views.generic import ListView, DetailView, CreateView, TemplateView
+from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView
 
 
 class FilmSearchView(TemplateView):
@@ -25,6 +25,7 @@ class FilmSearchView(TemplateView):
         context = {'results': self.results, 'count': len(self.results), 'search_term': self.search_term,
                    'nav': 'films'}
         return render(request, self.template_name, context)
+
 
 class DocumentSearchView(TemplateView):
     template_name = "searchapp/document_search.html"
@@ -71,6 +72,33 @@ class WebsiteDetailView(DetailView):
         context['documents'] = documents
         return context
 
+
+class DocumentDetailView(DetailView):
+    model = Document
+    template_name = 'searchapp/document_detail.html'
+    context_object_name = 'document'
+
+    def get_context_data(self, **kwargs):
+        # call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        # add in the Solr data to document
+        document = Document.objects.get(id=self.kwargs['pk'])
+        solr_data = solr_search_id('documents', str(document.id))
+        if solr_data:
+            document.solr_data = solr_search_id('documents', str(document.id))[0]
+        # add to context to be used in template
+        context['document'] = document
+        return context
+
+
+class DocumentUpdateView(UpdateView):
+    model = Document
+    form_class = DocumentForm
+    template_name = 'searchapp/document_update.html'
+    context_object_name = 'document'
+
+    def get_success_url(self):
+        return reverse_lazy('searchapp:document', kwargs={'pk': self.kwargs['pk']})
 
 class DocumentCreateView(CreateView):
     model = Document
