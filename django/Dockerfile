@@ -4,6 +4,10 @@ FROM python:3.8-slim-buster
 # to the terminal without buffering it first
 ENV PYTHONUNBUFFERED 1
 
+# Pip dependency Twisted needs gcc
+RUN apt-get update
+RUN apt-get install -y gcc
+
 # create root directory for our project in the container
 RUN mkdir /django
 

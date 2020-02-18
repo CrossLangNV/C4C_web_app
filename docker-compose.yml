@@ -20,6 +20,17 @@ services:
     depends_on:
       - postgres
       - solr
+      - scrapyd
+
+  scrapyd:
+    build: ./django
+    ports: 
+      - "6800:6800"
+    env_file:
+      - ./secrets/django-docker.env
+    volumes: 
+      - ./django:/django
+    command: bash -c "cd scrapy_app && scrapyd"
 
   solr:
     image: solr:8-slim
@@ -27,7 +38,7 @@ services:
       - "8983:8983"
     volumes:
       - solr:/var/solr
-    command: solr-precreate films
+    command: solr-precreate documents
 
   postgres:
     image: postgres:alpine
