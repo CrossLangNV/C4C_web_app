@@ -2,6 +2,7 @@ import os
 from uuid import uuid4
 
 from django.http import JsonResponse
+from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -21,7 +22,9 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
         unique_id = request.GET.get('unique_id', None)
 
         if not unique_id:
-            return JsonResponse({'error': 'Missing unique_id'})
+            # render overview page
+            scraped_items = ScrapyItem.objects.all()
+            return render(request, self.template_name, {'scraped_items': scraped_items})
 
         try:
             # this is the unique_id that we created even before crawling started.
@@ -31,8 +34,8 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
             return JsonResponse({'error': str(e)})
 
     # new scraping task
-    def post(self, request):
-        spider = request.POST.get('spider', None)
+    def post(self, request, spider):
+        #spider = request.POST.get('spider', None)
 
         if not spider:
             return JsonResponse({'error': 'Missing spider'})
