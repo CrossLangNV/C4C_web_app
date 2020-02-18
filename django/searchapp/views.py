@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from .models import Document, Website
 from .forms import DocumentForm, WebsiteForm
 
-from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView
+from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
 
 
 class FilmSearchView(TemplateView):
@@ -126,6 +126,16 @@ class DocumentCreateView(CreateView):
         return super().form_valid(form)
 
 
+class DocumentDeleteView(DeleteView):
+    model = Document
+    template_name = "searchapp/document_delete.html"
+    context_object_name = 'document'
+
+    def get_success_url(self):
+        document = Document.objects.get(pk=self.kwargs['pk'])
+        return reverse_lazy('searchapp:website', kwargs={'pk': document.website.id})
+
+
 class WebsiteUpdateView(UpdateView):
     model = Website
     form_class = WebsiteForm
@@ -141,6 +151,13 @@ class WebsiteCreateView(CreateView):
     form_class = WebsiteForm
     success_url = reverse_lazy('searchapp:websites')
     template_name = "searchapp/website_create.html"
+
+
+class WebsiteDeleteView(DeleteView):
+    model = Website
+    success_url = reverse_lazy('searchapp:websites')
+    template_name = 'searchapp/website_delete.html'
+    context_object_name = 'website'
 
 
 class FilmList(APIView):

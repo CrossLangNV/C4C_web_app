@@ -6,7 +6,10 @@
     <p>{{ website.content }}</p>
     <p><a href="{{ doc.url }}">{{ website.url }}</a></p>
     <div class="update-website my-2">
-        <a href="{% url 'searchapp:update_website' website.id %}" class="btn btn-info" role="button">Update</a>
+        <a href="{% url 'searchapp:update_website' website.id %}" class="btn btn-info" role="button">Update website</a>
+    </div>
+    <div class="delete-website my-2">
+        <a href="{% url 'searchapp:delete_website' website.id %}" class="btn btn-danger" role="button">Delete website</a>
     </div>
     <h3>Documents:</h3>
     <div class="create-document my-2">
