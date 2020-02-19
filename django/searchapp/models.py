@@ -33,6 +33,11 @@ class Document(models.Model):
     def __str__(self):
         return self.title
 
+    def __eq__(self, other):
+        if isinstance(other, Document):
+            return self.title == other.title and self.url == other.url
+        return False
+
     def save(self, *args, **kwargs):
         # add and index content to Solr
         solr_doc = {

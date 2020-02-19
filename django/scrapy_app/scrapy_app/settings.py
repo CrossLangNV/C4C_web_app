@@ -10,20 +10,10 @@ import sys
 #     https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 
-# DJANGO INTEGRATION
-
-sys.path.append(os.path.dirname(os.path.abspath('.')))
-os.environ['DJANGO_SETTINGS_MODULE'] = 'project.settings'
-
-# This is required only if Django Version > 1.8
-import django
-django.setup()
-
 BOT_NAME = 'scrapy_app'
 
 SPIDER_MODULES = ['scrapy_app.spiders']
 NEWSPIDER_MODULE = 'scrapy_app.spiders'
-
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'scrapy_app (+http://www.yourdomain.com)'
