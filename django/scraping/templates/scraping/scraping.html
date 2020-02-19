@@ -13,7 +13,7 @@
     {% for item in scraped_items %}
         <li class="list-group-item">
             <p>{{ item.data }}</p>
-            <p>{{ item.date | date }}</p>
+            <p>{{ item.date_django }}</p>
         </li>
     {% endfor %}
 </ul>
