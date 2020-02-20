@@ -4,8 +4,11 @@
 
 <h2>Scraping</h2>
 <div class="start-scraping my-2">
-    <form class="form" action="{% url 'scraping:spider' spider='quotes' %}" method="post">
+    <form class="form my-2" action="{% url 'scraping:spider' spider='quotes' %}" method="post">
         <button class="btn btn-primary" type="submit">Launch "quotes" spider</button>
+    </form>
+    <form class="form" action="{% url 'scraping:spider' spider='eiopa' %}" method="post">
+        <button class="btn btn-primary" type="submit">Launch "eiopa" spider</button>
     </form>
 </div>
 <h3>Scraped items</h3>
