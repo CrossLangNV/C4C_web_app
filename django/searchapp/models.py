@@ -20,6 +20,10 @@ class AcceptanceState(models.TextChoices):
 
 
 class Document(models.Model):
+    class Meta:
+        permissions = (
+            ('can_approve_dish', "Can approve Dish publication"),
+        )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=500)
     date = models.DateField(default=timezone.now)
