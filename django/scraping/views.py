@@ -48,6 +48,7 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
         # custom settings for spider
         settings = {
             'unique_id': unique_id,
+            'spider': spider,
             'USER_AGENT': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
         }
 

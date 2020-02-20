@@ -16,6 +16,7 @@
     {% for item in scraped_items %}
         <li class="list-group-item">
             <p>{{ item.data }}</p>
+            <p>From spider: {{ item.spider }}</p>
             <p>{{ item.date_django }}</p>
         </li>
     {% endfor %}
