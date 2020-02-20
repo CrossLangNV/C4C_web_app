@@ -1,3 +1,5 @@
+from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from .solr_call import solr_search, solr_search_id
@@ -73,10 +75,11 @@ class WebsiteDetailView(DetailView):
         return context
 
 
-class DocumentDetailView(DetailView):
+class DocumentDetailView(PermissionRequiredMixin, DetailView):
     model = Document
     template_name = 'searchapp/document_detail.html'
     context_object_name = 'document'
+    permission_required = 'searchapp.view_document'
 
     def get_context_data(self, **kwargs):
         # call the base implementation first to get a context
