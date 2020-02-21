@@ -1,13 +1,15 @@
+import uuid
+
 from django.db import models
 from django.utils import timezone
-import uuid
+
 from .solr_call import solr_add
 
 
 class Website(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, unique=True)
     content = models.TextField()
-    url = models.URLField()
+    url = models.URLField(unique=True)
 
     def __str__(self):
         return self.name
@@ -20,27 +22,18 @@ class AcceptanceState(models.TextChoices):
 
 
 class Document(models.Model):
-    class Meta:
-        permissions = (
-            ('can_approve_dish', "Can approve Dish publication"),
-        )
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=500)
     date = models.DateField(default=timezone.now)
     acceptance_state = models.CharField(max_length=20,
                                         choices=AcceptanceState.choices,
                                         default=AcceptanceState.UNVALIDATED)
-    url = models.URLField()
+    url = models.URLField(unique=True)
     website = models.ForeignKey('Website', on_delete=models.CASCADE)
     content = models.TextField(default="")
 
     def __str__(self):
         return self.title
-
-    def __eq__(self, other):
-        if isinstance(other, Document):
-            return self.title == other.title and self.url == other.url
-        return False
 
     def save(self, *args, **kwargs):
         # add and index content to Solr

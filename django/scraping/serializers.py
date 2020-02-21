@@ -9,7 +9,7 @@ class ScrapyItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ScrapyItem
-        fields = ['unique_id', 'spider', 'data', 'date', 'date_django']
+        fields = ['id', 'unique_id', 'spider', 'data', 'date', 'date_django']
 
     def get_date_django(self, obj):
         return formats.date_format(obj.date, 'DATETIME_FORMAT')

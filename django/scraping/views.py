@@ -1,6 +1,7 @@
 import os
 from uuid import uuid4
 
+from django.db.models.signals import post_save
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
@@ -9,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.detail import ContextMixin, TemplateResponseMixin
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from scrapyd_api import ScrapydAPI
 
 from .models import ScrapyItem
@@ -73,3 +75,10 @@ class ScrapingItemList(ListAPIView):
             return Response({'serializer': serializer})
         serializer.save()
         return redirect('scraping:scraping-task')
+
+class PostprocessScrapyItem(APIView):
+
+    def post(self, request, *args, **kwargs):
+        scrapy_item = ScrapyItem.objects.get(pk=kwargs['pk'])
+        post_save.send(ScrapyItem, instance=scrapy_item, created=True)
+        return redirect('searchapp:websites')

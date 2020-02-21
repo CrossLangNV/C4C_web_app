@@ -18,6 +18,10 @@
             <p>{{ item.data }}</p>
             <p>From spider: {{ item.spider }}</p>
             <p>{{ item.date_django }}</p>
+            <form class="form" action="{% url 'scraping:postprocess' pk=item.id %}" method="post">
+                {% csrf_token %}
+                <button class="btn btn-primary" type="submit">Postprocess item</button>
+            </form>
         </li>
     {% endfor %}
 </ul>
