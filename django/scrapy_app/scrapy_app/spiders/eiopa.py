@@ -27,6 +27,7 @@ class EiopaSpider(scrapy.Spider):
         data = {'data':
             {
                 'meta': response.meta,
+                'url': response.url,
                 'summary': response.css("div[id='main-content'] ::text").extract(),
                 'pdf_docs': response.css("a.related-item.file-type-pdf::attr(href)").extract()
             }
