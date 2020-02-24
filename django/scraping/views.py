@@ -25,7 +25,7 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
     def get(self, request):
         # render overview page
         scraped_tasks = ScrapingTask.objects.all()
-        return render(request, self.template_name, {'scraped_tasks': scraped_tasks})
+        return render(request, self.template_name, {'scraped_tasks': scraped_tasks, 'nav': 'scraping'})
 
     # new scraping task
     def post(self, request, spider):

@@ -51,17 +51,16 @@ class QuotesItemHandler(ScrapingTaskItemHandler):
 class EiopaItemHandler(ScrapingTaskItemHandler):
 
     def process(self):
-        website = Website.objects.create(
+        website, created_website = Website.objects.get_or_create(
             name='Eiopa',
             content='Scraped level 3 documents for Eiopa',
             url='https://eiopa.europa.eu'
         )
-        for obj in self.data:
-            document = Document.objects.create(
-                title=obj['meta']['title'],
-                date=datetime.strptime(obj['meta']['date'], '%d %b %Y'),
-                acceptance_state='unvalidated',
-                url=obj['url'],
-                website=website,
-                content=''.join(obj['summary'])
-            )
+        Document.objects.update_or_create(
+            title=self.data['meta']['title'],
+            date=datetime.strptime(self.data['meta']['date'], '%d %b %Y'),
+            acceptance_state='unvalidated',
+            url=self.data['url'],
+            website=website,
+            content=''.join(self.data['summary'])
+        )
