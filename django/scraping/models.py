@@ -2,11 +2,12 @@ from django.db import models
 from django.utils import timezone
 
 
-class ScrapyItem(models.Model):
-    unique_id = models.CharField(max_length=100, null=True)
+class ScrapingTask(models.Model):
     spider = models.CharField(max_length=100, default="")
-    data = models.TextField()  # crawled data
     date = models.DateTimeField(default=timezone.now)
 
-    def __str__(self):
-        return self.unique_id
+
+class ScrapingTaskItem(models.Model):
+    task = models.ForeignKey('ScrapingTask', on_delete=models.CASCADE)
+    data = models.TextField()  # crawled data
+    date = models.DateTimeField(default=timezone.now)
