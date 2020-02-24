@@ -24,9 +24,8 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
 
     def get(self, request):
         # render overview page
-        scraped_items = ScrapingTaskItem.objects.all()
-        serializer = ScrapingTaskItemSerializer(scraped_items, many=True)
-        return render(request, self.template_name, {'scraped_items': serializer.data})
+        scraped_tasks = ScrapingTask.objects.all()
+        return render(request, self.template_name, {'scraped_tasks': scraped_tasks})
 
     # new scraping task
     def post(self, request, spider):
@@ -45,9 +44,9 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
         }
 
         # schedule scraping task
-        scrapyd_task = self.scrapyd.schedule('default', spider, settings=settings)
+        scrapyd_task_id = self.scrapyd.schedule('default', spider, settings=settings)
 
-        return JsonResponse({'scrapyd_task_id': scrapyd_task, 'task_id': scraping_task.id, 'status': 'started'})
+        return redirect('scraping:scraping')
 
 
 class ScrapingTaskListView(ListAPIView):
