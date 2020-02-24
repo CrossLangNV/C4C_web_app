@@ -8,6 +8,6 @@ class ScrapingTask(models.Model):
 
 
 class ScrapingTaskItem(models.Model):
-    task = models.ForeignKey('ScrapingTask', on_delete=models.CASCADE)
+    task = models.ForeignKey('ScrapingTask', on_delete=models.CASCADE, related_name='items')
     data = models.TextField()  # crawled data
     date = models.DateTimeField(default=timezone.now)
