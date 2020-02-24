@@ -13,8 +13,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from scrapyd_api import ScrapydAPI
 
-from .models import ScrapyItem
-from .serializers import ScrapyItemSerializer
+from .models import ScrapingTask, ScrapingTaskItem
+from .serializers import ScrapingTaskItemSerializer
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -22,63 +22,64 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
     template_name = "scraping/scraping.html"
     scrapyd = ScrapydAPI(os.environ['SCRAPYD_URL'])
 
-    # query db for scraped item
     def get(self, request):
-        unique_id = request.GET.get('unique_id', None)
-
-        if not unique_id:
-            # render overview page
-            scraped_items = ScrapyItem.objects.all()
-            serializer = ScrapyItemSerializer(scraped_items, many=True)
-            return render(request, self.template_name, {'scraped_items': serializer.data})
-
-        try:
-            # this is the unique_id that we created even before crawling started.
-            item = ScrapyItem.objects.get(unique_id=unique_id)
-            serializer = ScrapyItemSerializer(item)
-            return JsonResponse(serializer.data)
-        except Exception as e:
-            return JsonResponse({'error': str(e)})
+        # render overview page
+        scraped_items = ScrapingTaskItem.objects.all()
+        serializer = ScrapingTaskItemSerializer(scraped_items, many=True)
+        return render(request, self.template_name, {'scraped_items': serializer.data})
 
     # new scraping task
     def post(self, request, spider):
         if not spider:
             return JsonResponse({'error': 'Missing spider'})
 
-        unique_id = str(uuid4())  # create a unique ID
+        scraping_task = ScrapingTask.objects.create(
+            spider=spider
+        )
+        scraping_task.save()
 
         # custom settings for spider
         settings = {
-            'unique_id': unique_id,
-            'spider': spider,
+            'task_id': scraping_task.id,
             'USER_AGENT': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
         }
 
         # schedule scraping task
-        task = self.scrapyd.schedule('default', spider, settings=settings)
+        scrapyd_task = self.scrapyd.schedule('default', spider, settings=settings)
 
-        return JsonResponse({'task_id': task, 'unique_id': unique_id, 'status': 'started'})
+        return JsonResponse({'scrapyd_task_id': scrapyd_task, 'task_id': scraping_task.id, 'status': 'started'})
 
 
-class ScrapingItemList(ListAPIView):
-    queryset = ScrapyItem.objects.all()
-    serializer_class = ScrapyItemSerializer
+class ScrapingTaskListView(ListAPIView):
+    queryset = ScrapingTaskItem.objects.all()
+    serializer_class = ScrapingTaskItemSerializer
 
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        serializer = ScrapyItemSerializer(queryset, many=True)
+        serializer = ScrapingTaskItemSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    def post(self, request):
-        serializer = ScrapyItemSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response({'serializer': serializer})
-        serializer.save()
-        return redirect('scraping:scraping-task')
+
+class ScrapingTaskView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        # get all items for this scraping task
+        scraping_task = ScrapingTask.objects.get(pk=kwargs['pk'])
+        scraping_items = scraping_task.scrapingtaskitem_set.all()
+        serializer = ScrapingTaskItemSerializer(scraping_items, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        # add scraping item to scraping task
+        serializer = ScrapingTaskItemSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+        return redirect('scraping:scraping-task-list')
+
 
 class PostprocessScrapyItem(APIView):
 
     def post(self, request, *args, **kwargs):
-        scrapy_item = ScrapyItem.objects.get(pk=kwargs['pk'])
-        post_save.send(ScrapyItem, instance=scrapy_item, created=True)
+        scraping_item = ScrapingTaskItem.objects.get(pk=kwargs['pk'])
+        post_save.send(ScrapingTaskItem, instance=scraping_item, created=True)
         return redirect('searchapp:websites')

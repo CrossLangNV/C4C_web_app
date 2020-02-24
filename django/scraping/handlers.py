@@ -5,29 +5,29 @@ from datetime import datetime
 from searchapp.models import Website, Document
 
 
-class ScrapyItemHandlerFactory:
+class ScrapingTaskItemHandlerFactory:
 
-    def __init__(self, scrapy_item):
-        self.scrapy_item = scrapy_item
+    def __init__(self, scraping_item):
+        self.scraping_item = scraping_item
 
     def create_handler(self):
         handler = None
-        handler_type = self.scrapy_item.spider
+        handler_type = self.scraping_item.task.spider
 
         if handler_type == 'quotes':
-            handler = QuotesItemHandler(self.scrapy_item)
+            handler = QuotesItemHandler(self.scraping_item)
         elif handler_type == 'eiopa':
-            handler = EiopaItemHandler(self.scrapy_item)
+            handler = EiopaItemHandler(self.scraping_item)
 
         return handler
 
 
-class ScrapyItemHandler(ABC):
+class ScrapingTaskItemHandler(ABC):
 
-    def __init__(self, scrapy_item):
-        self.spider = scrapy_item.spider
-        self.data = json.loads(scrapy_item.data, strict=False)
-        self.date = scrapy_item.date
+    def __init__(self, scraping_item):
+        self.task = scraping_item.task
+        self.data = json.loads(scraping_item.data, strict=False)
+        self.date = scraping_item.date
         super().__init__()
 
     @abstractmethod
@@ -35,23 +35,20 @@ class ScrapyItemHandler(ABC):
         pass
 
 
-class QuotesItemHandler(ScrapyItemHandler):
-    quotes = []
+class QuotesItemHandler(ScrapingTaskItemHandler):
 
     def process(self):
-        for obj in self.data:
-            quote = {
-                'text': obj['text'],
-                'author': obj['author'],
-                'tags': obj['tags']
-            }
-            # quote.save()
-            print("saved quote:")
-            print(quote)
-            self.quotes.append(quote)
+        quote = {
+            'text': self.data['text'],
+            'author': self.data['author'],
+            'tags': self.data['tags']
+        }
+        # quote.save()
+        print("saved quote:")
+        print(quote)
 
 
-class EiopaItemHandler(ScrapyItemHandler):
+class EiopaItemHandler(ScrapingTaskItemHandler):
 
     def process(self):
         website = Website.objects.create(
@@ -62,7 +59,7 @@ class EiopaItemHandler(ScrapyItemHandler):
         for obj in self.data:
             document = Document.objects.create(
                 title=obj['meta']['title'],
-                date= datetime.strptime(obj['meta']['date'], '%d %b %Y'),
+                date=datetime.strptime(obj['meta']['date'], '%d %b %Y'),
                 acceptance_state='unvalidated',
                 url=obj['url'],
                 website=website,
