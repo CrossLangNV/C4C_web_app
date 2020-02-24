@@ -23,14 +23,14 @@ services:
       - scrapyd
 
   scrapyd:
-    build: ./django
+    build: ./scrapy
     ports: 
       - "6800:6800"
     env_file:
       - ./secrets/django-docker.env
     volumes: 
-      - ./django:/django
-    command: bash -c "cd scrapy_app && scrapyd"
+      - ./scrapy:/scrapy
+    command: scrapyd
 
   solr:
     image: solr:8-slim

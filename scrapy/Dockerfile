@@ -4,11 +4,15 @@ FROM python:3.8-slim-buster
 # to the terminal without buffering it first
 ENV PYTHONUNBUFFERED 1
 
-# create root directory for our project in the container
-RUN mkdir /django
+# Pip dependency Twisted needs gcc
+RUN apt-get update
+RUN apt-get install -y gcc
 
-# Set the working directory to /django
-WORKDIR /django
+# create root directory for our project in the container
+RUN mkdir /scrapy
+
+# Set the working directory to /scrapy
+WORKDIR /scrapy
 
 # Install any needed packages specified in requirements.txt
 ADD ./requirements.txt .
