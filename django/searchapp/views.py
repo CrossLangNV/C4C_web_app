@@ -7,7 +7,7 @@ from .solr_call import solr_search, solr_search_id
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .models import Document, Website
+from .models import EiopaDocument, Website
 from .forms import DocumentForm, WebsiteForm
 
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
@@ -65,7 +65,7 @@ class WebsiteDetailView(DetailView):
         # call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
         # add in the Solr data to documents
-        documents = Document.objects.filter(website=self.kwargs['pk'])
+        documents = EiopaDocument.objects.filter(website=self.kwargs['pk'])
         for doc in documents:
             solr_data = solr_search_id('documents', str(doc.id))
             if solr_data:
@@ -76,7 +76,7 @@ class WebsiteDetailView(DetailView):
 
 
 class DocumentDetailView(PermissionRequiredMixin, DetailView):
-    model = Document
+    model = EiopaDocument
     template_name = 'searchapp/document_detail.html'
     context_object_name = 'document'
     permission_required = 'searchapp.view_document'
@@ -85,7 +85,7 @@ class DocumentDetailView(PermissionRequiredMixin, DetailView):
         # call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
         # add in the Solr data to document
-        document = Document.objects.get(id=self.kwargs['pk'])
+        document = EiopaDocument.objects.get(id=self.kwargs['pk'])
         solr_data = solr_search_id('documents', str(document.id))
         if solr_data:
             document.solr_data = solr_data[0]
@@ -95,14 +95,14 @@ class DocumentDetailView(PermissionRequiredMixin, DetailView):
 
 
 class DocumentUpdateView(UpdateView):
-    model = Document
+    model = EiopaDocument
     form_class = DocumentForm
     template_name = 'searchapp/document_update.html'
     context_object_name = 'document'
 
     def get_initial(self):
         initial = super().get_initial()
-        document = Document.objects.get(id=self.kwargs['pk'])
+        document = EiopaDocument.objects.get(id=self.kwargs['pk'])
         solr_data = solr_search_id('documents', str(document.id))
         if solr_data:
             initial['content'] = solr_data[0]['content'][0]
@@ -113,7 +113,7 @@ class DocumentUpdateView(UpdateView):
 
 
 class DocumentCreateView(CreateView):
-    model = Document
+    model = EiopaDocument
     form_class = DocumentForm
     template_name = "searchapp/document_create.html"
 
@@ -130,12 +130,12 @@ class DocumentCreateView(CreateView):
 
 
 class DocumentDeleteView(DeleteView):
-    model = Document
+    model = EiopaDocument
     template_name = "searchapp/document_delete.html"
     context_object_name = 'document'
 
     def get_success_url(self):
-        document = Document.objects.get(pk=self.kwargs['pk'])
+        document = EiopaDocument.objects.get(pk=self.kwargs['pk'])
         return reverse_lazy('searchapp:website', kwargs={'pk': document.website.id})
 
 
