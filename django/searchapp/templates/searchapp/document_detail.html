@@ -6,6 +6,14 @@
 <p>{{ document.date }}</p>
 <p>Acceptance state: {{ document.acceptance_state }}</p>
 <p><a href="{{ document.url }}">{{ document.url }}</a></p>
+<ul>
+{% for pdf in document.pdf_files %}
+    <li>{{ pdf }}</li>
+{% endfor %}
+</ul>
+<div>
+    <p>{{ document.pdf_file }}</p>
+</div>
 <div>
     <p>{{ document.solr_data.content.0 }}</p>
 </div>

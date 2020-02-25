@@ -1,8 +1,16 @@
 import json
+import os
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
+from urllib.parse import urlparse
+from urllib.request import urlretrieve
 
-from searchapp.models import Website, Document
+from django.core.files import File
+from django.core.files.base import ContentFile
+from django.utils import timezone
+
+from project import settings
+from searchapp.models import Website, EiopaDocument
 
 
 class ScrapingTaskItemHandlerFactory:
@@ -56,13 +64,25 @@ class EiopaItemHandler(ScrapingTaskItemHandler):
             content='Scraped level 3 documents for Eiopa',
             url='https://eiopa.europa.eu'
         )
-        Document.objects.update_or_create(
+
+        # test with 1 file
+        url = self.data['pdf_docs'][0]
+        file_name = os.path.basename(url)
+        downloaded_pdf_file_path = urlretrieve(url, os.path.join(settings.MEDIA_ROOT, 'downloaded',
+                                                                 file_name + str(timezone.now()) + '.pdf'))
+        downloaded_pdf_file = File(open(downloaded_pdf_file_path[0], 'rb'))
+
+        document, created_document = EiopaDocument.objects.update_or_create(
             url=self.data['url'],
             defaults={
+                'title_prefix': self.data['meta']['title_prefix'],
                 'title': self.data['meta']['title'],
+                'type': self.data['meta']['type'],
                 'date': datetime.strptime(self.data['meta']['date'], '%d %b %Y'),
                 'acceptance_state': 'unvalidated',
                 'website': website,
-                'content': ''.join(self.data['summary'])
+                'content': ''.join(self.data['summary']),
+                'pdf_urls': self.data['pdf_docs'],
             }
         )
+        document.pdf_file.save(file_name, downloaded_pdf_file)
