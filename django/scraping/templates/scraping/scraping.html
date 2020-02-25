@@ -24,7 +24,6 @@
                     {% for item in task.items.all %}
                         <li class="list-group-item">
                             <p>{{ item.data }}</p>
-                            <p>From spider: {{ task.spider }}</p>
                             <p>{{ item.date }}</p>
                             <form class="form" action="{% url 'scraping:postprocess' pk=item.id %}" method="post">
                                 {% csrf_token %}

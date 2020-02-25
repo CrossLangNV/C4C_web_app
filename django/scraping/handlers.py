@@ -57,10 +57,12 @@ class EiopaItemHandler(ScrapingTaskItemHandler):
             url='https://eiopa.europa.eu'
         )
         Document.objects.update_or_create(
-            title=self.data['meta']['title'],
-            date=datetime.strptime(self.data['meta']['date'], '%d %b %Y'),
-            acceptance_state='unvalidated',
             url=self.data['url'],
-            website=website,
-            content=''.join(self.data['summary'])
+            defaults={
+                'title': self.data['meta']['title'],
+                'date': datetime.strptime(self.data['meta']['date'], '%d %b %Y'),
+                'acceptance_state': 'unvalidated',
+                'website': website,
+                'content': ''.join(self.data['summary'])
+            }
         )

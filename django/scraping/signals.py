@@ -9,7 +9,7 @@ from scraping.models import ScrapingTaskItem, ScrapingTask
 def postprocess_scraping_item(sender, instance, created, **kwargs):
     if created:
         scraping_task = ScrapingTask.objects.get(pk=instance.task.id)
-        print("Saved scrapy item from spider: " + scraping_task.spider)
+        print("Saved scraping item from spider: " + scraping_task.spider)
         # give ScrapingTaskItem instance to handler
         factory = ScrapingTaskItemHandlerFactory(instance)
         handler = factory.create_handler()

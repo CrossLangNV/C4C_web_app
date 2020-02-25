@@ -76,7 +76,7 @@ class ScrapingTaskView(APIView):
         return redirect('scraping:scraping-task-list')
 
 
-class PostprocessScrapyItem(APIView):
+class PostprocessScrapingItem(APIView):
 
     def post(self, request, *args, **kwargs):
         scraping_item = ScrapingTaskItem.objects.get(pk=kwargs['pk'])
