@@ -3,7 +3,7 @@ import os
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from urllib.parse import urlparse
-from urllib.request import urlretrieve
+from urllib.request import urlretrieve, urlopen
 
 from django.core.files import File
 from django.core.files.base import ContentFile
@@ -68,9 +68,10 @@ class EiopaItemHandler(ScrapingTaskItemHandler):
         # test with 1 file
         url = self.data['pdf_docs'][0]
         file_name = os.path.basename(url)
-        downloaded_pdf_file_path = urlretrieve(url, os.path.join(settings.MEDIA_ROOT, 'downloaded',
-                                                                 file_name + str(timezone.now()) + '.pdf'))
-        downloaded_pdf_file = File(open(downloaded_pdf_file_path[0], 'rb'))
+
+        response = urlopen(url)
+        opened_file = response.read()
+        django_file = ContentFile(opened_file)
 
         document, created_document = EiopaDocument.objects.update_or_create(
             url=self.data['url'],
@@ -85,4 +86,4 @@ class EiopaItemHandler(ScrapingTaskItemHandler):
                 'pdf_urls': self.data['pdf_docs'],
             }
         )
-        document.pdf_file.save(file_name, downloaded_pdf_file)
+        document.pdf_file.save(file_name, django_file)
