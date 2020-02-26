@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Website, Document, EiopaDocument
+from .models import Website, Document
 
 
 class WebsiteForm(forms.ModelForm):
@@ -18,7 +18,3 @@ class DocumentForm(forms.ModelForm):
                 'type': 'date'
             })
         }
-
-
-class ExtendedDocumentForm(forms.Form):
-    pass

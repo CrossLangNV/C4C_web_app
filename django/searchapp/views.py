@@ -1,16 +1,13 @@
-from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse_lazy
-from .solr_call import solr_search, solr_search_id
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-
-from .models import EiopaDocument, Website, Document
-from .forms import DocumentForm, WebsiteForm
-
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .forms import DocumentForm, WebsiteForm
+from .models import Website, Document
+from .solr_call import solr_search, solr_search_id
 
 
 class FilmSearchView(TemplateView):
@@ -107,7 +104,7 @@ class DocumentUpdateView(UpdateView):
 
     def get_initial(self):
         initial = super().get_initial()
-        document = EiopaDocument.objects.get(id=self.kwargs['pk'])
+        document = Document.objects.get(id=self.kwargs['pk'])
         solr_data = solr_search_id('documents', str(document.id))
         if solr_data:
             initial['content'] = solr_data[0]['content'][0]
@@ -118,7 +115,7 @@ class DocumentUpdateView(UpdateView):
 
 
 class DocumentCreateView(CreateView):
-    model = EiopaDocument
+    model = Document
     form_class = DocumentForm
     template_name = "searchapp/document_create.html"
 
@@ -135,12 +132,12 @@ class DocumentCreateView(CreateView):
 
 
 class DocumentDeleteView(DeleteView):
-    model = EiopaDocument
+    model = Document
     template_name = "searchapp/document_delete.html"
     context_object_name = 'document'
 
     def get_success_url(self):
-        document = EiopaDocument.objects.get(pk=self.kwargs['pk'])
+        document = Document.objects.get(pk=self.kwargs['pk'])
         return reverse_lazy('searchapp:website', kwargs={'pk': document.website.id})
 
 
