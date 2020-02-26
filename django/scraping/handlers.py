@@ -10,7 +10,7 @@ from django.core.files.base import ContentFile
 from django.utils import timezone
 
 from project import settings
-from searchapp.models import Website, EiopaDocument
+from searchapp.models import Website, EiopaDocument, Attachment
 
 
 class ScrapingTaskItemHandlerFactory:
@@ -65,14 +65,6 @@ class EiopaItemHandler(ScrapingTaskItemHandler):
             url='https://eiopa.europa.eu'
         )
 
-        # test with 1 file
-        url = self.data['pdf_docs'][0]
-        file_name = os.path.basename(url)
-
-        response = urlopen(url)
-        opened_file = response.read()
-        django_file = ContentFile(opened_file)
-
         document, created_document = EiopaDocument.objects.update_or_create(
             url=self.data['url'],
             defaults={
@@ -82,8 +74,17 @@ class EiopaItemHandler(ScrapingTaskItemHandler):
                 'date': datetime.strptime(self.data['meta']['date'], '%d %b %Y'),
                 'acceptance_state': 'unvalidated',
                 'website': website,
-                'content': ''.join(self.data['summary']),
-                'pdf_urls': self.data['pdf_docs'],
+                'content': ''.join(self.data['summary'])
             }
         )
-        document.pdf_file.save(file_name, django_file)
+
+        for url in self.data['pdf_docs']:
+            file_name = os.path.basename(url)
+            response = urlopen(url)
+            content = response.read()
+            django_file = ContentFile(content)
+            attachment, created_attachment = Attachment.objects.get_or_create(
+                url=url,
+                document=document
+            )
+            attachment.file.save(file_name, django_file)
