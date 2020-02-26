@@ -2,13 +2,13 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
-from rest_framework.generics import RetrieveUpdateDestroyAPIView
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment
-from .serializers import AttachmentSerializer, DocumentSerializer
+from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer
 from .solr_call import solr_search, solr_search_id
 
 
@@ -167,14 +167,34 @@ class WebsiteDeleteView(DeleteView):
     context_object_name = 'website'
 
 
-class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
-    queryset = Attachment.objects.all()
-    serializer_class = AttachmentSerializer
+class WebsiteListAPIView(ListCreateAPIView):
+    queryset = Website.objects.all()
+    serializer_class = WebsiteSerializer
+
+
+class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = Website.objects.all()
+    serializer_class = WebsiteSerializer
+
+
+class DocumentListAPIView(ListCreateAPIView):
+    queryset = Document.objects.all()
+    serializer_class = DocumentSerializer
 
 
 class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
+
+
+class AttachmentListAPIView(ListCreateAPIView):
+    queryset = Attachment.objects.all()
+    serializer_class = AttachmentSerializer
+
+
+class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = Attachment.objects.all()
+    serializer_class = AttachmentSerializer
 
 
 class FilmList(APIView):
