@@ -7,7 +7,7 @@ from .solr_call import solr_search, solr_search_id
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from .models import EiopaDocument, Website
+from .models import EiopaDocument, Website, Document
 from .forms import DocumentForm, WebsiteForm
 
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
@@ -65,7 +65,7 @@ class WebsiteDetailView(DetailView):
         # call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
         # add in the Solr data to documents
-        documents = EiopaDocument.objects.filter(website=self.kwargs['pk'])
+        documents = Document.objects.filter(website=self.kwargs['pk'])
         for doc in documents:
             solr_data = solr_search_id('documents', str(doc.id))
             if solr_data:
@@ -76,7 +76,7 @@ class WebsiteDetailView(DetailView):
 
 
 class DocumentDetailView(PermissionRequiredMixin, DetailView):
-    model = EiopaDocument
+    model = Document
     template_name = 'searchapp/document_detail.html'
     context_object_name = 'document'
     permission_required = 'searchapp.view_document'
@@ -84,18 +84,23 @@ class DocumentDetailView(PermissionRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         # call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
+        # which subclass of Document depends on its Website
+        document = Document.objects.get(id=self.kwargs['pk'])
+        document_type = document.website.name.lower() + 'document'
+        document = Document.objects.select_related(document_type).get(id=self.kwargs['pk'])
+        sub_doc = getattr(document, document_type)
+
         # add in the Solr data to document
-        document = EiopaDocument.objects.get(id=self.kwargs['pk'])
-        solr_data = solr_search_id('documents', str(document.id))
+        solr_data = solr_search_id('documents', str(sub_doc.id))
         if solr_data:
-            document.solr_data = solr_data[0]
+            sub_doc.solr_data = solr_data[0]
         # add to context to be used in template
-        context['document'] = document
+        context['document'] = sub_doc
         return context
 
 
 class DocumentUpdateView(UpdateView):
-    model = EiopaDocument
+    model = Document
     form_class = DocumentForm
     template_name = 'searchapp/document_update.html'
     context_object_name = 'document'

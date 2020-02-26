@@ -4,16 +4,17 @@
 
 <h2>{{ document.title }}</h2>
 <p>{{ document.date }}</p>
+<p>Type: {{ document.type }}</p>
+<p>Title prefix: {{ document.title_prefix }}</p>
 <p>Acceptance state: {{ document.acceptance_state }}</p>
-<p><a href="{{ document.url }}">{{ document.url }}</a></p>
+<p>From: <a href="{{ document.url }}">{{ document.url }}</a></p>
+<h6>Files</h6>
 <ul>
-{% for pdf in document.pdf_files %}
-    <li>{{ pdf }}</li>
+{% for attachment in document.attachment_set.all %}
+    <li><a href="{{ attachment.file.url }}">{{ attachment.file }}</a></li>
 {% endfor %}
 </ul>
-<div>
-    <p>{{ document.pdf_file.url }}</p>
-</div>
+<h6>Summary</h6>
 <div>
     <p>{{ document.solr_data.content.0 }}</p>
 </div>
