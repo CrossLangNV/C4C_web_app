@@ -1,6 +1,5 @@
 import uuid
 
-from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 
@@ -23,9 +22,6 @@ class AcceptanceState(models.TextChoices):
 
 
 class Document(models.Model):
-    class Meta:
-        abstract = True
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=500)
     date = models.DateField(default=timezone.now)
@@ -66,7 +62,12 @@ class Document(models.Model):
 class EiopaDocument(Document):
     title_prefix = models.CharField(max_length=500)
     type = models.CharField(max_length=200)
-    pdf_urls = ArrayField(
-        models.URLField(), default=list
-    )
-    pdf_file = models.FileField(upload_to='eiopa/' ,default=None)
+
+
+class Attachment(models.Model):
+    file = models.FileField()
+    url = models.URLField(unique=True)
+    document = models.ForeignKey('Document', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.url
