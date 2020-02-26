@@ -29,7 +29,7 @@ class Document(models.Model):
                                         choices=AcceptanceState.choices,
                                         default=AcceptanceState.UNVALIDATED)
     url = models.URLField(unique=True)
-    website = models.ForeignKey('Website', on_delete=models.CASCADE)
+    website = models.ForeignKey('Website', related_name='documents', on_delete=models.CASCADE)
     summary = models.TextField(default="")
     content = models.TextField(default="")
 
