@@ -2,11 +2,13 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .forms import DocumentForm, WebsiteForm
-from .models import Website, Document
+from .models import Website, Document, Attachment
+from .serializers import AttachmentSerializer
 from .solr_call import solr_search, solr_search_id
 
 
@@ -163,6 +165,11 @@ class WebsiteDeleteView(DeleteView):
     success_url = reverse_lazy('searchapp:websites')
     template_name = 'searchapp/website_delete.html'
     context_object_name = 'website'
+
+
+class AttachmentDetailView(RetrieveUpdateDestroyAPIView):
+    queryset = Attachment.objects.all()
+    serializer_class = AttachmentSerializer
 
 
 class FilmList(APIView):

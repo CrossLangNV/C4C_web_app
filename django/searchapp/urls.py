@@ -47,5 +47,7 @@ urlpatterns = [
 
     path('films/', login_required(views.FilmSearchView.as_view(), login_url='searchapp:login'), name='films'),
     path('api/films/', views.FilmList.as_view(), name='film-list'),
-    path('api/films/<search_term>/', views.Film.as_view(), name='film-search')
+    path('api/films/<search_term>/', views.Film.as_view(), name='film-search'),
+
+    path('api/attachment/<int:pk>/', views.AttachmentDetailView.as_view(), name='attachment'),
 ]
