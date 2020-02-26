@@ -49,5 +49,6 @@ urlpatterns = [
     path('api/films/', views.FilmList.as_view(), name='film-list'),
     path('api/films/<search_term>/', views.Film.as_view(), name='film-search'),
 
-    path('api/attachment/<int:pk>/', views.AttachmentDetailView.as_view(), name='attachment'),
+    path('api/document/<uuid:pk>/', views.DocumentDetailAPIView.as_view(), name='document_api'),
+    path('api/attachment/<int:pk>/', views.AttachmentDetailAPIView.as_view(), name='attachment'),
 ]

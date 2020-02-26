@@ -64,7 +64,7 @@ class ScrapingTaskView(APIView):
     def get(self, request, *args, **kwargs):
         # get all items for this scraping task
         scraping_task = ScrapingTask.objects.get(pk=kwargs['pk'])
-        scraping_items = scraping_task.scrapingtaskitem_set.all()
+        scraping_items = scraping_task.items.all()
         serializer = ScrapingTaskItemSerializer(scraping_items, many=True)
         return Response(serializer.data)
 

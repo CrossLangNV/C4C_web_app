@@ -67,7 +67,7 @@ class EiopaDocument(Document):
 class Attachment(models.Model):
     file = models.FileField()
     url = models.URLField(unique=True)
-    document = models.ForeignKey('Document', on_delete=models.CASCADE)
+    document = models.ForeignKey('Document', related_name='attachments', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.url
