@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 
 from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment
-from .serializers import AttachmentSerializer
+from .serializers import AttachmentSerializer, DocumentSerializer
 from .solr_call import solr_search, solr_search_id
 
 
@@ -167,9 +167,14 @@ class WebsiteDeleteView(DeleteView):
     context_object_name = 'website'
 
 
-class AttachmentDetailView(RetrieveUpdateDestroyAPIView):
+class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
+
+
+class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = Document.objects.all()
+    serializer_class = DocumentSerializer
 
 
 class FilmList(APIView):
