@@ -203,6 +203,12 @@ class SolrFileList(APIView):
         return Response(files)
 
 
+class SolrFile(APIView):
+    def get(self, request, search_term, format=None):
+        files = solr_search(core="files", term=search_term)
+        return Response(files)
+
+
 class FilmList(APIView):
     """
     View all films.
