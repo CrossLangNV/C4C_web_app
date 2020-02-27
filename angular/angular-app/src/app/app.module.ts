@@ -7,11 +7,13 @@ import { HttpClientModule } from '@angular/common/http';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { FilmListComponent, NgbdSortableHeaderDirective } from './film-list/film-list.component';
+import { SolrFileListComponent } from './solrfile-list/solrfile-list.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     FilmListComponent,
+    SolrFileListComponent,
     NgbdSortableHeaderDirective,
   ],
   imports: [
