@@ -10,7 +10,7 @@
 <p>From: <a href="{{ document.url }}">{{ document.url }}</a></p>
 <h6>Files</h6>
 <ul>
-{% for attachment in document.attachment_set.all %}
+{% for attachment in document.attachments.all %}
     <li><a href="{{ attachment.file.url }}">{{ attachment.file }}</a></li>
 {% endfor %}
 </ul>
