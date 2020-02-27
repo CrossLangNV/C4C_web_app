@@ -6,6 +6,7 @@ def solr_search(core="", term=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search = get_results_highlighted(client.search(term,
                                        **{'rows': 10000, 'hl': 'on', 'hl.fl': '*',
+                                          'hl.snippets': 100, 'hl.maxAnalyzedChars': 1000000,
                                           'hl.simple.pre': '<span class="highlight">',
                                           'hl.simple.post': '</span>'}))
     return search
