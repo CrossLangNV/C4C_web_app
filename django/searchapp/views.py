@@ -197,6 +197,12 @@ class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
     serializer_class = AttachmentSerializer
 
 
+class SolrFileList(APIView):
+    def get(self, request, format=None):
+        files = solr_search(core="files", term="*")
+        return Response(files)
+
+
 class FilmList(APIView):
     """
     View all films.
