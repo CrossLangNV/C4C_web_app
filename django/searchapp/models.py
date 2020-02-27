@@ -3,7 +3,7 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
-from .solr_call import solr_add, solr_search_id
+from .solr_call import solr_add, solr_search_id, solr_add_file
 
 
 class Website(models.Model):
@@ -65,9 +65,16 @@ class EiopaDocument(Document):
 
 
 class Attachment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     file = models.FileField()
     url = models.URLField(unique=True)
     document = models.ForeignKey('Document', related_name='attachments', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.url
+
+    def save(self, *args, **kwargs):
+        # add and index file-like object to Solr
+        if self.file.name:
+            solr_add_file('files', self.file, self.id)
+        super().save(*args, **kwargs)

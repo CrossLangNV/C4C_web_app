@@ -37,6 +37,33 @@ def solr_add(core="", docs=[]):
     print(docs)
     client.add(docs, commit=True)
 
+def solr_add_file(core, file, file_id):
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    extra_params = {
+        'commit': 'true',
+        'literal.id': file_id
+    }
+    client.extract(file, extractOnly=False, **extra_params)
+
+def solr_delete_all(core):
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    client.delete(q='*:*')
+    client.commit()
+
 if __name__ == '__main__':
-    term = "film"
-    print("Search films | term = " + term + ":\n", solr_search(core="films", term=term))
+    os.environ['SOLR_URL'] = 'http://localhost:8983/solr'
+
+    # Search
+    #term = "film"
+    #print("Search films | term = " + term + ":\n", solr_search(core="films", term=term))
+
+    # File save
+    #base_dir = os.path.dirname(os.getcwd())
+    #media_dir = os.path.join(base_dir, 'media')
+    #test_file_path = os.path.join(media_dir, os.listdir(media_dir)[0])
+    #test_file = open(test_file_path, 'rb')
+    #solr_add_file('files', test_file, '0')
+
+    # Delete
+    #solr_delete_all('')
+
