@@ -56,4 +56,5 @@ urlpatterns = [
     path('api/attachment/', views.AttachmentListAPIView.as_view(), name='attachment_list_api'),
     path('api/attachment/<uuid:pk>/', views.AttachmentDetailAPIView.as_view(), name='attachment_detail_api'),
     path('api/solrfiles/', views.SolrFileList.as_view(), name='solr_file_list_api'),
+    path('api/solrfiles/<search_term>', views.SolrFile.as_view(), name='solr_file_search_api'),
 ]
