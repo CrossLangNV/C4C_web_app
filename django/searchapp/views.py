@@ -178,13 +178,32 @@ class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
 
 
 class DocumentListAPIView(ListCreateAPIView):
-    queryset = Document.objects.all()
     serializer_class = DocumentSerializer
+
+    def get_queryset(self):
+        queryset = Document.objects.all()
+        # add in the Solr data to document
+        for document in queryset:
+            solr_data = solr_search_id('documents', str(document.id))
+            if solr_data:
+                document.content = solr_data[0]['content'][0]
+
+        return queryset
 
 
 class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        document_qs = queryset.filter(pk=self.kwargs['pk'])
+        document = document_qs[0]
+        # add in the Solr data to document
+        solr_data = solr_search_id('documents', str(document.id))
+        if solr_data:
+            document.content = solr_data[0]['content'][0]
+        return document
 
 
 class AttachmentListAPIView(ListCreateAPIView):
