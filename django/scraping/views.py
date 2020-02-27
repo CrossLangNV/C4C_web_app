@@ -1,5 +1,4 @@
 import os
-from uuid import uuid4
 
 from django.db.models.signals import post_save
 from django.http import JsonResponse
@@ -81,4 +80,14 @@ class PostprocessScrapingItem(APIView):
     def post(self, request, *args, **kwargs):
         scraping_item = ScrapingTaskItem.objects.get(pk=kwargs['pk'])
         post_save.send(ScrapingTaskItem, instance=scraping_item, created=True)
+        return redirect('searchapp:websites')
+
+
+class PostprocessScrapingTask(APIView):
+
+    def post(self, request, *args, **kwargs):
+        scraping_task = ScrapingTask.objects.get(pk=kwargs['pk'])
+        scraping_task_items = scraping_task.items.all()
+        for item in scraping_task_items:
+            post_save.send(ScrapingTaskItem, instance=item, created=True)
         return redirect('searchapp:websites')
