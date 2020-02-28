@@ -1,6 +1,10 @@
+import uuid
+
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse_lazy
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView
 from rest_framework.response import Response
@@ -10,6 +14,7 @@ from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer
 from .solr_call import solr_search, solr_search_id
+from .uploadhandlers import ProgressBarUploadHandler
 
 
 class FilmSearchView(TemplateView):
@@ -209,6 +214,17 @@ class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
 class AttachmentListAPIView(ListCreateAPIView):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
+
+    @method_decorator(csrf_exempt)
+    def post(self, request, *args, **kwargs):
+        request.GET = request.GET.copy()
+        request.GET['X-Progress-ID'] = str(uuid.uuid4())
+        request.upload_handlers.insert(0, ProgressBarUploadHandler(request))
+        return self._post(request, *args, **kwargs)
+
+    @method_decorator(csrf_protect)
+    def _post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
 
 
 class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
