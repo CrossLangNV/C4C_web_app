@@ -10,13 +10,13 @@
 <p>From: <a href="{{ document.url }}">{{ document.url }}</a></p>
 <h6>Files</h6>
 <ul>
-{% for attachment in document.attachments.all %}
+{% for attachment in attachments %}
     <li><a href="{{ attachment.file.url }}">{{ attachment.file }}</a></li>
 {% endfor %}
 </ul>
 <h6>Summary</h6>
 <div>
-    <p>{{ document.solr_data.content.0 }}</p>
+    <p>{{ document.summary }}</p>
 </div>
 <div class="update-document my-2">
     <a href="{% url 'searchapp:update_document' document.id %}" class="btn btn-info" role="button">Update</a>

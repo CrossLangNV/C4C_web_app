@@ -1,7 +1,8 @@
-import json
 import os
+import uuid
+from urllib.request import urlopen
 
-import requests
+from scrapy_app.solr_call import solr_add, solr_add_file
 
 
 class ScrapyAppPipeline(object):
@@ -19,6 +20,15 @@ class ScrapyAppPipeline(object):
     def process_item(self, item, spider):
         # save crawled data to django through API call
         item['task'] = self.task_id
-        item['data'] = json.dumps(item['data'])
-        requests.post(self.django_api_url + '/task/' + self.task_id + '/', json=item)
+        item['website'] = spider.name
+        # generate UUID (version 5, see https://tools.ietf.org/html/rfc4122#section-4.3) based on url
+        item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url']))
+        # add/update and index item to Solr
+        solr_add(core="documents", docs=[item])
+        for url in item['pdf_docs']:
+            pdf_id = str(uuid.uuid5(uuid.NAMESPACE_URL, url))
+            file = urlopen(url)
+            file.name = os.path.basename(url)
+            solr_add_file('files', file, pdf_id, url, item['id'])
+
         return item

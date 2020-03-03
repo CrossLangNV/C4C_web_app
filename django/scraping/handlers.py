@@ -1,16 +1,12 @@
 import json
 import os
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
-from urllib.parse import urlparse
-from urllib.request import urlretrieve, urlopen
+from datetime import datetime
+from urllib.request import urlopen
 
-from django.core.files import File
 from django.core.files.base import ContentFile
-from django.utils import timezone
 
-from project import settings
-from searchapp.models import Website, EiopaDocument, Attachment
+from searchapp.models import Website, Attachment, Document
 
 
 class ScrapingTaskItemHandlerFactory:
@@ -65,13 +61,13 @@ class EiopaItemHandler(ScrapingTaskItemHandler):
             url='https://eiopa.europa.eu'
         )
 
-        document, created_document = EiopaDocument.objects.update_or_create(
+        document, created_document = Document.objects.update_or_create(
             url=self.data['url'],
             defaults={
-                'title_prefix': self.data['meta']['title_prefix'],
-                'title': self.data['meta']['title'],
-                'type': self.data['meta']['type'],
-                'date': datetime.strptime(self.data['meta']['date'], '%d %b %Y'),
+                'title_prefix': self.data['title_prefix'],
+                'title': self.data['title'],
+                'type': self.data['type'],
+                'date': self.data['date'],
                 'acceptance_state': 'unvalidated',
                 'website': website,
                 'content': ''.join(self.data['summary'])
