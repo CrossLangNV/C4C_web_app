@@ -10,10 +10,11 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIV
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .datahandling import sync_documents, sync_attachments
 from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer
-from .solr_call import solr_search, solr_search_id
+from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
 from .uploadhandlers import ProgressBarUploadHandler
 
 
@@ -68,14 +69,13 @@ class WebsiteDetailView(DetailView):
     def get_context_data(self, **kwargs):
         # call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
-        # add in the Solr data to documents
-        documents = Document.objects.filter(website=self.kwargs['pk'])
-        for doc in documents:
-            solr_data = solr_search_id('documents', str(doc.id))
-            if solr_data:
-                doc.solr_data = solr_data[0]
+        website = Website.objects.get(pk=self.kwargs['pk'])
+        # query Solr for available documents
+        solr_documents = solr_search_website_sorted(core='documents', website=website.name.lower())
+        django_documents = Document.objects.filter(website=website).order_by('id')
+        sync_documents(website, solr_documents, django_documents)
         # add to context to be used in template
-        context['documents'] = documents
+        context['documents'] = django_documents
         return context
 
 
@@ -88,18 +88,15 @@ class DocumentDetailView(PermissionRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         # call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
-        # which subclass of Document depends on its Website
         document = Document.objects.get(id=self.kwargs['pk'])
-        document_type = document.website.name.lower() + 'document'
-        document = Document.objects.select_related(document_type).get(id=self.kwargs['pk'])
-        sub_doc = getattr(document, document_type)
-
-        # add in the Solr data to document
-        solr_data = solr_search_id('documents', str(sub_doc.id))
-        if solr_data:
-            sub_doc.solr_data = solr_data[0]
-        # add to context to be used in template
-        context['document'] = sub_doc
+        # sync current document
+        solr_document = solr_search_id(core='documents', id=str(document.id))
+        sync_documents(document.website, solr_document, [document])
+        # query Solr for attachments
+        solr_files = solr_search_document_id_sorted(core='files', document_id=str(document.id))
+        django_attachments = Attachment.objects.filter(document=document).order_by('id')
+        sync_attachments(document, solr_files, django_attachments)
+        context['attachments'] = django_attachments
         return context
 
 
@@ -108,14 +105,6 @@ class DocumentUpdateView(UpdateView):
     form_class = DocumentForm
     template_name = 'searchapp/document_update.html'
     context_object_name = 'document'
-
-    def get_initial(self):
-        initial = super().get_initial()
-        document = Document.objects.get(id=self.kwargs['pk'])
-        solr_data = solr_search_id('documents', str(document.id))
-        if solr_data:
-            initial['content'] = solr_data[0]['content'][0]
-        return initial
 
     def get_success_url(self):
         return reverse_lazy('searchapp:document', kwargs={'pk': self.kwargs['pk']})
@@ -173,13 +162,25 @@ class WebsiteDeleteView(DeleteView):
 
 
 class WebsiteListAPIView(ListCreateAPIView):
-    queryset = Website.objects.all()
     serializer_class = WebsiteSerializer
+
+    def get_queryset(self):
+        queryset = Website.objects.all()
+        return queryset
 
 
 class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Website.objects.all()
     serializer_class = WebsiteSerializer
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        website_qs = queryset.filter(pk=self.kwargs['pk'])
+        website = website_qs[0]
+        solr_documents = solr_search_website_sorted(core='documents', website=website.name.lower())
+        django_documents = Document.objects.filter(website=website).order_by('id')
+        sync_documents(website, solr_documents, django_documents)
+        return website
 
 
 class DocumentListAPIView(ListCreateAPIView):
@@ -187,12 +188,6 @@ class DocumentListAPIView(ListCreateAPIView):
 
     def get_queryset(self):
         queryset = Document.objects.all()
-        # add in the Solr data to document
-        for document in queryset:
-            solr_data = solr_search_id('documents', str(document.id))
-            if solr_data:
-                document.content = solr_data[0]['content'][0]
-
         return queryset
 
 
@@ -204,10 +199,9 @@ class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
         queryset = self.get_queryset()
         document_qs = queryset.filter(pk=self.kwargs['pk'])
         document = document_qs[0]
-        # add in the Solr data to document
-        solr_data = solr_search_id('documents', str(document.id))
-        if solr_data:
-            document.content = solr_data[0]['content'][0]
+        solr_files = solr_search_document_id_sorted(core='files', document_id=str(document.id))
+        django_attachments = Attachment.objects.filter(document=document).order_by('id')
+        sync_attachments(document, solr_files, django_attachments)
         return document
 
 
