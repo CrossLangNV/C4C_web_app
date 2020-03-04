@@ -229,12 +229,16 @@ class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
 
 
 class SolrFileList(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request, format=None):
         files = solr_search(core="files", term="*")
         return Response(files)
 
 
 class SolrFile(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request, search_term, format=None):
         files = solr_search(core="files", term=search_term)
         return Response(files)
