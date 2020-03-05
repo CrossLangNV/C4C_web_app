@@ -15,10 +15,9 @@ import { AlertComponent } from './alert-component/alert.component';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import {
-  FilmListComponent,
+  SolrFileListComponent,
   NgbdSortableHeaderDirective
-} from './film-list/film-list.component';
-import { SolrFileListComponent } from './solrfile-list/solrfile-list.component';
+} from './solrfile-list/solrfile-list.component';
 
 import { SocialLoginModule, AuthServiceConfig } from 'angularx-social-login';
 import { getAuthServiceConfigs } from './social-login.config';
@@ -32,7 +31,6 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
     LoginComponent,
     RegisterComponent,
     AlertComponent,
-    FilmListComponent,
     SolrFileListComponent,
     NgbdSortableHeaderDirective
   ],
