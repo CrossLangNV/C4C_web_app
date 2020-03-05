@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Film } from './film';
 import { Environment } from '../environments/environment-variables';
-import { SolrFile } from './solrfile';
+import { SolrFile, SolrFileAdapter } from './solrfile';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -11,21 +11,17 @@ import { SolrFile } from './solrfile';
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
 
-  constructor(private http: HttpClient) { }
-
-  public getFilms(): Observable<Film[]> {
-    return this.http.get<Film[]>(`${this.API_URL}/films`);
-  }
-
-  public searchFilms(term: string): Observable<Film[]> {
-    return this.http.get<Film[]>(`${this.API_URL}/films/${term}`);
-  }
+  constructor(private http: HttpClient, private adapter: SolrFileAdapter) {}
 
   public getSolrFiles(): Observable<SolrFile[]> {
-    return this.http.get<SolrFile[]>(`${this.API_URL}/solrfiles`);
+    return this.http
+      .get(`${this.API_URL}/solrfiles`)
+      .pipe(map((data: any[]) => data.map(item => this.adapter.adapt(item))));
   }
 
   public searchSolrFiles(term: string): Observable<SolrFile[]> {
-    return this.http.get<SolrFile[]>(`${this.API_URL}/solrfiles/${term}`);
+    return this.http
+      .get<SolrFile[]>(`${this.API_URL}/solrfiles/${term}`)
+      .pipe(map((data: any[]) => data.map(item => this.adapter.adapt(item))));
   }
 }
