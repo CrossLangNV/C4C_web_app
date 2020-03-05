@@ -6,7 +6,6 @@ from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
-from rest_framework import permissions
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -71,10 +70,12 @@ class WebsiteDetailView(DetailView):
         # call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
         website = Website.objects.get(pk=self.kwargs['pk'])
-        # query Solr for available documents
-        solr_documents = solr_search_website_sorted(core='documents', website=website.name.lower())
         django_documents = Document.objects.filter(website=website).order_by('id')
-        sync_documents(website, solr_documents, django_documents)
+        sync = self.request.GET.get('sync', False)
+        if sync:
+            # query Solr for available documents and sync with Django
+            solr_documents = solr_search_website_sorted(core='documents', website=website.name.lower())
+            sync_documents(website, solr_documents, django_documents)
         # add to context to be used in template
         context['documents'] = django_documents
         return context
@@ -178,15 +179,16 @@ class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
         queryset = self.get_queryset()
         website_qs = queryset.filter(pk=self.kwargs['pk'])
         website = website_qs[0]
-        solr_documents = solr_search_website_sorted(core='documents', website=website.name.lower())
         django_documents = Document.objects.filter(website=website).order_by('id')
-        sync_documents(website, solr_documents, django_documents)
+        sync = self.request.GET.get('sync', False)
+        if sync:
+            solr_documents = solr_search_website_sorted(core='documents', website=website.name.lower())
+            sync_documents(website, solr_documents, django_documents)
         return website
 
 
 class DocumentListAPIView(ListCreateAPIView):
     serializer_class = DocumentSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         queryset = Document.objects.all()
