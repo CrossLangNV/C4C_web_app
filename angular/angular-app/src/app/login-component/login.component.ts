@@ -27,7 +27,7 @@ export class LoginComponent implements OnInit {
     private alertService: AlertService
   ) {
     // redirect to home if already logged in
-    if (this.authenticationService.currentDjangoTokenValue) {
+    if (this.authenticationService.currentDjangoUserValue) {
       this.router.navigate(['/']);
     }
   }
@@ -54,7 +54,7 @@ export class LoginComponent implements OnInit {
 
     this.socialAuthService.signIn(socialPlatformProvider).then(userData => {
       this.authenticationService
-        .signInWithGoogle(userData.authToken)
+        .signInWithGoogle(userData)
         .pipe(first())
         .subscribe(
           data => {

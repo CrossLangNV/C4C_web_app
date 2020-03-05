@@ -21,7 +21,7 @@ export class RegisterComponent implements OnInit {
     private alertService: AlertService
   ) {
     // redirect to home if already logged in
-    if (this.authenticationService.currentDjangoTokenValue) {
+    if (this.authenticationService.currentDjangoUserValue) {
       this.router.navigate(['/']);
     }
   }

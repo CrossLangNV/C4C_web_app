@@ -18,11 +18,11 @@ export class TokenInterceptor implements HttpInterceptor {
     next: HttpHandler
   ): Observable<HttpEvent<any>> {
     // add authorization header with jwt token if available
-    let currentDjangoToken = this.authenticationService.currentDjangoTokenValue;
-    if (currentDjangoToken && currentDjangoToken.access_token) {
+    let currentDjangoUser = this.authenticationService.currentDjangoUserValue;
+    if (currentDjangoUser && currentDjangoUser.access_token) {
       request = request.clone({
         setHeaders: {
-          Authorization: `Bearer ${currentDjangoToken.access_token}`
+          Authorization: `Bearer ${currentDjangoUser.access_token}`
         }
       });
     }
