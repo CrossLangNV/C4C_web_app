@@ -2,20 +2,20 @@ import { Component, OnInit } from '@angular/core';
 import { first } from 'rxjs/operators';
 
 import { User } from '../user';
-import { DjangoToken } from '../django_token';
+import { DjangoUser } from '../django_user';
 import { UserService } from '../user.service';
 import { AuthenticationService } from '../authentication.service';
 
 @Component({ templateUrl: 'home.component.html' })
 export class HomeComponent implements OnInit {
-  currentDjangoToken: DjangoToken;
+  currentDjangoUser: DjangoUser;
   users = [];
 
   constructor(
     private authenticationService: AuthenticationService,
     private userService: UserService
   ) {
-    this.currentDjangoToken = this.authenticationService.currentDjangoTokenValue;
+    this.currentDjangoUser = this.authenticationService.currentDjangoUserValue;
   }
 
   ngOnInit() {

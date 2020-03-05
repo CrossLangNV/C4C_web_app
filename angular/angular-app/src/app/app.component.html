@@ -1,7 +1,10 @@
 <!-- nav -->
-<nav class="navbar navbar-expand navbar-dark bg-dark" *ngIf="currentDjangoToken">
+<nav class="navbar navbar-expand navbar-dark bg-dark" *ngIf="currentDjangoUser">
+  <div class="navbar-nav mr-auto">
+    <a class="navbar-brand" routerLink="/">Home</a>
+  </div>
   <div class="navbar-nav">
-    <a class="nav-item nav-link" routerLink="/">Home</a>
+    <a class="nav-item nav-link">{{currentDjangoUser.username}}</a>
     <a class="nav-item nav-link" (click)="logout()">Logout</a>
   </div>
 </nav>

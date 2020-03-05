@@ -3,18 +3,18 @@ import { Router } from '@angular/router';
 
 import { AuthenticationService } from './authentication.service';
 import { User } from './user';
-import { DjangoToken } from './django_token';
+import { DjangoUser } from './django_user';
 
 @Component({ selector: 'app', templateUrl: 'app.component.html' })
 export class AppComponent {
-  currentDjangoToken: DjangoToken;
+  currentDjangoUser: DjangoUser;
 
   constructor(
     private router: Router,
     private authenticationService: AuthenticationService
   ) {
-    this.authenticationService.currentDjangoToken.subscribe(
-      x => (this.currentDjangoToken = x)
+    this.authenticationService.currentDjangoUser.subscribe(
+      x => (this.currentDjangoUser = x)
     );
   }
 

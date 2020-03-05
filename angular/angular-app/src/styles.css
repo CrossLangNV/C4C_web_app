@@ -5,3 +5,7 @@
 span.highlight {
   background-color: yellow;
 }
+
+a {
+  cursor: pointer;
+}

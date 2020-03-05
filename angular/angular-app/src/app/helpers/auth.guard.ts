@@ -16,7 +16,7 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
-    const currentUser = this.authenticationService.currentDjangoTokenValue;
+    const currentUser = this.authenticationService.currentDjangoUserValue;
     if (currentUser) {
       // authorised so return true
       return true;

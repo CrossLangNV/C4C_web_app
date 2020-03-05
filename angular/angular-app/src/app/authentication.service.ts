@@ -3,23 +3,24 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-import { DjangoToken } from './django_token';
+import { DjangoUser } from './django_user';
 import { Environment } from '../environments/environment-variables';
+import { SocialUser } from 'angularx-social-login';
 
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
-  private currentDjangoTokenSubject: BehaviorSubject<DjangoToken>;
-  public currentDjangoToken: Observable<DjangoToken>;
+  private currentDjangoUserSubject: BehaviorSubject<DjangoUser>;
+  public currentDjangoUser: Observable<DjangoUser>;
 
   constructor(private http: HttpClient) {
-    this.currentDjangoTokenSubject = new BehaviorSubject<DjangoToken>(
+    this.currentDjangoUserSubject = new BehaviorSubject<DjangoUser>(
       JSON.parse(localStorage.getItem('currentDjangoToken'))
     );
-    this.currentDjangoToken = this.currentDjangoTokenSubject.asObservable();
+    this.currentDjangoUser = this.currentDjangoUserSubject.asObservable();
   }
 
-  public get currentDjangoTokenValue(): DjangoToken {
-    return this.currentDjangoTokenSubject.value;
+  public get currentDjangoUserValue(): DjangoUser {
+    return this.currentDjangoUserSubject.value;
   }
 
   login(username, password) {
@@ -34,16 +35,17 @@ export class AuthenticationService {
         grant_type: 'password'
       })
       .pipe(
-        map(djangoToken => {
+        map(djangoUser => {
+          djangoUser.username = username;
           // store user details and token in local storage to keep user logged in between page refreshes
-          localStorage.setItem('currentDjangoToken', JSON.stringify(djangoToken));
-          this.currentDjangoTokenSubject.next(djangoToken);
-          return djangoToken;
+          localStorage.setItem('currentDjangoUser', JSON.stringify(djangoUser));
+          this.currentDjangoUserSubject.next(djangoUser);
+          return djangoUser;
         })
       );
   }
 
-  signInWithGoogle(token) {
+  signInWithGoogle(userData: SocialUser) {
     let client_id = Environment.ANGULAR_DJANGO_CLIENT_ID;
     let client_secret = Environment.ANGULAR_DJANGO_CLIENT_SECRET;
     return this.http
@@ -51,25 +53,26 @@ export class AuthenticationService {
         client_id,
         client_secret,
         backend: 'google-oauth2',
-        token,
+        token: userData.authToken,
         grant_type: 'convert_token'
       })
       .pipe(
-        map(djangoToken => {
+        map(djangoUser => {
+          djangoUser.username = userData.email;
           // store user details and token in local storage to keep user logged in between page refreshes
           localStorage.setItem(
-            'currentDjangoToken',
-            JSON.stringify(djangoToken)
+            'currentDjangoUser',
+            JSON.stringify(djangoUser)
           );
-          this.currentDjangoTokenSubject.next(djangoToken);
-          return djangoToken;
+          this.currentDjangoUserSubject.next(djangoUser);
+          return djangoUser;
         })
       );
   }
 
   logout() {
     // remove user from local storage and set current user to null
-    localStorage.removeItem('currentDjangoToken');
-    this.currentDjangoTokenSubject.next(null);
+    localStorage.removeItem('currentDjangoUser');
+    this.currentDjangoUserSubject.next(null);
   }
 }
