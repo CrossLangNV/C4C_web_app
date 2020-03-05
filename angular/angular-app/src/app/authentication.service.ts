@@ -14,7 +14,7 @@ export class AuthenticationService {
 
   constructor(private http: HttpClient) {
     this.currentDjangoUserSubject = new BehaviorSubject<DjangoUser>(
-      JSON.parse(localStorage.getItem('currentDjangoToken'))
+      JSON.parse(localStorage.getItem('currentDjangoUser'))
     );
     this.currentDjangoUser = this.currentDjangoUserSubject.asObservable();
   }
