@@ -35,8 +35,32 @@ export class AuthenticationService {
       })
       .pipe(
         map(djangoToken => {
-          // store user details and jwt token in local storage to keep user logged in between page refreshes
+          // store user details and token in local storage to keep user logged in between page refreshes
           localStorage.setItem('currentDjangoToken', JSON.stringify(djangoToken));
+          this.currentDjangoTokenSubject.next(djangoToken);
+          return djangoToken;
+        })
+      );
+  }
+
+  signInWithGoogle(token) {
+    let client_id = Environment.ANGULAR_DJANGO_CLIENT_ID;
+    let client_secret = Environment.ANGULAR_DJANGO_CLIENT_SECRET;
+    return this.http
+      .post<any>(`${Environment.ANGULAR_DJANGO_AUTH_URL}/convert-token`, {
+        client_id,
+        client_secret,
+        backend: 'google-oauth2',
+        token,
+        grant_type: 'convert_token'
+      })
+      .pipe(
+        map(djangoToken => {
+          // store user details and token in local storage to keep user logged in between page refreshes
+          localStorage.setItem(
+            'currentDjangoToken',
+            JSON.stringify(djangoToken)
+          );
           this.currentDjangoTokenSubject.next(djangoToken);
           return djangoToken;
         })

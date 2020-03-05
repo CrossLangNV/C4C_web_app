@@ -6,18 +6,24 @@ import { first } from 'rxjs/operators';
 import { AlertService } from '../alert.service';
 import { AuthenticationService } from '../authentication.service';
 
+import { GoogleLoginProvider, AuthService } from 'angularx-social-login';
+
+import { faGoogle, IconDefinition } from '@fortawesome/free-brands-svg-icons';
+
 @Component({ templateUrl: 'login.component.html' })
 export class LoginComponent implements OnInit {
   loginForm: FormGroup;
   loading = false;
   submitted = false;
   returnUrl: string;
+  faGoogle: IconDefinition;
 
   constructor(
     private formBuilder: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
     private authenticationService: AuthenticationService,
+    private socialAuthService: AuthService,
     private alertService: AlertService
   ) {
     // redirect to home if already logged in
@@ -32,6 +38,8 @@ export class LoginComponent implements OnInit {
       password: ['', Validators.required]
     });
 
+    this.faGoogle = faGoogle;
+
     // get return url from route parameters or default to '/'
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
   }
@@ -39,6 +47,25 @@ export class LoginComponent implements OnInit {
   // convenience getter for easy access to form fields
   get f() {
     return this.loginForm.controls;
+  }
+
+  signInWithGoogle() {
+    let socialPlatformProvider = GoogleLoginProvider.PROVIDER_ID;
+
+    this.socialAuthService.signIn(socialPlatformProvider).then(userData => {
+      this.authenticationService
+        .signInWithGoogle(userData.authToken)
+        .pipe(first())
+        .subscribe(
+          data => {
+            this.router.navigate([this.returnUrl]);
+          },
+          error => {
+            this.alertService.error(error);
+            this.loading = false;
+          }
+        );
+    });
   }
 
   onSubmit() {

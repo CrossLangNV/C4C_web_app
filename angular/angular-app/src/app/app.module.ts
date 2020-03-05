@@ -20,11 +20,10 @@ import {
 } from './film-list/film-list.component';
 import { SolrFileListComponent } from './solrfile-list/solrfile-list.component';
 
-import {
-  SocialLoginModule,
-  AuthServiceConfig,
-  GoogleLoginProvider
-} from 'angularx-social-login';
+import { SocialLoginModule, AuthServiceConfig } from 'angularx-social-login';
+import { getAuthServiceConfigs } from './social-login.config';
+
+import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
 @NgModule({
   declarations: [
@@ -43,11 +42,14 @@ import {
     NgbModule,
     ReactiveFormsModule,
     FormsModule,
-    HttpClientModule
+    HttpClientModule,
+    SocialLoginModule,
+    FontAwesomeModule
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: TokenInterceptor, multi: true },
     { provide: HTTP_INTERCEPTORS, useClass: ErrorInterceptor, multi: true },
+    { provide: AuthServiceConfig, useFactory: getAuthServiceConfigs }
     //fakeBackendProvider
   ],
   bootstrap: [AppComponent]
