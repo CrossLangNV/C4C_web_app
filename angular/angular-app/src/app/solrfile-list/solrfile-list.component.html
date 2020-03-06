@@ -19,20 +19,20 @@
 <table class="table table-striped">
   <thead>
     <tr>
-      <th scope="col" sortable="id" (sort)="onSort($event)">Id</th>
-      <th scope="col" sortable="id" (sort)="onSort($event)">Document title</th>
+      <th scope="col" sortable="website" (sort)="onSort($event)">Website</th>
+      <th scope="col" sortable="documentTitle" (sort)="onSort($event)">Document title</th>
+      <th scope="col" sortable="rawFile" (sort)="onSort($event)">File</th>
       <th scope="col" sortable="content" (sort)="onSort($event)">Content</th>
       <th scope="col" sortable="language" (sort)="onSort($event)">Language</th>
-      <th scope="col" sortable="doc_type" (sort)="onSort($event)">File type</th>
     </tr>
   </thead>
   <tbody>
     <tr *ngFor="let file of files">
-      <td [innerHTML]="file.id"></td>
+      <td [innerHTML]="file.website"></td>
       <td [innerHTML]="file.documentTitle"></td>
+      <td><a href="{{file.rawFile}}">{{file.rawFile}}</a></td>
       <td [innerHTML]="file.content"></td>
       <td [innerHTML]="file.language"></td>
-      <td [innerHTML]="file.docType"></td>
     </tr>
   </tbody>
 </table>

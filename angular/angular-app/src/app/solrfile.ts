@@ -3,6 +3,8 @@ import { Adapter } from './adapter';
 
 export class SolrFile {
   public documentTitle: string;
+  public website: string;
+  public rawFile: string;
 
   constructor(
     public id: string,

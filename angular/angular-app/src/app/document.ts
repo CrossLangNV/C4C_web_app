@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Adapter } from './adapter';
 
-export class SolrDocument {
+export class Document {
   constructor(
     public id: string,
     public title: string,
@@ -19,19 +19,19 @@ export class SolrDocument {
 @Injectable({
   providedIn: 'root'
 })
-export class SolrDocumentAdapter implements Adapter<SolrDocument> {
-  adapt(item: any): SolrDocument {
-    return new SolrDocument(
+export class DocumentAdapter implements Adapter<Document> {
+  adapt(item: any): Document {
+    return new Document(
       item.id,
-      item.title[0],
-      item.title_prefix[0],
-      item.type[0],
-      new Date(item.date[0]),
-      item.acceptance_state[0],
-      item.url[0],
-      item.website[0],
-      item.summary ? item.summary[0] : '',
-      item.content ? item.content[0] : ''
+      item.title,
+      item.title_prefix,
+      item.type,
+      new Date(item.date),
+      item.acceptance_state,
+      item.url,
+      item.website,
+      item.summary,
+      item.content
     );
   }
 }

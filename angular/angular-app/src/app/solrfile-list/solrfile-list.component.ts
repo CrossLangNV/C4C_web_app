@@ -10,9 +10,8 @@ import {
 } from '@angular/core';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { SolrFile, SolrFileAdapter } from '../solrfile';
+import { SolrFile } from '../solrfile';
 import { ApiService } from '../api.service';
-import { SolrDocument } from '../solrdocument';
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -80,8 +79,14 @@ export class SolrFileListComponent implements OnInit {
     this.apiService.getSolrFiles().subscribe(files => {
       this.cachedSolrFilesBeforeSort = files as SolrFile[];
       this.cachedSolrFilesBeforeSort.forEach(file => {
+        this.apiService.getAttachment(file.id).subscribe(attachment => {
+          file.rawFile = attachment.file;
+        });
         this.apiService.getDocument(file.documentId).subscribe(document => {
-          file.documentTitle = document[0].title;
+          file.documentTitle = document.title;
+          this.apiService.getWebsite(document.website).subscribe(website => {
+            file.website = website.name;
+          });
         });
       });
       this.cachedSolrFiles = [...this.cachedSolrFilesBeforeSort];
@@ -94,8 +99,16 @@ export class SolrFileListComponent implements OnInit {
         this.apiService.searchSolrFiles(this.searchTerm).subscribe(files => {
           this.cachedSolrFilesBeforeSort = files as SolrFile[];
           this.cachedSolrFilesBeforeSort.forEach(file => {
+            this.apiService.getAttachment(file.id).subscribe(attachment => {
+              file.rawFile = attachment.file;
+            });
             this.apiService.getDocument(file.documentId).subscribe(document => {
-              file.documentTitle = document[0].title;
+              file.documentTitle = document.title;
+              this.apiService
+                .getWebsite(document.website)
+                .subscribe(website => {
+                  file.website = website.name;
+                });
             });
           });
           this.cachedSolrFiles = [...this.cachedSolrFilesBeforeSort];

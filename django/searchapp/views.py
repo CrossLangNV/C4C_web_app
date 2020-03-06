@@ -204,9 +204,8 @@ class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
         queryset = self.get_queryset()
         document_qs = queryset.filter(pk=self.kwargs['pk'])
         document = document_qs[0]
-        solr_files = solr_search_document_id_sorted(core='files', document_id=str(document.id))
-        django_attachments = Attachment.objects.filter(document=document).order_by('id')
-        sync_attachments(document, solr_files, django_attachments)
+        solr_document = solr_search_id(core='documents', id=str(document.id))
+        sync_documents(document.website, solr_document, [document])
         return document
 
 

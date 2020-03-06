@@ -4,7 +4,9 @@ import { Observable } from 'rxjs';
 import { Environment } from '../environments/environment-variables';
 import { SolrFile, SolrFileAdapter } from './solrfile';
 import { map } from 'rxjs/operators';
-import { SolrDocument, SolrDocumentAdapter } from './solrdocument';
+import { Document, DocumentAdapter } from './document';
+import { Website, WebsiteAdapter } from './website';
+import { Attachment, AttachmentAdapter } from './attachment';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +17,9 @@ export class ApiService {
   constructor(
     private http: HttpClient,
     private solrFileAdapter: SolrFileAdapter,
-    private solrDocumentAdapter: SolrDocumentAdapter
+    private documentAdapter: DocumentAdapter,
+    private websiteAdapter: WebsiteAdapter,
+    private attachmentAdapter: AttachmentAdapter
   ) {}
 
   public getSolrFiles(): Observable<SolrFile[]> {
@@ -34,13 +38,21 @@ export class ApiService {
       );
   }
 
-  public getDocument(id: string): Observable<SolrDocument> {
+  public getDocument(id: string): Observable<Document> {
     return this.http
-      .get<SolrDocument>(`${this.API_URL}/solrdocument/${id}`)
-      .pipe(
-        map((data: any) =>
-          data.map(item => this.solrDocumentAdapter.adapt(item))
-        )
-      );
+      .get<Document>(`${this.API_URL}/document/${id}`)
+      .pipe(map(item => this.documentAdapter.adapt(item)));
+  }
+
+  public getWebsite(id: string): Observable<Website> {
+    return this.http
+      .get<Website>(`${this.API_URL}/website/${id}`)
+      .pipe(map(item => this.websiteAdapter.adapt(item)));
+  }
+
+  public getAttachment(id: string): Observable<Attachment> {
+    return this.http
+      .get<Attachment>(`${this.API_URL}/attachment/${id}`)
+      .pipe(map(item => this.attachmentAdapter.adapt(item)));
   }
 }
