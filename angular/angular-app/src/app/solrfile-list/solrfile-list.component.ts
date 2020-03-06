@@ -10,8 +10,9 @@ import {
 } from '@angular/core';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { SolrFile } from '../solrfile';
+import { SolrFile, SolrFileAdapter } from '../solrfile';
 import { ApiService } from '../api.service';
+import { SolrDocument } from '../solrdocument';
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -78,6 +79,11 @@ export class SolrFileListComponent implements OnInit {
   ngOnInit() {
     this.apiService.getSolrFiles().subscribe(files => {
       this.cachedSolrFilesBeforeSort = files as SolrFile[];
+      this.cachedSolrFilesBeforeSort.forEach(file => {
+        this.apiService.getDocument(file.documentId).subscribe(document => {
+          file.documentTitle = document[0].title;
+        });
+      });
       this.cachedSolrFiles = [...this.cachedSolrFilesBeforeSort];
       this.collectionSize = this.cachedSolrFiles.length;
     });
@@ -87,6 +93,11 @@ export class SolrFileListComponent implements OnInit {
         this.searchTerm = model;
         this.apiService.searchSolrFiles(this.searchTerm).subscribe(files => {
           this.cachedSolrFilesBeforeSort = files as SolrFile[];
+          this.cachedSolrFilesBeforeSort.forEach(file => {
+            this.apiService.getDocument(file.documentId).subscribe(document => {
+              file.documentTitle = document[0].title;
+            });
+          });
           this.cachedSolrFiles = [...this.cachedSolrFilesBeforeSort];
           this.collectionSize = this.cachedSolrFiles.length;
         });

@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { Adapter } from './adapter';
 
 export class SolrFile {
+  public documentTitle: string;
+
   constructor(
     public id: string,
     public documentId: string,
