@@ -1,0 +1,19 @@
+<h2>Website details</h2>
+
+<button (click)="onDelete()">Delete this website</button>
+
+<div (click)="titleIsBeingEdited=true" *ngIf="!titleIsBeingEdited">Name: <span class="editable">{{website.name}}</span></div>
+<div id="title-edit" *ngIf="titleIsBeingEdited">
+    <input type="text" id="new-title" name="new-title" value={{website.name}} (keydown.enter)=onNameChanged($event)>
+</div>
+
+<div (click)="urlIsBeingEdited=true" *ngIf="!urlIsBeingEdited">URL: <span class="editable">{{website.url}}</span></div>
+<div id="url-edit" *ngIf="urlIsBeingEdited">
+    <input type="text" id="new-url" name="new-url" value={{website.url}} (keydown.enter)=onUrlChanged($event) class="col-lg-12">
+</div>
+
+<div (click)="contentIsBeingEdited=true" *ngIf="!contentIsBeingEdited">Content: <span class="editable">{{website.content}}</span></div>
+<div id="url-edit" *ngIf="contentIsBeingEdited">
+    <textarea id="new-content" name="new-content" value={{website.content}} (keydown.enter)=onContentChanged($event) class="col-lg-12"></textarea>
+</div>
+
