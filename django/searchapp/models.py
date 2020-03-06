@@ -26,7 +26,7 @@ class Document(models.Model):
     title = models.CharField(max_length=500)
     title_prefix = models.CharField(max_length=500, default="")
     type = models.CharField(max_length=200, default="")
-    date = models.DateField(default=timezone.now)
+    date = models.DateTimeField(default=timezone.now)
     acceptance_state = models.CharField(max_length=20,
                                         choices=AcceptanceState.choices,
                                         default=AcceptanceState.UNVALIDATED)
