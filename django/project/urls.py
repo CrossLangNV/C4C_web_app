@@ -24,7 +24,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('searchapp/', include(('searchapp.urls', 'searchapp'), namespace="searchapp")),
     path('scraping/', include(('scraping.urls', 'scraping'), namespace="scraping")),
-    path('social-auth/', include('social_django.urls', namespace="social")),
+    path('social-auth/', include('social_django.urls', namespace="social-view")),
+    path('auth/', include('rest_framework_social_oauth2.urls'))
 ]
 
 if settings.DEBUG:

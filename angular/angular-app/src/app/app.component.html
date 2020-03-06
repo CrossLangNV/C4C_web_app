@@ -1,7 +1,26 @@
-<div class="container main">
 
-  <h1 class="site-title">Search app</h1>
+<!-- nav -->
+<nav class="navbar navbar-expand navbar-dark bg-dark" *ngIf="currentDjangoUser">
+  <div class="navbar-nav mr-auto">
+    <a class="navbar-brand" routerLink="/">Home</a>
+  </div>
+  <div class="navbar-nav">
+    <a class="nav-item nav-link">{{currentDjangoUser.username}}</a>
+    <a class="nav-item nav-link" (click)="logout()">Logout</a>
+  </div>
+</nav>
 
-  <router-outlet></router-outlet>
+<!-- main app container -->
+<div class="jumbotron">
+  <div class="container main">
+    <div class="row">
+      <div class="col-sm-6 offset-sm-3">
+        <alert></alert>
+      </div>
+    </div>
+    <div class="row">
+      <router-outlet></router-outlet>
+    </div>
 
+  </div>
 </div>
