@@ -1,10 +1,25 @@
 import { Component } from '@angular/core';
+import { Router } from '@angular/router';
 
-@Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
-})
+import { AuthenticationService } from './authentication.service';
+import { User } from './user';
+import { DjangoUser } from './django_user';
+
+@Component({ selector: 'app', templateUrl: 'app.component.html' })
 export class AppComponent {
-  title = 'angular-app';
+  currentDjangoUser: DjangoUser;
+
+  constructor(
+    private router: Router,
+    private authenticationService: AuthenticationService
+  ) {
+    this.authenticationService.currentDjangoUser.subscribe(
+      x => (this.currentDjangoUser = x)
+    );
+  }
+
+  logout() {
+    this.authenticationService.logout();
+    this.router.navigate(['/login']);
+  }
 }

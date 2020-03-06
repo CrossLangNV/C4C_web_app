@@ -23,7 +23,7 @@
             <p>Acceptance state: {{ doc.acceptance_state }}</p>
             <p><a href="{{ doc.url }}">{{ doc.url }}</a></p>
             <div>
-                <p>{{ doc.solr_data.content.0 }}</p>
+                <p>{{ doc.summary }}</p>
             </div>
         </li>
     {% endfor %}

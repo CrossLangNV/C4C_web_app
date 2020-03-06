@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import scrapy
 
 
@@ -24,12 +26,13 @@ class EiopaSpider(scrapy.Spider):
             yield scrapy.Request(response.urljoin(next_page_url))
 
     def parse_single(self, response):
-        data = {'data':
-            {
-                'meta': response.meta,
-                'url': response.url,
-                'summary': response.css("div[id='main-content'] ::text").extract(),
-                'pdf_docs': response.css("a.related-item.file-type-pdf::attr(href)").extract()
-            }
+        data = {
+            'title_prefix': response.meta['title_prefix'],
+            'title': response.meta['title'],
+            'date': datetime.strptime(response.meta['date'], '%d %b %Y'),
+            'type': response.meta['type'],
+            'url': response.url,
+            'summary': response.css("div[id='main-content'] ::text").extract(),
+            'pdf_docs': response.css("a.related-item.file-type-pdf::attr(href)").extract()
         }
         return data
