@@ -20,7 +20,7 @@
   <thead>
     <tr>
       <th scope="col" sortable="id" (sort)="onSort($event)">Id</th>
-      <th scope="col" sortable="id" (sort)="onSort($event)">Document id</th>
+      <th scope="col" sortable="id" (sort)="onSort($event)">Document title</th>
       <th scope="col" sortable="content" (sort)="onSort($event)">Content</th>
       <th scope="col" sortable="language" (sort)="onSort($event)">Language</th>
       <th scope="col" sortable="doc_type" (sort)="onSort($event)">File type</th>
@@ -29,7 +29,7 @@
   <tbody>
     <tr *ngFor="let file of files">
       <td [innerHTML]="file.id"></td>
-      <td [innerHTML]="file.documentId"></td>
+      <td [innerHTML]="file.documentTitle"></td>
       <td [innerHTML]="file.content"></td>
       <td [innerHTML]="file.language"></td>
       <td [innerHTML]="file.docType"></td>
