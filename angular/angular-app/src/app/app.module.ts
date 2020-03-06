@@ -7,14 +7,19 @@ import { HttpClientModule } from '@angular/common/http';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { FilmListComponent, NgbdSortableHeaderDirective } from './film-list/film-list.component';
+import { WebsiteListComponent, WebsiteNgbdSortableHeaderDirective } from './website-list/website-list.component';
+import { WebsiteDetailsComponent } from './website-details/website-details.component';
 import { SolrFileListComponent } from './solrfile-list/solrfile-list.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     FilmListComponent,
+    WebsiteListComponent,
+    WebsiteDetailsComponent,
     SolrFileListComponent,
     NgbdSortableHeaderDirective,
+    WebsiteNgbdSortableHeaderDirective,
   ],
   imports: [
     BrowserModule,
