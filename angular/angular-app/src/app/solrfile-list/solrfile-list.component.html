@@ -23,7 +23,6 @@
       <th scope="col" sortable="documentTitle" (sort)="onSort($event)">Document title</th>
       <th scope="col" sortable="rawFile" (sort)="onSort($event)">File</th>
       <th scope="col" sortable="content" (sort)="onSort($event)">Content</th>
-      <th scope="col" sortable="language" (sort)="onSort($event)">Language</th>
     </tr>
   </thead>
   <tbody>
@@ -32,7 +31,6 @@
       <td [innerHTML]="file.documentTitle"></td>
       <td><a href="{{file.rawFile}}">{{file.rawFile}}</a></td>
       <td [innerHTML]="file.content"></td>
-      <td [innerHTML]="file.language"></td>
     </tr>
   </tbody>
 </table>
