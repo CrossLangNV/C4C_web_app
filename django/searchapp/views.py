@@ -247,6 +247,14 @@ class SolrFile(APIView):
         return Response(files)
 
 
+class SolrDocument(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, id, format=None):
+        solr_document = solr_search_id(core='documents', id=id)
+        return Response(solr_document)
+
+
 class FilmList(APIView):
     """
     View all films.
