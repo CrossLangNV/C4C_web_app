@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ApiServiceWebsites } from '../api.service.websites';
-import { Website } from '../website';
+import { ApiServiceWebsites } from '../../core/services/api.service.websites';
+import { Website } from '../../shared/models/website';
 import {Router} from "@angular/router"
 
 @Component({

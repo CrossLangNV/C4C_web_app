@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Website } from './website';
-import { Environment } from '../environments/environment-variables';
-import { SolrFile } from './solrfile';
+import { Website } from '../../shared/models/website';
+import { Environment } from '../../../environments/environment-variables';
+import { SolrFile } from '../../shared/models/solrfile';
 
 @Injectable({
   providedIn: 'root'

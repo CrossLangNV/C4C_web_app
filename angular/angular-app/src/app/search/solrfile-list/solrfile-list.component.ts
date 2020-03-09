@@ -10,8 +10,8 @@ import {
 } from '@angular/core';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { SolrFile } from '../solrfile';
-import { ApiService } from '../api.service';
+import { SolrFile } from '../../shared/models/solrfile';
+import { ApiService } from '../../core/services/api.service';
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {

@@ -1,13 +1,12 @@
 import { Routes, RouterModule } from '@angular/router';
-import { WebsiteListComponent } from './website-list/website-list.component';
-import { WebsiteDetailsComponent } from './website-details/website-details.component';
+import { WebsiteListComponent } from './browse/website-list/website-list.component';
+import { WebsiteDetailsComponent } from './browse/website-details/website-details.component';
 
 
-import { HomeComponent } from './home-component/home.component';
-import { SolrFileListComponent } from './solrfile-list/solrfile-list.component';
-import { LoginComponent } from './login-component/login.component';
-import { RegisterComponent } from './register-component/register.component';
-import { AuthGuard } from './helpers/auth.guard';
+import { SolrFileListComponent } from './search/solrfile-list/solrfile-list.component';
+import { LoginComponent } from './shared/login-component/login.component';
+import { RegisterComponent } from './shared/register-component/register.component';
+import { AuthGuard } from './core/guards/auth.guard';
 
 const routes: Routes = [
   { path: '', component: SolrFileListComponent, canActivate: [AuthGuard] },
