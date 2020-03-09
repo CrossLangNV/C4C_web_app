@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, ParamMap } from '@angular/router';
 import { ApiServiceWebsites } from '../../core/services/api.service.websites';
 import { Website } from '../../shared/models/website';
-import {Router} from "@angular/router"
+import { Router } from '@angular/router';
+import { switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-website-details',
@@ -19,18 +20,21 @@ export class WebsiteDetailsComponent implements OnInit {
     private route: ActivatedRoute,
     private apiServiceWebsites: ApiServiceWebsites,
     private router: Router
-  ) { }
+  ) {}
 
   ngOnInit() {
-
-    this.apiServiceWebsites.getWebsite('test').subscribe(website => {
-      this.website = website as Website;
-    });
+    this.route.paramMap
+      .pipe(
+        switchMap((params: ParamMap) =>
+          this.apiServiceWebsites.getWebsite(params.get('websiteId'))
+        )
+      )
+      .subscribe(website => (this.website = website));
   }
 
   onDelete() {
     this.apiServiceWebsites.deleteWebsite(this.website.id).subscribe(
-      res => this.router.navigate(['/websites']),
+      res => this.router.navigate(['/website']),
       err => console.log(err)
     );
   }
@@ -58,5 +62,4 @@ export class WebsiteDetailsComponent implements OnInit {
       this.contentIsBeingEdited = false;
     });
   }
-
 }
