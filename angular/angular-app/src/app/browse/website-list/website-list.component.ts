@@ -9,7 +9,6 @@ import {
   ViewChildren
 } from '@angular/core';
 import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ApiServiceWebsites } from '../../core/services/api.service.websites';
 import { Website } from '../../shared/models/website';
 
@@ -83,16 +82,6 @@ export class WebsiteListComponent implements OnInit {
       this.cachedWebsites = [...this.cachedWebsitesBeforeSort];
       this.collectionSize = this.cachedWebsites.length;
     });
-    this.searchTermChanged
-      .pipe(debounceTime(200), distinctUntilChanged())
-      .subscribe(model => {
-        this.searchTerm = model;
-        this.apiServiceWebsites.searchWebsites(this.searchTerm).subscribe(websites => {
-          this.cachedWebsitesBeforeSort = websites as Website[];
-          this.cachedWebsites = [...this.cachedWebsitesBeforeSort];
-          this.collectionSize = this.cachedWebsites.length;
-        });
-      });
   }
 
   get websites(): Website[] {
@@ -104,10 +93,6 @@ export class WebsiteListComponent implements OnInit {
 
   set websites(websites: Website[]) {
     this.websites = websites;
-  }
-
-  onSearch(searchTerm: string) {
-    this.searchTermChanged.next(searchTerm);
   }
 
   onSort({ column, direction }: SortEvent) {
