@@ -1,0 +1,50 @@
+<div class="form-group">
+  <label for="WebsiteName">Search for:</label>
+  <input id="WebsiteName" type="text" name="WebsiteName" class="form-control" [(ngModel)]="searchTerm"
+    (ngModelChange)="onSearch($event)" />
+  <label [ngPlural]="collectionSize">
+    <ng-template ngPluralCase="=0">
+    </ng-template>
+    <ng-template ngPluralCase="=1">
+      {{collectionSize}} matching website found
+    </ng-template>
+    <ng-template ngPluralCase="other">
+      {{ collectionSize }} matching websites found
+    </ng-template>
+  </label>
+</div>
+
+<h3 class="subtitle">Websites</h3>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col" sortable="name" (sort)="onSort($event)">Name</th>
+      <th scope="col" sortable="url" (sort)="onSort($event)">URL</th>
+      <th scope="col" sortable="actions" (sort)="onSort($event)">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let website of websites">
+      <td [innerHTML]="website.name"></td>
+      <td>
+        <a href="{{website.url}}">{{website.url}}</a>
+      </td>
+      <td>
+        <div><a routerLink="/websites/{{website.id}}"><button>view details</button></a></div>
+        <div><button (click)="onDelete(website.id)">delete</button></div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="d-flex justify-content-between p-2">
+  <ngb-pagination [collectionSize]="collectionSize" [(page)]="page" [pageSize]="pageSize" [maxSize]=10 [ellipses]=true>
+  </ngb-pagination>
+
+  <select class="custom-select" style="width: auto" [(ngModel)]="pageSize">
+    <option [ngValue]="10">10 items per page</option>
+    <option [ngValue]="50">50 items per page</option>
+    <option [ngValue]="100">100 items per page</option>
+  </select>
+</div>
