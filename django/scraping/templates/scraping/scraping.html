@@ -7,8 +7,11 @@
     <form class="form my-2" action="{% url 'scraping:spider' spider='quotes' %}" method="post">
         <button class="btn btn-primary" type="submit">Launch "quotes" spider</button>
     </form>
-    <form class="form" action="{% url 'scraping:spider' spider='eiopa' %}" method="post">
+    <form class="form my-2" action="{% url 'scraping:spider' spider='eiopa' %}" method="post">
         <button class="btn btn-primary" type="submit">Launch "eiopa" spider</button>
+    </form>
+    <form class="form my-2" action="{% url 'scraping:spider' spider='bis' %}" method="post">
+        <button class="btn btn-primary" type="submit">Launch "BIS" spider</button>
     </form>
 </div>
 <h3>Tasks</h3>
