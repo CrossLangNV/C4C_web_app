@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Environment } from '../environments/environment-variables';
-import { SolrFile, SolrFileAdapter } from './solrfile';
+import { Environment } from '../../../environments/environment-variables';
+import { SolrFile, SolrFileAdapter } from '../../shared/models/solrfile';
 import { map } from 'rxjs/operators';
-import { Document, DocumentAdapter } from './document';
-import { Website, WebsiteAdapter } from './website';
-import { Attachment, AttachmentAdapter } from './attachment';
+import { Document, DocumentAdapter } from '../../shared/models/document';
+import { Website, WebsiteAdapter } from '../../shared/models/website';
+import { Attachment, AttachmentAdapter } from '../../shared/models/attachment';
 
 @Injectable({
   providedIn: 'root'

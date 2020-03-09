@@ -3,8 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-import { DjangoUser } from './django_user';
-import { Environment } from '../environments/environment-variables';
+import { DjangoUser } from '../../shared/models/django_user';
+import { Environment } from '../../../environments/environment-variables';
 import { SocialUser } from 'angularx-social-login';
 
 @Injectable({ providedIn: 'root' })

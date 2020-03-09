@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { first } from 'rxjs/operators';
 
-import { User } from '../user';
-import { DjangoUser } from '../django_user';
-import { UserService } from '../user.service';
-import { AuthenticationService } from '../authentication.service';
+import { User } from '../models/user';
+import { DjangoUser } from '../models/django_user';
+import { UserService } from '../../core/auth/user.service';
+import { AuthenticationService } from '../../core/auth/authentication.service';
 
 @Component({ templateUrl: 'home.component.html' })
 export class HomeComponent implements OnInit {

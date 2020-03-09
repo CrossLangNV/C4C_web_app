@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { User } from './user';
-import { Environment } from '../environments/environment-variables'
+import { User } from '../../shared/models/user';
+import { Environment } from '../../../environments/environment-variables'
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
