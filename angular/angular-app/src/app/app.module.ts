@@ -14,6 +14,8 @@ import { AlertComponent } from './alert-component/alert.component';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { WebsiteListComponent, WebsiteNgbdSortableHeaderDirective } from './website-list/website-list.component';
+import { WebsiteDetailsComponent } from './website-details/website-details.component';
 import {
   SolrFileListComponent,
   NgbdSortableHeaderDirective
@@ -27,6 +29,9 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 @NgModule({
   declarations: [
     AppComponent,
+    WebsiteListComponent,
+    WebsiteDetailsComponent,
+    WebsiteNgbdSortableHeaderDirective,
     HomeComponent,
     LoginComponent,
     RegisterComponent,
