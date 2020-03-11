@@ -14,4 +14,4 @@ class ScrapingTaskItemSerializer(serializers.ModelSerializer):
 class ScrapingTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScrapingTask
-        fields = ['id', 'spider', 'date']
+        fields = ['id', 'scheduler_id', 'spider', 'spider_type', 'status', 'date']
