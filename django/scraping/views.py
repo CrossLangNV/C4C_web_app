@@ -19,6 +19,7 @@ from .serializers import ScrapingTaskSerializer
 class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
     template_name = "scraping/scraping.html"
     scrapyd = ScrapydAPI(os.environ['SCRAPYD_URL'])
+    scrapyd_project = 'default'
 
     def get(self, request):
         # render overview page
@@ -42,7 +43,7 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
         }
 
         # schedule scraping task
-        scrapyd_task_id = self.scrapyd.schedule('default', spider, settings=settings)
+        scrapyd_task_id = self.scrapyd.schedule(self.scrapyd_project, spider, settings=settings)
 
         return redirect('scraping:scraping')
 
@@ -86,6 +87,19 @@ class ScrapingTaskListView(ListCreateAPIView):
 class ScrapingTaskView(RetrieveDestroyAPIView):
     queryset = ScrapingTask.objects.all()
     serializer_class = ScrapingTaskSerializer
+    scrapyd = ScrapydAPI(os.environ['SCRAPYD_URL'])
+    scrapyd_project = 'default'
+
+    def get_object(self):
+        # update with status
+        queryset = self.get_queryset()
+        task_qs = queryset.filter(pk=self.kwargs['pk'])
+        task = task_qs[0]
+        if task.scheduler_id:
+            status = self.scrapyd.job_status(self.scrapyd_project, task.scheduler_id)
+            task.status = status
+            task.save()
+        return task
 
 
 class SpiderListView(APIView):
