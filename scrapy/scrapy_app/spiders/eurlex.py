@@ -81,119 +81,132 @@ class EurLexSpider(scrapy.Spider):
         dates = soup.find('div', {'id': 'PPDates_Contents'})
         if dates is not None:
             all_dates = []
+            all_dates_type = []
+            all_dates_info = []
             date_texts = dates.findAll('dd')
             date_types = dates.findAll('dt')
             for (x, y) in zip(date_types, date_texts):
                 date_type = x.getText().split(':')[0].lower()
                 value = y.getText().split(';')
                 date_value = datetime.strptime(value[0], self.date_format)
-                date_info = value[1].replace('\n', ' ').strip() if len(value) > 1 else None
+                date_info = value[1].replace('\n', ' ').strip() if len(value) > 1 else 'n/a'
                 # date of document is our main "date"
                 if date_type == 'date of document':
                     newdict.update({"date": date_value})
                 # handle other date_types to be appended to "dates"
-                date_type_obj = {}
-                date_type_obj['type'] = date_type
-                date_type_obj['date'] = date_value
-                date_type_obj['info'] = date_info
-                all_dates.append(date_type_obj)
+                all_dates_type.append(date_type)
+                all_dates.append(date_value)
+                all_dates_info.append(date_info)
             newdict.update({"dates": all_dates})
+            newdict.update({"dates_type": all_dates_type})
+            newdict.update({"dates_info": all_dates_info})
 
         classifications = soup.find('div', {'id': 'PPClass_Contents'})
         if classifications is not None:
             classifications_data = classifications.findAll('dd')
             classifications_types = classifications.findAll('dt')
-            all_classifications = []
+            all_classifications_type = []
+            all_classifications_label = []
+            all_classifications_code = []
             for (x, y) in zip(classifications_types, classifications_data):
                 ref_codes = y.findAll('a')
                 for ref_code in ref_codes:
-                    single_classification = {}
-                    single_classification['type'] = x.getText().split(':')[0].lower()
+                    all_classifications_type.append(x.getText().split(':')[0].lower())
                     element_name = ref_code.getText().replace('\n', '')
                     ref_code = str(ref_code['href']).replace('./../../../', base_url)
                     element_code = re.search('CODED=(.*)&', ref_code)
                     element_code = element_code.group(1)
-                    single_classification['label'] = element_name
-                    if element_code:
-                        single_classification['code'] = element_code
-                    all_classifications.append(single_classification)
+                    all_classifications_label.append(element_name)
+                    all_classifications_code.append(element_code if element_code else 'n/a')
 
-            newdict.update({"classifications": all_classifications})
+            newdict.update({"classifications_label": all_classifications_label})
+            newdict.update({"classifications_type": all_classifications_type})
+            newdict.update({"classifications_code": all_classifications_code})
 
         miscellaneous = soup.find('div', {'id': 'PPMisc_Contents'})
         if miscellaneous is not None:
-            misc = {}
             misc_texts = miscellaneous.findAll('dd')
             misc_types = miscellaneous.findAll('dt')
             for (x, y) in zip(misc_types, misc_texts):
                 misc_type = x.getText().split(':')[0].lower()
                 value = y.getText().replace('\n', ' ').strip()
-                misc[misc_type] = value
+                misc_value = value
                 # save 'form' value also as general document type value
                 if misc_type == 'form':
                     newdict.update({"type": value})
-            newdict.update({"misc": misc})
+                newdict.update({'misc_' + misc_type: value})
 
         procedure = soup.find('div', {'id': 'PPProc_Contents'})
         if procedure is not None:
-            procedure_info = {}
+            all_procedures_links_url = []
+            all_procedures_links_name = []
+            all_procedures_number = []
             procedure_types = procedure.findAll('dt')
             procedure_data = procedure.findAll('dd')
-            ext_links = []
             for (x, y) in zip(procedure_types, procedure_data):
                 procedure_type = x.getText().split(':')[0].lower().replace('\n', '')
                 if procedure_type == 'procedure number':
-                    value = []
                     for number in y.getText().split('\n'):
                         if number.strip():
-                            value.append(number.strip())
-                    procedure_info[procedure_type] = value
+                            all_procedures_number.append(number.strip())
+
                 elif procedure_type == 'link':
                     procedure_links = y.findAll('a')
                     if procedure_links is not None:
                         name = procedure_links[0].getText().replace('\n', '').strip()
                         link = procedure_links[0]['href']
-                        ext_links.append({'name': name, 'url': link})
+                        all_procedures_links_name.append(name)
+                        all_procedures_links_url.append(link)
                 else:
                     value = y.getText().replace('\n', ' ').strip()
-                    procedure_info[procedure_type] = value
-            if ext_links:
-                procedure_info['ext_links'] = ext_links
-            newdict.update({"procedure": procedure_info})
+                    newdict.update({'procedure_' + procedure_type: value})
+
+            newdict.update({"procedures_number": all_procedures_number})
+            newdict.update({"procedures_links_name": all_procedures_links_name})
+            newdict.update({"procedures_links_url": all_procedures_links_url})
 
         relationships = soup.find('div', {'id': 'PPLinked_Contents'})
         if relationships is not None:
-            rel_between_docs = {}
             date_types = relationships.findAll('dt', attrs={'class': None})
             date_texts = relationships.findAll('dd', attrs={'class': None})
+            all_relationships_legal_basis = []
+            all_relationships_proposal = []
             for element in date_texts[1:]:
                 common_index = date_texts.index(element)
                 rel_category = date_types[common_index].getText().split(':')[0].replace('\n', '').lower()
-                if rel_category == 'link':
-                    rel_category = 'oj_link'
-                redirect_link_info = []
+                redirect_link_value = ''
                 redirect_links = element.findAll('a')
                 for redirect_link in redirect_links:
                     redirect_link_text = redirect_link.getText()
-                    redirect_link_link = redirect_link['href'].replace('./../../../', base_url)
-                    if 'CELEX' in redirect_link_link:
-                        redirect_link_info.append(redirect_link_text)
+                    redirect_link_url = redirect_link['href'].replace('./../../../', base_url)
+                    if 'CELEX' in redirect_link_url:
+                        redirect_link_value = redirect_link_text
                     else:
-                        redirect_link_info.append(redirect_link_link)
-                # treaty is always the first
-                rel_between_docs.update(
-                    {date_types[0].getText().split(':')[0].lower(): date_texts[0].getText().replace('\n', '')})
-                rel_between_docs.update({rel_category: redirect_link_info})
-            newdict.update({"relationships": rel_between_docs})
+                        redirect_link_value = redirect_link_url
+                    if rel_category == 'legal basis':
+                        all_relationships_legal_basis.append(redirect_link_value)
+                    elif rel_category == 'proposal':
+                        all_relationships_proposal.append(redirect_link_value)
+            # treaty is always the first
+            newdict.update({'relationships_treaty': date_texts[0].getText().replace('\n', '')})
+            # oj link is always the last
+            newdict.update({'relationships_oj_link': redirect_link_value})
+
+            newdict.update({"relationships_legal_basis": all_relationships_legal_basis})
+            newdict.update({"relationships_proposal": all_relationships_proposal})
 
             amendment_to = relationships.find('tbody')
-            table = []
+            all_amendments_relation = []
+            all_amendments_act = []
+            all_amendments_comment = []
+            all_amendments_subdivision = []
+            all_amendments_from = []
+            all_amendments_to = []
             if amendment_to is not None:
                 rows = amendment_to.findAll('tr')
                 if rows is not None:
                     n = 0
                     for tr in rows:
-                        row = {}
                         td = tr.findAll('td')
                         relation = td[0].getText().replace('\n', '')
                         act = td[1].getText().replace('\n', '')
@@ -202,14 +215,18 @@ class EurLexSpider(scrapy.Spider):
                         as_from = td[4].getText().replace('\n', '')
                         to = td[5].getText().replace('\n', '')
                         n += 1
-                        row.update({"relation": relation})
-                        row.update({"act": act})
-                        row.update({"comment": comment})
-                        row.update({"subdivision concerned": subdivision_concerned})
-                        row.update({"from": as_from})
-                        row.update({"to": to})
-                        table.append(row)
-                    rel_between_docs.update({"amendment to": table})
+                        all_amendments_relation.append(relation if relation else 'n/a')
+                        all_amendments_act.append(act if act else 'n/a')
+                        all_amendments_comment.append(comment if comment else 'n/a')
+                        all_amendments_subdivision.append(subdivision_concerned if subdivision_concerned else 'n/a')
+                        all_amendments_from.append(as_from if as_from else 'n/a')
+                        all_amendments_to.append(to if to else 'n/a')
+                    newdict.update({'amendments_relation': all_amendments_relation})
+                    newdict.update({'amendments_act': all_amendments_act})
+                    newdict.update({'amendments_comment': all_amendments_comment})
+                    newdict.update({'amendments_subdivision': all_amendments_subdivision})
+                    newdict.update({'amendments_from': all_amendments_from})
+                    newdict.update({'amendments_to': all_amendments_to})
 
         newdict.update({'url': response.url})
         return newdict
