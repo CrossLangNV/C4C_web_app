@@ -23,17 +23,29 @@ class AcceptanceState(models.TextChoices):
 
 class Document(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    celex = models.CharField(max_length=20, default="")
+
     title = models.CharField(max_length=500)
     title_prefix = models.CharField(max_length=500, default="")
+    author = models.CharField(max_length=500, default="")
+
+    status = models.CharField(max_length=100, default="")
     type = models.CharField(max_length=200, default="")
-    date = models.DateTimeField(default=timezone.now)
     acceptance_state = models.CharField(max_length=20,
                                         choices=AcceptanceState.choices,
                                         default=AcceptanceState.UNVALIDATED)
+
+    date = models.DateTimeField(default=timezone.now)
+
     url = models.URLField(unique=True)
+    eli = models.URLField(default="")
+
     website = models.ForeignKey('Website', related_name='documents', on_delete=models.CASCADE)
+
     summary = models.TextField(default="")
     content = models.TextField(default="")
+    various = models.TextField(default="")
+
     pull = models.BooleanField(default=False, editable=False)
 
     def __str__(self):
