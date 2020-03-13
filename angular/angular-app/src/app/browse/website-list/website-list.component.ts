@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ApiServiceWebsites } from '../../core/services/api.service.websites';
+import { ApiService } from '../../core/services/api.service';
 import { Website } from '../../shared/models/website';
 
 @Component({
@@ -10,15 +10,15 @@ import { Website } from '../../shared/models/website';
 export class WebsiteListComponent implements OnInit {
   websites = [];
 
-  constructor(private apiServiceWebsites: ApiServiceWebsites) {}
+  constructor(private apiService: ApiService) {}
 
   ngOnInit() {
-    this.apiServiceWebsites.getWebsites().subscribe(websites => {
+    this.apiService.getWebsites().subscribe(websites => {
       this.websites = websites as Website[];
     });
   }
 
   onDelete(id) {
-    this.apiServiceWebsites.deleteWebsite(id).subscribe();
+    this.apiService.deleteWebsite(id).subscribe();
   }
 }
