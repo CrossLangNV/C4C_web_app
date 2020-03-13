@@ -8,13 +8,16 @@ import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { BreadcrumbComponent } from './breadcrumb-component/breadcrumb.component';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 
 @NgModule({
   declarations: [
     HomeComponent,
     LoginComponent,
     RegisterComponent,
-    AlertComponent
+    AlertComponent,
+    BreadcrumbComponent
   ],
   imports: [
     CommonModule,
@@ -22,7 +25,8 @@ import { RouterModule } from '@angular/router';
     NgbModule,
     ReactiveFormsModule,
     FormsModule,
-    FontAwesomeModule
+    FontAwesomeModule,
+    BreadcrumbModule
   ],
   exports: [
     CommonModule,
@@ -34,7 +38,9 @@ import { RouterModule } from '@angular/router';
     FormsModule,
     ReactiveFormsModule,
     NgbModule,
-    FontAwesomeModule
+    FontAwesomeModule,
+    BreadcrumbModule,
+    BreadcrumbComponent
   ]
 })
 export class SharedModule {}
