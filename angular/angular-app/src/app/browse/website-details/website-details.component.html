@@ -32,7 +32,9 @@
 </div>
 <ul class="list-group list-group-flush">
   <li class="list-group-item" *ngFor="let doc of documents">
-    <h3>{{ doc.title }}</h3>
+    <a routerLink="/document/{{doc.id}}">
+      <h4>{{doc.title}}</h4>
+    </a>
     <p>{{ doc.date }}</p>
     <p>Acceptance state: {{ doc.acceptanceState }}</p>
     <p><a href="{{doc.url}}">{{ doc.url }}</a></p>
