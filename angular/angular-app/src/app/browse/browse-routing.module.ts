@@ -7,6 +7,9 @@ const routes: Routes = [
   { path: '', redirectTo: '/browse/website', pathMatch: 'full' },
   {
     path: 'website',
+    data: {
+      breadcrumb: 'Websites'
+    },
     children: [
       {
         path: '',
@@ -14,16 +17,24 @@ const routes: Routes = [
       },
       {
         path: ':websiteId',
-        component: WebsiteDetailsComponent
-      }
-    ]
-  },
-  {
-    path: 'document',
-    children: [
-      {
-        path: ':documentId',
-        component: DocumentDetailsComponent
+        data: {
+          breadcrumb: '',
+          breadcrumbType: 'website'
+        },
+        children: [
+          {
+            path: '',
+            component: WebsiteDetailsComponent
+          },
+          {
+            path: 'document/:documentId',
+            data: {
+              breadcrumb: '',
+              breadcrumbType: 'document'
+            },
+            component: DocumentDetailsComponent
+          }
+        ]
       }
     ]
   }
