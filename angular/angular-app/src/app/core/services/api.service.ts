@@ -53,7 +53,10 @@ export class ApiService {
   }
 
   public updateWebsite(website: Website): Observable<Website> {
-    return this.http.put<Website>(`${this.API_URL}/website/${website.id}/`, website);
+    return this.http.put<Website>(
+      `${this.API_URL}/website/${website.id}/`,
+      website
+    );
   }
 
   public getDocument(id: string): Observable<Document> {

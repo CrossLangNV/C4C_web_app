@@ -18,7 +18,26 @@
     class="col-lg-12"></textarea>
 </div>
 
-<button class="btn btn-danger" (click)="onDelete()">
-  <fa-icon [icon]="deleteIcon"></fa-icon> Delete
-</button>
+<div class="delete-website my-2">
+  <button class="btn btn-danger" (click)="onDelete()">
+    <fa-icon [icon]="deleteIcon"></fa-icon> Delete
+  </button>
+</div>
 
+<h3>Documents</h3>
+<div class="create-document my-2">
+  <button class="btn btn-info">
+    <fa-icon [icon]="addIcon"></fa-icon> Add
+  </button>
+</div>
+<ul class="list-group list-group-flush">
+  <li class="list-group-item" *ngFor="let doc of documents">
+    <h3>{{ doc.title }}</h3>
+    <p>{{ doc.date }}</p>
+    <p>Acceptance state: {{ doc.acceptanceState }}</p>
+    <p><a href="{{doc.url}}">{{ doc.url }}</a></p>
+    <div>
+      <p>{{doc.summary}}</p>
+    </div>
+  </li>
+</ul>
