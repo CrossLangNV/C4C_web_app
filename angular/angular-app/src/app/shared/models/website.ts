@@ -6,7 +6,8 @@ export class Website {
     public id: string,
     public name: string,
     public url: string,
-    public content: string
+    public content: string,
+    public documentIds: string[]
   ) {}
 }
 
@@ -19,7 +20,8 @@ export class WebsiteAdapter implements Adapter<Website> {
       item.id,
       item.name,
       item.url,
-      item.content
+      item.content,
+      item.documents
     );
   }
 }

@@ -2,10 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { Website } from '../../shared/models/website';
+import { Document } from '../../shared/models/document';
 import { Router } from '@angular/router';
 import { switchMap } from 'rxjs/operators';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
+import { faTrashAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-website-details',
@@ -13,11 +14,13 @@ import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
   styleUrls: ['./website-details.component.css']
 })
 export class WebsiteDetailsComponent implements OnInit {
-  website;
+  website: Website;
+  documents: Document[] = [];
   titleIsBeingEdited: boolean = false;
   urlIsBeingEdited: boolean = false;
   contentIsBeingEdited: boolean = false;
   deleteIcon: IconDefinition;
+  addIcon: IconDefinition;
 
   constructor(
     private route: ActivatedRoute,
@@ -32,8 +35,16 @@ export class WebsiteDetailsComponent implements OnInit {
           this.apiService.getWebsite(params.get('websiteId'))
         )
       )
-      .subscribe(website => (this.website = website));
+      .subscribe(website => {
+        this.website = website;
+        website.documentIds.forEach(id => {
+          this.apiService.getDocument(id).subscribe(document => {
+            this.documents.push(document);
+          });
+        });
+      });
     this.deleteIcon = faTrashAlt;
+    this.addIcon = faPlus;
   }
 
   onDelete() {
