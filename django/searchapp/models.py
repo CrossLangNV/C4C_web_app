@@ -25,7 +25,7 @@ class Document(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     celex = models.CharField(max_length=20, default="")
 
-    title = models.CharField(max_length=500)
+    title = models.CharField(max_length=1000)
     title_prefix = models.CharField(max_length=500, default="")
     author = models.CharField(max_length=500, default="")
 

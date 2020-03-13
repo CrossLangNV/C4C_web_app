@@ -12,15 +12,22 @@ def sync_documents(website, solr_documents, django_documents):
         if solr_doc is None:
             break
         elif django_doc is None:
-            solr_doc_date = solr_doc['date'][0].split('T')[0]
+            solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
+            date_format = '%Y-%m-%dT%H:%M:%SZ'
+
             new_django_doc = Document.objects.create(
                 id=solr_doc['id'],
                 url=solr_doc['url'][0],
-                title_prefix=solr_doc['title_prefix'][0],
-                title=solr_doc['title'][0],
-                date=datetime.strptime(solr_doc_date, '%Y-%m-%d'),
-                type=solr_doc['type'][0],
-                summary=''.join(x.strip() for x in solr_doc['summary']),
+                celex=solr_doc.get('celex', [''])[0],
+                eli=solr_doc.get('ELI', [''])[0],
+                title_prefix=solr_doc.get('title_prefix', [''])[0],
+                title=solr_doc.get('title', [''])[0],
+                status=solr_doc.get('status', [''])[0],
+                date=datetime.strptime(solr_doc_date, date_format),
+                type=solr_doc.get('type', [''])[0],
+                summary=''.join(x.strip() for x in solr_doc.get('summary', [''])),
+                content=''.join(x.strip() for x in solr_doc.get('content', [''])),
+                various=''.join(x.strip() for x in solr_doc.get('various', [''])),
                 website=website,
                 pull=True
             )
