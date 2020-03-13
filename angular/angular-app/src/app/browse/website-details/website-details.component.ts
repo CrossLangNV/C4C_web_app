@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
-import { ApiServiceWebsites } from '../../core/services/api.service.websites';
+import { ApiService } from '../../core/services/api.service';
 import { Website } from '../../shared/models/website';
 import { Router } from '@angular/router';
 import { switchMap } from 'rxjs/operators';
@@ -18,7 +18,7 @@ export class WebsiteDetailsComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private apiServiceWebsites: ApiServiceWebsites,
+    private apiService: ApiService,
     private router: Router
   ) {}
 
@@ -26,14 +26,14 @@ export class WebsiteDetailsComponent implements OnInit {
     this.route.paramMap
       .pipe(
         switchMap((params: ParamMap) =>
-          this.apiServiceWebsites.getWebsite(params.get('websiteId'))
+          this.apiService.getWebsite(params.get('websiteId'))
         )
       )
       .subscribe(website => (this.website = website));
   }
 
   onDelete() {
-    this.apiServiceWebsites.deleteWebsite(this.website.id).subscribe(
+    this.apiService.deleteWebsite(this.website.id).subscribe(
       res => this.router.navigate(['/website']),
       err => console.log(err)
     );
@@ -41,7 +41,7 @@ export class WebsiteDetailsComponent implements OnInit {
 
   onNameChanged(event: any) {
     this.website.name = event.target.value;
-    this.apiServiceWebsites.updateWebsite(this.website).subscribe(website => {
+    this.apiService.updateWebsite(this.website).subscribe(website => {
       this.website = website as Website;
       this.titleIsBeingEdited = false;
     });
@@ -49,7 +49,7 @@ export class WebsiteDetailsComponent implements OnInit {
 
   onUrlChanged(event: any) {
     this.website.url = event.target.value;
-    this.apiServiceWebsites.updateWebsite(this.website).subscribe(website => {
+    this.apiService.updateWebsite(this.website).subscribe(website => {
       this.website = website as Website;
       this.urlIsBeingEdited = false;
     });
@@ -57,7 +57,7 @@ export class WebsiteDetailsComponent implements OnInit {
 
   onContentChanged(event: any) {
     this.website.content = event.target.value;
-    this.apiServiceWebsites.updateWebsite(this.website).subscribe(website => {
+    this.apiService.updateWebsite(this.website).subscribe(website => {
       this.website = website as Website;
       this.contentIsBeingEdited = false;
     });

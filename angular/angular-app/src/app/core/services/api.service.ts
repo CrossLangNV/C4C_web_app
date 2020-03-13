@@ -38,16 +38,28 @@ export class ApiService {
       );
   }
 
-  public getDocument(id: string): Observable<Document> {
-    return this.http
-      .get<Document>(`${this.API_URL}/document/${id}`)
-      .pipe(map(item => this.documentAdapter.adapt(item)));
+  public getWebsites(): Observable<Website[]> {
+    return this.http.get<Website[]>(`${this.API_URL}/website`);
   }
 
   public getWebsite(id: string): Observable<Website> {
     return this.http
       .get<Website>(`${this.API_URL}/website/${id}`)
       .pipe(map(item => this.websiteAdapter.adapt(item)));
+  }
+
+  public deleteWebsite(id): Observable<any> {
+    return this.http.delete(`${this.API_URL}/website/${id}`);
+  }
+
+  public updateWebsite(website: Website): Observable<Website> {
+    return this.http.put<Website>(`${this.API_URL}/website/${website.id}/`, website);
+  }
+
+  public getDocument(id: string): Observable<Document> {
+    return this.http
+      .get<Document>(`${this.API_URL}/document/${id}`)
+      .pipe(map(item => this.documentAdapter.adapt(item)));
   }
 
   public getAttachment(id: string): Observable<Attachment> {
