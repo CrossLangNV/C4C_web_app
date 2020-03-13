@@ -4,6 +4,8 @@ import { ApiService } from '../../core/services/api.service';
 import { Website } from '../../shared/models/website';
 import { Router } from '@angular/router';
 import { switchMap } from 'rxjs/operators';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-website-details',
@@ -15,6 +17,7 @@ export class WebsiteDetailsComponent implements OnInit {
   titleIsBeingEdited: boolean = false;
   urlIsBeingEdited: boolean = false;
   contentIsBeingEdited: boolean = false;
+  deleteIcon: IconDefinition;
 
   constructor(
     private route: ActivatedRoute,
@@ -30,6 +33,7 @@ export class WebsiteDetailsComponent implements OnInit {
         )
       )
       .subscribe(website => (this.website = website));
+    this.deleteIcon = faTrashAlt;
   }
 
   onDelete() {
