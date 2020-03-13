@@ -19,7 +19,3 @@ th[sortable].desc:before {
   transform: rotate(180deg);
   -ms-transform: rotate(180deg);
 }
-
-h3.subtitle {
-  margin-top: 10px;
-}
