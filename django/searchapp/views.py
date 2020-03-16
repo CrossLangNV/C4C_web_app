@@ -229,6 +229,15 @@ class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
 
+    def get_object(self):
+        queryset = self.get_queryset()
+        attachment_qs = queryset.filter(pk=self.kwargs['pk'])
+        attachment = attachment_qs[0]
+        solr_attachment = solr_search_id(core='files', id=str(attachment.id))[0]
+        if not attachment.content:
+            attachment.content = solr_attachment['content']
+        return attachment
+
 
 class SolrFileList(APIView):
     permission_classes = [permissions.IsAuthenticated]
