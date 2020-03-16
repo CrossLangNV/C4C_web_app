@@ -18,8 +18,7 @@ const routes: Routes = [
       {
         path: ':websiteId',
         data: {
-          breadcrumb: '',
-          breadcrumbType: 'website'
+          breadcrumb: ''
         },
         children: [
           {
@@ -29,8 +28,7 @@ const routes: Routes = [
           {
             path: 'document/:documentId',
             data: {
-              breadcrumb: '',
-              breadcrumbType: 'document'
+              breadcrumb: ''
             },
             component: DocumentDetailsComponent
           }
