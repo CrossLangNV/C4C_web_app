@@ -6,7 +6,8 @@ export class Attachment {
     public id: string,
     public file: string,
     public url: string,
-    public documentId: string
+    public documentId: string,
+    public content: string
   ) {}
 }
 
@@ -19,7 +20,8 @@ export class AttachmentAdapter implements Adapter<Attachment> {
       item.id,
       item.file,
       item.url,
-      item.document
+      item.document,
+      item.content
     );
   }
 }

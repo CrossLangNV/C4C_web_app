@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, ParamMap } from '@angular/router';
 import { ApiService } from 'src/app/core/services/api.service';
 import { switchMap } from 'rxjs/operators';
 import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
+import { Attachment } from 'src/app/shared/models/attachment';
 
 @Component({
   selector: 'app-document-details',
@@ -14,6 +15,7 @@ import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 export class DocumentDetailsComponent implements OnInit {
   document: Document;
   deleteIcon: IconDefinition;
+  attachments: Attachment[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -30,6 +32,11 @@ export class DocumentDetailsComponent implements OnInit {
       )
       .subscribe(document => {
         this.document = document;
+        document.attachmentIds.forEach(id => {
+          this.apiService.getAttachment(id).subscribe(attachment => {
+            this.attachments.push(attachment);
+          })
+        })
       });
     this.deleteIcon = faTrashAlt;
   }
