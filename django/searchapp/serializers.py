@@ -8,7 +8,7 @@ class WebsiteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Website
-        fields = ['id', 'name', 'url', 'content', 'documents']
+        fields = '__all__'
 
 
 class DocumentSerializer(serializers.ModelSerializer):
@@ -17,12 +17,11 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Document
-        fields = ['id', 'title', 'date', 'acceptance_state', 'url', 'summary', 'content', 'website', 'attachments']
-
+        fields = '__all__'
 
 class AttachmentSerializer(serializers.ModelSerializer):
     document = serializers.PrimaryKeyRelatedField(queryset=Document.objects.all())
 
     class Meta:
         model = Attachment
-        fields = ['id', 'file', 'url', 'document', 'content']
+        fields = '__all__'
