@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { ApiService } from 'src/app/core/services/api.service';
 
 @Component({
   selector: 'breadcrumb',
@@ -14,11 +13,7 @@ export class BreadcrumbComponent implements OnInit {
   readonly home = { icon: 'pi pi-home', url: '' };
   menuItems: MenuItem[];
 
-  constructor(
-    private router: Router,
-    private activatedRoute: ActivatedRoute,
-    private apiService: ApiService
-  ) {}
+  constructor(private router: Router, private activatedRoute: ActivatedRoute) {}
 
   ngOnInit(): void {
     this.router.events
@@ -47,26 +42,7 @@ export class BreadcrumbComponent implements OnInit {
     if (isDynamicRoute && !!route.snapshot) {
       const paramName = lastRoutePart.split(':')[1];
       path = path.replace(lastRoutePart, route.snapshot.params[paramName]);
-      // if a breadcrumb type is given, use it to give a more specific label
-      if (route.routeConfig.data.breadcrumbType) {
-        const breadcrumbType = route.routeConfig.data.breadcrumbType;
-        if (breadcrumbType === 'website') {
-          this.apiService
-            .getWebsite(route.snapshot.params[paramName])
-            .subscribe(website => {
-              label = website.name;
-            });
-          //label = route.snapshot.params[paramName];
-        } else if (breadcrumbType === 'document') {
-          this.apiService
-            .getDocument(route.snapshot.params[paramName])
-            .subscribe(document => (label = document.title));
-        } else {
-          label = route.snapshot.params[paramName];
-        }
-      } else {
-        label = route.snapshot.params[paramName];
-      }
+      label = route.snapshot.params[paramName];
     }
 
     // In the routeConfig the complete path is not available,
