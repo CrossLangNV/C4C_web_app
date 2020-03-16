@@ -101,4 +101,4 @@ if __name__ == '__main__':
     # solr_add_file('files', test_file, '0')
 
     # Delete
-    solr_delete_all('files')
+    solr_delete_all('documents')

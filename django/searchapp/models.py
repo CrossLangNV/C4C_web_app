@@ -74,6 +74,7 @@ class Attachment(models.Model):
     file = models.FileField()
     url = models.URLField(unique=True)
     document = models.ForeignKey('Document', related_name='attachments', on_delete=models.CASCADE)
+    content = models.TextField(default="")
     pull = models.BooleanField(default=False, editable=False)
 
     def __str__(self):
