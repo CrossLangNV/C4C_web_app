@@ -8,12 +8,14 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
+import { WebsiteAddComponent } from './website-add/website-add.component';
 
 @NgModule({
   declarations: [
     WebsiteListComponent,
     WebsiteDetailsComponent,
-    DocumentDetailsComponent
+    DocumentDetailsComponent,
+    WebsiteAddComponent
   ],
   imports: [
     SharedModule,
