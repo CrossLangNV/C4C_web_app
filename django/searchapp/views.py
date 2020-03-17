@@ -7,13 +7,13 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
 from rest_framework import permissions
-from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .datahandling import sync_documents, sync_attachments
 from .forms import DocumentForm, WebsiteForm
-from .models import Website, Document, Attachment
+from .models import Website, Document, Attachment, AcceptanceState
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
 from .uploadhandlers import ProgressBarUploadHandler
@@ -228,6 +228,21 @@ class AttachmentListAPIView(ListCreateAPIView):
 class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
+
+    def get_object(self):
+        queryset = self.get_queryset()
+        attachment_qs = queryset.filter(pk=self.kwargs['pk'])
+        attachment = attachment_qs[0]
+        solr_attachment = solr_search_id(core='files', id=str(attachment.id))[0]
+        if not attachment.content:
+            attachment.content = solr_attachment['content']
+        return attachment
+
+
+class AcceptanceStateAPIView(APIView):
+
+    def get(self, request, format=None):
+        return Response([state.value for state in AcceptanceState])
 
 
 class SolrFileList(APIView):
