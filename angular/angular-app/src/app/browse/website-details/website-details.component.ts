@@ -7,6 +7,7 @@ import { Router } from '@angular/router';
 import { switchMap } from 'rxjs/operators';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faTrashAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { SelectItem, ConfirmationService } from 'primeng/api';
 
 @Component({
   selector: 'app-website-details',
@@ -25,7 +26,8 @@ export class WebsiteDetailsComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit() {
@@ -48,6 +50,14 @@ export class WebsiteDetailsComponent implements OnInit {
   }
 
   onDelete() {
+    this.confirmationService.confirm({
+      message: 'Do you want to delete this website?',
+      accept: () => {
+        this.apiService.deleteWebsite(this.website.id).subscribe();
+        this.router.navigate(['/website/']);
+      }
+    });
+
     this.apiService.deleteWebsite(this.website.id).subscribe(
       res => this.router.navigate(['/website']),
       err => console.log(err)
