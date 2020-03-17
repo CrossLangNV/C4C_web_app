@@ -38,13 +38,13 @@ class Document(models.Model):
     date = models.DateTimeField(default=timezone.now)
 
     url = models.URLField(unique=True)
-    eli = models.URLField(default="")
+    eli = models.URLField(default="", blank=True)
 
     website = models.ForeignKey('Website', related_name='documents', on_delete=models.CASCADE)
 
-    summary = models.TextField(default="")
-    content = models.TextField(default="")
-    various = models.TextField(default="")
+    summary = models.TextField(default="", blank=True)
+    content = models.TextField(default="", blank=True)
+    various = models.TextField(default="", blank=True)
 
     pull = models.BooleanField(default=False, editable=False)
 
