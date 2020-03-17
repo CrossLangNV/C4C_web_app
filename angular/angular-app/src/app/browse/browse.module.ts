@@ -6,18 +6,22 @@ import { DocumentDetailsComponent } from './document-details/document-details.co
 import { BrowseRoutingModule } from './browse-routing.module';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { WebsiteAddComponent } from './website-add/website-add.component';
+import { FormsModule }   from '@angular/forms';
 
 @NgModule({
   declarations: [
     WebsiteListComponent,
     WebsiteDetailsComponent,
-    DocumentDetailsComponent
+    DocumentDetailsComponent,
+    WebsiteAddComponent
   ],
   imports: [
     SharedModule,
     BrowseRoutingModule,
     ScrollPanelModule,
-    SelectButtonModule
+    SelectButtonModule,
+    FormsModule
   ]
 })
 export class BrowseModule {}

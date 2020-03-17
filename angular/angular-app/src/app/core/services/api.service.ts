@@ -41,16 +41,26 @@ export class ApiService {
   }
 
   public getWebsites(): Observable<Website[]> {
-    return of([
-      new Website("1", "name", "htp://url", "bla", []),
-    ]);
-    //return this.http.get<Website[]>(`${this.API_URL}/website`);
+    // return of([
+    //   new Website("1", "name", "htp://url", "bla", []),
+    // ]);
+    return this.http.get<Website[]>(`${this.API_URL}/website`);
   }
 
   public getWebsite(id: string): Observable<Website> {
     return this.http
       .get<Website>(`${this.API_URL}/website/${id}`)
       .pipe(map(item => this.websiteAdapter.adapt(item)));
+  }
+
+  public createWebsite(website: Website): Observable<any> {
+    // return of([
+    //   new Website("1", "name", "htp://url", "bla", []),
+    // ]);
+    return this.http.put<Website>(
+      `${this.API_URL}/website/`,
+      this.websiteAdapter.encode(website)
+    );
   }
 
   public deleteWebsite(id): Observable<any> {
