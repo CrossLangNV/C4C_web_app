@@ -5,6 +5,7 @@ import { WebsiteDetailsComponent } from './website-details/website-details.compo
 import { DocumentDetailsComponent } from './document-details/document-details.component';
 import { BrowseRoutingModule } from './browse-routing.module';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 @NgModule({
   declarations: [
@@ -12,6 +13,11 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
     WebsiteDetailsComponent,
     DocumentDetailsComponent
   ],
-  imports: [SharedModule, BrowseRoutingModule, ScrollPanelModule]
+  imports: [
+    SharedModule,
+    BrowseRoutingModule,
+    ScrollPanelModule,
+    SelectButtonModule
+  ]
 })
 export class BrowseModule {}

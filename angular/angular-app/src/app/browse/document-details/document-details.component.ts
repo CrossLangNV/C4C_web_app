@@ -6,6 +6,7 @@ import { ApiService } from 'src/app/core/services/api.service';
 import { switchMap } from 'rxjs/operators';
 import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { Attachment } from 'src/app/shared/models/attachment';
+import { SelectItem } from 'primeng/api';
 
 @Component({
   selector: 'app-document-details',
@@ -16,6 +17,7 @@ export class DocumentDetailsComponent implements OnInit {
   document: Document;
   deleteIcon: IconDefinition;
   attachments: Attachment[] = [];
+  allStates: SelectItem[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -24,6 +26,11 @@ export class DocumentDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.apiService.getStates().subscribe(states => {
+      states.forEach(state => {
+        this.allStates.push({label: state, value: state});
+      });
+    });
     this.route.paramMap
       .pipe(
         switchMap((params: ParamMap) =>
@@ -39,5 +46,11 @@ export class DocumentDetailsComponent implements OnInit {
         })
       });
     this.deleteIcon = faTrashAlt;
+  }
+
+  onStateChange(event) {
+    const newState = event.value;
+    this.document.acceptanceState = newState;
+    this.apiService.updateDocument(this.document).subscribe();
   }
 }

@@ -36,4 +36,19 @@ export class DocumentAdapter implements Adapter<Document> {
       item.attachments
     );
   }
+  encode(document: Document): any {
+    return {
+      id: document.id,
+      title: document.title,
+      title_prefix: document.titlePrefix,
+      type: document.type,
+      date: document.date,
+      acceptance_state: document.acceptanceState,
+      url: document.url,
+      website: document.website,
+      summary: document.summary,
+      content: document.content,
+      attachments: document.attachmentIds
+    };
+  }
 }

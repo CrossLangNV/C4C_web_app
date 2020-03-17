@@ -55,7 +55,7 @@ export class ApiService {
   public updateWebsite(website: Website): Observable<Website> {
     return this.http.put<Website>(
       `${this.API_URL}/website/${website.id}/`,
-      website
+      this.websiteAdapter.encode(website)
     );
   }
 
@@ -65,9 +65,24 @@ export class ApiService {
       .pipe(map(item => this.documentAdapter.adapt(item)));
   }
 
+  public deleteDocument(id: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/document/${id}`);
+  }
+
+  public updateDocument(document: Document): Observable<Document> {
+    return this.http.put<Document>(
+      `${this.API_URL}/document/${document.id}/`,
+      this.documentAdapter.encode(document)
+    );
+  }
+
   public getAttachment(id: string): Observable<Attachment> {
     return this.http
       .get<Attachment>(`${this.API_URL}/attachment/${id}`)
       .pipe(map(item => this.attachmentAdapter.adapt(item)));
+  }
+
+  public getStates(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.API_URL}/state`);
   }
 }
