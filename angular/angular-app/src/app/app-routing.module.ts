@@ -6,7 +6,7 @@ import { RegisterComponent } from './shared/register-component/register.componen
 import { AuthGuard } from './core/guards/auth.guard';
 
 const routes: Routes = [
-  { path: '', component: SolrFileListComponent, canActivate: [AuthGuard] },
+  // { path: '', component: SolrFileListComponent, canActivate: [AuthGuard] },
   { path: '', component: SolrFileListComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
