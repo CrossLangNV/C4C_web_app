@@ -1,8 +1,12 @@
 <h2>{{ document.title }}</h2>
+<h6>Date of document</h6>
 <p>{{ document.date }}</p>
-<p>Type: {{ document.type }}</p>
-<p>Title prefix: {{ document.titlePrefix }}</p>
-<p>Acceptance state: {{ document.acceptanceState }}</p>
+<h6>Type</h6>
+<p>{{ document.type }}</p>
+<h6>Title prefix</h6>
+<p>{{ document.titlePrefix }}</p>
+<h6>Acceptance state</h6>
+<p-selectButton [options]="allStates" [(ngModel)]="document.acceptanceState" (onChange)="onStateChange($event)"></p-selectButton>
 <p>From: <a href="{{ document.url }}">{{ document.url }}</a></p>
 <h6>Summary</h6>
 <div>

@@ -32,4 +32,15 @@ export class SolrFileAdapter implements Adapter<SolrFile> {
       item.content
     );
   }
+  encode(solrFile: SolrFile): any {
+    return {
+      id: solrFile.id,
+      attr_document_id: solrFile.documentId,
+      attr_url: solrFile.url,
+      attr_date: solrFile.date,
+      language: solrFile.language,
+      doc_type: solrFile.docType,
+      content: solrFile.content
+    };
+  }
 }

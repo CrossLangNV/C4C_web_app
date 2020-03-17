@@ -24,4 +24,13 @@ export class AttachmentAdapter implements Adapter<Attachment> {
       item.content
     );
   }
+  encode(attachment: Attachment): any {
+    return {
+      id: attachment.id,
+      file: attachment.file,
+      url: attachment.url,
+      document: attachment.documentId,
+      content: attachment.content
+    };
+  }
 }
