@@ -26,7 +26,7 @@ class Document(models.Model):
     celex = models.CharField(max_length=20, default="")
 
     title = models.CharField(max_length=1000)
-    title_prefix = models.CharField(max_length=500, default="")
+    title_prefix = models.CharField(max_length=500, default="", blank=True)
     author = models.CharField(max_length=500, default="")
 
     status = models.CharField(max_length=100, default="")
