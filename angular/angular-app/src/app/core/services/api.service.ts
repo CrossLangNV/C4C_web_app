@@ -13,8 +13,8 @@ import { of } from 'rxjs';
   providedIn: 'root'
 })
 export class ApiService {
-  // API_URL = Environment.ANGULAR_DJANGO_API_URL;
-  API_URL = 'localhost:3001';
+  API_URL = Environment.ANGULAR_DJANGO_API_URL;
+  //API_URL = 'localhost:3001';
 
   constructor(
     private http: HttpClient,
@@ -57,7 +57,7 @@ export class ApiService {
     // return of([
     //   new Website("1", "name", "htp://url", "bla", []),
     // ]);
-    return this.http.put<Website>(
+    return this.http.post<Website>(
       `${this.API_URL}/website/`,
       this.websiteAdapter.encode(website)
     );
