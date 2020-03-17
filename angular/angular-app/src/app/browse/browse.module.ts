@@ -6,6 +6,8 @@ import { DocumentDetailsComponent } from './document-details/document-details.co
 import { BrowseRoutingModule } from './browse-routing.module';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 
 @NgModule({
   declarations: [
@@ -17,7 +19,9 @@ import { SelectButtonModule } from 'primeng/selectbutton';
     SharedModule,
     BrowseRoutingModule,
     ScrollPanelModule,
-    SelectButtonModule
-  ]
+    SelectButtonModule,
+    ConfirmDialogModule
+  ],
+  providers: [ConfirmationService]
 })
 export class BrowseModule {}
