@@ -12,7 +12,8 @@ export class Document {
     public url: string,
     public website: string,
     public summary: string,
-    public content: string
+    public content: string,
+    public attachmentIds: string[]
   ) {}
 }
 
@@ -31,7 +32,23 @@ export class DocumentAdapter implements Adapter<Document> {
       item.url,
       item.website,
       item.summary,
-      item.content
+      item.content,
+      item.attachments
     );
+  }
+  encode(document: Document): any {
+    return {
+      id: document.id,
+      title: document.title,
+      title_prefix: document.titlePrefix,
+      type: document.type,
+      date: document.date,
+      acceptance_state: document.acceptanceState,
+      url: document.url,
+      website: document.website,
+      summary: document.summary,
+      content: document.content,
+      attachments: document.attachmentIds
+    };
   }
 }

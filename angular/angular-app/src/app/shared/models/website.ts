@@ -24,4 +24,13 @@ export class WebsiteAdapter implements Adapter<Website> {
       item.documents
     );
   }
+  encode(website: Website): any {
+    return {
+      id: website.id,
+      name: website.name,
+      url: website.url,
+      content: website.content,
+      documents: website.documentIds
+    };
+  }
 }
