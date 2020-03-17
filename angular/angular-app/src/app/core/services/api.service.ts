@@ -7,12 +7,14 @@ import { map } from 'rxjs/operators';
 import { Document, DocumentAdapter } from '../../shared/models/document';
 import { Website, WebsiteAdapter } from '../../shared/models/website';
 import { Attachment, AttachmentAdapter } from '../../shared/models/attachment';
+import { of } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  API_URL = Environment.ANGULAR_DJANGO_API_URL;
+  // API_URL = Environment.ANGULAR_DJANGO_API_URL;
+  API_URL = 'localhost:3001';
 
   constructor(
     private http: HttpClient,
@@ -39,7 +41,10 @@ export class ApiService {
   }
 
   public getWebsites(): Observable<Website[]> {
-    return this.http.get<Website[]>(`${this.API_URL}/website`);
+    return of([
+      new Website("1", "name", "htp://url", "bla", []),
+    ]);
+    //return this.http.get<Website[]>(`${this.API_URL}/website`);
   }
 
   public getWebsite(id: string): Observable<Website> {
