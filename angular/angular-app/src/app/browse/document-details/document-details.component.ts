@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { Document } from 'src/app/shared/models/document';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { ActivatedRoute, Router, ParamMap } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 import { ApiService } from 'src/app/core/services/api.service';
 import { switchMap } from 'rxjs/operators';
 import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { Attachment } from 'src/app/shared/models/attachment';
-import { SelectItem } from 'primeng/api';
+import { SelectItem, ConfirmationService } from 'primeng/api';
 
 @Component({
   selector: 'app-document-details',
@@ -14,6 +14,7 @@ import { SelectItem } from 'primeng/api';
   styleUrls: ['./document-details.component.css']
 })
 export class DocumentDetailsComponent implements OnInit {
+  websiteId: string;
   document: Document;
   deleteIcon: IconDefinition;
   attachments: Attachment[] = [];
@@ -22,15 +23,19 @@ export class DocumentDetailsComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private apiService: ApiService,
-    private router: Router
+    private router: Router,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit() {
     this.apiService.getStates().subscribe(states => {
       states.forEach(state => {
-        this.allStates.push({label: state, value: state});
+        this.allStates.push({ label: state, value: state });
       });
     });
+    this.route.paramMap.subscribe(
+      (params: ParamMap) => (this.websiteId = params.get('websiteId'))
+    );
     this.route.paramMap
       .pipe(
         switchMap((params: ParamMap) =>
@@ -42,8 +47,8 @@ export class DocumentDetailsComponent implements OnInit {
         document.attachmentIds.forEach(id => {
           this.apiService.getAttachment(id).subscribe(attachment => {
             this.attachments.push(attachment);
-          })
-        })
+          });
+        });
       });
     this.deleteIcon = faTrashAlt;
   }
@@ -52,5 +57,15 @@ export class DocumentDetailsComponent implements OnInit {
     const newState = event.value;
     this.document.acceptanceState = newState;
     this.apiService.updateDocument(this.document).subscribe();
+  }
+
+  onDelete() {
+    this.confirmationService.confirm({
+      message: 'Do you want to delete this document?',
+      accept: () => {
+        this.apiService.deleteDocument(this.document.id).subscribe();
+        this.router.navigate(['/website/' + this.websiteId]);
+      }
+    });
   }
 }

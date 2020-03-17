@@ -6,7 +6,8 @@
 <h6>Title prefix</h6>
 <p>{{ document.titlePrefix }}</p>
 <h6>Acceptance state</h6>
-<p-selectButton [options]="allStates" [(ngModel)]="document.acceptanceState" (onChange)="onStateChange($event)"></p-selectButton>
+<p-selectButton [options]="allStates" [(ngModel)]="document.acceptanceState" (onChange)="onStateChange($event)">
+</p-selectButton>
 <p>From: <a href="{{ document.url }}">{{ document.url }}</a></p>
 <h6>Summary</h6>
 <div>
@@ -30,4 +31,6 @@
   <button class="btn btn-danger" (click)="onDelete()">
     <fa-icon [icon]="deleteIcon"></fa-icon> Delete
   </button>
+  <p-confirmDialog header="Confirmation" icon="pi pi-exclamation-triangle">
+  </p-confirmDialog>
 </div>
