@@ -6,14 +6,18 @@ import { RegisterComponent } from './shared/register-component/register.componen
 import { AuthGuard } from './core/guards/auth.guard';
 
 const routes: Routes = [
-  { path: '', component: SolrFileListComponent, canActivate: [AuthGuard] },
-  { path: '', component: SolrFileListComponent },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   {
     path: 'browse',
     loadChildren: () =>
-      import('./browse/browse.module').then(m => m.BrowseModule)
+      import('./browse/browse.module').then(m => m.BrowseModule),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'search',
+    component: SolrFileListComponent,
+    canActivate: [AuthGuard]
   },
 
   // otherwise redirect to home
