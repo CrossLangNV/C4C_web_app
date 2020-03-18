@@ -7,6 +7,7 @@ import { switchMap } from 'rxjs/operators';
 import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { Attachment } from 'src/app/shared/models/attachment';
 import { SelectItem, ConfirmationService } from 'primeng/api';
+import * as uuid from 'uuid';
 
 @Component({
   selector: 'app-document-details',
@@ -57,6 +58,27 @@ export class DocumentDetailsComponent implements OnInit {
     const newState = event.value;
     this.document.acceptanceState = newState;
     this.apiService.updateDocument(this.document).subscribe();
+  }
+
+  onAddFile(event) {
+    const newFile = event.files[0];
+    console.log(newFile);
+    const formData = new FormData();
+    formData.append('document', this.document.id);
+    formData.append('file', newFile);
+    formData.append('url', `http://${uuid.v4()}.test`);
+    this.apiService.addAttachment(formData).subscribe(attachment => {
+      this.router
+        .navigateByUrl('/website', { skipLocationChange: true })
+        .then(() =>
+          this.router.navigate([
+            '/website',
+            this.websiteId,
+            'document',
+            this.document.id
+          ])
+        );
+    });
   }
 
   onDelete() {
