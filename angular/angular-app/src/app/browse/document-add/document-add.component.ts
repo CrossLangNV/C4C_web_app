@@ -4,6 +4,8 @@ import { Router, ActivatedRoute, ParamMap } from '@angular/router';
 
 import { Document } from '../../shared/models/document';
 import { SelectItem } from 'primeng/api/selectitem';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-document-add',
@@ -14,6 +16,7 @@ export class DocumentAddComponent implements OnInit {
   websiteId: string;
   document: Document;
   allStates: SelectItem[] = [];
+  calendarIcon: IconDefinition;
   submitted = false;
 
   constructor(
@@ -44,6 +47,7 @@ export class DocumentAddComponent implements OnInit {
       '',
       []
     );
+    this.calendarIcon = faCalendarAlt;
   }
 
   onSubmit() {
