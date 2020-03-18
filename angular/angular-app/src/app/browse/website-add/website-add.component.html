@@ -20,13 +20,13 @@
 
         <div class="form-group">
             <label for="content">Content</label>
-            <input type="text" class="form-control" id="content" required [(ngModel)]="model.content" name="content" #content="ngModel">
+            <textarea type="text" class="form-control" id="content" required [(ngModel)]="model.content" name="content" #content="ngModel"></textarea>
             <div [hidden]="content.valid || content.pristine" class="alert alert-danger">
                 Content is required
             </div>
         </div>
 
-        <button type="submit" class="btn btn-success" [disabled]="!addWebsiteForm.form.valid">Add</button>
+        <button type="submit" class="btn btn-success mt-4" [disabled]="!addWebsiteForm.form.valid">Add</button>
 
         </form>
     </div>

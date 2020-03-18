@@ -1,8 +1,8 @@
 <div class="container">
-  <h1>Add document</h1>
+  <h3 class="mb-4">Add document</h3>
   <div [hidden]="submitted">
     <form (ngSubmit)="onSubmit()" #addDocumentForm="ngForm">
-      <div class="form-group">
+      <div class="form-group mb-4">
         <label for="name">Title</label>
         <input type="text" class="form-control" id="title" required [(ngModel)]="document.title" name="title"
           #title="ngModel">
@@ -11,7 +11,7 @@
         </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group mb-4">
         <label for="url">URL</label>
         <input type="text" class="form-control" id="url" required [(ngModel)]="document.url" name="url" #url="ngModel">
         <div [hidden]="url.valid || url.pristine" class="alert alert-danger">
@@ -19,9 +19,9 @@
         </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group mb-4 mt-5">
         <div class="input-group">
-          <div><label for="date">Date</label></div>
+          <div><label for="date">Date&nbsp;&nbsp;</label></div>
           <input type="text" ngbDatepicker #d="ngbDatepicker" class="form-control" id="date" [(ngModel)]="document.date"
             name="date" #date="ngModel">
           <div class="input-group-append"><button class="btn-outline-secondary" (click)="d.toggle()" type="button">
@@ -31,7 +31,7 @@
         </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group mb-4">
         <label for="acceptanceState">Acceptance state</label>
         <div>
           <p-dropdown [options]="allStates" [(ngModel)]="document.acceptanceState" required name="acceptanceState"
@@ -45,7 +45,7 @@
           #summary="ngModel"></textarea>
       </div>
 
-      <button type="submit" class="btn btn-success" [disabled]="!addDocumentForm.form.valid">Add</button>
+      <button type="submit" class="btn btn-success mt-3" [disabled]="!addDocumentForm.form.valid">Add</button>
 
     </form>
   </div>
