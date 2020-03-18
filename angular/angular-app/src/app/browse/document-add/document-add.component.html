@@ -20,6 +20,18 @@
       </div>
 
       <div class="form-group">
+        <div class="input-group">
+          <div><label for="date">Date</label></div>
+          <input type="text" ngbDatepicker #d="ngbDatepicker" class="form-control" id="date" [(ngModel)]="document.date"
+            name="date" #date="ngModel">
+          <div class="input-group-append"><button class="btn-outline-secondary" (click)="d.toggle()" type="button">
+              <fa-icon [icon]="calendarIcon"></fa-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
         <label for="acceptanceState">Acceptance state</label>
         <div>
           <p-dropdown [options]="allStates" [(ngModel)]="document.acceptanceState" required name="acceptanceState"

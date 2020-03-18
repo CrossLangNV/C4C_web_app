@@ -37,12 +37,13 @@ export class DocumentAdapter implements Adapter<Document> {
     );
   }
   encode(document: Document): any {
+    const stringDate = new Date(document.date).toISOString();
     return {
       id: document.id,
       title: document.title,
       title_prefix: document.titlePrefix,
       type: document.type,
-      date: document.date,
+      date: stringDate,
       acceptance_state: document.acceptanceState,
       url: document.url,
       website: document.website,

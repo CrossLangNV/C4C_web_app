@@ -11,6 +11,10 @@ import { DropdownModule } from 'primeng/dropdown';
 import { ConfirmationService } from 'primeng/api';
 import { WebsiteAddComponent } from './website-add/website-add.component';
 import { DocumentAddComponent } from './document-add/document-add.component';
+import {
+  NgbDateAdapter,
+  NgbDateNativeAdapter
+} from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
@@ -28,6 +32,9 @@ import { DocumentAddComponent } from './document-add/document-add.component';
     ConfirmDialogModule,
     DropdownModule
   ],
-  providers: [ConfirmationService]
+  providers: [
+    ConfirmationService,
+    { provide: NgbDateAdapter, useClass: NgbDateNativeAdapter }
+  ]
 })
 export class BrowseModule {}
