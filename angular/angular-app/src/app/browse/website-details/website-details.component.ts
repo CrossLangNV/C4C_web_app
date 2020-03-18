@@ -53,15 +53,11 @@ export class WebsiteDetailsComponent implements OnInit {
     this.confirmationService.confirm({
       message: 'Do you want to delete this website?',
       accept: () => {
-        this.apiService.deleteWebsite(this.website.id).subscribe();
-        this.router.navigate(['/website/']);
+        this.apiService
+          .deleteWebsite(this.website.id)
+          .subscribe(website => this.router.navigate(['/website/']));
       }
     });
-
-    this.apiService.deleteWebsite(this.website.id).subscribe(
-      res => this.router.navigate(['/website']),
-      err => console.log(err)
-    );
   }
 
   onNameChanged(event: any) {

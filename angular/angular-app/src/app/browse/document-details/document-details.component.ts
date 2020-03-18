@@ -63,8 +63,11 @@ export class DocumentDetailsComponent implements OnInit {
     this.confirmationService.confirm({
       message: 'Do you want to delete this document?',
       accept: () => {
-        this.apiService.deleteDocument(this.document.id).subscribe();
-        this.router.navigate(['/website/' + this.websiteId]);
+        this.apiService
+          .deleteDocument(this.document.id)
+          .subscribe(document =>
+            this.router.navigate(['/website/' + this.websiteId])
+          );
       }
     });
   }
