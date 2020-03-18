@@ -1,32 +1,32 @@
-<h2 (click)="titleIsBeingEdited=true" *ngIf="!titleIsBeingEdited"><span class="editable">{{website.name}}</span>
+<h2 (click)="titleIsBeingEdited=true" *ngIf="!titleIsBeingEdited" class="name"><span class="editable">{{website.name}}</span>
 </h2>
-<h2 id="title-edit" *ngIf="titleIsBeingEdited">
+<h2 id="title-edit" *ngIf="titleIsBeingEdited" class="name">
   <input type="text" id="new-title" name="new-title" value={{website.name}} (keydown.enter)=onNameChanged($event)>
   <button (click)="titleIsBeingEdited=false" type="button" class="close" aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>
 </h2>
 
-<div (click)="urlIsBeingEdited=true" *ngIf="!urlIsBeingEdited">URL: <span class="editable">{{website.url}}</span></div>
-<div id="url-edit" *ngIf="urlIsBeingEdited">
+<div (click)="urlIsBeingEdited=true" *ngIf="!urlIsBeingEdited" class="url col-lg-12">URL: <span class="editable">{{website.url}}</span></div>
+<div id="url-edit" *ngIf="urlIsBeingEdited" class="url col-lg-12">
   <input type="text" id="new-url" name="new-url" value={{website.url}} (keydown.enter)=onUrlChanged($event)
-    class="col-lg-12">
+    class="col-lg-11">
   <button (click)="urlIsBeingEdited=false" type="button" class="close" aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>
 </div>
 
-<div (click)="contentIsBeingEdited=true" *ngIf="!contentIsBeingEdited">Content: <span
+<div (click)="contentIsBeingEdited=true" *ngIf="!contentIsBeingEdited" class="content col-lg-12">Content: <span
     class="editable">{{website.content}}</span></div>
-<div id="url-edit" *ngIf="contentIsBeingEdited">
+<div id="content-edit" *ngIf="contentIsBeingEdited" class="content col-lg-12">
   <textarea id="new-content" name="new-content" value={{website.content}} (keydown.enter)=onContentChanged($event)
-    class="col-lg-12"></textarea>
+    class="col-lg-11"></textarea>
   <button (click)="contentIsBeingEdited=false" type="button" class="close" aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>
 </div>
 
-<div class="delete-website my-2">
+<div class="delete-website my-2" class="delete">
   <button class="btn btn-danger" (click)="onDelete()">
     <fa-icon [icon]="deleteIcon"></fa-icon> Delete
   </button>
