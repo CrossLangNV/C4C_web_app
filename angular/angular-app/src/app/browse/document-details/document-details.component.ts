@@ -62,7 +62,6 @@ export class DocumentDetailsComponent implements OnInit {
 
   onAddFile(event) {
     const newFile = event.files[0];
-    console.log(newFile);
     const formData = new FormData();
     formData.append('document', this.document.id);
     formData.append('file', newFile);
@@ -89,6 +88,28 @@ export class DocumentDetailsComponent implements OnInit {
           .deleteDocument(this.document.id)
           .subscribe(document =>
             this.router.navigate(['/website/' + this.websiteId])
+          );
+      }
+    });
+  }
+
+  onDeleteAttachment(attachment: Attachment) {
+    this.confirmationService.confirm({
+      message: `Do you want to delete ${attachment.file}?`,
+      accept: () => {
+        this.apiService
+          .deleteAttachment(attachment.id)
+          .subscribe(attachment =>
+            this.router
+              .navigateByUrl('/website', { skipLocationChange: true })
+              .then(() =>
+                this.router.navigate([
+                  '/website',
+                  this.websiteId,
+                  'document',
+                  this.document.id
+                ])
+              )
           );
       }
     });

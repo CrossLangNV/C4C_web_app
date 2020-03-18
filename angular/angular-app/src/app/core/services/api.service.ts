@@ -114,6 +114,10 @@ export class ApiService {
     return this.http.post<Attachment>(`${this.API_URL}/attachment/`, formData);
   }
 
+  public deleteAttachment(id: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/attachment/${id}`);
+  }
+
   public getStates(): Observable<string[]> {
     return this.http.get<string[]>(`${this.API_URL}/state`);
   }
