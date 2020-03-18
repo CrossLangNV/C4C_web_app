@@ -9,6 +9,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { FileUploadModule } from 'primeng/fileupload';
+import { PanelModule } from 'primeng/panel';
 import { ConfirmationService } from 'primeng/api';
 import { WebsiteAddComponent } from './website-add/website-add.component';
 import { DocumentAddComponent } from './document-add/document-add.component';
@@ -32,7 +33,8 @@ import {
     SelectButtonModule,
     ConfirmDialogModule,
     DropdownModule,
-    FileUploadModule
+    FileUploadModule,
+    PanelModule
   ],
   providers: [
     ConfirmationService,
