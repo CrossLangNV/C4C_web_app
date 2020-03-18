@@ -41,19 +41,19 @@ export class ApiService {
   }
 
   public getWebsites(): Observable<Website[]> {
-    return of([
-      new Website("1", "name", "htp://url", "bla", []),
-    ]);
-    // return this.http.get<Website[]>(`${this.API_URL}/website`);
+    // return of([
+    //   new Website("1", "name", "htp://url", "bla", []),
+    // ]);
+    return this.http.get<Website[]>(`${this.API_URL}/website`);
   }
 
   public getWebsite(id: string): Observable<Website> {
-    return of(
-      new Website("1", "name", "htp://url", "bla", []),
-    );
-    // return this.http
-    //   .get<Website>(`${this.API_URL}/website/${id}`)
-    //   .pipe(map(item => this.websiteAdapter.adapt(item)));
+    // return of(
+    //   new Website("1", "name", "htp://url", "bla", []),
+    // );
+    return this.http
+      .get<Website>(`${this.API_URL}/website/${id}`)
+      .pipe(map(item => this.websiteAdapter.adapt(item)));
   }
 
   public createWebsite(website: Website): Observable<any> {
@@ -108,6 +108,10 @@ export class ApiService {
     return this.http
       .get<Attachment>(`${this.API_URL}/attachment/${id}`)
       .pipe(map(item => this.attachmentAdapter.adapt(item)));
+  }
+
+  public addAttachment(formData: FormData): Observable<Attachment> {
+    return this.http.post<Attachment>(`${this.API_URL}/attachment/`, formData);
   }
 
   public getStates(): Observable<string[]> {

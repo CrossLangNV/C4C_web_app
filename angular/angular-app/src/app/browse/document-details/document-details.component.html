@@ -20,13 +20,18 @@
   </li>
 </ul>
 <h6>Content</h6>
-<ul class="list-group">
+<ul class="list-group my-2">
   <li class="list-group-item" *ngFor="let attachment of attachments">
     <p-scrollPanel [style]="{width: '100%', height: '200px'}">
       {{ attachment.content }}
     </p-scrollPanel>
   </li>
 </ul>
+<h6>Add file</h6>
+<div class="add-attachment">
+  <p-fileUpload name="file" customUpload="true" accept=".pdf" [auto]="true" (uploadHandler)="onAddFile($event)">
+  </p-fileUpload>
+</div>
 <div class="delete-document my-2">
   <button class="btn btn-danger" (click)="onDelete()">
     <fa-icon [icon]="deleteIcon"></fa-icon> Delete

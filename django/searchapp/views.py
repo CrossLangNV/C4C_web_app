@@ -213,17 +213,6 @@ class AttachmentListAPIView(ListCreateAPIView):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
 
-    @method_decorator(csrf_exempt)
-    def post(self, request, *args, **kwargs):
-        request.GET = request.GET.copy()
-        request.GET['X-Progress-ID'] = str(uuid.uuid4())
-        request.upload_handlers.insert(0, ProgressBarUploadHandler(request))
-        return self._post(request, *args, **kwargs)
-
-    @method_decorator(csrf_protect)
-    def _post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
-
 
 class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Attachment.objects.all()
