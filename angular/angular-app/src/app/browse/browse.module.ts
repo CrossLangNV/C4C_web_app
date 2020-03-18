@@ -7,22 +7,26 @@ import { BrowseRoutingModule } from './browse-routing.module';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DropdownModule } from 'primeng/dropdown';
 import { ConfirmationService } from 'primeng/api';
 import { WebsiteAddComponent } from './website-add/website-add.component';
+import { DocumentAddComponent } from './document-add/document-add.component';
 
 @NgModule({
   declarations: [
     WebsiteListComponent,
     WebsiteDetailsComponent,
     DocumentDetailsComponent,
-    WebsiteAddComponent
+    WebsiteAddComponent,
+    DocumentAddComponent
   ],
   imports: [
     SharedModule,
     BrowseRoutingModule,
     ScrollPanelModule,
     SelectButtonModule,
-    ConfirmDialogModule
+    ConfirmDialogModule,
+    DropdownModule
   ],
   providers: [ConfirmationService]
 })

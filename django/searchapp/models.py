@@ -23,14 +23,14 @@ class AcceptanceState(models.TextChoices):
 
 class Document(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    celex = models.CharField(max_length=20, default="")
+    celex = models.CharField(max_length=20, default="", blank=True)
 
     title = models.CharField(max_length=1000)
     title_prefix = models.CharField(max_length=500, default="", blank=True)
-    author = models.CharField(max_length=500, default="")
+    author = models.CharField(max_length=500, default="", blank=True)
 
-    status = models.CharField(max_length=100, default="")
-    type = models.CharField(max_length=200, default="")
+    status = models.CharField(max_length=100, default="", blank=True)
+    type = models.CharField(max_length=200, default="", blank=True)
     acceptance_state = models.CharField(max_length=20,
                                         choices=AcceptanceState.choices,
                                         default=AcceptanceState.UNVALIDATED)
