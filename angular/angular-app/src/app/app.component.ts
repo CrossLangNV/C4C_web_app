@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { AuthenticationService } from './core/auth/authentication.service';
-import { User } from './shared/models/user';
 import { DjangoUser } from './shared/models/django_user';
 
 @Component({ selector: 'app', templateUrl: 'app.component.html' })
