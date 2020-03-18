@@ -86,6 +86,13 @@ export class ApiService {
       .pipe(map(item => this.documentAdapter.adapt(item)));
   }
 
+  public createDocument(document: Document): Observable<any> {
+    return this.http.post<Document>(
+      `${this.API_URL}/document/`,
+      this.documentAdapter.encode(document)
+    );
+  }
+
   public deleteDocument(id: string): Observable<any> {
     return this.http.delete(`${this.API_URL}/document/${id}`);
   }
