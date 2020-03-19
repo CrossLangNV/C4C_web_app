@@ -77,6 +77,7 @@ export class WebsiteDetailsComponent implements OnInit {
   }
 
   onContentChanged(event: any) {
+    event.preventDefault();
     this.website.content = event.target.value;
     this.apiService.updateWebsite(this.website).subscribe(website => {
       this.website = website as Website;
