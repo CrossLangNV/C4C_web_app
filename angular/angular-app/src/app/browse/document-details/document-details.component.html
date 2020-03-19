@@ -1,17 +1,17 @@
-<h2>{{ document.title }}</h2>
-<h6>Date of document</h6>
-<p>{{ document.date }}</p>
-<h6>Type</h6>
-<p>{{ document.type }}</p>
-<h6>Title prefix</h6>
-<p>{{ document.titlePrefix }}</p>
-<h6>Acceptance state</h6>
+<h4>{{ document.title }}</h4>
+<div class="font-italic small">Date of document:</div>
+<p class="font-italic small mb-5">{{ document.date }}</p>
+
+<p><b>Type:</b> {{ document.type }}</p>
+<h6></h6>
+<p><b>Title prefix:</b> {{ document.titlePrefix }}</p>
+<p><b>Acceptance state:</b></p>
 <p-selectButton [options]="allStates" [(ngModel)]="document.acceptanceState" (onChange)="onStateChange($event)">
 </p-selectButton>
-<p>From: <a href="{{ document.url }}">{{ document.url }}</a></p>
-<h6>Summary</h6>
+<p><b>From:&nbsp;</b> <a href="{{ document.url }}">{{ document.url }}</a></p>
+<p><b>Summary:</b></p>
 <div>
-  <p>{{ document.summary }}</p>
+  <p class="col-lg-7 text-justify mb-5">{{ document.summary }}</p>
 </div>
 <p-panel styleClass="my-2" header="Attachments">
   <ul class="list-group my-2">
@@ -28,12 +28,12 @@
     </li>
   </ul>
 </p-panel>
-<h6>Add file</h6>
+<p class="mt-4"><b>Add file</b></p>
 <div class="add-attachment">
   <p-fileUpload name="file" customUpload="true" accept=".pdf" [auto]="true" (uploadHandler)="onAddFile($event)">
   </p-fileUpload>
 </div>
-<div class="delete-document my-2">
+<div class="delete-document mt-5">
   <button class="btn btn-danger" (click)="onDelete()">
     <fa-icon [icon]="deleteIcon"></fa-icon> Delete document
   </button>
