@@ -6,6 +6,7 @@ import { Document } from '../../shared/models/document';
 import { SelectItem } from 'primeng/api/selectitem';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
+import { AcceptanceState } from 'src/app/shared/models/acceptanceState';
 
 @Component({
   selector: 'app-document-add',
@@ -15,6 +16,7 @@ import { faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 export class DocumentAddComponent implements OnInit {
   websiteId: string;
   document: Document;
+  acceptanceState: string;
   allStates: SelectItem[] = [];
   calendarIcon: IconDefinition;
   submitted = false;
@@ -26,7 +28,7 @@ export class DocumentAddComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.apiService.getStates().subscribe(states => {
+    this.apiService.getStateValues().subscribe(states => {
       states.forEach(state => {
         this.allStates.push({ label: state, value: state });
       });
@@ -52,10 +54,20 @@ export class DocumentAddComponent implements OnInit {
 
   onSubmit() {
     this.submitted = true;
-    this.apiService
-      .createDocument(this.document)
-      .subscribe(document =>
-        this.router.navigate(['/website/' + this.websiteId])
-      );
+    this.apiService.createDocument(this.document).subscribe(document => {
+      console.log(document);
+      this.apiService
+        .updateState(
+          new AcceptanceState(
+            document.acceptanceState,
+            document.id,
+            '',
+            this.acceptanceState
+          )
+        )
+        .subscribe(state =>
+          this.router.navigate(['/website/' + this.websiteId])
+        );
+    });
   }
 }

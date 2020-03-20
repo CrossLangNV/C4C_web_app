@@ -8,6 +8,10 @@ import { Document, DocumentAdapter } from '../../shared/models/document';
 import { Website, WebsiteAdapter } from '../../shared/models/website';
 import { Attachment, AttachmentAdapter } from '../../shared/models/attachment';
 import { of } from 'rxjs';
+import {
+  AcceptanceState,
+  AcceptanceStateAdapter
+} from 'src/app/shared/models/acceptanceState';
 
 @Injectable({
   providedIn: 'root'
@@ -21,7 +25,8 @@ export class ApiService {
     private solrFileAdapter: SolrFileAdapter,
     private documentAdapter: DocumentAdapter,
     private websiteAdapter: WebsiteAdapter,
-    private attachmentAdapter: AttachmentAdapter
+    private attachmentAdapter: AttachmentAdapter,
+    private stateAdapter: AcceptanceStateAdapter
   ) {}
 
   public getSolrFiles(): Observable<SolrFile[]> {
@@ -90,11 +95,13 @@ export class ApiService {
       .pipe(map(item => this.documentAdapter.adapt(item)));
   }
 
-  public createDocument(document: Document): Observable<any> {
-    return this.http.post<Document>(
-      `${this.API_URL}/document/`,
-      this.documentAdapter.encode(document)
-    );
+  public createDocument(document: Document): Observable<Document> {
+    return this.http
+      .post<Document>(
+        `${this.API_URL}/document/`,
+        this.documentAdapter.encode(document)
+      )
+      .pipe(map(item => this.documentAdapter.adapt(item)));
   }
 
   public deleteDocument(id: string): Observable<any> {
@@ -122,7 +129,20 @@ export class ApiService {
     return this.http.delete(`${this.API_URL}/attachment/${id}`);
   }
 
-  public getStates(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.API_URL}/state`);
+  public getStateValues(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.API_URL}/state/value`);
+  }
+
+  public getState(id: string): Observable<AcceptanceState> {
+    return this.http
+      .get<AcceptanceState>(`${this.API_URL}/state/${id}`)
+      .pipe(map(item => this.stateAdapter.adapt(item)));
+  }
+
+  public updateState(state: AcceptanceState): Observable<AcceptanceState> {
+    return this.http.put<AcceptanceState>(
+      `${this.API_URL}/state/${state.id}/`,
+      this.stateAdapter.encode(state)
+    );
   }
 }
