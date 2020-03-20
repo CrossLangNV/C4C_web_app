@@ -15,12 +15,6 @@ class Website(models.Model):
         return self.name
 
 
-class AcceptanceState(models.TextChoices):
-    UNVALIDATED = 'Unvalidated',
-    ACCEPTED = 'Accepted',
-    REJECTED = 'Rejected'
-
-
 class Document(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     celex = models.CharField(max_length=20, default="", blank=True)
@@ -31,9 +25,6 @@ class Document(models.Model):
 
     status = models.CharField(max_length=100, default="", blank=True)
     type = models.CharField(max_length=200, default="", blank=True)
-    acceptance_state = models.CharField(max_length=20,
-                                        choices=AcceptanceState.choices,
-                                        default=AcceptanceState.UNVALIDATED)
 
     date = models.DateTimeField(default=timezone.now)
 
@@ -67,6 +58,20 @@ class Document(models.Model):
         # delete from Solr
         solr_delete(core='documents', id=str(self.id))
         super().delete(*args, **kwargs)
+
+
+class AcceptanceStateValue(models.TextChoices):
+    UNVALIDATED = 'Unvalidated',
+    ACCEPTED = 'Accepted',
+    REJECTED = 'Rejected'
+
+
+class AcceptanceState(models.Model):
+    value = models.CharField(max_length=20,
+                             choices=AcceptanceStateValue.choices,
+                             default=AcceptanceStateValue.UNVALIDATED)
+    document = models.ForeignKey('Document', related_name='acceptance_states', on_delete=models.CASCADE)
+    user = models.ForeignKey('auth.User', on_delete=models.DO_NOTHING)
 
 
 class Attachment(models.Model):

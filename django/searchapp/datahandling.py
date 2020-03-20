@@ -79,8 +79,6 @@ def update_document(django_doc, solr_doc):
         django_doc.summary = ''.join(x.strip() for x in solr_doc['summary'])
     if 'website' in solr_doc:
         django_doc.website = Website.objects.get(name__iexact=solr_doc['website'][0])
-    if 'acceptance_state' in solr_doc:
-        django_doc.acceptance_state = solr_doc['acceptance_state'][0]
     else:
         django_doc.acceptance_state = 'Unvalidated'
     django_doc.pull = False

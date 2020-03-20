@@ -7,14 +7,16 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
 from rest_framework import permissions
-from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveAPIView
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveAPIView, \
+    RetrieveUpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .datahandling import sync_documents, sync_attachments
 from .forms import DocumentForm, WebsiteForm
-from .models import Website, Document, Attachment, AcceptanceState
-from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer
+from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue
+from .permissions import IsOwner
+from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
 from .uploadhandlers import ProgressBarUploadHandler
 
@@ -197,6 +199,7 @@ class DocumentListAPIView(ListCreateAPIView):
 
 
 class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
 
@@ -228,10 +231,34 @@ class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
         return attachment
 
 
-class AcceptanceStateAPIView(APIView):
+class AcceptanceStateValueAPIView(APIView):
 
     def get(self, request, format=None):
-        return Response([state.value for state in AcceptanceState])
+        return Response([state.value for state in AcceptanceStateValue])
+
+
+class AcceptanceStateListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AcceptanceStateSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = AcceptanceState.objects.filter(user=request.user)
+        serializer = AcceptanceStateSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
+        return self.create(request, *args, **kwargs)
+
+
+class AcceptanceStateDetailAPIView(RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsOwner]
+    serializer_class = AcceptanceStateSerializer
+    queryset = AcceptanceState.objects.all()
+
+    def put(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
+        return self.update(request, *args, **kwargs)
 
 
 class SolrFileList(APIView):
