@@ -8,6 +8,7 @@ import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { Attachment } from 'src/app/shared/models/attachment';
 import { SelectItem, ConfirmationService } from 'primeng/api';
 import * as uuid from 'uuid';
+import { AcceptanceState } from 'src/app/shared/models/acceptanceState';
 
 @Component({
   selector: 'app-document-details',
@@ -19,7 +20,8 @@ export class DocumentDetailsComponent implements OnInit {
   document: Document;
   deleteIcon: IconDefinition;
   attachments: Attachment[] = [];
-  allStates: SelectItem[] = [];
+  stateValues: SelectItem[] = [];
+  acceptanceState: AcceptanceState;
 
   constructor(
     private route: ActivatedRoute,
@@ -29,9 +31,10 @@ export class DocumentDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.apiService.getStates().subscribe(states => {
+    this.acceptanceState = new AcceptanceState('', '', '', '');
+    this.apiService.getStateValues().subscribe(states => {
       states.forEach(state => {
-        this.allStates.push({ label: state, value: state });
+        this.stateValues.push({ label: state, value: state });
       });
     });
     this.route.paramMap.subscribe(
@@ -50,14 +53,17 @@ export class DocumentDetailsComponent implements OnInit {
             this.attachments.push(attachment);
           });
         });
+        this.apiService.getState(document.acceptanceState).subscribe(state => {
+          this.acceptanceState = state;
+        })
       });
     this.deleteIcon = faTrashAlt;
   }
 
   onStateChange(event) {
-    const newState = event.value;
-    this.document.acceptanceState = newState;
-    this.apiService.updateDocument(this.document).subscribe();
+    this.acceptanceState.value = event.value;
+    this.acceptanceState.documentId = this.document.id;
+    this.apiService.updateState(this.acceptanceState).subscribe();
   }
 
   onAddFile(event) {

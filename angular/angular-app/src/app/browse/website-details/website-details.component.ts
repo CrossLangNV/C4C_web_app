@@ -41,7 +41,10 @@ export class WebsiteDetailsComponent implements OnInit {
         this.website = website;
         website.documentIds.forEach(id => {
           this.apiService.getDocument(id).subscribe(document => {
-            this.documents.push(document);
+            this.apiService.getState(document.acceptanceState).subscribe(state => {
+              document.acceptanceState = state.value;
+              this.documents.push(document);
+            })
           });
         });
       });
