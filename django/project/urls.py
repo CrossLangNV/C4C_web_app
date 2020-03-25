@@ -20,7 +20,10 @@ from django.urls import path
 
 from project import settings
 
+from admin_rest.models import site
+
 urlpatterns = [
+    path('admin/api', site.urls),
     path('admin/', admin.site.urls),
     path('searchapp/', include(('searchapp.urls', 'searchapp'), namespace="searchapp")),
     path('scraping/', include(('scraping.urls', 'scraping'), namespace="scraping")),
