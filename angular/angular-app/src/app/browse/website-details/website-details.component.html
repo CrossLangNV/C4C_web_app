@@ -54,7 +54,7 @@
       <div *ngFor="let docStates of acceptanceStatesByDocument | keyvalue">
         <ul *ngFor="let state of docStates.value">
           <li *ngIf="state.documentId === doc.id">
-            {{state.username}} says {{state.value}}
+            <a routerLink="/dashboard">{{state.username}}</a> says {{state.value}}
           </li>
         </ul>
       </div>
