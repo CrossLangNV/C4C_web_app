@@ -1,13 +1,16 @@
-<h3 (click)="titleIsBeingEdited=true" *ngIf="!titleIsBeingEdited" class="name"><span class="editable">{{website.name}}</span>
+<h3 (click)="titleIsBeingEdited=true" *ngIf="!titleIsBeingEdited" class="name"><span
+    class="editable">{{website.name}}</span>
 </h3>
 <h3 id="title-edit" *ngIf="titleIsBeingEdited" class="name col-lg-12">
-  <input type="text" id="new-title" name="new-title" value={{website.name}} (keydown.enter)=onNameChanged($event) class="col-lg-11">
+  <input type="text" id="new-title" name="new-title" value={{website.name}} (keydown.enter)=onNameChanged($event)
+    class="col-lg-11">
   <button (click)="titleIsBeingEdited=false" type="button" class="close" aria-label="Close">
     <span aria-hidden="true">&times;</span>
   </button>
 </h3>
 
-<div (click)="urlIsBeingEdited=true" *ngIf="!urlIsBeingEdited" class="url mt-5 mb-3">URL: <span class="editable">{{website.url}}</span></div>
+<div (click)="urlIsBeingEdited=true" *ngIf="!urlIsBeingEdited" class="url mt-5 mb-3">URL: <span
+    class="editable">{{website.url}}</span></div>
 <div id="url-edit" *ngIf="urlIsBeingEdited" class="url col-lg-12 mt-5 mb-3">
   <input type="text" id="new-url" name="new-url" value={{website.url}} (keydown.enter)=onUrlChanged($event)
     class="col-lg-11">
@@ -16,8 +19,8 @@
   </button>
 </div>
 
-<div (click)="contentIsBeingEdited=true" *ngIf="!contentIsBeingEdited" class="content mt-4 mb-3 text-justify">Content: <span
-    class="editable">{{website.content}}</span></div>
+<div (click)="contentIsBeingEdited=true" *ngIf="!contentIsBeingEdited" class="content mt-4 mb-3 text-justify">Content:
+  <span class="editable">{{website.content}}</span></div>
 <div id="content-edit" *ngIf="contentIsBeingEdited" class="content col-lg-12 mt-4 mb-3">
   <textarea id="new-content" name="new-content" value={{website.content}} (keydown.enter)="onContentChanged($event)"
     class="col-lg-11"></textarea>
@@ -46,8 +49,22 @@
       <h4 class="mb-3">{{doc.title}}</h4>
     </a>
     <p class="small font-italic">{{ doc.date }}</p>
-    <p>Acceptance state: {{ doc.acceptanceState }}</p>
-    <p><a href="{{doc.url}}">{{ doc.url }}</a></p>
+    <div *ngIf="adminMode; else elseBlock">
+      Acceptance states:
+      <div *ngFor="let docStates of acceptanceStatesByDocument | keyvalue">
+        <ul *ngFor="let state of docStates.value">
+          <li *ngIf="state.documentId === doc.id">
+            {{state.username}} says {{state.value}}
+          </li>
+        </ul>
+      </div>
+    </div>
+    <ng-template #elseBlock>
+      <p>Acceptance state: {{ doc.acceptanceState }}</p>
+    </ng-template>
+    <div>
+      <p><a href="{{doc.url}}">{{ doc.url }}</a></p>
+    </div>
     <div>
       <p class="text-justify">{{doc.summary}}</p>
     </div>

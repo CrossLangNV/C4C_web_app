@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Adapter } from './adapter';
 
 export class AcceptanceState {
+  public username: string;
   constructor(
     public id: string,
     public documentId: string,

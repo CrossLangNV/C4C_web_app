@@ -29,7 +29,7 @@ export class ApiAdminService {
       );
   }
 
-  public getUser(id: number): Observable<User> {
+  public getUser(id: string): Observable<User> {
     return this.http
       .get<User>(`${this.API_URL}auth/user/${id}`)
       .pipe(map(item => this.userAdapter.adapt(item)));

@@ -26,6 +26,7 @@ export class WebsiteDetailsComponent implements OnInit {
   addIcon: IconDefinition;
   adminMode = false;
   acceptanceStates: AcceptanceState[] = [];
+  acceptanceStatesByDocument = new Map<string, AcceptanceState[]>();
 
   constructor(
     private route: ActivatedRoute,
@@ -51,20 +52,27 @@ export class WebsiteDetailsComponent implements OnInit {
         )
         .subscribe(website => {
           this.website = website;
-          if (isAdmin) {
-            this.acceptanceStates = this.acceptanceStates.filter(state =>
-              website.documentIds.includes(state.documentId)
-            );
-          }
-          console.log(this.acceptanceStates);
           website.documentIds.forEach(id => {
             this.apiService.getDocument(id).subscribe(document => {
-              this.apiService
-                .getState(document.acceptanceState)
-                .subscribe(state => {
-                  document.acceptanceState = state.value;
-                  this.documents.push(document);
+              if (isAdmin) {
+                const docAcceptanceStates = this.acceptanceStates.filter(
+                  state => state.documentId === id
+                );
+                docAcceptanceStates.map(state => {
+                  this.apiAdminService.getUser(state.userId).subscribe(user => {
+                    state.username = user.username;
+                  });
                 });
+                this.acceptanceStatesByDocument.set(id, docAcceptanceStates);
+                this.documents.push(document);
+              } else {
+                this.apiService
+                  .getState(document.acceptanceState)
+                  .subscribe(state => {
+                    document.acceptanceState = state.value;
+                    this.documents.push(document);
+                  });
+              }
             });
           });
         });
