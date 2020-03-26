@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.routers import DefaultRouter
 from rest_framework.serializers import ModelSerializer
 
+from admin_rest import permissions
+
 
 class AlreadyRegistered(Exception):
     pass
@@ -18,6 +20,7 @@ class ImproperlyConfigured(Exception):
 
 
 class RestFulModelAdmin(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsSuperUser]
     queryset = None
 
     @staticmethod

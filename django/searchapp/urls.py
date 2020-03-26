@@ -58,6 +58,7 @@ urlpatterns = [
     path('api/state/', views.AcceptanceStateListAPIView.as_view(), name='state_list_api'),
     path('api/state/<int:pk>/', views.AcceptanceStateDetailAPIView.as_view(), name='state_detail_api'),
     path('api/state/value/', views.AcceptanceStateValueAPIView.as_view(), name='state_value_api'),
+    path('api/super/', views.IsSuperUserAPIView.as_view(), name='super_api'),
     path('api/solrfiles/', views.SolrFileList.as_view(), name='solr_file_list_api'),
     path('api/solrfiles/<search_term>', views.SolrFile.as_view(), name='solr_file_search_api'),
     path('api/solrdocument/<id>', views.SolrDocument.as_view(), name='solr_document_api'),
