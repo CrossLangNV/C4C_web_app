@@ -8,6 +8,8 @@ import { switchMap } from 'rxjs/operators';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faTrashAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { SelectItem, ConfirmationService } from 'primeng/api';
+import { ApiAdminService } from 'src/app/core/services/api.admin.service';
+import { AcceptanceState } from 'src/app/shared/models/acceptanceState';
 
 @Component({
   selector: 'app-website-details',
@@ -17,37 +19,56 @@ import { SelectItem, ConfirmationService } from 'primeng/api';
 export class WebsiteDetailsComponent implements OnInit {
   website: Website;
   documents: Document[] = [];
-  titleIsBeingEdited: boolean = false;
-  urlIsBeingEdited: boolean = false;
-  contentIsBeingEdited: boolean = false;
+  titleIsBeingEdited = false;
+  urlIsBeingEdited = false;
+  contentIsBeingEdited = false;
   deleteIcon: IconDefinition;
   addIcon: IconDefinition;
+  adminMode = false;
+  acceptanceStates: AcceptanceState[] = [];
 
   constructor(
     private route: ActivatedRoute,
     private apiService: ApiService,
+    private apiAdminService: ApiAdminService,
     private router: Router,
     private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit() {
-    this.route.paramMap
-      .pipe(
-        switchMap((params: ParamMap) =>
-          this.apiService.getWebsite(params.get('websiteId'))
+    this.apiService.isAdmin().subscribe(isAdmin => {
+      this.adminMode = isAdmin;
+      if (isAdmin) {
+        this.apiAdminService.getStates().subscribe(states => {
+          this.acceptanceStates = states;
+        });
+      }
+      this.route.paramMap
+        .pipe(
+          switchMap((params: ParamMap) =>
+            this.apiService.getWebsite(params.get('websiteId'))
+          )
         )
-      )
-      .subscribe(website => {
-        this.website = website;
-        website.documentIds.forEach(id => {
-          this.apiService.getDocument(id).subscribe(document => {
-            this.apiService.getState(document.acceptanceState).subscribe(state => {
-              document.acceptanceState = state.value;
-              this.documents.push(document);
-            })
+        .subscribe(website => {
+          this.website = website;
+          if (isAdmin) {
+            this.acceptanceStates = this.acceptanceStates.filter(state =>
+              website.documentIds.includes(state.documentId)
+            );
+          }
+          console.log(this.acceptanceStates);
+          website.documentIds.forEach(id => {
+            this.apiService.getDocument(id).subscribe(document => {
+              this.apiService
+                .getState(document.acceptanceState)
+                .subscribe(state => {
+                  document.acceptanceState = state.value;
+                  this.documents.push(document);
+                });
+            });
           });
         });
-      });
+    });
     this.deleteIcon = faTrashAlt;
     this.addIcon = faPlus;
   }

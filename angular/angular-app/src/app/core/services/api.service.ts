@@ -145,4 +145,8 @@ export class ApiService {
       this.stateAdapter.encode(state)
     );
   }
+
+  public isAdmin(): Observable<boolean> {
+    return this.http.get<boolean>(`${this.API_URL}/super`);
+  }
 }
