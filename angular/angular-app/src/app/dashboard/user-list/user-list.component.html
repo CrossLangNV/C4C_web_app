@@ -1,0 +1,10 @@
+<h3>Users</h3>
+
+<ul class="list-group list-group-flush">
+  <li class="list-group-item mt-4 col-lg-7 px-4 py-4" *ngFor="let user of users">
+    <a routerLink="{{user.id}}">
+      <h4 class="mb-3">{{user.username}}</h4>
+    </a>
+    <p class="text-justify">{{user.isSuperuser}}</p>
+  </li>
+</ul>

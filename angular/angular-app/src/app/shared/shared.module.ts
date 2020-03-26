@@ -1,7 +1,5 @@
 import { NgModule } from '@angular/core';
-import { HomeComponent } from './home-component/home.component';
 import { LoginComponent } from './login-component/login.component';
-import { RegisterComponent } from './register-component/register.component';
 import { AlertComponent } from './alert-component/alert.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -13,9 +11,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb';
 
 @NgModule({
   declarations: [
-    HomeComponent,
     LoginComponent,
-    RegisterComponent,
     AlertComponent,
     BreadcrumbComponent
   ],
@@ -31,9 +27,7 @@ import { BreadcrumbModule } from 'primeng/breadcrumb';
   exports: [
     CommonModule,
     RouterModule,
-    HomeComponent,
     LoginComponent,
-    RegisterComponent,
     AlertComponent,
     FormsModule,
     ReactiveFormsModule,

@@ -2,12 +2,10 @@ import { Routes, RouterModule } from '@angular/router';
 
 import { SolrFileListComponent } from './search/solrfile-list/solrfile-list.component';
 import { LoginComponent } from './shared/login-component/login.component';
-import { RegisterComponent } from './shared/register-component/register.component';
 import { AuthGuard } from './core/guards/auth.guard';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
-  { path: 'register', component: RegisterComponent },
   {
     path: 'browse',
     loadChildren: () =>
@@ -19,7 +17,12 @@ const routes: Routes = [
     component: SolrFileListComponent,
     canActivate: [AuthGuard]
   },
-
+  {
+    path: 'dashboard',
+    loadChildren: () =>
+      import('./dashboard/dashboard.module').then(m => m.DashboardModule),
+    canActivate: [AuthGuard]
+  },
   // otherwise redirect to home
   { path: '**', redirectTo: '' }
 ];
