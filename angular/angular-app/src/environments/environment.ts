@@ -5,6 +5,7 @@
 export const environment = {
   ANGULAR_PRODUCTION: 'false',
   ANGULAR_DJANGO_API_URL: 'http://localhost:8000/searchapp/api',
+  ANGULAR_DJANGO_API_ADMIN_URL: 'http://localhost:8000/admin/api',
   ANGULAR_DJANGO_AUTH_URL: 'http://localhost:8000/auth',
   ANGULAR_GOOGLE_CLIENT_ID: '540501250122-2k39tbh973rc7ufpl2nioor6muejkvok.apps.googleusercontent.com',
   ANGULAR_DJANGO_CLIENT_ID: '***REMOVED***',
