@@ -3,18 +3,24 @@ import { Router } from '@angular/router';
 
 import { AuthenticationService } from './core/auth/authentication.service';
 import { DjangoUser } from './shared/models/django_user';
+import { ApiService } from './core/services/api.service';
 
 @Component({ selector: 'app', templateUrl: 'app.component.html' })
 export class AppComponent {
   currentDjangoUser: DjangoUser;
+  adminMode = false;
 
   constructor(
     private router: Router,
+    private apiService: ApiService,
     private authenticationService: AuthenticationService
   ) {
     this.authenticationService.currentDjangoUser.subscribe(
       x => (this.currentDjangoUser = x)
     );
+    this.apiService.isAdmin().subscribe(isAdmin => {
+      this.adminMode = isAdmin;
+    });
   }
 
   logout() {
