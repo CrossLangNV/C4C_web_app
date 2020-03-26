@@ -1,14 +1,10 @@
-import uuid
-
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.urls import reverse_lazy
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
 from rest_framework import permissions
-from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveAPIView, \
-    RetrieveUpdateAPIView
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -18,7 +14,6 @@ from .models import Website, Document, Attachment, AcceptanceState, AcceptanceSt
 from .permissions import IsOwner
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
-from .uploadhandlers import ProgressBarUploadHandler
 
 
 class FilmSearchView(TemplateView):
@@ -259,6 +254,15 @@ class AcceptanceStateDetailAPIView(RetrieveUpdateAPIView):
     def put(self, request, *args, **kwargs):
         request.data['user'] = request.user.id
         return self.update(request, *args, **kwargs)
+
+
+class IsSuperUserAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        is_superuser = request.user.is_superuser
+
+        return Response(is_superuser)
 
 
 class SolrFileList(APIView):
