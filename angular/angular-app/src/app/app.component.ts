@@ -18,9 +18,6 @@ export class AppComponent {
     this.authenticationService.currentDjangoUser.subscribe(
       x => (this.currentDjangoUser = x)
     );
-    this.apiService.isAdmin().subscribe(isAdmin => {
-      this.adminMode = isAdmin;
-    });
   }
 
   logout() {
