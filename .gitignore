@@ -89,7 +89,7 @@ local_settings.py
 db.sqlite3
 scrapy/dbs
 .idea
-secrets/
+secrets/django-docker.env
 data/
 ngrok.exe
 twistd.pid
