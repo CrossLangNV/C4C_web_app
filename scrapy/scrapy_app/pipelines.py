@@ -21,8 +21,11 @@ class ScrapyAppPipeline(object):
         # save crawled data to django through API call
         item['task'] = self.task_id
         item['website'] = spider.name
-        # generate UUID (version 5, see https://tools.ietf.org/html/rfc4122#section-4.3) based on url
-        item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url']))
+        # generate UUID (version 5, see https://tools.ietf.org/html/rfc4122#section-4.3) based on url or reference
+        if "url" in item:
+            item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url']))
+        else:
+            return
         # add/update and index item to Solr
         solr_add(core="documents", docs=[item])
         for url in item['pdf_docs']:

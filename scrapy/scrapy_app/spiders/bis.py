@@ -20,6 +20,7 @@ class BISSpider(scrapy.Spider):
         base_url = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
 
         newdict = {}
+        newdict.update(({"url": response.url}))
 
         for meta in metas:
             if 'property' in meta.attrs and meta.attrs['property'] == 'og:title':
