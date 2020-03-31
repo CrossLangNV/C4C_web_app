@@ -73,8 +73,7 @@ class ScrapingTaskListView(ListCreateAPIView):
             scraping_task = serializer.save()
             # custom settings for spider
             settings = {
-                'task_id': scraping_task.id,
-                'USER_AGENT': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+                'task_id': scraping_task.id
             }
             scheduler_id = self.scrapyd.schedule(self.scrapyd_project, scraping_task.spider, settings=settings,
                                                  spider_type=scraping_task.spider_type)
