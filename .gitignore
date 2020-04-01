@@ -94,3 +94,4 @@ data/
 ngrok.exe
 twistd.pid
 django/media
+scrapy/files
