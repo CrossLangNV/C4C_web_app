@@ -1,3 +1,5 @@
+import json
+import os
 from datetime import datetime
 from itertools import zip_longest
 from urllib.request import urlopen
@@ -6,12 +8,14 @@ from django.core.files.base import ContentFile
 
 from searchapp.models import Document, Attachment, Website
 
+import logging
+
 
 def sync_documents(website, solr_documents, django_documents):
-    for solr_doc, django_doc in zip_longest(solr_documents, django_documents):
+    for solr_doc, django_doc_id in align_lists(solr_documents, django_documents):
         if solr_doc is None:
             break
-        elif django_doc is None:
+        elif django_doc_id is None:
             solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
             date_format = '%Y-%m-%dT%H:%M:%SZ'
 
@@ -31,19 +35,19 @@ def sync_documents(website, solr_documents, django_documents):
                 website=website,
                 pull=True
             )
-        elif str(django_doc.id) == solr_doc['id']:
-            update_document(django_doc, solr_doc)
+        elif str(django_doc_id) == solr_doc['id']:
+            update_document(Document.objects.get(pk=django_doc_id), solr_doc)
         else:
             print('comparison failed')
-            print('django document id: ' + str(django_doc.id))
+            print('django document id: ' + str(django_doc_id))
             print('solr document id: ' + str(solr_doc['id']))
 
 
 def sync_attachments(document, solr_files, django_attachments):
-    for solr_file, django_attachment in zip_longest(solr_files, django_attachments):
+    for solr_file, django_attachment_id in align_lists(solr_files, django_attachments):
         if solr_file is None:
             break
-        elif django_attachment is None:
+        elif django_attachment_id is None:
             new_django_attachment = Attachment.objects.create(
                 id=solr_file['id'],
                 url=solr_file['attr_url'][0],
@@ -53,12 +57,12 @@ def sync_attachments(document, solr_files, django_attachments):
             response = urlopen(solr_file['attr_url'][0])
             content = response.read()
             django_file = ContentFile(content)
-            new_django_attachment.file.save(solr_file['attr_resourcename'][0], django_file)
-        elif str(django_attachment.id) == solr_file['id']:
-            update_attachment(django_attachment, solr_file)
+            new_django_attachment.file.save(os.path.basename(solr_file['attr_resourcename'][0]), django_file)
+        elif str(django_attachment_id) == solr_file['id']:
+            update_attachment(Attachment.objects.get(pk=django_attachment_id), solr_file)
         else:
             print('comparison failed')
-            print('django attachment id: ' + str(django_attachment.id))
+            print('django attachment id: ' + str(django_attachment_id))
             print('solr file id: ' + str(solr_file['id']))
 
 
@@ -91,3 +95,20 @@ def update_attachment(django_attachment, solr_file):
     django_attachment.document = Document.objects.get(pk=solr_file['attr_document_id'][0])
     django_attachment.pull = False
     django_attachment.save()
+
+
+# assumes lists are sorted, without duplicates and each element of a list contains an "id" property
+# returns zip of lists
+def align_lists(solr_docs, django_docs):
+    django_docs_ids = set()
+    solr_docs_ids = set()
+    for django_doc in django_docs:
+        django_docs_ids.add(str(django_doc.id))
+    for solr_doc in solr_docs:
+        solr_docs_ids.add(solr_doc['id'])
+
+    new_django_docs_ids = [x if x in django_docs_ids else None for x in sorted(solr_docs_ids)]
+    logging.info(django_docs_ids)
+    logging.info(solr_docs_ids)
+    logging.info(new_django_docs_ids)
+    return zip(solr_docs, new_django_docs_ids)

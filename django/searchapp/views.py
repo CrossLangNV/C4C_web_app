@@ -1,5 +1,6 @@
+import logging
+
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
@@ -172,6 +173,7 @@ class WebsiteListAPIView(ListCreateAPIView):
 class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Website.objects.all()
     serializer_class = WebsiteSerializer
+    logger = logging.getLogger(__name__)
 
     def get_object(self):
         queryset = self.get_queryset()
