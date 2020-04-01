@@ -35,15 +35,15 @@ class FSBScraperSpider(scrapy.Spider):
             if 'content' in meta.attrs and meta.attrs['content'].endswith('pdf'):
                 link_to_pdf = meta.attrs['content']
                 if not link_to_pdf.startswith(base_url):
-                    link_to_pdf = str(base_url) + str(link_to_pdf)
-                    newdict.update({"pdf_docs": [link_to_pdf]})
-                else:
-                    newdict.update({"pdf_docs": [link_to_pdf]})
+                    link_to_pdf = str(base_url) + link_to_pdf
+                newdict.update({"pdf_docs": [link_to_pdf]})
 
         if 'pdf_docs' not in newdict:
             for link in soup.find_all('a'):
                 pdf_link = link.get('href')
                 if pdf_link is not None and pdf_link.endswith('pdf'):
+                    if not pdf_link.startswith(base_url):
+                        pdf_link = str(base_url) + pdf_link
                     newdict.update({"pdf_docs": [pdf_link]})
                     break
 
