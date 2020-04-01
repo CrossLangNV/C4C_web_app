@@ -2,7 +2,7 @@ import json
 import os
 from datetime import datetime
 from itertools import zip_longest
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 
 from django.core.files.base import ContentFile
 
@@ -54,10 +54,7 @@ def sync_attachments(document, solr_files, django_attachments):
                 document=document,
                 pull=True
             )
-            response = urlopen(solr_file['attr_url'][0])
-            content = response.read()
-            django_file = ContentFile(content)
-            new_django_attachment.file.save(os.path.basename(solr_file['attr_resourcename'][0]), django_file)
+            save_file_from_url(new_django_attachment, solr_file)
         elif str(django_attachment_id) == solr_file['id']:
             update_attachment(Attachment.objects.get(pk=django_attachment_id), solr_file)
         else:
@@ -112,3 +109,14 @@ def align_lists(solr_docs, django_docs):
     logging.info(solr_docs_ids)
     logging.info(new_django_docs_ids)
     return zip(solr_docs, new_django_docs_ids)
+
+
+def save_file_from_url(django_attachment, solr_file):
+    headers = {
+        'User-Agent': 'Mozilla/5.0(Windows NT 6.1) AppleWebKit/537.36(KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.3'
+    }
+    req = Request(url=solr_file['attr_url'][0], headers=headers)
+    response = urlopen(req)
+    content = response.read()
+    django_file = ContentFile(content)
+    django_attachment.file.save(os.path.basename(solr_file['attr_resourcename'][0]), django_file)
