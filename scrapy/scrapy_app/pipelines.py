@@ -1,3 +1,4 @@
+import logging
 import os
 import uuid
 from urllib.parse import urlparse
@@ -9,19 +10,23 @@ from scrapy_app.solr_call import solr_add, solr_add_file
 
 
 class ScrapyAppPipeline(FilesPipeline):
-    def __init__(self, task_id, *args, **kwargs):
+    def __init__(self, task_id, crawler, *args, **kwargs):
         self.task_id = task_id
+        self.crawler = crawler
         self.django_api_url = os.environ['DJANGO_SCRAPING_API_URL']
+        self.logger = logging.getLogger(__name__)
+        super().__init__(store_uri='files', *args, **kwargs)
 
     @classmethod
     def from_crawler(cls, crawler):
         return cls(
             # this will be passed from django view
-            task_id=crawler.settings.get('task_id')
+            task_id=crawler.settings.get('task_id'),
+            crawler=crawler
         )
 
     def get_media_requests(self, item, info):
-        if not 'pdf_docs' in item:
+        if 'pdf_docs' not in item:
             self.handle_document(item, info)
             return item
         else:
@@ -29,14 +34,16 @@ class ScrapyAppPipeline(FilesPipeline):
                 yield scrapy.Request(url)
 
     def file_path(self, request, response=None, info=None):
-        return 'files/' + os.path.basename(urlparse(request.url).path)
+        return os.path.basename(urlparse(request.url).path)
 
     def item_completed(self, results, item, info):
         self.handle_document(item, info)
-        file_paths = [x['path'] for ok, x in results if ok]
-        for file in file_paths:
-            pdf_id = str(uuid.uuid5(uuid.NAMESPACE_URL, file['url']))
-            solr_add_file('files', file, pdf_id, file['url'], item['id'])
+        self.logger.info(results)
+        file_results = [x for ok, x in results if ok]
+        for file_result in file_results:
+            pdf_id = str(uuid.uuid5(uuid.NAMESPACE_URL, file_result['url']))
+            file = open('files/' + file_result['path'], mode='rb')
+            solr_add_file('files', file, pdf_id, file_result['url'], item['id'])
 
         return item
 

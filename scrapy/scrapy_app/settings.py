@@ -73,6 +73,8 @@ ITEM_PIPELINES = {
     'scrapy_app.pipelines.ScrapyAppPipeline': 300,
 }
 
+FILES_STORE = 'files'
+
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
 # AUTOTHROTTLE_ENABLED = True
