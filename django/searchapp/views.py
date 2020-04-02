@@ -204,12 +204,17 @@ class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
         queryset = self.get_queryset()
         document_qs = queryset.filter(pk=self.kwargs['pk'])
         document = document_qs[0]
+        with_attachments = self.request.GET.get('with_attachments', False)
+        sync = self.request.GET.get('sync', False)
         solr_document = solr_search_id(core='documents', id=str(document.id))
-        sync_documents(document.website, solr_document, [document])
-        # query Solr for attachments
-        solr_files = solr_search_document_id_sorted(core='files', document_id=str(document.id))
-        django_attachments = Attachment.objects.filter(document=document).order_by('id')
-        sync_attachments(document, solr_files, django_attachments)
+        if sync:
+            sync_documents(document.website, solr_document, [document])
+        if with_attachments:
+            # query Solr for attachments
+            solr_files = solr_search_document_id_sorted(core='files', document_id=str(document.id))
+            django_attachments = Attachment.objects.filter(document=document).order_by('id')
+            if sync:
+                sync_attachments(document, solr_files, django_attachments)
         return document
 
 
