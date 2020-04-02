@@ -43,7 +43,7 @@ export class DocumentDetailsComponent implements OnInit {
     this.route.paramMap
       .pipe(
         switchMap((params: ParamMap) =>
-          this.apiService.getDocument(params.get('documentId'))
+          this.apiService.getDocumentSyncWithAttachments(params.get('documentId'))
         )
       )
       .subscribe(document => {
