@@ -13,7 +13,8 @@ export class Document {
     public website: string,
     public summary: string,
     public content: string,
-    public attachmentIds: string[]
+    public attachmentIds: string[],
+    public pull: boolean
   ) {}
 }
 
@@ -33,7 +34,8 @@ export class DocumentAdapter implements Adapter<Document> {
       item.website,
       item.summary,
       item.content,
-      item.attachments
+      item.attachments,
+      item.pull
     );
   }
   encode(document: Document): any {
@@ -49,7 +51,8 @@ export class DocumentAdapter implements Adapter<Document> {
       website: document.website,
       summary: document.summary,
       content: document.content,
-      attachments: document.attachmentIds
+      attachments: document.attachmentIds,
+      pull: document.pull
     };
   }
 }

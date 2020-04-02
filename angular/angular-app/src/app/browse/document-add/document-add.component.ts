@@ -47,7 +47,8 @@ export class DocumentAddComponent implements OnInit {
       this.websiteId,
       '',
       '',
-      []
+      [],
+      false
     );
     this.calendarIcon = faCalendarAlt;
   }

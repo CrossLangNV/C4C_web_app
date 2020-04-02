@@ -45,9 +45,8 @@
 </div>
 <ul class="list-group list-group-flush">
   <li class="list-group-item mt-4 col-lg-7 px-4 py-4" *ngFor="let doc of documents">
-    <a routerLink="document/{{doc.id}}">
-      <h4 class="mb-3">{{doc.title}}</h4>
-    </a>
+    <h4 class="mb-3"><a routerLink="document/{{doc.id}}">{{doc.title}}</a>&nbsp;<span *ngIf="doc.pull"
+        class="badge badge-secondary">NEW</span></h4>
     <p class="small font-italic">{{ doc.date }}</p>
     <div *ngIf="adminMode; else elseBlock">
       Acceptance states:
