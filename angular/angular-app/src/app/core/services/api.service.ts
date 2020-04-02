@@ -99,6 +99,12 @@ export class ApiService {
       .pipe(map(item => this.documentAdapter.adapt(item)));
   }
 
+  public getDocumentSyncWithAttachments(id: string): Observable<Document> {
+    return this.http
+    .get<Document>(`${this.API_URL}/document/${id}?sync=true&with_attachments=true`)
+    .pipe(map(item => this.documentAdapter.adapt(item)));
+  }
+
   public createDocument(document: Document): Observable<Document> {
     return this.http
       .post<Document>(
