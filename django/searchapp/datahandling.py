@@ -1,16 +1,15 @@
-import json
+import logging
 import os
 from datetime import datetime
-from itertools import zip_longest
 from urllib.request import urlopen, Request
 
 from django.core.files.base import ContentFile
+from django.db import transaction
 
 from searchapp.models import Document, Attachment, Website
 
-import logging
 
-
+@transaction.atomic
 def sync_documents(website, solr_documents, django_documents):
     for solr_doc, django_doc_id in align_lists(solr_documents, django_documents):
         if solr_doc is None:
@@ -43,6 +42,7 @@ def sync_documents(website, solr_documents, django_documents):
             print('solr document id: ' + str(solr_doc['id']))
 
 
+@transaction.atomic
 def sync_attachments(document, solr_files, django_attachments):
     for solr_file, django_attachment_id in align_lists(solr_files, django_attachments):
         if solr_file is None:
@@ -96,19 +96,19 @@ def update_attachment(django_attachment, solr_file):
 
 # assumes lists are sorted, without duplicates and each element of a list contains an "id" property
 # returns zip of lists
-def align_lists(solr_docs, django_docs):
-    django_docs_ids = set()
-    solr_docs_ids = set()
-    for django_doc in django_docs:
-        django_docs_ids.add(str(django_doc.id))
-    for solr_doc in solr_docs:
-        solr_docs_ids.add(solr_doc['id'])
+def align_lists(solr_items, django_items):
+    django_items_ids = set()
+    solr_items_ids = set()
+    for django_item in django_items:
+        django_items_ids.add(str(django_item.id))
+    for solr_doc in solr_items:
+        solr_items_ids.add(solr_doc['id'])
 
-    new_django_docs_ids = [x if x in django_docs_ids else None for x in sorted(solr_docs_ids)]
-    logging.info(django_docs_ids)
-    logging.info(solr_docs_ids)
-    logging.info(new_django_docs_ids)
-    return zip(solr_docs, new_django_docs_ids)
+    new_django_items_ids = [x if x in django_items_ids else None for x in sorted(solr_items_ids)]
+    logging.info(django_items_ids)
+    logging.info(solr_items_ids)
+    logging.info(new_django_items_ids)
+    return zip(solr_items, new_django_items_ids)
 
 
 def save_file_from_url(django_attachment, solr_file):
