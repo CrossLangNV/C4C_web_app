@@ -8,9 +8,8 @@
 
 <ul class="list-group list-group-flush">
   <li class="list-group-item mt-4 col-lg-7 px-4 py-4" *ngFor="let website of websites">
-    <a routerLink="{{website.id}}">
-      <h4 class="mb-3">{{website.name}}</h4>
-    </a>
+    <h4 class="mb-3"><a routerLink="{{website.id}}">{{website.name}}</a>&nbsp;<span
+        class="badge badge-secondary">{{website.documentIds.length}}</span></h4>
     <p class="text-justify">{{website.content}}</p>
     <a href="{{website.url}}">{{website.url}}</a>
   </li>
