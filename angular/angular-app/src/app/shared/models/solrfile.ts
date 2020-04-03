@@ -22,11 +22,12 @@ export class SolrFile {
 })
 export class SolrFileAdapter implements Adapter<SolrFile> {
   adapt(item: any): SolrFile {
+    const parsedDate = item.attr_date ? new Date(item.attr_date[0]) : new Date();
     return new SolrFile(
       item.id,
       item.attr_document_id[0],
       item.attr_url[0],
-      new Date(item.attr_date[0]),
+      parsedDate,
       item.language,
       item.doc_type,
       item.content

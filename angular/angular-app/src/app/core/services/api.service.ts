@@ -31,7 +31,7 @@ export class ApiService {
 
   public getSolrFiles(): Observable<SolrFile[]> {
     return this.http
-      .get(`${this.API_URL}/solrfiles`)
+      .get<SolrFile[]>(`${this.API_URL}/solrfiles`)
       .pipe(
         map((data: any[]) => data.map(item => this.solrFileAdapter.adapt(item)))
       );
