@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, MAXYEAR
 from enum import Enum
 from urllib.parse import urlparse
 
@@ -88,7 +88,10 @@ class EurLexSpider(scrapy.Spider):
             for (x, y) in zip(date_types, date_texts):
                 date_type = x.getText().split(':')[0].lower()
                 value = y.getText().split(';')
-                date_value = datetime.strptime(value[0], self.date_format)
+                if '/' in value[0]:
+                    date_value = datetime.strptime(value[0], self.date_format)
+                else:
+                    date_value = datetime(MAXYEAR, 1, 1)
                 date_info = value[1].replace('\n', ' ').strip() if len(value) > 1 else 'n/a'
                 # date of document is our main "date"
                 if date_type == 'date of document':
