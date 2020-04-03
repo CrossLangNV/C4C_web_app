@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from searchapp.models import Attachment, Document, Website, AcceptanceState
+from searchapp.models import Attachment, Document, Website, AcceptanceState, Comment
 
 
 class WebsiteSerializer(serializers.ModelSerializer):
@@ -51,4 +51,13 @@ class AttachmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Attachment
+        fields = '__all__'
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    document = serializers.PrimaryKeyRelatedField(queryset=Document.objects.all())
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+
+    class Meta:
+        model = Comment
         fields = '__all__'

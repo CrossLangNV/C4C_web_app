@@ -71,7 +71,7 @@ class AcceptanceState(models.Model):
                              choices=AcceptanceStateValue.choices,
                              default=AcceptanceStateValue.UNVALIDATED)
     document = models.ForeignKey('Document', related_name='acceptance_states', on_delete=models.CASCADE)
-    user = models.ForeignKey('auth.User', on_delete=models.DO_NOTHING)
+    user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
 
 
 class Attachment(models.Model):
@@ -96,3 +96,8 @@ class Attachment(models.Model):
         # delete from Solr
         solr_delete(core='files', id=str(self.id))
         super().delete(*args, **kwargs)
+
+class Comment(models.Model):
+    value = models.TextField()
+    document = models.ForeignKey('Document', related_name='comments', on_delete=models.CASCADE)
+    user = models.ForeignKey('auth.User', on_delete=models.CASCADE)

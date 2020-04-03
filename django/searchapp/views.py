@@ -11,9 +11,10 @@ from rest_framework.views import APIView
 
 from .datahandling import sync_documents, sync_attachments
 from .forms import DocumentForm, WebsiteForm
-from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue
+from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment
 from .permissions import IsOwner
-from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer
+from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
+    CommentSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
 
 
@@ -261,6 +262,30 @@ class AcceptanceStateDetailAPIView(RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsOwner]
     serializer_class = AcceptanceStateSerializer
     queryset = AcceptanceState.objects.all()
+
+    def put(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
+        return self.update(request, *args, **kwargs)
+
+
+class CommentListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CommentSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = Comment.objects.filter(user=request.user)
+        serializer = CommentSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
+        return self.create(request, *args, **kwargs)
+
+
+class CommentDetailAPIView(RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsOwner]
+    serializer_class = CommentSerializer
+    queryset = Comment.objects.all()
 
     def put(self, request, *args, **kwargs):
         request.data['user'] = request.user.id
