@@ -2,11 +2,12 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    kompose.cmd: kompose-windows-amd64 -f docker-kompose.yml convert -c
+    kompose.cmd: kompose convert -f docker-kompose.yml -c
     kompose.image-pull-policy: Always
     kompose.image-pull-secret: crosslang
     kompose.service.expose: django.localhost
-    kompose.version: 1.19.0 (f63a961c)
+    kompose.service.expose.tls-secret: django-certificate
+    kompose.version: 1.21.0 ()
   creationTimestamp: null
   labels:
     io.kompose.service: django
@@ -20,11 +21,12 @@ spec:
   template:
     metadata:
       annotations:
-        kompose.cmd: kompose-windows-amd64 -f docker-kompose.yml convert -c
+        kompose.cmd: kompose convert -f docker-kompose.yml -c
         kompose.image-pull-policy: Always
         kompose.image-pull-secret: crosslang
         kompose.service.expose: django.localhost
-        kompose.version: 1.19.0 (f63a961c)
+        kompose.service.expose.tls-secret: django-certificate
+        kompose.version: 1.21.0 ()
       creationTimestamp: null
       labels:
         io.kompose.service: django
@@ -36,46 +38,106 @@ spec:
         - python manage.py makemigrations && python manage.py migrate && python manage.py
           runserver 0.0.0.0:8000
         env:
+        - name: ANGULAR_DJANGO_API_ADMIN_URL
+          valueFrom:
+            configMapKeyRef:
+              key: ANGULAR_DJANGO_API_ADMIN_URL
+              name: secrets-django-docker-env
+        - name: ANGULAR_DJANGO_API_URL
+          valueFrom:
+            configMapKeyRef:
+              key: ANGULAR_DJANGO_API_URL
+              name: secrets-django-docker-env
+        - name: ANGULAR_DJANGO_AUTH_URL
+          valueFrom:
+            configMapKeyRef:
+              key: ANGULAR_DJANGO_AUTH_URL
+              name: secrets-django-docker-env
+        - name: ANGULAR_DJANGO_CLIENT_ID
+          valueFrom:
+            configMapKeyRef:
+              key: ANGULAR_DJANGO_CLIENT_ID
+              name: secrets-django-docker-env
+        - name: ANGULAR_DJANGO_CLIENT_SECRET
+          valueFrom:
+            configMapKeyRef:
+              key: ANGULAR_DJANGO_CLIENT_SECRET
+              name: secrets-django-docker-env
+        - name: ANGULAR_GOOGLE_CLIENT_ID
+          valueFrom:
+            configMapKeyRef:
+              key: ANGULAR_GOOGLE_CLIENT_ID
+              name: secrets-django-docker-env
+        - name: ANGULAR_PRODUCTION
+          valueFrom:
+            configMapKeyRef:
+              key: ANGULAR_PRODUCTION
+              name: secrets-django-docker-env
+        - name: DJANGO_ADMIN_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              key: DJANGO_ADMIN_EMAIL
+              name: secrets-django-docker-env
+        - name: DJANGO_ADMIN_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              key: DJANGO_ADMIN_USERNAME
+              name: secrets-django-docker-env
+        - name: DJANGO_SCRAPING_API_URL
+          valueFrom:
+            configMapKeyRef:
+              key: DJANGO_SCRAPING_API_URL
+              name: secrets-django-docker-env
         - name: DJANGO_SECRET_KEY
           valueFrom:
             configMapKeyRef:
               key: DJANGO_SECRET_KEY
-              name: django-secrets-django-docker-env
-        - name: DJANGO_ALLOWED_HOSTS
-          valueFrom:
-            configMapKeyRef:
-              key: DJANGO_ALLOWED_HOSTS
-              name: django-secrets-django-docker-env
+              name: secrets-django-docker-env
         - name: POSTGRES_DB
           valueFrom:
             configMapKeyRef:
               key: POSTGRES_DB
-              name: django-secrets-django-docker-env
+              name: secrets-django-docker-env
         - name: POSTGRES_HOST
           valueFrom:
             configMapKeyRef:
               key: POSTGRES_HOST
-              name: django-secrets-django-docker-env
+              name: secrets-django-docker-env
         - name: POSTGRES_PASSWORD
           valueFrom:
             configMapKeyRef:
               key: POSTGRES_PASSWORD
-              name: django-secrets-django-docker-env
+              name: secrets-django-docker-env
         - name: POSTGRES_PORT
           valueFrom:
             configMapKeyRef:
               key: POSTGRES_PORT
-              name: django-secrets-django-docker-env
+              name: secrets-django-docker-env
         - name: POSTGRES_USER
           valueFrom:
             configMapKeyRef:
               key: POSTGRES_USER
-              name: django-secrets-django-docker-env
+              name: secrets-django-docker-env
+        - name: SCRAPYD_URL
+          valueFrom:
+            configMapKeyRef:
+              key: SCRAPYD_URL
+              name: secrets-django-docker-env
+        - name: SOCIAL_AUTH_GOOGLE_OAUTH2_KEY
+          valueFrom:
+            configMapKeyRef:
+              key: SOCIAL_AUTH_GOOGLE_OAUTH2_KEY
+              name: secrets-django-docker-env
+        - name: SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET
+          valueFrom:
+            configMapKeyRef:
+              key: SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET
+              name: secrets-django-docker-env
         - name: SOLR_URL
           valueFrom:
             configMapKeyRef:
               key: SOLR_URL
-              name: django-secrets-django-docker-env
+              name: secrets-django-docker-env
         image: docker.crosslang.com/ctlg-manager/django
         imagePullPolicy: Always
         name: django
@@ -85,4 +147,6 @@ spec:
       imagePullSecrets:
       - name: crosslang
       restartPolicy: Always
+      serviceAccountName: ""
+      volumes: null
 status: {}

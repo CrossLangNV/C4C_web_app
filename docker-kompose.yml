@@ -1,5 +1,12 @@
 version: '3'
 services:
+  angular:
+    image: docker.crosslang.com/ctlg-manager/angular
+    ports:
+     - "8080:80"
+    env_file:
+      - ./secrets/django-docker.env
+
   django:
     image: docker.crosslang.com/ctlg-manager/django
     ports:
@@ -13,6 +20,14 @@ services:
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
       kompose.service.expose.tls-secret: "django-certificate"
+
+  scrapyd:
+    image: docker.crosslang.com/ctlg-manager/scrapyd
+    ports:
+      - "6800:6800"
+    env_file:
+      - ./secrets/django-docker.env
+    command: scrapyd
 
   solr:
     image: solr:8-slim

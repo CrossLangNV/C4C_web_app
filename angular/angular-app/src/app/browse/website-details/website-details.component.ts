@@ -14,7 +14,7 @@ import { AcceptanceState } from 'src/app/shared/models/acceptanceState';
 @Component({
   selector: 'app-website-details',
   templateUrl: './website-details.component.html',
-  styleUrls: ['./website-details.component.css']
+  styleUrls: ['./website-details.component.css'],
 })
 export class WebsiteDetailsComponent implements OnInit {
   website: Website;
@@ -37,10 +37,10 @@ export class WebsiteDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.apiService.isAdmin().subscribe(isAdmin => {
+    this.apiService.isAdmin().subscribe((isAdmin) => {
       this.adminMode = isAdmin;
       if (isAdmin) {
-        this.apiAdminService.getStates().subscribe(states => {
+        this.apiAdminService.getStates().subscribe((states) => {
           this.acceptanceStates = states;
         });
       }
@@ -50,25 +50,27 @@ export class WebsiteDetailsComponent implements OnInit {
             this.apiService.getWebsite(params.get('websiteId'))
           )
         )
-        .subscribe(website => {
+        .subscribe((website) => {
           this.website = website;
-          website.documentIds.forEach(id => {
-            this.apiService.getDocument(id).subscribe(document => {
+          website.documentIds.forEach((id) => {
+            this.apiService.getDocument(id).subscribe((document) => {
               if (isAdmin) {
                 const docAcceptanceStates = this.acceptanceStates.filter(
-                  state => state.documentId === id
+                  (state) => state.documentId === id
                 );
-                docAcceptanceStates.map(state => {
-                  this.apiAdminService.getUser(state.userId).subscribe(user => {
-                    state.username = user.username;
-                  });
+                docAcceptanceStates.map((state) => {
+                  this.apiAdminService
+                    .getUser(state.userId)
+                    .subscribe((user) => {
+                      state.username = user.username;
+                    });
                 });
                 this.acceptanceStatesByDocument.set(id, docAcceptanceStates);
                 this.documents.push(document);
               } else {
                 this.apiService
                   .getState(document.acceptanceState)
-                  .subscribe(state => {
+                  .subscribe((state) => {
                     document.acceptanceState = state.value;
                     this.documents.push(document);
                   });
@@ -81,39 +83,39 @@ export class WebsiteDetailsComponent implements OnInit {
     this.addIcon = faPlus;
   }
 
-  onDelete() {
-    this.confirmationService.confirm({
-      message: 'Do you want to delete this website?',
-      accept: () => {
-        this.apiService
-          .deleteWebsite(this.website.id)
-          .subscribe(website => this.router.navigate(['/website/']));
-      }
-    });
-  }
+  // onDelete() {
+  //   this.confirmationService.confirm({
+  //     message: 'Do you want to delete this website?',
+  //     accept: () => {
+  //       this.apiService
+  //         .deleteWebsite(this.website.id)
+  //         .subscribe((website) => this.router.navigate(['/website/']));
+  //     },
+  //   });
+  // }
 
-  onNameChanged(event: any) {
-    this.website.name = event.target.value;
-    this.apiService.updateWebsite(this.website).subscribe(website => {
-      this.website = website as Website;
-      this.titleIsBeingEdited = false;
-    });
-  }
+  // onNameChanged(event: any) {
+  //   this.website.name = event.target.value;
+  //   this.apiService.updateWebsite(this.website).subscribe((website) => {
+  //     this.website = website as Website;
+  //     this.titleIsBeingEdited = false;
+  //   });
+  // }
 
-  onUrlChanged(event: any) {
-    this.website.url = event.target.value;
-    this.apiService.updateWebsite(this.website).subscribe(website => {
-      this.website = website as Website;
-      this.urlIsBeingEdited = false;
-    });
-  }
+  // onUrlChanged(event: any) {
+  //   this.website.url = event.target.value;
+  //   this.apiService.updateWebsite(this.website).subscribe((website) => {
+  //     this.website = website as Website;
+  //     this.urlIsBeingEdited = false;
+  //   });
+  // }
 
-  onContentChanged(event: any) {
-    event.preventDefault();
-    this.website.content = event.target.value;
-    this.apiService.updateWebsite(this.website).subscribe(website => {
-      this.website = website as Website;
-      this.contentIsBeingEdited = false;
-    });
-  }
+  // onContentChanged(event: any) {
+  //   event.preventDefault();
+  //   this.website.content = event.target.value;
+  //   this.apiService.updateWebsite(this.website).subscribe((website) => {
+  //     this.website = website as Website;
+  //     this.contentIsBeingEdited = false;
+  //   });
+  // }
 }

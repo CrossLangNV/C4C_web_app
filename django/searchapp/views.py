@@ -18,22 +18,6 @@ from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerial
 from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
 
 
-class FilmSearchView(TemplateView):
-    template_name = "searchapp/film_search.html"
-    search_term = "*"
-    results = []
-
-    def get(self, request, *args, **kwargs):
-        if request.GET.get('term'):
-            self.search_term = request.GET['term']
-
-        self.results = solr_search(core="films", term=self.search_term)
-        print(self.results)
-        context = {'results': self.results, 'count': len(self.results), 'search_term': self.search_term,
-                   'nav': 'films'}
-        return render(request, self.template_name, context)
-
-
 class DocumentSearchView(TemplateView):
     template_name = "searchapp/document_search.html"
     search_term = "*"
@@ -70,11 +54,13 @@ class WebsiteDetailView(DetailView):
         # call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
         website = Website.objects.get(pk=self.kwargs['pk'])
-        django_documents = Document.objects.filter(website=website).order_by('id')
+        django_documents = Document.objects.filter(
+            website=website).order_by('id')
         sync = self.request.GET.get('sync', False)
         if sync:
             # query Solr for available documents and sync with Django
-            solr_documents = solr_search_website_sorted(core='documents', website=website.name.lower())
+            solr_documents = solr_search_website_sorted(
+                core='documents', website=website.name.lower())
             sync_documents(website, solr_documents, django_documents)
         # add to context to be used in template
         context['documents'] = django_documents
@@ -95,8 +81,10 @@ class DocumentDetailView(PermissionRequiredMixin, DetailView):
         solr_document = solr_search_id(core='documents', id=str(document.id))
         sync_documents(document.website, solr_document, [document])
         # query Solr for attachments
-        solr_files = solr_search_document_id_sorted(core='files', document_id=str(document.id))
-        django_attachments = Attachment.objects.filter(document=document).order_by('id')
+        solr_files = solr_search_document_id_sorted(
+            core='files', document_id=str(document.id))
+        django_attachments = Attachment.objects.filter(
+            document=document).order_by('id')
         sync_attachments(document, solr_files, django_attachments)
         context['attachments'] = django_attachments
         return context
@@ -177,14 +165,20 @@ class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
     logger = logging.getLogger(__name__)
 
     def get_object(self):
+        self.logger.info("In website detail view")
         queryset = self.get_queryset()
         website_qs = queryset.filter(pk=self.kwargs['pk'])
         website = website_qs[0]
-        django_documents = Document.objects.filter(website=website).order_by('id')
+        django_documents = Document.objects.filter(
+            website=website).order_by('id')
         sync = self.request.GET.get('sync', False)
         if sync:
-            solr_documents = solr_search_website_sorted(core='documents', website=website.name.lower())
+            solr_documents = solr_search_website_sorted(
+                core='documents', website=website.name.lower())
             sync_documents(website, solr_documents, django_documents)
+        else:
+            self.logger.info("Not syncing")
+
         return website
 
 
@@ -212,8 +206,10 @@ class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
             sync_documents(document.website, solr_document, [document])
         if with_attachments:
             # query Solr for attachments
-            solr_files = solr_search_document_id_sorted(core='files', document_id=str(document.id))
-            django_attachments = Attachment.objects.filter(document=document).order_by('id')
+            solr_files = solr_search_document_id_sorted(
+                core='files', document_id=str(document.id))
+            django_attachments = Attachment.objects.filter(
+                document=document).order_by('id')
             if sync:
                 sync_attachments(document, solr_files, django_attachments)
         return document
@@ -232,7 +228,8 @@ class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
         queryset = self.get_queryset()
         attachment_qs = queryset.filter(pk=self.kwargs['pk'])
         attachment = attachment_qs[0]
-        solr_attachment = solr_search_id(core='files', id=str(attachment.id))[0]
+        solr_attachment = solr_search_id(
+            core='files', id=str(attachment.id))[0]
         if not attachment.content:
             attachment.content = solr_attachment['content']
         return attachment

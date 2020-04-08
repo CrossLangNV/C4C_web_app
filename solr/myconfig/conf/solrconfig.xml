@@ -35,7 +35,7 @@
        that you fully re-index after changing this setting as it can
        affect both how text is indexed and queried.
   -->
-  <luceneMatchVersion>8.4.1</luceneMatchVersion>
+  <luceneMatchVersion>8.5.0</luceneMatchVersion>
 
   <!-- <lib/> directives can be used to instruct Solr to load any Jars
        identified and use them to resolve any "plugins" specified in
@@ -57,9 +57,6 @@
 
               <lib dir="./lib" />
     -->
-
-  <lib dir="${solr.install.dir:../../../..}/dist/" regex="solr-dataimporthandler-\d.*\.jar"/>
-  <lib dir="${solr.install.dir:../../../..}/contrib/dataimporthandler/lib" regex=".*\.jar"/>
 
   <!-- A 'dir' option by itself adds any files found in the directory
        to the classpath, this is useful for including all jars in a
@@ -84,6 +81,9 @@
   <!--
      <lib path="../a-jar-that-does-not-exist.jar" />
   -->
+
+  <lib dir="${solr.install.dir:../../..}/contrib/extraction/lib" regex=".*\.jar" />
+  <lib dir="${solr.install.dir:../../..}/dist/" regex="solr-cell-\d.*\.jar" />
 
   <!-- Data Directory
 
@@ -384,9 +384,12 @@
 
     <!-- Solr Internal Query Caches
 
-         There are two implementations of cache available for Solr,
-         LRUCache, based on a synchronized LinkedHashMap, and
-         FastLRUCache, based on a ConcurrentHashMap.
+         There are four implementations of cache available for Solr:
+         LRUCache, based on a synchronized LinkedHashMap, 
+         LFUCache and FastLRUCache, based on a ConcurrentHashMap, and CaffeineCache -
+         a modern and robust cache implementation. Note that in Solr 9.0
+         only CaffeineCache will be available, other implementations are now
+         deprecated.
 
          FastLRUCache has faster gets and slower puts in single
          threaded operation and thus is generally faster than LRUCache
@@ -777,6 +780,15 @@
     </lst>
   </initParams>
 
+  <requestHandler name="/update/extract"
+                startup="lazy"
+                class="solr.extraction.ExtractingRequestHandler" >
+    <lst name="defaults">
+      <str name="lowernames">true</str>
+      <str name="fmap.content">_text_</str>
+    </lst>
+  </requestHandler>
+
   <!-- Search Components
 
        Search components are registered to SolrCore and used by
@@ -925,12 +937,6 @@
     <arr name="components">
       <str>terms</str>
     </arr>
-  </requestHandler>
-
-  <requestHandler name="/dataimport" class="org.apache.solr.handler.dataimport.DataImportHandler">
-    <lst name="defaults">
-      <str name="config">data-config.xml</str>
-    </lst>
   </requestHandler>
 
   <!-- Highlighting Component

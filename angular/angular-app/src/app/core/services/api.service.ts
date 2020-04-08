@@ -10,11 +10,11 @@ import { Attachment, AttachmentAdapter } from '../../shared/models/attachment';
 import { of } from 'rxjs';
 import {
   AcceptanceState,
-  AcceptanceStateAdapter
+  AcceptanceStateAdapter,
 } from 'src/app/shared/models/acceptanceState';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
@@ -33,7 +33,9 @@ export class ApiService {
     return this.http
       .get(`${this.API_URL}/solrfiles`)
       .pipe(
-        map((data: any[]) => data.map(item => this.solrFileAdapter.adapt(item)))
+        map((data: any[]) =>
+          data.map((item) => this.solrFileAdapter.adapt(item))
+        )
       );
   }
 
@@ -41,7 +43,9 @@ export class ApiService {
     return this.http
       .get<SolrFile[]>(`${this.API_URL}/solrfiles/${term}`)
       .pipe(
-        map((data: any[]) => data.map(item => this.solrFileAdapter.adapt(item)))
+        map((data: any[]) =>
+          data.map((item) => this.solrFileAdapter.adapt(item))
+        )
       );
   }
 
@@ -53,7 +57,9 @@ export class ApiService {
     return this.http
       .get<Website[]>(`${this.API_URL}/website`)
       .pipe(
-        map((data: any[]) => data.map(item => this.websiteAdapter.adapt(item)))
+        map((data: any[]) =>
+          data.map((item) => this.websiteAdapter.adapt(item))
+        )
       );
   }
 
@@ -63,7 +69,7 @@ export class ApiService {
     // );
     return this.http
       .get<Website>(`${this.API_URL}/website/${id}`)
-      .pipe(map(item => this.websiteAdapter.adapt(item)));
+      .pipe(map((item) => this.websiteAdapter.adapt(item)));
   }
 
   public createWebsite(website: Website): Observable<any> {
@@ -85,7 +91,7 @@ export class ApiService {
 
   public updateWebsite(website: Website): Observable<Website> {
     return this.http.put<Website>(
-      `${this.API_URL}/website/${website.id}/`,
+      `${this.API_URL}/website/${website.id}`,
       this.websiteAdapter.encode(website)
     );
   }
@@ -96,13 +102,15 @@ export class ApiService {
     // );
     return this.http
       .get<Document>(`${this.API_URL}/document/${id}`)
-      .pipe(map(item => this.documentAdapter.adapt(item)));
+      .pipe(map((item) => this.documentAdapter.adapt(item)));
   }
 
   public getDocumentSyncWithAttachments(id: string): Observable<Document> {
     return this.http
-    .get<Document>(`${this.API_URL}/document/${id}?sync=true&with_attachments=true`)
-    .pipe(map(item => this.documentAdapter.adapt(item)));
+      .get<Document>(
+        `${this.API_URL}/document/${id}?sync=true&with_attachments=true`
+      )
+      .pipe(map((item) => this.documentAdapter.adapt(item)));
   }
 
   public createDocument(document: Document): Observable<Document> {
@@ -111,7 +119,7 @@ export class ApiService {
         `${this.API_URL}/document/`,
         this.documentAdapter.encode(document)
       )
-      .pipe(map(item => this.documentAdapter.adapt(item)));
+      .pipe(map((item) => this.documentAdapter.adapt(item)));
   }
 
   public deleteDocument(id: string): Observable<any> {
@@ -128,7 +136,7 @@ export class ApiService {
   public getAttachment(id: string): Observable<Attachment> {
     return this.http
       .get<Attachment>(`${this.API_URL}/attachment/${id}`)
-      .pipe(map(item => this.attachmentAdapter.adapt(item)));
+      .pipe(map((item) => this.attachmentAdapter.adapt(item)));
   }
 
   public addAttachment(formData: FormData): Observable<Attachment> {
@@ -146,12 +154,12 @@ export class ApiService {
   public getState(id: string): Observable<AcceptanceState> {
     return this.http
       .get<AcceptanceState>(`${this.API_URL}/state/${id}`)
-      .pipe(map(item => this.stateAdapter.adapt(item)));
+      .pipe(map((item) => this.stateAdapter.adapt(item)));
   }
 
   public updateState(state: AcceptanceState): Observable<AcceptanceState> {
     return this.http.put<AcceptanceState>(
-      `${this.API_URL}/state/${state.id}/`,
+      `${this.API_URL}/state/${state.id}`,
       this.stateAdapter.encode(state)
     );
   }

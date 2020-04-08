@@ -17,4 +17,3 @@ WORKDIR /scrapy
 # Install any needed packages specified in requirements.txt
 ADD ./requirements.txt .
 RUN pip install -r requirements.txt
-

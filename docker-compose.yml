@@ -17,6 +17,8 @@ services:
       - ./django:/django
     command: bash -c "python manage.py makemigrations &&
       python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    restart:
+      always
     depends_on:
       - postgres
       - solr
@@ -38,7 +40,8 @@ services:
       - "8983:8983"
     volumes:
       - solr:/var/solr
-    command: solr-precreate documents
+      - ./solr/myconfig:/opt/solr/server/solr/configsets/myconfig:ro
+    command: solr-precreate documents /opt/solr/server/solr/configsets/myconfig
 
   postgres:
     image: postgres:alpine

@@ -2,8 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    kompose.cmd: kompose-windows-amd64 -f docker-kompose.yml convert -c
-    kompose.version: 1.19.0 (f63a961c)
+    kompose.cmd: kompose convert -f docker-kompose.yml -c
+    kompose.version: 1.21.0 ()
     kompose.volume.size: 1Gi
   creationTimestamp: null
   labels:
@@ -19,21 +19,19 @@ spec:
   template:
     metadata:
       annotations:
-        kompose.cmd: kompose-windows-amd64 -f docker-kompose.yml convert -c
-        kompose.version: 1.19.0 (f63a961c)
+        kompose.cmd: kompose convert -f docker-kompose.yml -c
+        kompose.version: 1.21.0 ()
         kompose.volume.size: 1Gi
       creationTimestamp: null
       labels:
         io.kompose.service: solr
     spec:
-      securityContext:
-        fsGroup: 8983
       containers:
       - args:
-        - bash
-        - -c
-        - solr-precreate documents
+        - solr-precreate
+        - documents
         image: solr:8-slim
+        imagePullPolicy: ""
         name: solr
         ports:
         - containerPort: 8983
@@ -42,6 +40,7 @@ spec:
         - mountPath: /var/solr
           name: solr
       restartPolicy: Always
+      serviceAccountName: ""
       volumes:
       - name: solr
         persistentVolumeClaim:
