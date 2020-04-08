@@ -3,6 +3,8 @@
 pipeline {
     environment {
         VERSION = ''
+        HELM_USERNAME=crosslang
+        HELM_PASSWORD=isthebest
     }
 
     agent { label 'master' }
@@ -42,6 +44,16 @@ pipeline {
                         }
                     }
                 }
+            }
+        }
+        stage('Deploy Helm Chart') {
+            steps {
+                sh 'rm -R helm/fisma-ctlg-manager'
+                sh 'cd helm'
+                sh 'docker run -v $PWD:/src -v $PWD/../docker-kompose.yml:/src/docker-compose.yaml -v $PWD/../secrets/django-docker.env:/src/secrets/django-docker.env --rm -it femtopixel/kompose convert -o fisma-ctlg-manager -c'
+                sh 'cd fisma-ctlg-manager'
+                sh 'docker run -v $PWD:/fisma-ctlg-manager -v $PWD:/apps -it --rm alpine/helm:latest package /fisma-ctlg-manager --version $BUILD_ID'
+                sh 'curl -u $HELM_USERNAME:$HELM_PASSWORD https://nexus.crosslang.com/repository/helm-repo/ --upload-file fisma-ctlg-manager-$BUILD_ID.tgz -v'
             }
         }
     }
