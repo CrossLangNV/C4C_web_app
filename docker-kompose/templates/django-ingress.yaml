@@ -1,25 +1,21 @@
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  annotations:
-    kubernetes.io/tls-acme: "true"
-    cert-manager.io/cluster-issuer: letsencrypt-prod
   creationTimestamp: null
   labels:
     io.kompose.service: django
   name: django
 spec:
   rules:
-  - host: django.ctlg-manager.95.216.185.26.xip.io
+  - host: django.localhost
     http:
       paths:
-      - path: /
-        backend:
+      - backend:
           serviceName: django
           servicePort: 8000
   tls:
-    - hosts:
-      - django.ctlg-manager.95.216.185.26.xip.io
-      secretName: django-certificate
+  - hosts:
+    - django.localhost
+    secretName: django-certificate
 status:
   loadBalancer: {}

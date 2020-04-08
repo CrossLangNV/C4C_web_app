@@ -20,8 +20,10 @@ from django.urls import path
 from searchapp import views
 
 urlpatterns = [
-    path('', login_required(views.WebsiteListView.as_view(), login_url='searchapp:login'), name='websites'),
-    path('website/', login_required(views.WebsiteListView.as_view(), login_url='searchapp:login'), name='websites'),
+    path('', login_required(views.WebsiteListView.as_view(),
+                            login_url='searchapp:login'), name='websites'),
+    path('website/', login_required(views.WebsiteListView.as_view(),
+                                    login_url='searchapp:login'), name='websites'),
     path('website/create/', login_required(views.WebsiteCreateView.as_view(), login_url='searchapp:login'),
          name='create_website'),
     path('website/<int:pk>/update/', login_required(views.WebsiteUpdateView.as_view(), login_url='searchapp:login'),
@@ -45,23 +47,47 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='searchapp/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
-    path('films/', login_required(views.FilmSearchView.as_view(), login_url='searchapp:login'), name='films'),
-    path('api/films/', views.FilmList.as_view(), name='film-list'),
-    path('api/films/<search_term>/', views.Film.as_view(), name='film-search'),
 
-    path('api/website/', views.WebsiteListAPIView.as_view(), name='website_list_api'),
-    path('api/website/<int:pk>/', views.WebsiteDetailAPIView.as_view(), name='website_detail_api'),
-    path('api/document/', views.DocumentListAPIView.as_view(), name='document_list_api'),
-    path('api/document/<uuid:pk>/', views.DocumentDetailAPIView.as_view(), name='document_detail_api'),
-    path('api/attachment/', views.AttachmentListAPIView.as_view(), name='attachment_list_api'),
-    path('api/attachment/<uuid:pk>/', views.AttachmentDetailAPIView.as_view(), name='attachment_detail_api'),
-    path('api/state/', views.AcceptanceStateListAPIView.as_view(), name='state_list_api'),
-    path('api/state/<int:pk>/', views.AcceptanceStateDetailAPIView.as_view(), name='state_detail_api'),
-    path('api/state/value/', views.AcceptanceStateValueAPIView.as_view(), name='state_value_api'),
-    path('api/comment/', views.CommentListAPIView.as_view(), name='comment_list_api'),
-    path('api/comment/<int:pk>/', views.CommentDetailAPIView.as_view(), name='comment_detail_api'),
-    path('api/super/', views.IsSuperUserAPIView.as_view(), name='super_api'),
-    path('api/solrfiles/', views.SolrFileList.as_view(), name='solr_file_list_api'),
-    path('api/solrfiles/<search_term>', views.SolrFile.as_view(), name='solr_file_search_api'),
-    path('api/solrdocument/<id>', views.SolrDocument.as_view(), name='solr_document_api'),
+    # API
+    # Website
+    path('api/website', views.WebsiteListAPIView.as_view(),
+         name='website_list_api'),
+    path('api/website/<int:pk>', views.WebsiteDetailAPIView.as_view(),
+         name='website_detail_api'),
+
+    # Document
+    path('api/document', views.DocumentListAPIView.as_view(),
+         name='document_list_api'),
+    path('api/document/<uuid:pk>', views.DocumentDetailAPIView.as_view(),
+         name='document_detail_api'),
+
+    # Attachment
+    path('api/attachment', views.AttachmentListAPIView.as_view(),
+         name='attachment_list_api'),
+    path('api/attachment/<uuid:pk>',
+         views.AttachmentDetailAPIView.as_view(), name='attachment_detail_api'),
+
+    # State
+    path('api/state', views.AcceptanceStateListAPIView.as_view(),
+         name='state_list_api'),
+    path('api/state/<int:pk>',
+         views.AcceptanceStateDetailAPIView.as_view(), name='state_detail_api'),
+    path('api/state/value', views.AcceptanceStateValueAPIView.as_view(),
+         name='state_value_api'),
+
+    # Comment
+    path('api/comment', views.CommentListAPIView.as_view(),
+         name='comment_list_api'),
+    path('api/comment/<int:pk>', views.CommentDetailAPIView.as_view(),
+         name='comment_detail_api'),
+
+    # Super
+    path('api/super', views.IsSuperUserAPIView.as_view(), name='super_api'),
+
+    # Solrfiles
+    path('api/solrfiles', views.SolrFileList.as_view(), name='solr_file_list_api'),
+    path('api/solrfiles/<search_term>',
+         views.SolrFile.as_view(), name='solr_file_search_api'),
+    path('api/solrdocument/<id>', views.SolrDocument.as_view(),
+         name='solr_document_api'),
 ]

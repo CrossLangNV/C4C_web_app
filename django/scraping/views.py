@@ -24,7 +24,9 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
     def get(self, request):
         # render overview page
         scraped_tasks = ScrapingTask.objects.all()
-        return render(request, self.template_name, {'scraped_tasks': scraped_tasks, 'nav': 'scraping'})
+        # FIXME: get list from http://localhost:6800/listspiders.json?project=default ?
+        spiders = ["bis", "eiopa", "esma", "eurlex", "fsb", "quotes", "srb"]
+        return render(request, self.template_name, {'scraped_tasks': scraped_tasks, 'nav': 'scraping', 'spiders': spiders})
 
     # new scraping task
     def post(self, request, spider):
@@ -43,7 +45,12 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
         }
 
         # schedule scraping task
-        scrapyd_task_id = self.scrapyd.schedule(self.scrapyd_project, spider, settings=settings)
+        scrapyd_task_id = self.scrapyd.schedule(
+            self.scrapyd_project, spider, settings=settings)
+
+        # Store the scheduler_id
+        scraping_task.scheduler_id = scrapyd_task_id
+        scraping_task.save()
 
         return redirect('scraping:scraping')
 
@@ -60,7 +67,8 @@ class ScrapingTaskListView(ListCreateAPIView):
         serializer_read = ScrapingTaskSerializer(queryset, many=True)
         for task_data in serializer_read.data:
             if task_data['scheduler_id']:
-                status = self.scrapyd.job_status(self.scrapyd_project, task_data['scheduler_id'])
+                status = self.scrapyd.job_status(
+                    self.scrapyd_project, task_data['scheduler_id'])
                 task = ScrapingTask.objects.get(pk=task_data['id'])
                 task.status = status
                 task.save()
@@ -95,7 +103,8 @@ class ScrapingTaskView(RetrieveDestroyAPIView):
         task_qs = queryset.filter(pk=self.kwargs['pk'])
         task = task_qs[0]
         if task.scheduler_id:
-            status = self.scrapyd.job_status(self.scrapyd_project, task.scheduler_id)
+            status = self.scrapyd.job_status(
+                self.scrapyd_project, task.scheduler_id)
             task.status = status
             task.save()
         return task

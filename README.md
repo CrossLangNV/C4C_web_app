@@ -23,16 +23,12 @@ The angular app required an applicaiton (uses django-oath-toolkit):
 
 ### Solr data
 
-The Solr service is started by docker-compose and will create a core named `films` if it doesn't exist yet.
+The Solr service is started by docker-compose and will create a core named `documents` if it doesn't exist yet.
 
-Load the example films data (following https://lucene.apache.org/solr/guide/8_4/solr-tutorial.html):
+An additional core should be created
 
-1. Create the "name" field
-2. Create the "catchall" copy field
-3. Index sample film data
-```
-bin/post -c films example/films/films.json
-```
+`docker exec ctlg-manager_solr_1 solr create -c files -d /opt/solr/server/solr/configsets/myconfig -n myconfig`
+
 
 ### Django app
 
