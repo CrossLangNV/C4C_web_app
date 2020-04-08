@@ -3,8 +3,8 @@
 pipeline {
     environment {
         VERSION = ''
-        HELM_USERNAME=crosslang
-        HELM_PASSWORD=isthebest
+        HELM_USERNAME='crosslang'
+        HELM_PASSWORD='isthebest'
     }
 
     agent { label 'master' }
