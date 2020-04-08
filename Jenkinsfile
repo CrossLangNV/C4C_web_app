@@ -48,7 +48,7 @@ pipeline {
         }
         stage('Deploy Helm Chart') {
             steps {
-                sh 'rm -R helm/fisma-ctlg-manager'
+                //sh 'rm -R helm/fisma-ctlg-manager'
                 sh 'cd helm'
                 sh 'docker run -v $PWD:/src -v $PWD/../docker-kompose.yml:/src/docker-compose.yaml -v $PWD/../secrets/django-docker.env:/src/secrets/django-docker.env --rm -it femtopixel/kompose convert -o fisma-ctlg-manager -c'
                 sh 'cd fisma-ctlg-manager'
@@ -60,10 +60,10 @@ pipeline {
 
     post {
         success {
-            slackSend (color: '#36A64F', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+            //slackSend (color: '#36A64F', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
         }
         failure {
-            slackSend (color: '#FF0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
+            //slackSend (color: '#FF0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
         }
     }
 }
