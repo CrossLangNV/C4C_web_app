@@ -1,3 +1,6 @@
+#!/bin/bash
+set +x # show commands
+set -e # fail on first error
 VERSION=1.0.0
 HELM_USERNAME=crosslang
 HELM_PASSWORD=***REMOVED***
