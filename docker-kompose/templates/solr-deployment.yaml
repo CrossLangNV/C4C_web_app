@@ -30,7 +30,8 @@ spec:
       - args:
         - solr-precreate
         - documents
-        image: solr:8-slim
+        - /opt/solr/server/solr/configsets/myconfig
+        image: docker.crosslang.com/ctlg-manager/solr
         imagePullPolicy: ""
         name: solr
         ports:

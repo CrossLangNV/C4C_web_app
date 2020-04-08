@@ -30,12 +30,12 @@ services:
     command: scrapyd
 
   solr:
-    image: solr:8-slim
+    image: docker.crosslang.com/ctlg-manager/solr
     ports:
       - "8983:8983"
     volumes:
       - solr:/var/solr
-    command: solr-precreate documents
+    command: solr-precreate documents /opt/solr/server/solr/configsets/myconfig
     labels:
       kompose.volume.size: 1Gi
 
