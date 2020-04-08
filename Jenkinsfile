@@ -26,7 +26,7 @@ pipeline {
                         }
                     }
                 }
-                dir('scrapyd'){
+                dir('scrapy'){
                     script {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
                             def customImage = docker.build("ctlg-manager/scrapyd:${env.BUILD_ID}", "-f Dockerfile .")
