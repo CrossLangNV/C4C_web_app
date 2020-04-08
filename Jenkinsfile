@@ -9,12 +9,17 @@ pipeline {
 
     stages {
         stage('Build Docker images') {
-            steps {
-                dir('django'){
-                    script {
-                        docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
-
+            docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
+                steps {
+                    dir('django'){
+                        script {
                             def customImage = docker.build("ctlg-manager/django:${env.BUILD_ID}", "-f Dockerfile.prod .")
+                            customImage.push()
+                        }
+                    }
+                    dir('angular'){
+                        script {
+                            def customImage = docker.build("ctlg-manager/angular:${env.BUILD_ID}", "-f Dockerfile .")
                             customImage.push()
                         }
                     }
