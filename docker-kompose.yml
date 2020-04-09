@@ -11,6 +11,8 @@ services:
       - "8000:8000"
     command: bash -c "python manage.py makemigrations &&
       python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    env_file:
+      - ./secrets/django-docker.env.sample
     labels:
       kompose.service.expose: "django.localhost"
       kompose.image-pull-secret: "crosslang"
@@ -22,6 +24,8 @@ services:
     ports:
       - "6800:6800"
     command: scrapyd
+    env_file:
+      - secrets/django-docker.env.sample
 
   solr:
     image: docker.crosslang.com/ctlg-manager/solr
@@ -39,6 +43,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres:/var/lib/postgresql/data
+    env_file:
+      - secrets/django-docker.env.sample
     labels:
       kompose.volume.size: 1Gi
 
