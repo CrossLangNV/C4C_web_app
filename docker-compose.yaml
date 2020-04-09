@@ -4,6 +4,8 @@ services:
     build: ./angular
     ports: 
       - "8080:80"
+    env_file:
+      - ./secrets/django-docker.env
     depends_on: 
       - django
 

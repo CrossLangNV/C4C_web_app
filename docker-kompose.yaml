@@ -4,6 +4,8 @@ services:
     image: docker.crosslang.com/ctlg-manager/angular:latest
     ports:
      - "8080:80"
+    env_file:
+      - ./secrets/django-docker.env.sample
     labels:
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
