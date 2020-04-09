@@ -17,7 +17,7 @@ You can create a admin user with these commands:
 
 `python manage.py createsuperuser --username $DJANGO_ADMIN_USERNAME --email $DJANGO_ADMIN_EMAIL`
 
-The angular app required an applicaiton (uses django-oath-toolkit):
+The angular app requires an application (uses django-oath-toolkit):
 
 `python manage.py createapplication --client-id $ANGULAR_DJANGO_CLIENT_ID --client-secret $ANGULAR_DJANGO_CLIENT_SECRET --name searchapp confidential password`
 

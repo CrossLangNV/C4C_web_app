@@ -73,7 +73,6 @@ class RestFulAdminSite:
     def __init__(self):
         self._registry = {}
         self._url_patterns = []
-        logger.error('Init!')
 
     def register(self, model_or_iterable, view_class=None, **options):
         if not view_class:
@@ -155,8 +154,6 @@ class RestFulAdminSite:
                 view_set.serializer_class = serializer_class
 
             view_sets.append(view_set)
-            logger.info("Adding url: %s ",
-                        (model._meta.app_label, model._meta.model_name))
             router.register('%s/%s' % (model._meta.app_label,
                                        model._meta.model_name), view_set)
 
@@ -165,7 +162,6 @@ class RestFulAdminSite:
     @property
     def urls(self):
         urls = self.get_urls(), 'django_restful_admin', 'django_restful_admin'
-        logger.info("Adding url: %s ", urls)
         return urls
 
 
