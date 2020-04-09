@@ -26,6 +26,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = [h for h in os.environ.get(
     'DJANGO_ALLOWED_HOSTS', "localhost django").split(" ")]
+CORS_ORIGIN_WHITELIST = [h for h in os.environ.get(
+    'DJANGO_CORS_ORIGIN_WHITELIST', "http://localhost:4200 http://localhost:8080").split(" ")]
 
 # Application definition
 
@@ -59,10 +61,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ORIGIN_WHITELIST = (
-    'http://localhost:4200',
-    'http://localhost:8080',
-)
 
 ROOT_URLCONF = 'project.urls'
 

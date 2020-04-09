@@ -1,7 +1,7 @@
 #!/bin/bash
 set +x # show commands
 set -e # fail on first error
-VERSION=1.0.0
+VERSION=1
 HELM_USERNAME=crosslang
 HELM_PASSWORD=isthebest
 if [ ! -z "$BUILD_ID" ]; then
