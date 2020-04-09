@@ -22,6 +22,6 @@ cd fisma-ctlg-manager
 # work around: https://github.com/kubernetes/kompose/issues/1096
 patch -p0 templates/postgres-deployment.yaml ../../postgres-deployment.yaml.patch
 # work around: Cannot write to /var/solr as 8983:8983
-patch -p0 templates/solr-persistentvolumeclaim.yaml ../../solr-persistentvolumeclaim.yaml.patch
+patch -p0 templates/solr-deployment.yaml ../../solr-deployment.yaml.patch
 docker run --user $(id -u):$(id -g) -v $PWD:/fisma-ctlg-manager -v $PWD:/apps --rm alpine/helm:latest package /fisma-ctlg-manager --version $VERSION
-curl -u $HELM_USERNAME:$HELM_PASSWORD https://nexus.crosslang.com/repository/helm-repo/ --upload-file fisma-ctlg-manager-$VERSION.tgz -v
+curl -u $HELM_USERNAME:$HELM_PASSWORD https://nexus.crosslang.com/repository/helm-repo/ --upload-file fisma-ctlg-manager-$VERSION.tgz
