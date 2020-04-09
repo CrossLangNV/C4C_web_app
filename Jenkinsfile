@@ -17,6 +17,7 @@ pipeline {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
                             def customImage = docker.build("ctlg-manager/django:${env.BUILD_ID}", "-f Dockerfile.prod .")
                             customImage.push()
+                            customImage.push("latest")
                         }
                     }
                 }
@@ -25,6 +26,7 @@ pipeline {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
                             def customImage = docker.build("ctlg-manager/angular:${env.BUILD_ID}", "-f Dockerfile .")
                             customImage.push()
+                            customImage.push("latest")
                         }
                     }
                 }
@@ -33,6 +35,7 @@ pipeline {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
                             def customImage = docker.build("ctlg-manager/scrapyd:${env.BUILD_ID}", "-f Dockerfile .")
                             customImage.push()
+                            customImage.push("latest")
                         }
                     }
                 }
@@ -41,6 +44,7 @@ pipeline {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
                             def customImage = docker.build("ctlg-manager/solr:${env.BUILD_ID}", "-f Dockerfile .")
                             customImage.push()
+                            customImage.push("latest")
                         }
                     }
                 }
