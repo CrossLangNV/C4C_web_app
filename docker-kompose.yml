@@ -4,7 +4,7 @@ services:
     image: docker.crosslang.com/ctlg-manager/angular
     ports:
      - "8080:80"
-    label:
+    labels:
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
 
@@ -29,7 +29,7 @@ services:
     command: scrapyd
     env_file:
       - secrets/django-docker.env.sample
-    label:
+    labels:
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
 
