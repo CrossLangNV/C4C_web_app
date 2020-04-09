@@ -1,0 +1,12 @@
+--- solr-deployment.yaml.org	2020-04-09 11:50:44.000000000 +0200
++++ solr-deployment.yaml	2020-04-09 11:51:33.000000000 +0200
+@@ -30,6 +30,8 @@
+       labels:
+         io.kompose.service: solr
+     spec:
++      securityContext:
++        fsGroup: 8983
+       containers:
+       - args:
+         - solr-precreate
+
