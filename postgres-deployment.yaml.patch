@@ -1,0 +1,11 @@
+--- postgres-deployment.org.yaml	2020-04-09 10:42:09.000000000 +0200
++++ postgres-deployment.yaml	2020-04-09 10:45:51.000000000 +0200
+@@ -137,6 +137,7 @@
+         volumeMounts:
+         - mountPath: /var/lib/postgresql/data
+           name: postgres
++          subPath: data
+       restartPolicy: Always
+       serviceAccountName: ""
+       volumes:
+
