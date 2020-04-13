@@ -9,22 +9,28 @@ const routes: Routes = [
   {
     path: 'browse',
     loadChildren: () =>
-      import('./browse/browse.module').then(m => m.BrowseModule),
-    canActivate: [AuthGuard]
+      import('./browse/browse.module').then((m) => m.BrowseModule),
+    canActivate: [AuthGuard],
   },
   {
     path: 'search',
     component: SolrFileListComponent,
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
   },
   {
     path: 'dashboard',
     loadChildren: () =>
-      import('./dashboard/dashboard.module').then(m => m.DashboardModule),
-    canActivate: [AuthGuard]
+      import('./dashboard/dashboard.module').then((m) => m.DashboardModule),
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'validator',
+    loadChildren: () =>
+      import('./validator/validator.module').then((m) => m.ValidatorModule),
+    canActivate: [AuthGuard],
   },
   // otherwise redirect to home
-  { path: '**', redirectTo: '' }
+  { path: '**', redirectTo: 'browse' },
 ];
 
 export const AppRoutingModule = RouterModule.forRoot(routes);

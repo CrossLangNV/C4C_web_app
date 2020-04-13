@@ -28,8 +28,26 @@ The Solr service is started by docker-compose and will create a core named `docu
 An additional core should be created
 
 `docker exec ctlg-manager_solr_1 solr create -c files -d /opt/solr/server/solr/configsets/myconfig -n myconfig`
+`rancher kubectl exec solr-df687b79b-hrnmj  --namespace=fisma-ctlg-manager -- solr create -c files -d /opt/solr/server/solr/configsets/myconfig -n myconfig`
 
 
 ### Django app
 
 Open browser at `http://localhost:8000`
+
+
+### Rancher
+
+Some helpfull commands
+
+Look up pod name:
+
+`rancher kubectl get pods --namespace=fisma-ctlg-manager`
+
+Open postgresql shell:
+
+`rancher kubectl exec -it postgres-5b5bbf9f65-5c8mv --namespace=fisma-ctlg-manager -- psql --username django`
+
+Backup:
+
+rancher kubectl exec -it postgres-5b5bbf9f65-5c8mv --namespace=fisma-ctlg-manager -- pg_dumpall -c -U django > dump_`date +%d-%m-%Y"_"%H_%M_%S`.sql

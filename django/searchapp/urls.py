@@ -50,25 +50,25 @@ urlpatterns = [
 
     # API
     # Website
-    path('api/website', views.WebsiteListAPIView.as_view(),
+    path('api/websites', views.WebsiteListAPIView.as_view(),
          name='website_list_api'),
     path('api/website/<int:pk>', views.WebsiteDetailAPIView.as_view(),
          name='website_detail_api'),
 
     # Document
-    path('api/document', views.DocumentListAPIView.as_view(),
+    path('api/documents', views.DocumentListAPIView.as_view(),
          name='document_list_api'),
     path('api/document/<uuid:pk>', views.DocumentDetailAPIView.as_view(),
          name='document_detail_api'),
 
     # Attachment
-    path('api/attachment', views.AttachmentListAPIView.as_view(),
+    path('api/attachments', views.AttachmentListAPIView.as_view(),
          name='attachment_list_api'),
     path('api/attachment/<uuid:pk>',
          views.AttachmentDetailAPIView.as_view(), name='attachment_detail_api'),
 
     # State
-    path('api/state', views.AcceptanceStateListAPIView.as_view(),
+    path('api/states', views.AcceptanceStateListAPIView.as_view(),
          name='state_list_api'),
     path('api/state/<int:pk>',
          views.AcceptanceStateDetailAPIView.as_view(), name='state_detail_api'),
@@ -76,7 +76,7 @@ urlpatterns = [
          name='state_value_api'),
 
     # Comment
-    path('api/comment', views.CommentListAPIView.as_view(),
+    path('api/comments', views.CommentListAPIView.as_view(),
          name='comment_list_api'),
     path('api/comment/<int:pk>', views.CommentDetailAPIView.as_view(),
          name='comment_detail_api'),

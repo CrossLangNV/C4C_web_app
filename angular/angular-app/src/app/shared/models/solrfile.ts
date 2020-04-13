@@ -18,15 +18,15 @@ export class SolrFile {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SolrFileAdapter implements Adapter<SolrFile> {
   adapt(item: any): SolrFile {
     return new SolrFile(
       item.id,
-      item.attr_document_id[0],
-      item.attr_url[0],
-      new Date(item.attr_date[0]),
+      item.document_id,
+      item.url,
+      new Date(item.date),
       item.language,
       item.doc_type,
       item.content
@@ -40,7 +40,7 @@ export class SolrFileAdapter implements Adapter<SolrFile> {
       attr_date: solrFile.date,
       language: solrFile.language,
       doc_type: solrFile.docType,
-      content: solrFile.content
+      content: solrFile.content,
     };
   }
 }

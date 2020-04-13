@@ -31,7 +31,8 @@ class Document(models.Model):
     url = models.URLField(unique=True)
     eli = models.URLField(default="", blank=True)
 
-    website = models.ForeignKey('Website', related_name='documents', on_delete=models.CASCADE)
+    website = models.ForeignKey(
+        'Website', related_name='documents', on_delete=models.CASCADE)
 
     summary = models.TextField(default="", blank=True)
     content = models.TextField(default="", blank=True)
@@ -70,7 +71,8 @@ class AcceptanceState(models.Model):
     value = models.CharField(max_length=20,
                              choices=AcceptanceStateValue.choices,
                              default=AcceptanceStateValue.UNVALIDATED)
-    document = models.ForeignKey('Document', related_name='acceptance_states', on_delete=models.CASCADE)
+    document = models.ForeignKey(
+        'Document', related_name='acceptance_states', on_delete=models.CASCADE)
     user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
 
 
@@ -78,7 +80,8 @@ class Attachment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     file = models.FileField()
     url = models.URLField(unique=True)
-    document = models.ForeignKey('Document', related_name='attachments', on_delete=models.CASCADE)
+    document = models.ForeignKey(
+        'Document', related_name='attachments', on_delete=models.CASCADE)
     content = models.TextField(default="")
     pull = models.BooleanField(default=False, editable=False)
 
@@ -88,7 +91,8 @@ class Attachment(models.Model):
     def save(self, *args, **kwargs):
         # add and index data to Solr when it wasn't pulled from Solr first
         if not self.pull and self.file.name:
-            solr_add_file('files', self.file, self.id, self.url, str(self.document.id))
+            solr_add_file('files', self.file, self.id,
+                          self.url, str(self.document.id))
 
         super().save(*args, **kwargs)
 
@@ -97,7 +101,9 @@ class Attachment(models.Model):
         solr_delete(core='files', id=str(self.id))
         super().delete(*args, **kwargs)
 
+
 class Comment(models.Model):
     value = models.TextField()
-    document = models.ForeignKey('Document', related_name='comments', on_delete=models.CASCADE)
+    document = models.ForeignKey(
+        'Document', related_name='comments', on_delete=models.CASCADE)
     user = models.ForeignKey('auth.User', on_delete=models.CASCADE)

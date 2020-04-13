@@ -1,4 +1,3 @@
-
 <!-- nav -->
 <nav class="navbar navbar-expand navbar-dark bg-dark" *ngIf="currentDjangoUser">
   <div class="navbar-nav mr-auto">
@@ -7,8 +6,9 @@
   <div class="navbar-nav">
     <a class="nav-item nav-link" routerLink="browse">Browse</a>
     <a class="nav-item nav-link" routerLink="search">Search</a>
+    <a class="nav-item nav-link" routerLink="validator">Validator</a>
     <a class="nav-item nav-link" routerLink="dashboard">Dashboard</a>
-    <a class="nav-item nav-link">{{currentDjangoUser.username}}</a>
+    <a class="nav-item nav-link">{{ currentDjangoUser.username }}</a>
     <a class="nav-item nav-link" (click)="logout()">Logout</a>
   </div>
 </nav>
@@ -26,6 +26,8 @@
     <div class="row">
       <router-outlet></router-outlet>
     </div>
-
+    <div class="row">
+      <router-outlet name="secondary"></router-outlet>
+    </div>
   </div>
 </div>
