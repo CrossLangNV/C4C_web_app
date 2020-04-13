@@ -1,0 +1,26 @@
+<div *ngIf="document$ | async as document; else elseBlock">
+  <h4>{{ document.title }}</h4>
+
+  <p class="small font-italic">{{ document.date }}</p>
+  <div>
+    <p><b>Acceptance state:</b></p>
+    <p-selectButton
+      styleClass="mb-4"
+      [options]="stateValues"
+      [(ngModel)]="document.acceptanceStateValue"
+      (onChange)="onStateChange($event)"
+    >
+    </p-selectButton>
+  </div>
+  <div>
+    <p>
+      <a href="{{ document.url }}">{{ document.url }}</a>
+    </p>
+  </div>
+  <div>
+    <p class="text-justify">{{ document.summary }}</p>
+  </div>
+  <ng-template #elseBlock>
+    <p>Select a document above.</p>
+  </ng-template>
+</div>

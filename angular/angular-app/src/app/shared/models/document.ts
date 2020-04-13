@@ -1,6 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Adapter } from './adapter';
 
+export interface DocumentResults {
+  count: number;
+  next: string;
+  previous: string;
+  results: Document[];
+}
 export class Document {
   constructor(
     public id: string,
@@ -9,6 +15,7 @@ export class Document {
     public type: string,
     public date: Date,
     public acceptanceState: string,
+    public acceptanceStateValue: string,
     public url: string,
     public website: string,
     public summary: string,
@@ -19,7 +26,7 @@ export class Document {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DocumentAdapter implements Adapter<Document> {
   adapt(item: any): Document {
@@ -30,6 +37,7 @@ export class DocumentAdapter implements Adapter<Document> {
       item.type,
       new Date(item.date),
       item.acceptance_state,
+      item.acceptance_state_value,
       item.url,
       item.website,
       item.summary,
@@ -47,12 +55,13 @@ export class DocumentAdapter implements Adapter<Document> {
       type: document.type,
       date: stringDate,
       acceptance_state: document.acceptanceState,
+      acceptance_state_value: document.acceptanceStateValue,
       url: document.url,
       website: document.website,
       summary: document.summary,
       content: document.content,
       attachments: document.attachmentIds,
-      pull: document.pull
+      pull: document.pull,
     };
   }
 }

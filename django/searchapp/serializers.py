@@ -3,6 +3,10 @@ from rest_framework import serializers
 
 from searchapp.models import Attachment, Document, Website, AcceptanceState, Comment
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class WebsiteSerializer(serializers.ModelSerializer):
     documents = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
@@ -13,9 +17,11 @@ class WebsiteSerializer(serializers.ModelSerializer):
 
 
 class DocumentSerializer(serializers.ModelSerializer):
-    website = serializers.PrimaryKeyRelatedField(queryset=Website.objects.all())
+    website = serializers.PrimaryKeyRelatedField(
+        queryset=Website.objects.all())
     attachments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     acceptance_state = serializers.SerializerMethodField()
+    acceptance_state_value = serializers.SerializerMethodField()
 
     def get_acceptance_state(self, document):
         user = self.context['request'].user
@@ -32,13 +38,19 @@ class DocumentSerializer(serializers.ModelSerializer):
             state_id = new_unvalidated_state.id
         return state_id
 
+    def get_acceptance_state_value(self, document):
+        user = self.context['request'].user
+        qs = AcceptanceState.objects.filter(document=document, user=user)
+        return qs.values_list('value', flat=True)[0]
+
     class Meta:
         model = Document
         fields = '__all__'
 
 
 class AcceptanceStateSerializer(serializers.ModelSerializer):
-    document = serializers.PrimaryKeyRelatedField(queryset=Document.objects.all())
+    document = serializers.PrimaryKeyRelatedField(
+        queryset=Document.objects.all())
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:
@@ -47,7 +59,8 @@ class AcceptanceStateSerializer(serializers.ModelSerializer):
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
-    document = serializers.PrimaryKeyRelatedField(queryset=Document.objects.all())
+    document = serializers.PrimaryKeyRelatedField(
+        queryset=Document.objects.all())
 
     class Meta:
         model = Attachment
@@ -55,7 +68,8 @@ class AttachmentSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    document = serializers.PrimaryKeyRelatedField(queryset=Document.objects.all())
+    document = serializers.PrimaryKeyRelatedField(
+        queryset=Document.objects.all())
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:

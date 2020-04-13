@@ -17,6 +17,8 @@ from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerial
     CommentSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
 
+from rest_framework.pagination import PageNumberPagination
+
 
 class DocumentSearchView(TemplateView):
     template_name = "searchapp/document_search.html"
@@ -28,7 +30,6 @@ class DocumentSearchView(TemplateView):
             self.search_term = request.GET['term']
 
         self.results = solr_search(core="documents", term=self.search_term)
-        print(self.results)
         context = {'results': self.results, 'count': len(self.results), 'search_term': self.search_term,
                    'nav': 'documents'}
         return render(request, self.template_name, context)
@@ -182,8 +183,27 @@ class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
         return website
 
 
+class LargeResultsSetPagination(PageNumberPagination):
+    page_size = 1000
+    page_size_query_param = 'page_size'
+    max_page_size = 10000
+
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 100
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
+
+class SmallResultsSetPagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
+
 class DocumentListAPIView(ListCreateAPIView):
     serializer_class = DocumentSerializer
+    pagination_class = SmallResultsSetPagination
 
     def get_queryset(self):
         queryset = Document.objects.all()
@@ -230,7 +250,7 @@ class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
         attachment = attachment_qs[0]
         solr_attachment = solr_search_id(
             core='files', id=str(attachment.id))[0]
-        if not attachment.content:
+        if not attachment.content and "content" in solr_attachment:
             attachment.content = solr_attachment['content']
         return attachment
 
@@ -320,29 +340,3 @@ class SolrDocument(APIView):
     def get(self, request, id, format=None):
         solr_document = solr_search_id(core='documents', id=id)
         return Response(solr_document)
-
-
-class FilmList(APIView):
-    """
-    View all films.
-    """
-
-    def get(self, request, format=None):
-        """
-        Return a list of all films.
-        """
-        films = solr_search(core="films", term="*")
-        return Response(films)
-
-
-class Film(APIView):
-    """
-    Search for a film.
-    """
-
-    def get(self, request, search_term, format=None):
-        """
-        Return a list of found films.
-        """
-        films = solr_search(core="films", term=search_term)
-        return Response(films)

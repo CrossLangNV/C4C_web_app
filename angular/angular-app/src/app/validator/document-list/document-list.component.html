@@ -1,0 +1,68 @@
+<h3>Documents</h3>
+
+<div class="form-group">
+  <label for="content">Search for:</label>
+  <input
+    id="content"
+    type="text"
+    name="content"
+    class="form-control"
+    [(ngModel)]="searchTerm"
+    (ngModelChange)="onSearch($event)"
+  />
+  <label [ngPlural]="collectionSize">
+    <ng-template ngPluralCase="=0"> </ng-template>
+    <ng-template ngPluralCase="=1">
+      {{ collectionSize }} matching file found
+    </ng-template>
+    <ng-template ngPluralCase="other">
+      Total: {{ collectionSize }} Auto-validated:
+      {{ autoValidatedSize }} Auto-rejected: {{ autoRejectedSize }}
+    </ng-template>
+  </label>
+</div>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col" sortable="document" (sort)="onSort($event)">Title</th>
+      <th scope="col" sortable="tags" (sort)="onSort($event)">Tags</th>
+      <th scope="col" sortable="users" (sort)="onSort($event)">Users</th>
+      <th scope="col" sortable="confidence" (sort)="onSort($event)">
+        Confidence
+      </th>
+      <th scope="col" sortable="autoclassify" (sort)="onSort($event)">
+        Auto-classify
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let document of documents$ | async">
+      <td>
+        <a
+          [routerLink]="[{ outlets: { secondary: ['document', document.id] } }]"
+          >{{ document.title }}</a
+        >
+      </td>
+      <td [innerHTML]="document.title"></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="d-flex justify-content-between p-2">
+  <ngb-pagination
+    [collectionSize]="collectionSize"
+    [(page)]="page"
+    [pageSize]="pageSize"
+    [maxSize]="10"
+    [ellipses]="true"
+  >
+  </ngb-pagination>
+
+  <select class="custom-select" style="width: auto;" [(ngModel)]="pageSize">
+    <option [ngValue]="5">5 items per page</option>
+    <option [ngValue]="10">10 items per page</option>
+    <option [ngValue]="50">50 items per page</option>
+    <option [ngValue]="100">100 items per page</option>
+  </select>
+</div>
