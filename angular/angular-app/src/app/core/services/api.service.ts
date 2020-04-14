@@ -106,9 +106,10 @@ export class ApiService {
     page: number,
     searchTerm: string
   ): Observable<DocumentResults> {
-    var pageQuery = '?';
-    pageQuery = page ? pageQuery + 'page=' + page + '&' : '';
-    pageQuery = searchTerm ? pageQuery + 'keyword=' + searchTerm + '&' : '';
+    var pageQuery = page ? '?page=' + page : '';
+    if (searchTerm) {
+      pageQuery = '?keyword=' + searchTerm;
+    }
     return this.http.get<DocumentResults>(
       `${this.API_URL}/documents${pageQuery}`
     );
