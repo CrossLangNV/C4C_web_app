@@ -45,7 +45,7 @@ services:
       - "8983:8983"
     volumes:
       - solr:/var/solr
-    command: solr-precreate documents /opt/solr/server/solr/configsets/myconfig
+    command: solr-precreate documents /opt/solr/server/solr/configsets/documents
     labels:
       kompose.volume.size: 1Gi
       kompose.image-pull-secret: "crosslang"
