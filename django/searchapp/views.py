@@ -206,8 +206,11 @@ class DocumentListAPIView(ListCreateAPIView):
     pagination_class = SmallResultsSetPagination
 
     def get_queryset(self):
-        queryset = Document.objects.all()
-        return queryset
+        q = Document.objects.all()
+        keyword = self.request.GET.get('keyword', "")
+        if keyword:
+            q = q.filter(title__icontains=keyword)
+        return q
 
 
 class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):

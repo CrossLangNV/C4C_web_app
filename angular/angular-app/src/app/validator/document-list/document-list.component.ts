@@ -1,9 +1,9 @@
 import { Observable } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { switchMap, distinctUntilChanged, debounceTime } from 'rxjs/operators';
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute, ParamMap } from '@angular/router';
 import { ApiService } from 'src/app/core/services/api.service';
-import { Document } from 'src/app/shared/models/document';
+import { Document, DocumentResults } from 'src/app/shared/models/document';
 import { Subject } from 'rxjs';
 
 @Component({
@@ -12,14 +12,17 @@ import { Subject } from 'rxjs';
   styleUrls: ['./document-list.component.css'],
 })
 export class DocumentListComponent implements OnInit {
-  documents$: Observable<Document[]>;
+  documents$: Document[];
+  documentsResults$: Observable<DocumentResults>;
   selectedId: number;
-  pageId: number;
-  collectionSize: number;
-  autoValidatedSize: number;
-  autoRejectedSize: number;
+  page = 2;
+  pageSize = 5;
+  collectionSize = 0;
+  autoValidatedSize = 0;
+  autoRejectedSize = 0;
+  filterType: string;
+  keyword: string;
 
-  searchTerm = '';
   searchTermChanged: Subject<string> = new Subject<string>();
 
   constructor(
@@ -29,16 +32,43 @@ export class DocumentListComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.collectionSize = 9348; // FIXME read from results
-    this.autoRejectedSize = 1043;
-    this.autoValidatedSize = this.collectionSize - this.autoRejectedSize;
-    this.documents$ = this.route.paramMap.pipe(
-      switchMap((params) => {
-        // (+) before `params.get()` turns the string into a number
-        this.selectedId = +params.get('id');
-        this.pageId = +params.get('pageId');
-        return this.service.getDocuments(5);
-      })
-    );
+    this.service
+      .getDocumentResults(this.page, this.keyword)
+      .subscribe((result) => {
+        this.documents$ = result.results;
+        this.collectionSize = result.count;
+        this.autoRejectedSize = 0;
+        this.autoValidatedSize = 0;
+      });
+    this.searchTermChanged
+      .pipe(debounceTime(600), distinctUntilChanged())
+      .subscribe((model) => {
+        this.keyword = model;
+        this.service
+          .getDocumentResults(this.page, this.keyword)
+          .subscribe((result) => {
+            this.documents$ = result.results;
+            this.collectionSize = result.count;
+            this.autoRejectedSize = 0;
+            this.autoValidatedSize = 0;
+          });
+      });
+  }
+
+  onSearch(keyword: string) {
+    console.log('TERM:' + keyword);
+    this.searchTermChanged.next(keyword);
+  }
+
+  loadPage(pg: number) {
+    console.log('PAGE:' + this.page);
+    this.service
+      .getDocumentResults(this.page, this.keyword)
+      .subscribe((result) => {
+        this.documents$ = result.results;
+        this.collectionSize = result.count;
+        this.autoRejectedSize = 0;
+        this.autoValidatedSize = 0;
+      });
   }
 }
