@@ -1,6 +1,15 @@
---- postgres-deployment.org.yaml	2020-04-09 10:42:09.000000000 +0200
-+++ postgres-deployment.yaml	2020-04-09 10:45:51.000000000 +0200
-@@ -137,6 +137,7 @@
+--- postgres-deployment.yaml.orig	2020-04-14 09:26:22.000000000 +0200
++++ postgres-deployment.yaml	2020-04-14 09:27:25.000000000 +0200
+@@ -15,7 +15,7 @@
+     matchLabels:
+       io.kompose.service: postgres
+   strategy:
+-    type: Recreate
++    type: RollingUpdate
+   template:
+     metadata:
+       annotations:
+@@ -147,6 +147,7 @@
          volumeMounts:
          - mountPath: /var/lib/postgresql/data
            name: postgres
