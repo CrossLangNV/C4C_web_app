@@ -47,6 +47,7 @@ export class DocumentValidateComponent implements OnInit {
     this.document$.subscribe((document) => {
       this.newComment.documentId = document.id;
       if (document.commentIds) {
+        this.comments = [];
         document.commentIds.forEach((commentId) => {
           this.service.getComment(commentId).subscribe((comment) => {
             this.adminService.getUser(comment.userId).subscribe((user) => {
