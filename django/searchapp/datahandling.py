@@ -56,7 +56,7 @@ def sync_attachments(document, solr_files, django_attachments):
         elif django_attachment_id is None:
             new_django_attachment = Attachment.objects.create(
                 id=solr_file['id'],
-                url=solr_file['url'][0],
+                url=solr_file['attr_url'][0],
                 document=document,
                 pull=True
             )
@@ -97,9 +97,9 @@ def update_document(django_doc, solr_doc):
 
 def update_attachment(django_attachment, solr_file):
     logger.info('update django attachment with id ' + solr_file['id'])
-    django_attachment.url = solr_file['url'][0]
+    django_attachment.url = solr_file['attr_url'][0]
     django_attachment.document = Document.objects.get(
-        pk=solr_file['document_id'][0])
+        pk=solr_file['attr_document_id'][0])
     django_attachment.pull = False
     django_attachment.save()
 
@@ -126,7 +126,7 @@ def save_file_from_url(django_attachment, solr_file):
     headers = {
         'User-Agent': 'Mozilla/5.0(Windows NT 6.1) AppleWebKit/537.36(KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.3'
     }
-    req = Request(url=solr_file['url'][0], headers=headers)
+    req = Request(url=solr_file['attr_url'][0], headers=headers)
     response = urlopen(req)
     content = response.read()
     django_file = ContentFile(content)
