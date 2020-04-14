@@ -60,7 +60,7 @@
           >{{ document.title | truncate: [120, "..."] }}</a
         >
       </td>
-      <td>tag1, tag2</td>
+      <td><p-chips [(ngModel)]="document.tags"></p-chips></td>
       <td [innerHTML]="document.acceptanceStateValue"></td>
       <td [innerHTML]="document.confidenceScore"></td>
       <td [innerHTML]="document.autoclassify"></td>
