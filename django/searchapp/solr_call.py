@@ -36,7 +36,7 @@ def solr_search_website_sorted(core="", website=""):
 def solr_search_document_id_sorted(core="", document_id=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search = get_results(client.search(
-        'document_id:"' + document_id + '"', **{'rows': 10000, 'sort': 'id asc'}))
+        'attr_document_id:"' + document_id + '"', **{'rows': 10000, 'sort': 'id asc'}))
     return search
 
 

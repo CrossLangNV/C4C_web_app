@@ -131,4 +131,4 @@ def save_file_from_url(django_attachment, solr_file):
     content = response.read()
     django_file = ContentFile(content)
     django_attachment.file.save(os.path.basename(
-        solr_file['resourcename'][0]), django_file)
+        solr_file['attr_resourcename'][0]), django_file)
