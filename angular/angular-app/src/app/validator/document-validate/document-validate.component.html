@@ -4,13 +4,32 @@
   <p class="small font-italic">{{ document.date }}</p>
   <div>
     <p><b>Acceptance state:</b></p>
-    <p-selectButton
-      styleClass="mb-4"
-      [options]="stateValues"
-      [(ngModel)]="document.acceptanceStateValue"
-      (onChange)="onStateChange($event)"
-    >
+    <p-selectButton styleClass="mb-4" [options]="stateValues" [(ngModel)]="document.acceptanceStateValue"
+      (onChange)="onStateChange($event)">
     </p-selectButton>
+  </div>
+  <div *ngIf="comments">
+    <p><b>Comments:</b></p>
+    <div class="card" *ngFor="let comment of comments">
+      <div class="card-header">{{ comment.username }}</div>
+      <div class="card-body">
+        <p class="card-text">{{ comment.value }}</p>
+        <div class="delete-comment my-2">
+          <button class="btn btn-secondary" (click)="onDeleteComment(comment)">
+            <fa-icon [icon]="deleteIcon"></fa-icon> Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <form (ngSubmit)="onAddComment()" #addCommentForm="ngForm">
+      <div class="form-group">
+        <label for="comment">New comment</label>
+        <textarea type="text" class="form-control" id="comment" [(ngModel)]="newComment.value" name="comment"></textarea>
+      </div>
+      <button type="submit" class="btn btn-success">Add</button>
+    </form>
   </div>
   <div>
     <p>

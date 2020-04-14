@@ -6,6 +6,10 @@ import { switchMap } from 'rxjs/operators';
 import { Document } from 'src/app/shared/models/document';
 import { SelectItem } from 'primeng/api/selectitem';
 import { AcceptanceState } from 'src/app/shared/models/acceptanceState';
+import { Comment } from 'src/app/shared/models/comment';
+import { ApiAdminService } from 'src/app/core/services/api.admin.service';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-document-validate',
@@ -16,15 +20,20 @@ export class DocumentValidateComponent implements OnInit {
   document$: Observable<Document>;
   stateValues: SelectItem[] = [];
   acceptanceState: AcceptanceState;
+  comments: Comment[] = [];
+  newComment: Comment;
+  deleteIcon: IconDefinition;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private service: ApiService
+    private service: ApiService,
+    private adminService: ApiAdminService
   ) {}
 
   ngOnInit() {
     this.acceptanceState = new AcceptanceState('', '', '', '');
+    this.newComment = new Comment('', '', '', '');
     this.service.getStateValues().subscribe((states) => {
       states.forEach((state) => {
         this.stateValues.push({ label: state, value: state });
@@ -35,6 +44,20 @@ export class DocumentValidateComponent implements OnInit {
         this.service.getDocument(params.get('documentId'))
       )
     );
+    this.document$.subscribe((document) => {
+      this.newComment.documentId = document.id;
+      if (document.commentIds) {
+        document.commentIds.forEach((commentId) => {
+          this.service.getComment(commentId).subscribe((comment) => {
+            this.adminService.getUser(comment.userId).subscribe((user) => {
+              comment.username = user.username;
+            });
+            this.comments.push(comment);
+          });
+        });
+      }
+    });
+    this.deleteIcon = faTrashAlt;
   }
 
   onStateChange(event) {
@@ -51,5 +74,21 @@ export class DocumentValidateComponent implements OnInit {
         this.acceptanceState.documentId = document.id;
         this.service.updateState(this.acceptanceState).subscribe();
       });
+  }
+
+  onAddComment() {
+    this.service.addComment(this.newComment).subscribe((comment) => {
+      this.router
+        .navigateByUrl('/validator', { skipLocationChange: true })
+        .then(() => this.router.navigate(['/validator']));
+    });
+  }
+
+  onDeleteComment(comment: Comment) {
+    this.service.deleteComment(comment.id).subscribe((comment) => {
+      this.router
+        .navigateByUrl('/validator', { skipLocationChange: true })
+        .then(() => this.router.navigate(['/validator']));
+    });
   }
 }
