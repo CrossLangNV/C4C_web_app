@@ -302,8 +302,8 @@ class CommentListAPIView(ListCreateAPIView):
         return self.create(request, *args, **kwargs)
 
 
-class CommentDetailAPIView(RetrieveUpdateAPIView):
-    permission_classes = [permissions.IsAuthenticated, IsOwner]
+class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = CommentSerializer
     queryset = Comment.objects.all()
 
