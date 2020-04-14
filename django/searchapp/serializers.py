@@ -20,6 +20,7 @@ class DocumentSerializer(serializers.ModelSerializer):
     website = serializers.PrimaryKeyRelatedField(
         queryset=Website.objects.all())
     attachments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    comments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     acceptance_state = serializers.SerializerMethodField()
     acceptance_state_value = serializers.SerializerMethodField()
 
