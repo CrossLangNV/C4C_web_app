@@ -1,11 +1,21 @@
-<div *ngIf="document$ | async as document; else elseBlock">
-  <h4>{{ document.title }}</h4>
+<div class="jumbotron" *ngIf="document$ | async as document; else elseBlock">
+  <h4>
+    <a href="{{ document.url }}">{{ document.title }}</a>
+  </h4>
 
   <p class="small font-italic">{{ document.date }}</p>
   <div>
+    <samp class="text-justify">{{ document.summary }}</samp>
+  </div>
+  <hr class="my-4" />
+  <div>
     <p><b>Acceptance state:</b></p>
-    <p-selectButton styleClass="mb-4" [options]="stateValues" [(ngModel)]="document.acceptanceStateValue"
-      (onChange)="onStateChange($event)">
+    <p-selectButton
+      styleClass="mb-4"
+      [options]="stateValues"
+      [(ngModel)]="document.acceptanceStateValue"
+      (onChange)="onStateChange($event)"
+    >
     </p-selectButton>
   </div>
   <div *ngIf="comments">
@@ -25,19 +35,17 @@
   <div>
     <form (ngSubmit)="onAddComment()" #addCommentForm="ngForm">
       <div class="form-group">
-        <label for="comment">New comment</label>
-        <textarea type="text" class="form-control" id="comment" [(ngModel)]="newComment.value" name="comment"></textarea>
+        <label for="comment"><b>New comment:</b></label>
+        <textarea
+          type="text"
+          class="form-control"
+          id="comment"
+          [(ngModel)]="newComment.value"
+          name="comment"
+        ></textarea>
       </div>
       <button type="submit" class="btn btn-success">Add</button>
     </form>
-  </div>
-  <div>
-    <p>
-      <a href="{{ document.url }}">{{ document.url }}</a>
-    </p>
-  </div>
-  <div>
-    <p class="text-justify">{{ document.summary }}</p>
   </div>
   <ng-template #elseBlock>
     <p>Select a document above.</p>

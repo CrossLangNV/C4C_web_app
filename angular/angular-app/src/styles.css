@@ -1,6 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
-@import 'https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css';
-@import './assets/styles/bootstrap-social.css';
+@import "https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css";
+@import "./assets/styles/bootstrap-social.css";
 
 span.highlight {
   background-color: yellow;
@@ -8,4 +8,11 @@ span.highlight {
 
 a {
   cursor: pointer;
+}
+
+app-document-list {
+  width: 99%;
+}
+app-document-validate {
+  width: 99%;
 }
