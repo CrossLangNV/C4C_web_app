@@ -16,6 +16,7 @@ import {
   AcceptanceState,
   AcceptanceStateAdapter,
 } from 'src/app/shared/models/acceptanceState';
+import { Comment, CommentAdapter } from 'src/app/shared/models/comment';
 
 @Injectable({
   providedIn: 'root',
@@ -30,7 +31,8 @@ export class ApiService {
     private documentAdapter: DocumentAdapter,
     private websiteAdapter: WebsiteAdapter,
     private attachmentAdapter: AttachmentAdapter,
-    private stateAdapter: AcceptanceStateAdapter
+    private stateAdapter: AcceptanceStateAdapter,
+    private commentAdapter: CommentAdapter
   ) {}
 
   public getSolrFiles(): Observable<SolrFile[]> {
@@ -181,6 +183,25 @@ export class ApiService {
     return this.http
       .get<AcceptanceState>(`${this.API_URL}/state/${id}`)
       .pipe(map((item) => this.stateAdapter.adapt(item)));
+  }
+
+  public getComment(id: string): Observable<Comment> {
+    return this.http
+      .get<Comment>(`${this.API_URL}/comment/${id}`)
+      .pipe(map((item) => this.commentAdapter.adapt(item)));
+  }
+
+  public addComment(comment: Comment): Observable<Comment> {
+    return this.http
+      .post<Comment>(
+        `${this.API_URL}/comments`,
+        this.commentAdapter.encode(comment)
+      )
+      .pipe(map((item) => this.commentAdapter.adapt(item)));
+  }
+
+  public deleteComment(id: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/comment/${id}`);
   }
 
   public updateState(state: AcceptanceState): Observable<AcceptanceState> {
