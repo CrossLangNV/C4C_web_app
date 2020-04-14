@@ -79,17 +79,14 @@ export class DocumentValidateComponent implements OnInit {
 
   onAddComment() {
     this.service.addComment(this.newComment).subscribe((comment) => {
-      this.router
-        .navigateByUrl('/validator', { skipLocationChange: true })
-        .then(() => this.router.navigate(['/validator']));
+      this.comments.push(comment);
+      this.newComment.value = '';
     });
   }
 
   onDeleteComment(comment: Comment) {
-    this.service.deleteComment(comment.id).subscribe((comment) => {
-      this.router
-        .navigateByUrl('/validator', { skipLocationChange: true })
-        .then(() => this.router.navigate(['/validator']));
+    this.service.deleteComment(comment.id).subscribe((response) => {
+      this.comments = this.comments.filter((item) => item.id !== comment.id);
     });
   }
 }
