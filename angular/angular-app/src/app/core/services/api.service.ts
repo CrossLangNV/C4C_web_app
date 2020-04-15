@@ -106,11 +106,15 @@ export class ApiService {
 
   public getDocumentResults(
     page: number,
-    searchTerm: string
+    searchTerm: string,
+    filterType: string
   ): Observable<DocumentResults> {
     var pageQuery = page ? '?page=' + page : '';
     if (searchTerm) {
       pageQuery = '?keyword=' + searchTerm;
+    }
+    if (filterType) {
+      pageQuery = pageQuery + '&filterType=' + filterType;
     }
     return this.http.get<DocumentResults>(
       `${this.API_URL}/documents${pageQuery}`
