@@ -22,6 +22,7 @@ export class Document {
     public content: string,
     public attachmentIds: string[],
     public commentIds: string[],
+    public tags: string[],
     public pull: boolean
   ) {}
 }
@@ -45,6 +46,7 @@ export class DocumentAdapter implements Adapter<Document> {
       item.content,
       item.attachments,
       item.comments,
+      item.tags,
       item.pull
     );
   }
@@ -64,6 +66,7 @@ export class DocumentAdapter implements Adapter<Document> {
       content: document.content,
       attachments: document.attachmentIds,
       comments: document.commentIds,
+      tags: document.tags,
       pull: document.pull,
     };
   }

@@ -17,6 +17,7 @@ import {
   AcceptanceStateAdapter,
 } from 'src/app/shared/models/acceptanceState';
 import { Comment, CommentAdapter } from 'src/app/shared/models/comment';
+import { Tag, TagAdapter } from 'src/app/shared/models/tag';
 
 @Injectable({
   providedIn: 'root',
@@ -32,7 +33,8 @@ export class ApiService {
     private websiteAdapter: WebsiteAdapter,
     private attachmentAdapter: AttachmentAdapter,
     private stateAdapter: AcceptanceStateAdapter,
-    private commentAdapter: CommentAdapter
+    private commentAdapter: CommentAdapter,
+    private tagAdapter: TagAdapter
   ) {}
 
   public getSolrFiles(): Observable<SolrFile[]> {
@@ -208,6 +210,16 @@ export class ApiService {
 
   public deleteComment(id: string): Observable<any> {
     return this.http.delete(`${this.API_URL}/comment/${id}`);
+  }
+
+  public addTag(tag: Tag): Observable<Tag> {
+    return this.http
+      .post<Tag>(`${this.API_URL}/tags`, this.tagAdapter.encode(tag))
+      .pipe(map((item) => this.tagAdapter.adapt(item)));
+  }
+
+  public deleteTag(id: string): Observable<any> {
+    return this.http.delete(`${this.API_URL}/tag/${id}`);
   }
 
   public updateState(state: AcceptanceState): Observable<AcceptanceState> {
