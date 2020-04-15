@@ -100,7 +100,7 @@
           >{{ document.title | truncate: [80, "..."] }}</a
         >
       </td>
-      <td><p-chips [(ngModel)]="document.tags" (onAdd)="onAddTag($event, document.id)" (onRemove)="onRemoveTag($event)"></p-chips></td>
+      <td><p-chips [(ngModel)]="document.tags" allowDuplicate=false field="value" (onAdd)="onAddTag($event, document.tags, document.id)" (onRemove)="onRemoveTag($event)"></p-chips></td>
       <td [innerHTML]="document.acceptance_state_value"></td>
       <td [innerHTML]="document.confidenceScore"></td>
       <td [innerHTML]="document.autoclassify"></td>
