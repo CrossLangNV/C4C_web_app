@@ -11,10 +11,10 @@ from rest_framework.views import APIView
 
 from .datahandling import sync_documents, sync_attachments
 from .forms import DocumentForm, WebsiteForm
-from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment
+from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
 from .permissions import IsOwner
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
-    CommentSerializer
+    CommentSerializer, TagSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
 
 from rest_framework.pagination import PageNumberPagination
@@ -310,6 +310,18 @@ class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
     def put(self, request, *args, **kwargs):
         request.data['user'] = request.user.id
         return self.update(request, *args, **kwargs)
+
+
+class TagListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
+
+
+class TagDetailAPIView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
 
 
 class IsSuperUserAPIView(APIView):

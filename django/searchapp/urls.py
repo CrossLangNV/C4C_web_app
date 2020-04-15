@@ -47,7 +47,6 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='searchapp/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
-
     # API
     # Website
     path('api/websites', views.WebsiteListAPIView.as_view(),
@@ -80,6 +79,12 @@ urlpatterns = [
          name='comment_list_api'),
     path('api/comment/<int:pk>', views.CommentDetailAPIView.as_view(),
          name='comment_detail_api'),
+
+    # Tag
+    path('api/tags', views.CommentListAPIView.as_view(),
+         name='tag_list_api'),
+    path('api/tag/<int:pk>', views.CommentDetailAPIView.as_view(),
+         name='tag_detail_api'),
 
     # Super
     path('api/super', views.IsSuperUserAPIView.as_view(), name='super_api'),
