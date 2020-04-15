@@ -21,6 +21,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         queryset=Website.objects.all())
     attachments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     comments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    tags = serializers.StringRelatedField(many=True)
     acceptance_state = serializers.SerializerMethodField()
     acceptance_state_value = serializers.SerializerMethodField()
 
@@ -72,6 +73,14 @@ class CommentSerializer(serializers.ModelSerializer):
     document = serializers.PrimaryKeyRelatedField(
         queryset=Document.objects.all())
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+
+    class Meta:
+        model = Comment
+        fields = '__all__'
+
+class TagSerializer(serializers.ModelSerializer):
+    document = serializers.PrimaryKeyRelatedField(
+        queryset=Document.objects.all())
 
     class Meta:
         model = Comment

@@ -1,5 +1,6 @@
 import uuid
 
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 
@@ -107,3 +108,12 @@ class Comment(models.Model):
     document = models.ForeignKey(
         'Document', related_name='comments', on_delete=models.CASCADE)
     user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+
+
+class Tag(models.Model):
+    value = models.CharField(max_length=50)
+    document = models.ForeignKey(
+        'Document', related_name='tags', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.value
