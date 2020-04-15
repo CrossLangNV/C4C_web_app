@@ -77,6 +77,8 @@ class AcceptanceState(models.Model):
     document = models.ForeignKey(
         'Document', related_name='acceptance_states', on_delete=models.CASCADE)
     user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class Attachment(models.Model):
