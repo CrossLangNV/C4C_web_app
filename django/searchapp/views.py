@@ -9,7 +9,7 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIV
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .datahandling import sync_documents, sync_attachments
+from .datahandling import sync_documents, sync_attachments, score_documents
 from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
 from .permissions import IsOwner
@@ -63,6 +63,10 @@ class WebsiteDetailView(DetailView):
             solr_documents = solr_search_website_sorted(
                 core='documents', website=website.name.lower())
             sync_documents(website, solr_documents, django_documents)
+        score = self.request.GET.get('score', False)
+        if score:
+            # get confidence score
+            score_documents(django_documents)
         # add to context to be used in template
         context['documents'] = django_documents
         return context
@@ -179,6 +183,10 @@ class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
             sync_documents(website, solr_documents, django_documents)
         else:
             self.logger.info("Not syncing")
+        score = self.request.GET.get('score', False)
+        if score:
+            # get confidence score
+            score_documents(django_documents)
 
         return website
 

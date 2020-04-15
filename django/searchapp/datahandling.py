@@ -1,5 +1,7 @@
+import requests
 import logging
 import os
+import json
 from datetime import datetime
 from urllib.request import urlopen, Request
 
@@ -9,6 +11,22 @@ from django.db import transaction
 from searchapp.models import Document, Attachment, Website
 
 logger = logging.getLogger(__name__)
+
+
+@transaction.atomic
+def score_documents(django_documents):
+    for django_doc in django_documents:
+        url = os.environ['DOCUMENT_CLASSIFIER_URL'] + "/classify_doc"
+        if(len(django_doc.summary)):
+            data = {'document': django_doc.summary}
+            response = requests.post(url, json=data)
+            logger.info("Sending content: " + json.dumps(data))
+            js = response.json()
+            logger.info("Got response: " + json.dumps(js))
+            django_doc.accepted_probability = js["accepted_probability"]
+        else:
+            django_doc.accepted_probability = 0
+        django_doc.save()
 
 
 @transaction.atomic

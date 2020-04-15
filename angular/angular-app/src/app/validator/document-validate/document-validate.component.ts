@@ -10,6 +10,9 @@ import { Comment } from 'src/app/shared/models/comment';
 import { ApiAdminService } from 'src/app/core/services/api.admin.service';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
+import { AuthenticationService } from 'src/app/core/auth/authentication.service';
+import { DjangoUser } from 'src/app/shared/models/django_user';
+import { compileNgModuleFromRender2 } from '@angular/compiler/src/render3/r3_module_compiler';
 
 @Component({
   selector: 'app-document-validate',
@@ -19,21 +22,33 @@ import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 export class DocumentValidateComponent implements OnInit {
   document$: Observable<Document>;
   stateValues: SelectItem[] = [];
+  cities: SelectItem[];
+  selectedCities: string[] = [];
   acceptanceState: AcceptanceState;
   comments: Comment[] = [];
   newComment: Comment;
   deleteIcon: IconDefinition;
+  currentDjangoUser: DjangoUser;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private service: ApiService,
-    private adminService: ApiAdminService
+    private adminService: ApiAdminService,
+    private authenticationService: AuthenticationService
   ) {}
 
   ngOnInit() {
+    this.authenticationService.currentDjangoUser.subscribe(
+      (x) => (this.currentDjangoUser = x)
+    );
+    this.cities = [];
+    this.cities.push({ label: 'Level 1', value: 'level1' });
+    this.cities.push({ label: 'Level 2', value: 'level2' });
+    this.cities.push({ label: 'Level 3', value: 'level3' });
+
     this.acceptanceState = new AcceptanceState('', '', '', '');
-    this.newComment = new Comment('', '', '', '');
+    this.newComment = new Comment('', '', '', '', new Date());
     this.service.getStateValues().subscribe((states) => {
       states.forEach((state) => {
         this.stateValues.push({ label: state, value: state });
@@ -46,8 +61,8 @@ export class DocumentValidateComponent implements OnInit {
     );
     this.document$.subscribe((document) => {
       this.newComment.documentId = document.id;
+      this.comments = [];
       if (document.commentIds) {
-        this.comments = [];
         document.commentIds.forEach((commentId) => {
           this.service.getComment(commentId).subscribe((comment) => {
             this.adminService.getUser(comment.userId).subscribe((user) => {
@@ -79,6 +94,7 @@ export class DocumentValidateComponent implements OnInit {
 
   onAddComment() {
     this.service.addComment(this.newComment).subscribe((comment) => {
+      comment.username = this.currentDjangoUser.username;
       this.comments.push(comment);
       this.newComment.value = '';
     });

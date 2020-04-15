@@ -48,6 +48,7 @@ export class DocumentAddComponent implements OnInit {
       this.websiteId,
       '',
       '',
+      '',
       [],
       [],
       [],

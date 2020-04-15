@@ -25,6 +25,7 @@ class TagSerializer(serializers.ModelSerializer):
 class DocumentSerializer(serializers.ModelSerializer):
     website = serializers.PrimaryKeyRelatedField(
         queryset=Website.objects.all())
+    website_name = serializers.SerializerMethodField()
     attachments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     comments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
@@ -50,6 +51,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         qs = AcceptanceState.objects.filter(document=document, user=user)
         return qs.values_list('value', flat=True)[0]
+
+    def get_website_name(self, document):
+        return document.website.name
 
     class Meta:
         model = Document
