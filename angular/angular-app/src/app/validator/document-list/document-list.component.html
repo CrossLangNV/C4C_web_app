@@ -83,7 +83,7 @@
     <tr>
       <th scope="col" sortable="document" (sort)="onSort($event)">Title</th>
       <th scope="col" sortable="tags" (sort)="onSort($event)">Tags</th>
-      <th scope="col" sortable="users" (sort)="onSort($event)">State</th>
+      <th scope="col" sortable="users" (sort)="onSort($event)">States</th>
       <th scope="col" sortable="confidence" (sort)="onSort($event)">
         Confidence
       </th>
@@ -110,7 +110,11 @@
         ></p-chips>
       </td>
       <td>
-        {{ document.acceptance_state_value }}
+        <p-chips [(ngModel)]="document.acceptance_states" disabled="true">
+          <ng-template let-state pTemplate="state">
+            {{state.value}} - {{state.user.username}} <fa-icon [icon]="userIcon"></fa-icon>
+          </ng-template>
+        </p-chips>
         <span *ngIf="document.comments.length">*</span>
       </td>
       <td [innerHTML]="document.accepted_probability | number: '1.0-3'"></td>
