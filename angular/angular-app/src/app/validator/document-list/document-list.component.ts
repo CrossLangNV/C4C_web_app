@@ -6,6 +6,8 @@ import { ApiService } from 'src/app/core/services/api.service';
 import { Document, DocumentResults } from 'src/app/shared/models/document';
 import { Subject } from 'rxjs';
 import { Tag } from 'src/app/shared/models/tag';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { faUserAlt } from '@fortawesome/free-solid-svg-icons';
 
 @Component({
   selector: 'app-document-list',
@@ -24,6 +26,8 @@ export class DocumentListComponent implements OnInit {
   filterType: string;
   keyword: string;
 
+  userIcon: IconDefinition;
+
   searchTermChanged: Subject<string> = new Subject<string>();
 
   constructor(
@@ -33,6 +37,7 @@ export class DocumentListComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.userIcon = faUserAlt;
     this.service
       .getDocumentResults(this.page, this.keyword)
       .subscribe((result) => {
