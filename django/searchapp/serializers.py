@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from searchapp.models import Attachment, Document, Website, AcceptanceState, Comment
+from searchapp.models import Attachment, Document, Website, AcceptanceState, Comment, Tag
 
 import logging
 
@@ -83,5 +83,5 @@ class TagSerializer(serializers.ModelSerializer):
         queryset=Document.objects.all())
 
     class Meta:
-        model = Comment
+        model = Tag
         fields = '__all__'

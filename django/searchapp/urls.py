@@ -81,9 +81,9 @@ urlpatterns = [
          name='comment_detail_api'),
 
     # Tag
-    path('api/tags', views.CommentListAPIView.as_view(),
+    path('api/tags', views.TagListAPIView.as_view(),
          name='tag_list_api'),
-    path('api/tag/<int:pk>', views.CommentDetailAPIView.as_view(),
+    path('api/tag/<int:pk>', views.TagDetailAPIView.as_view(),
          name='tag_detail_api'),
 
     # Super
