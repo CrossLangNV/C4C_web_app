@@ -45,7 +45,7 @@ def sync_documents(website, solr_documents, django_documents):
                 eli=solr_doc.get('ELI', [''])[0],
                 title_prefix=solr_doc.get('title_prefix', [''])[0],
                 title=solr_doc.get('title', [''])[0],
-                # status=solr_doc.get('status', [''])[0],
+                status=solr_doc.get('status', [''])[0][:100],
                 date=solr_doc_date,
                 type=solr_doc.get('type', [''])[0],
                 summary=''.join(x.strip()

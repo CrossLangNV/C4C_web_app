@@ -68,6 +68,9 @@ services:
     image: docker.crosslang.com/ctlg-manager/docclass:latest
     ports:
       - "5000:5000"
+    labels:
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
 
 volumes:
   solr:
