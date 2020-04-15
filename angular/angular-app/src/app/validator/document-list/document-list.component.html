@@ -100,9 +100,20 @@
           >{{ document.title | truncate: [80, "..."] }}</a
         >
       </td>
-      <td><p-chips [(ngModel)]="document.tags" allowDuplicate=false field="value" (onAdd)="onAddTag($event, document.tags, document.id)" (onRemove)="onRemoveTag($event)"></p-chips></td>
-      <td [innerHTML]="document.acceptance_state_value"></td>
-      <td [innerHTML]="document.confidenceScore"></td>
+      <td>
+        <p-chips
+          [(ngModel)]="document.tags"
+          allowDuplicate="false"
+          field="value"
+          (onAdd)="onAddTag($event, document.tags, document.id)"
+          (onRemove)="onRemoveTag($event)"
+        ></p-chips>
+      </td>
+      <td>
+        {{ document.acceptance_state_value }}
+        <span *ngIf="document.comments.length">*</span>
+      </td>
+      <td [innerHTML]="document.accepted_probability | number: '1.0-3'"></td>
       <td [innerHTML]="document.autoclassify"></td>
     </tr>
   </tbody>

@@ -4,6 +4,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 
+
 from searchapp.solr_call import solr_add, solr_delete, solr_add_file
 
 
@@ -38,6 +39,7 @@ class Document(models.Model):
     summary = models.TextField(default="", blank=True)
     content = models.TextField(default="", blank=True)
     various = models.TextField(default="", blank=True)
+    accepted_probability = models.FloatField(default=0.0, blank=True)
 
     pull = models.BooleanField(default=False, editable=False)
 
@@ -108,6 +110,8 @@ class Comment(models.Model):
     document = models.ForeignKey(
         'Document', related_name='comments', on_delete=models.CASCADE)
     user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class Tag(models.Model):

@@ -1,6 +1,7 @@
 <div class="jumbotron" *ngIf="document$ | async as document; else elseBlock">
   <h4>
-    <a href="{{ document.url }}">{{ document.title }}</a>
+    {{ document.websiteName }} :
+    <a href="{{ document.url }}">{{ document.title }} </a>
   </h4>
 
   <p class="small font-italic">{{ document.date }}</p>
@@ -18,10 +19,20 @@
     >
     </p-selectButton>
   </div>
-  <div *ngIf="comments">
+  <div>
+    <p><b>Classification:</b></p>
+    <p-selectButton
+      styleClass="mb-4"
+      [options]="cities"
+      [(ngModel)]="selectedCity"
+    ></p-selectButton>
+  </div>
+  <div *ngIf="comments.length">
     <p><b>Comments:</b></p>
     <div class="card" *ngFor="let comment of comments">
-      <div class="card-header">{{ comment.username }}</div>
+      <div class="card-header">
+        {{ comment.username }} ({{ comment.createdAt }})
+      </div>
       <div class="card-body">
         <p class="card-text">{{ comment.value }}</p>
         <div class="delete-comment my-2">
