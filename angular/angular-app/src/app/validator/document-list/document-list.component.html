@@ -20,16 +20,14 @@
               (ngModelChange)="onSearch($event)"
             />
           </div>
-
           <select
-            class="form-control form-control-sm m-1"
+            class="form-control form-control-sm m-1 col-2"
             [(ngModel)]="filterType"
+            (change)="fetchDocuments()"
           >
-            <option [ngValue]="none">Filter ...</option>
-            <option [ngValue]="own">...Validated by me</option>
-            <option [ngValue]="unvalidated">...Unvalidated</option>
-            <option [ngValue]="accepted">...Accepted</option>
-            <option [ngValue]="rejected">...Rejected</option>
+            <option *ngFor="let f of filters" [ngValue]="f.id">{{
+              f.name
+            }}</option>
           </select>
         </div>
         <div class="row">
@@ -87,9 +85,9 @@
       <th scope="col" sortable="confidence" (sort)="onSort($event)">
         Confidence
       </th>
-      <th scope="col" sortable="autoclassify" (sort)="onSort($event)">
+      <!-- <th scope="col" sortable="autoclassify" (sort)="onSort($event)">
         Auto-classify
-      </th>
+      </th> -->
     </tr>
   </thead>
   <tbody>
@@ -98,6 +96,11 @@
         <a
           [routerLink]="[{ outlets: { secondary: ['document', document.id] } }]"
           >{{ document.title | truncate: [80, "..."] }}</a
+        >&nbsp;
+        <span
+          *ngIf="document.comments.length > 0"
+          class="badge badge-secondary"
+          >{{ document.comments.length }}</span
         >
       </td>
       <td>
@@ -112,13 +115,16 @@
       <td>
         <p-chips [(ngModel)]="document.acceptance_states" disabled="true">
           <ng-template let-state pTemplate="state">
-            {{state.value}} - {{state.user.username}} <fa-icon [icon]="userIcon"></fa-icon>
+            {{ state.value }} - {{ state.user.username }}
+            <fa-icon [icon]="userIcon"></fa-icon>
           </ng-template>
         </p-chips>
-        <span *ngIf="document.comments.length">*</span>
       </td>
-      <td [innerHTML]="document.accepted_probability | number: '1.0-3'"></td>
-      <td [innerHTML]="document.autoclassify"></td>
+      <td
+        *ngIf="document.accepted_probability > 0"
+        [innerHTML]="document.accepted_probability | number: '1.0-3'"
+      ></td>
+      <td *ngIf="document.accepted_probability == 0">-</td>
     </tr>
   </tbody>
 </table>
@@ -134,11 +140,11 @@
   >
   </ngb-pagination>
 
-  <select class="custom-select" style="width: auto;" [(ngModel)]="pageSize">
+  <!-- <select class="custom-select" style="width: auto;" [(ngModel)]="pageSize">
     <option [ngValue]="5">5 items per page</option>
     <option [ngValue]="10">10 items per page</option>
     <option [ngValue]="50">50 items per page</option>
     <option [ngValue]="100">100 items per page</option>
-  </select>
+  </select> -->
 </div>
 <hr class="my-2" />

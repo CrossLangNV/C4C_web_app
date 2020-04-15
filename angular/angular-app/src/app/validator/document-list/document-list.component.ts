@@ -23,11 +23,16 @@ export class DocumentListComponent implements OnInit {
   collectionSize = 0;
   autoValidatedSize = 0;
   autoRejectedSize = 0;
-  filterType: string;
+  filterType: string = 'none';
   keyword: string;
-
   userIcon: IconDefinition;
-
+  filters = [
+    { id: 'none', name: 'Filter..' },
+    { id: 'own', name: '..Validated by me' },
+    { id: 'unvalidated', name: '..Unvalidated' },
+    { id: 'accepted', name: '..Accepted' },
+    { id: 'rejected', name: '..Rejected' },
+  ];
   searchTermChanged: Subject<string> = new Subject<string>();
 
   constructor(
@@ -36,33 +41,28 @@ export class DocumentListComponent implements OnInit {
     private service: ApiService
   ) {}
 
-  ngOnInit() {
-    this.userIcon = faUserAlt;
+  fetchDocuments() {
     this.service
-      .getDocumentResults(this.page, this.keyword)
+      .getDocumentResults(this.page, this.keyword, this.filterType)
       .subscribe((result) => {
         this.documents$ = result.results;
         this.collectionSize = result.count;
         this.autoRejectedSize = 0;
         this.autoValidatedSize = 0;
       });
+  }
+  ngOnInit() {
+    this.userIcon = faUserAlt;
+    this.fetchDocuments();
     this.searchTermChanged
       .pipe(debounceTime(600), distinctUntilChanged())
       .subscribe((model) => {
         this.keyword = model;
-        this.service
-          .getDocumentResults(this.page, this.keyword)
-          .subscribe((result) => {
-            this.documents$ = result.results;
-            this.collectionSize = result.count;
-            this.autoRejectedSize = 0;
-            this.autoValidatedSize = 0;
-          });
+        this.fetchDocuments();
       });
   }
 
   onSearch(keyword: string) {
-    console.log('TERM:' + keyword);
     this.searchTermChanged.next(keyword);
   }
 
@@ -82,14 +82,6 @@ export class DocumentListComponent implements OnInit {
   }
 
   loadPage(pg: number) {
-    console.log('PAGE:' + this.page);
-    this.service
-      .getDocumentResults(this.page, this.keyword)
-      .subscribe((result) => {
-        this.documents$ = result.results;
-        this.collectionSize = result.count;
-        this.autoRejectedSize = 0;
-        this.autoValidatedSize = 0;
-      });
+    this.fetchDocuments();
   }
 }
