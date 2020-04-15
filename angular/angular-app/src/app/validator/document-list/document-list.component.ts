@@ -5,6 +5,7 @@ import { Router, ActivatedRoute, ParamMap } from '@angular/router';
 import { ApiService } from 'src/app/core/services/api.service';
 import { Document, DocumentResults } from 'src/app/shared/models/document';
 import { Subject } from 'rxjs';
+import { Tag } from 'src/app/shared/models/tag';
 
 @Component({
   selector: 'app-document-list',
@@ -58,6 +59,15 @@ export class DocumentListComponent implements OnInit {
   onSearch(keyword: string) {
     console.log('TERM:' + keyword);
     this.searchTermChanged.next(keyword);
+  }
+
+  onAddTag(event, documentId) {
+    const newTag = new Tag('', event.value, documentId);
+    this.service.addTag(newTag).subscribe();
+  }
+
+  onRemoveTag(event) {
+
   }
 
   loadPage(pg: number) {
