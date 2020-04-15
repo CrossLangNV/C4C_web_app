@@ -61,13 +61,19 @@ export class DocumentListComponent implements OnInit {
     this.searchTermChanged.next(keyword);
   }
 
-  onAddTag(event, documentId) {
+  onAddTag(event, tags, documentId) {
     const newTag = new Tag('', event.value, documentId);
-    this.service.addTag(newTag).subscribe();
+    this.service.addTag(newTag).subscribe((addedTag) => {
+      // primeng automatically adds the string value first, delete this as workaround
+      // see: https://github.com/primefaces/primeng/issues/3419
+      tags.splice(-1, 1);
+      // now add the tag object
+      tags.push(addedTag);
+    });
   }
 
   onRemoveTag(event) {
-
+    this.service.deleteTag(event.value.id).subscribe();
   }
 
   loadPage(pg: number) {
