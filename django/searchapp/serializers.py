@@ -16,12 +16,18 @@ class WebsiteSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = '__all__'
+
+
 class DocumentSerializer(serializers.ModelSerializer):
     website = serializers.PrimaryKeyRelatedField(
         queryset=Website.objects.all())
     attachments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     comments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    tags = serializers.StringRelatedField(many=True)
+    tags = TagSerializer(many=True, read_only=True)
     acceptance_state = serializers.SerializerMethodField()
     acceptance_state_value = serializers.SerializerMethodField()
 
@@ -76,12 +82,4 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = '__all__'
-
-class TagSerializer(serializers.ModelSerializer):
-    document = serializers.PrimaryKeyRelatedField(
-        queryset=Document.objects.all())
-
-    class Meta:
-        model = Tag
         fields = '__all__'
