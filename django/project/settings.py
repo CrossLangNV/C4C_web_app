@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_cleanup.apps.CleanupConfig',
     'rest_framework',
+    'drf_yasg',
     'oauth2_provider',
     'social_django',
     'rest_framework_social_oauth2',
@@ -60,7 +61,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
 
 ROOT_URLCONF = 'project.urls'
 
@@ -138,6 +138,18 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'auth': {
+            'type': 'oauth2',
+            'tokenUrl': os.environ['DJANGO_BASE_URL'] + '/auth/token',
+            'flow': 'password',
+            'scopes': {
+            }
+        }
+    }
+}
 
 LOGGING = {
     'version': 1,
