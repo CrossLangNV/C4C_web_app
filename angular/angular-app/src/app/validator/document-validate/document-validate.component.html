@@ -5,6 +5,11 @@
   </h4>
 
   <p class="small font-italic">{{ document.date }}</p>
+  <p *ngIf="document.type" class="">Type: {{ document.type }}</p>
+  <p *ngIf="document.celex" class="">Celex: {{ document.celex }}</p>
+  <p *ngIf="document.eli" class="">Eli: {{ document.eli }}</p>
+  <p *ngIf="document.status" class="">Status: {{ document.status }}</p>
+  <p *ngIf="document.various" class="">Various: {{ document.various }}</p>
   <div>
     <samp class="text-justify">{{ document.summary }}</samp>
   </div>
