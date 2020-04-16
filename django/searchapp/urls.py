@@ -16,8 +16,11 @@ Including another URLconf
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 from django.urls import path
+from django.views.generic import TemplateView
 
 from searchapp import views
+
+from rest_framework.schemas import get_schema_view
 
 urlpatterns = [
     path('', login_required(views.WebsiteListView.as_view(),
@@ -48,6 +51,17 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
     # API
+    # Swagger
+    path('openapi', get_schema_view(
+        title="Catalogue Manager",
+        description="",
+        version="1.0.0"
+    ), name='openapi-schema'),
+    path('api', TemplateView.as_view(
+        template_name='searchapp/swagger-ui.html',
+        extra_context={'schema_url': 'openapi'}
+    ), name='swagger-ui'),
+
     # Website
     path('api/websites', views.WebsiteListAPIView.as_view(),
          name='website_list_api'),
