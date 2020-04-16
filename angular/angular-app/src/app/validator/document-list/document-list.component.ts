@@ -18,7 +18,8 @@ export class DocumentListComponent implements OnInit {
   documents$: Document[];
   documentsResults$: Observable<DocumentResults>;
   selectedId: number;
-  page = 2;
+  page: any = 1;
+  previousPage: any;
   pageSize = 5;
   collectionSize = 0;
   autoValidatedSize = 0;
@@ -81,7 +82,12 @@ export class DocumentListComponent implements OnInit {
     this.service.deleteTag(event.value.id).subscribe();
   }
 
-  loadPage(pg: number) {
-    this.fetchDocuments();
+  loadPage(page: number) {
+    if (page !== this.previousPage) {
+      console.log('fetching');
+      this.page = page;
+      this.previousPage = page;
+      this.fetchDocuments();
+    }
   }
 }
