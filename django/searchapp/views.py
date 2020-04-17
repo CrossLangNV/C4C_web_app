@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from .datahandling import sync_documents, sync_attachments, score_documents
 from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
-from .permissions import IsOwner
+from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
@@ -157,6 +157,7 @@ class WebsiteDeleteView(DeleteView):
 
 
 class WebsiteListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = WebsiteSerializer
 
     def get_queryset(self):
@@ -165,6 +166,7 @@ class WebsiteListAPIView(ListCreateAPIView):
 
 
 class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     queryset = Website.objects.all()
     serializer_class = WebsiteSerializer
     logger = logging.getLogger(__name__)
@@ -210,6 +212,7 @@ class SmallResultsSetPagination(PageNumberPagination):
 
 
 class DocumentListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = DocumentSerializer
     pagination_class = SmallResultsSetPagination
 
@@ -247,11 +250,13 @@ class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
 
 
 class AttachmentListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
 
 
 class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
 
@@ -311,7 +316,7 @@ class CommentListAPIView(ListCreateAPIView):
 
 
 class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrSuperUser]
     serializer_class = CommentSerializer
     queryset = Comment.objects.all()
 
