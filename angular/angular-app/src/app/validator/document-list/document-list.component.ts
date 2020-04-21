@@ -8,6 +8,8 @@ import { Subject } from 'rxjs';
 import { Tag } from 'src/app/shared/models/tag';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faUserAlt } from '@fortawesome/free-solid-svg-icons';
+import { DjangoUser } from 'src/app/shared/models/django_user';
+import { AuthenticationService } from 'src/app/core/auth/authentication.service';
 
 @Component({
   selector: 'app-document-list',
@@ -21,9 +23,20 @@ export class DocumentListComponent implements OnInit {
   page: any = 1;
   previousPage: any;
   pageSize = 5;
+  stats = {
+    unValidatedSize: 0,
+    unValidatedPercent: 0,
+    autoValidatedSize: 0,
+    autoValidatedPercent: 0,
+    autoRejectedSize: 0,
+    autoRejectedPercent: 0,
+    autoRejectedSizeCSS: 'width: 30%',
+    humanRejectedSize: 0,
+    humanRejectedPercent: 0,
+    humanAcceptedSize: 0,
+    humanAcceptedPercent: 0,
+  };
   collectionSize = 0;
-  autoValidatedSize = 0;
-  autoRejectedSize = 0;
   filterType: string = 'none';
   keyword: string;
   userIcon: IconDefinition;
@@ -34,26 +47,46 @@ export class DocumentListComponent implements OnInit {
     { id: 'accepted', name: '..Accepted' },
     { id: 'rejected', name: '..Rejected' },
   ];
+  websites = [
+    { id: 'none', name: 'Website..' },
+    { id: 'bis', name: '..BIS' },
+    { id: 'eiopa', name: '..EIOPA' },
+    { id: 'esma', name: '..ESMA' },
+    { id: 'eurlex', name: '..EURLEX' },
+    { id: 'fsb', name: '..FSB' },
+    { id: 'srb', name: '..SRB' },
+  ];
+  websiteFilter: string = 'none';
   searchTermChanged: Subject<string> = new Subject<string>();
+  currentDjangoUser: DjangoUser;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private service: ApiService
+    private service: ApiService,
+    private authenticationService: AuthenticationService
   ) {}
 
   fetchDocuments() {
+    console.log(this.filterType);
     this.service
-      .getDocumentResults(this.page, this.keyword, this.filterType)
+      .getDocumentResults(
+        this.page,
+        this.keyword,
+        this.filterType,
+        this.currentDjangoUser.username,
+        this.websiteFilter
+      )
       .subscribe((result) => {
         this.documents$ = result.results;
         this.collectionSize = result.count;
-        this.autoRejectedSize = 0;
-        this.autoValidatedSize = 0;
       });
   }
   ngOnInit() {
     this.userIcon = faUserAlt;
+    this.authenticationService.currentDjangoUser.subscribe(
+      (x) => (this.currentDjangoUser = x)
+    );
     this.fetchDocuments();
     this.searchTermChanged
       .pipe(debounceTime(600), distinctUntilChanged())
@@ -84,7 +117,6 @@ export class DocumentListComponent implements OnInit {
 
   loadPage(page: number) {
     if (page !== this.previousPage) {
-      console.log('fetching');
       this.page = page;
       this.previousPage = page;
       this.fetchDocuments();

@@ -19,6 +19,12 @@ from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, 
 
 from rest_framework.pagination import PageNumberPagination
 
+import json
+import logging
+from django.db.models import Q
+
+logger = logging.getLogger(__name__)
+
 
 class DocumentSearchView(TemplateView):
     template_name = "searchapp/document_search.html"
@@ -221,7 +227,23 @@ class DocumentListAPIView(ListCreateAPIView):
         keyword = self.request.GET.get('keyword', "")
         if keyword:
             q = q.filter(title__icontains=keyword)
-        return q
+        filtertype = self.request.GET.get('filterType', "")
+        if filtertype == "own":
+            username = self.request.GET.get('userName', "")
+            q = q.filter(acceptance_states__user__username=username)
+            q = q.filter(Q(acceptance_states__value="Accepted") |
+                         Q(acceptance_states__value="Rejected"))
+        if filtertype == "unvalidated":
+            q = q.filter(Q(acceptance_states__isnull=True) |
+                         Q(acceptance_states__value="Unvalidated"))
+        if filtertype == "accepted":
+            q = q.filter(acceptance_states__value="Accepted")
+        if filtertype == "rejected":
+            q = q.filter(acceptance_states__value="Rejected")
+        website = self.request.GET.get('website', "")
+        if website:
+            q = q.filter(website__name__iexact=website)
+        return q.order_by("-created_at")
 
 
 class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
