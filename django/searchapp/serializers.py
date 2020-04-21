@@ -38,11 +38,17 @@ class AcceptanceStateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class AttachmentWithoutContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attachment
+        exclude = ['content', 'file']
+
+
 class DocumentSerializer(serializers.ModelSerializer):
     website = serializers.PrimaryKeyRelatedField(
         queryset=Website.objects.all())
     website_name = serializers.SerializerMethodField()
-    attachments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    attachments = AttachmentWithoutContentSerializer(many=True, read_only=True)
     comments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     acceptance_states = AcceptanceStateSerializer(many=True, read_only=True)

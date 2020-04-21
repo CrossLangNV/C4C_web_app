@@ -78,7 +78,7 @@ def sync_attachments(document, solr_files, django_attachments):
                 document=document,
                 pull=True
             )
-            save_file_from_url(new_django_attachment, solr_file)
+            # save_file_from_url(new_django_attachment, solr_file)
         elif str(django_attachment_id) == solr_file['id']:
             update_attachment(Attachment.objects.get(
                 pk=django_attachment_id), solr_file)

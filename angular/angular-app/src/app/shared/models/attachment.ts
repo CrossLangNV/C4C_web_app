@@ -12,7 +12,7 @@ export class Attachment {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AttachmentAdapter implements Adapter<Attachment> {
   adapt(item: any): Attachment {
@@ -30,7 +30,7 @@ export class AttachmentAdapter implements Adapter<Attachment> {
       file: attachment.file,
       url: attachment.url,
       document: attachment.documentId,
-      content: attachment.content
+      content: attachment.content,
     };
   }
 }

@@ -30,7 +30,7 @@ const routes: Routes = [
     canActivate: [AuthGuard],
   },
   // otherwise redirect to home
-  { path: '**', redirectTo: 'browse' },
+  { path: '**', redirectTo: 'validator' },
 ];
 
 export const AppRoutingModule = RouterModule.forRoot(routes);
