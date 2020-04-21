@@ -34,7 +34,7 @@ class ScrapyAppPipeline(FilesPipeline):
                 yield scrapy.Request(url)
 
     def file_path(self, request, response=None, info=None):
-        return os.path.basename(urlparse(request.url).path)
+        return os.path.basename(request.url)
 
     def item_completed(self, results, item, info):
         self.handle_document(item, info)
