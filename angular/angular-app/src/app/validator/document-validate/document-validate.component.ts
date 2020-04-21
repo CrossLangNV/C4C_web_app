@@ -13,6 +13,8 @@ import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { AuthenticationService } from 'src/app/core/auth/authentication.service';
 import { DjangoUser } from 'src/app/shared/models/django_user';
 import { compileNgModuleFromRender2 } from '@angular/compiler/src/render3/r3_module_compiler';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { Attachment } from 'src/app/shared/models/attachment';
 
 @Component({
   selector: 'app-document-validate',
@@ -29,13 +31,15 @@ export class DocumentValidateComponent implements OnInit {
   newComment: Comment;
   deleteIcon: IconDefinition;
   currentDjangoUser: DjangoUser;
+  attachment: Attachment;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private service: ApiService,
     private adminService: ApiAdminService,
-    private authenticationService: AuthenticationService
+    private authenticationService: AuthenticationService,
+    private modalService: NgbModal
   ) {}
 
   ngOnInit() {
@@ -56,7 +60,7 @@ export class DocumentValidateComponent implements OnInit {
     });
     this.document$ = this.route.paramMap.pipe(
       switchMap((params: ParamMap) =>
-        this.service.getDocument(params.get('documentId'))
+        this.service.getDocumentSyncWithAttachments(params.get('documentId'))
       )
     );
     this.document$.subscribe((document) => {
@@ -104,5 +108,21 @@ export class DocumentValidateComponent implements OnInit {
     this.service.deleteComment(comment.id).subscribe((response) => {
       this.comments = this.comments.filter((item) => item.id !== comment.id);
     });
+  }
+
+  openModal(targetModal, attachmentId) {
+    this.modalService.open(targetModal, {
+      centered: true,
+      backdrop: 'static',
+      size: 'xl',
+      scrollable: true,
+    });
+
+    this.service.getAttachment(attachmentId).subscribe((attachment) => {
+      this.attachment = attachment;
+    });
+  }
+  onSubmit() {
+    this.modalService.dismissAll();
   }
 }

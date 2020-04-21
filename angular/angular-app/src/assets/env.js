@@ -14,4 +14,11 @@
     "***REMOVED***";
   window["env"]["ANGULAR_DJANGO_CLIENT_SECRET"] =
     "***REMOVED***;
+
+  // window["env"]["ANGULAR_DJANGO_API_URL"] =
+  //   "https://django.dgfisma.crosslang.com/searchapp/api";
+  // window["env"]["ANGULAR_DJANGO_API_ADMIN_URL"] =
+  //   "https://django.dgfisma.crosslang.com/admin/api";
+  // window["env"]["ANGULAR_DJANGO_AUTH_URL"] =
+  //   "https://django.dgfisma.crosslang.com/auth";
 })(this);

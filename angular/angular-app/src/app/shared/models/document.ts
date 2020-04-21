@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Adapter } from './adapter';
+import { Attachment } from './attachment';
 
 export interface DocumentResults {
   count: number;
@@ -21,7 +22,12 @@ export class Document {
     public websiteName: string,
     public summary: string,
     public content: string,
-    public attachmentIds: string[],
+    public various: string,
+    public celex: string,
+    public eli: string,
+    public status: string,
+    public author: string,
+    public attachments: Attachment[],
     public commentIds: string[],
     public tags: string[],
     public pull: boolean
@@ -46,6 +52,11 @@ export class DocumentAdapter implements Adapter<Document> {
       item.website_name,
       item.summary,
       item.content,
+      item.various,
+      item.celex,
+      item.eli,
+      item.status,
+      item.author,
       item.attachments,
       item.comments,
       item.tags,
@@ -67,7 +78,12 @@ export class DocumentAdapter implements Adapter<Document> {
       website_name: document.websiteName,
       summary: document.summary,
       content: document.content,
-      attachments: document.attachmentIds,
+      various: document.various,
+      celex: document.celex,
+      eli: document.eli,
+      status: document.status,
+      author: document.author,
+      attachments: document.attachments,
       comments: document.commentIds,
       tags: document.tags,
       pull: document.pull,

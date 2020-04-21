@@ -1,17 +1,45 @@
 <div class="jumbotron" *ngIf="document$ | async as document; else elseBlock">
   <h4>
     {{ document.websiteName }} :
+    <span *ngIf="document.titlePrefix">{{ document.titlePrefix }} : </span>
     <a href="{{ document.url }}">{{ document.title }} </a>
   </h4>
 
-  <p class="small font-italic">{{ document.date }}</p>
-  <p *ngIf="document.type" class="">Type: {{ document.type }}</p>
-  <p *ngIf="document.celex" class="">Celex: {{ document.celex }}</p>
-  <p *ngIf="document.eli" class="">Eli: {{ document.eli }}</p>
-  <p *ngIf="document.status" class="">Status: {{ document.status }}</p>
-  <p *ngIf="document.various" class="">Various: {{ document.various }}</p>
-  <div>
+  <p>
+    <span class="font-italic">{{ document.date | date }}</span>
+  </p>
+  <p *ngIf="document.type" class=""><u>Type:</u> {{ document.type }}</p>
+  <p *ngIf="document.author" class=""><u>Author:</u> {{ document.author }}</p>
+  <p *ngIf="document.celex" class=""><u>Celex:</u> {{ document.celex }}</p>
+  <p *ngIf="document.eli" class=""><u>Eli:</u> {{ document.eli }}</p>
+  <p *ngIf="document.status" class=""><u>Status:</u> {{ document.status }}</p>
+  <p *ngIf="document.various" class="">
+    <u>Various:</u> {{ document.various }}
+  </p>
+  <div *ngIf="document.summary">
+    <hr class="my-4" />
     <samp class="text-justify">{{ document.summary }}</samp>
+  </div>
+  <div *ngIf="document.content">
+    <hr class="my-4" />
+    <samp class="text-justify">{{ document.content }}</samp>
+  </div>
+  <div>
+    <hr class="my-4" />
+    <p><b>Attachments:</b></p>
+    <table>
+      <tr *ngFor="let attachment of document.attachments">
+        <td>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="openModal(editProfileModal, attachment.id)"
+          >
+            {{ attachment.url }}
+          </button>
+        </td>
+      </tr>
+    </table>
   </div>
   <hr class="my-4" />
   <div>
@@ -67,3 +95,34 @@
     <p>Select a document above.</p>
   </ng-template>
 </div>
+
+<!-- Modal dialog-->
+<ng-template #editProfileModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title" id="editProfileLabel">
+      Attachment: {{ attachment.url }}
+    </h5>
+    <button
+      type="button"
+      class="close"
+      (click)="modal.dismiss()"
+      aria-label="Close"
+    >
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+
+  <div class="modal-body">
+    <pre>{{ attachment.content }}</pre>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
+      Close
+    </button>
+    <a href="{{ attachment.url }}">
+      <button type="button" class="btn btn-primary">
+        See original
+      </button>
+    </a>
+  </div>
+</ng-template>
