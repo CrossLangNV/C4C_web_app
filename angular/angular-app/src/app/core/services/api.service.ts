@@ -164,7 +164,7 @@ export class ApiService {
   public createDocument(document: Document): Observable<Document> {
     return this.http
       .post<Document>(
-        `${this.API_URL}/document/`,
+        `${this.API_URL}/documents`,
         this.documentAdapter.encode(document)
       )
       .pipe(map((item) => this.documentAdapter.adapt(item)));
@@ -188,7 +188,7 @@ export class ApiService {
   }
 
   public addAttachment(formData: FormData): Observable<Attachment> {
-    return this.http.post<Attachment>(`${this.API_URL}/attachment/`, formData);
+    return this.http.post<Attachment>(`${this.API_URL}/attachments`, formData);
   }
 
   public deleteAttachment(id: string): Observable<any> {
