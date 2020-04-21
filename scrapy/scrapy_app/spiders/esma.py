@@ -25,9 +25,6 @@ class EsmaScraperSpider(scrapy.Spider):
         if reference_number is not None:
             reference = reference_number.getText()
             newdict.update({"reference": reference})
-            # pseudo-url for element
-            url = 'https://www.esma.europa.eu/' + reference.replace(' ', '')
-            newdict.update({"url": url})
         if publication_title is not None:
             title = publication_title.getText()
             newdict.update({"title": title})
@@ -41,6 +38,8 @@ class EsmaScraperSpider(scrapy.Spider):
         if pdf_link is not None:
             pdf_link = pdf_link.get('href')
             newdict.update({"pdf_docs": [pdf_link]})
+            # doc url == pdf url for esma
+            newdict.update({"url": pdf_link})
         return newdict
 
     def parse(self, response):
