@@ -25,16 +25,26 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
         # render overview page
         scraped_tasks = ScrapingTask.objects.all()
         # FIXME: get list from http://localhost:6800/listspiders.json?project=default ?
-        spiders = ["bis", "eiopa", "esma", "eurlex", "fsb", "quotes", "srb"]
+        spiders = [{"id": "bis"}, {"id": "eiopa"}, {"id": "esma"}, {
+            "id": "eurlex", "type": "directions"}, {"id": "eurlex", "type": "decisions"}, {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
+            {"id": "eba", "type": "guidelines"}, {
+                "id": "eba", "type": "recommendations"},
+        ]
         return render(request, self.template_name, {'scraped_tasks': scraped_tasks, 'nav': 'scraping', 'spiders': spiders})
 
     # new scraping task
     def post(self, request, spider):
+        spider_type = request.POST.get('spider_type')
+        if not spider_type:
+            return JsonResponse({'error': 'Missing spider type'})
+
         if not spider:
             return JsonResponse({'error': 'Missing spider'})
 
         scraping_task = ScrapingTask.objects.create(
-            spider=spider
+            spider=spider,
+            spider_type=spider_type
+
         )
         scraping_task.save()
 

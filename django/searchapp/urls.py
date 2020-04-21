@@ -65,9 +65,12 @@ urlpatterns = [
 
     # API
     # Swagger drf-yasg
-    re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('swagger', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('redoc', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    re_path(r'^swagger(?P<format>\.json|\.yaml)$',
+            schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    path('swagger', schema_view.with_ui(
+        'swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('redoc', schema_view.with_ui(
+        'redoc', cache_timeout=0), name='schema-redoc'),
 
     # Website
     path('api/websites', views.WebsiteListAPIView.as_view(),
@@ -106,6 +109,10 @@ urlpatterns = [
          name='tag_list_api'),
     path('api/tag/<int:pk>', views.TagDetailAPIView.as_view(),
          name='tag_detail_api'),
+
+    # Celex
+    path('api/celex', views.celex_get_xhtml,
+         name='celex_get_api'),
 
     # Super
     path('api/super', views.IsSuperUserAPIView.as_view(), name='super_api'),

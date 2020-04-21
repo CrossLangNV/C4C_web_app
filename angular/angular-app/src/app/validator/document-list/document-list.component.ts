@@ -55,6 +55,7 @@ export class DocumentListComponent implements OnInit {
     { id: 'eurlex', name: '..EURLEX' },
     { id: 'fsb', name: '..FSB' },
     { id: 'srb', name: '..SRB' },
+    { id: 'eba', name: '..EBA' },
   ];
   websiteFilter: string = 'none';
   searchTermChanged: Subject<string> = new Subject<string>();
