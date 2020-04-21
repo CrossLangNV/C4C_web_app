@@ -39,6 +39,17 @@
           </button>
         </td>
       </tr>
+      <tr *ngIf="document.celex">
+        <td>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="openModal(editProfileModal, 'CELEX:' + document.celex)"
+          >
+            XHTML
+          </button>
+        </td>
+      </tr>
     </table>
   </div>
   <hr class="my-4" />
@@ -112,9 +123,7 @@
     </button>
   </div>
 
-  <div class="modal-body">
-    <pre>{{ attachment.content }}</pre>
-  </div>
+  <div [innerHTML]="attachment.content" class="modal-body"></div>
   <div class="modal-footer">
     <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
       Close

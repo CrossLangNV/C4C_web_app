@@ -46,6 +46,7 @@ export class DocumentValidateComponent implements OnInit {
     this.authenticationService.currentDjangoUser.subscribe(
       (x) => (this.currentDjangoUser = x)
     );
+    this.attachment = new Attachment('', '', '', '', '');
     this.cities = [];
     this.cities.push({ label: 'Level 1', value: 'level1' });
     this.cities.push({ label: 'Level 2', value: 'level2' });
@@ -110,7 +111,7 @@ export class DocumentValidateComponent implements OnInit {
     });
   }
 
-  openModal(targetModal, attachmentId) {
+  openModal(targetModal, attachmentId: string) {
     this.modalService.open(targetModal, {
       centered: true,
       backdrop: 'static',
@@ -118,9 +119,17 @@ export class DocumentValidateComponent implements OnInit {
       scrollable: true,
     });
 
-    this.service.getAttachment(attachmentId).subscribe((attachment) => {
-      this.attachment = attachment;
-    });
+    if (attachmentId.startsWith('CELEX:')) {
+      attachmentId = attachmentId.replace(/CELEX:/g, '');
+      this.service.getEURLEXxhtml(attachmentId).subscribe((xhtml) => {
+        this.attachment = new Attachment(attachmentId, '', '', '', xhtml);
+      });
+    } else {
+      this.service.getAttachment(attachmentId).subscribe((attachment) => {
+        attachment.content = '<pre>' + attachment.content + '</pre>';
+        this.attachment = attachment;
+      });
+    }
   }
   onSubmit() {
     this.modalService.dismissAll();

@@ -1,5 +1,5 @@
 import logging
-
+import requests
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse_lazy
@@ -18,6 +18,8 @@ from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerial
 from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
 
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 import json
 import logging
@@ -390,3 +392,15 @@ class SolrDocument(APIView):
     def get(self, request, id, format=None):
         solr_document = solr_search_id(core='documents', id=id)
         return Response(solr_document)
+
+
+@api_view(['GET'])
+def celex_get_xhtml(request):
+    if request.method == 'GET':
+        celex_id = request.GET["celex_id"]
+        logger.info(celex_id)
+        headers = {"Accept": "application/xhtml+xml", "Accept-Language": "eng"}
+        response = requests.get(
+            "http://publications.europa.eu/resource/celex/" + celex_id, headers=headers)
+        logger.info(response.text)
+        return Response(response.text)
