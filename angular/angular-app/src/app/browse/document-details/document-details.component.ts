@@ -13,7 +13,7 @@ import { AcceptanceState } from 'src/app/shared/models/acceptanceState';
 @Component({
   selector: 'app-document-details',
   templateUrl: './document-details.component.html',
-  styleUrls: ['./document-details.component.css']
+  styleUrls: ['./document-details.component.css'],
 })
 export class DocumentDetailsComponent implements OnInit {
   websiteId: string;
@@ -32,8 +32,8 @@ export class DocumentDetailsComponent implements OnInit {
 
   ngOnInit() {
     this.acceptanceState = new AcceptanceState('', '', '', '');
-    this.apiService.getStateValues().subscribe(states => {
-      states.forEach(state => {
+    this.apiService.getStateValues().subscribe((states) => {
+      states.forEach((state) => {
         this.stateValues.push({ label: state, value: state });
       });
     });
@@ -43,19 +43,25 @@ export class DocumentDetailsComponent implements OnInit {
     this.route.paramMap
       .pipe(
         switchMap((params: ParamMap) =>
-          this.apiService.getDocumentSyncWithAttachments(params.get('documentId'))
+          this.apiService.getDocumentSyncWithAttachments(
+            params.get('documentId')
+          )
         )
       )
-      .subscribe(document => {
+      .subscribe((document) => {
         this.document = document;
-        document.attachmentIds.forEach(id => {
-          this.apiService.getAttachment(id).subscribe(attachment => {
-            this.attachments.push(attachment);
-          });
+        document.attachments.forEach((attachment) => {
+          this.apiService
+            .getAttachment(attachment.id)
+            .subscribe((attachment) => {
+              this.attachments.push(attachment);
+            });
         });
-        this.apiService.getState(document.acceptanceState).subscribe(state => {
-          this.acceptanceState = state;
-        })
+        this.apiService
+          .getState(document.acceptanceState)
+          .subscribe((state) => {
+            this.acceptanceState = state;
+          });
       });
     this.deleteIcon = faTrashAlt;
   }
@@ -72,7 +78,7 @@ export class DocumentDetailsComponent implements OnInit {
     formData.append('document', this.document.id);
     formData.append('file', newFile);
     formData.append('url', `http://${uuid.v4()}.test`);
-    this.apiService.addAttachment(formData).subscribe(attachment => {
+    this.apiService.addAttachment(formData).subscribe((attachment) => {
       this.router
         .navigateByUrl('/website', { skipLocationChange: true })
         .then(() =>
@@ -80,7 +86,7 @@ export class DocumentDetailsComponent implements OnInit {
             '/website',
             this.websiteId,
             'document',
-            this.document.id
+            this.document.id,
           ])
         );
     });
@@ -92,10 +98,10 @@ export class DocumentDetailsComponent implements OnInit {
       accept: () => {
         this.apiService
           .deleteDocument(this.document.id)
-          .subscribe(document =>
+          .subscribe((document) =>
             this.router.navigate(['/website/' + this.websiteId])
           );
-      }
+      },
     });
   }
 
@@ -105,7 +111,7 @@ export class DocumentDetailsComponent implements OnInit {
       accept: () => {
         this.apiService
           .deleteAttachment(attachment.id)
-          .subscribe(attachment =>
+          .subscribe((attachment) =>
             this.router
               .navigateByUrl('/website', { skipLocationChange: true })
               .then(() =>
@@ -113,11 +119,11 @@ export class DocumentDetailsComponent implements OnInit {
                   '/website',
                   this.websiteId,
                   'document',
-                  this.document.id
+                  this.document.id,
                 ])
               )
           );
-      }
+      },
     });
   }
 }
