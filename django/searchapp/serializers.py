@@ -67,7 +67,11 @@ class DocumentSerializer(serializers.ModelSerializer):
     def get_acceptance_state_value(self, document):
         user = self.context['request'].user
         qs = AcceptanceState.objects.filter(document=document, user=user)
-        return qs.values_list('value', flat=True)[0]
+        res = qs.values_list('value', flat=True)
+        if len(res):
+            return res[0]
+        else:
+            return None
 
     def get_website_name(self, document):
         return document.website.name

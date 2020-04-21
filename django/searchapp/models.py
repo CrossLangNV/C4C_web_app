@@ -43,6 +43,9 @@ class Document(models.Model):
 
     pull = models.BooleanField(default=False, editable=False)
 
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return self.title
 
@@ -89,6 +92,9 @@ class Attachment(models.Model):
         'Document', related_name='attachments', on_delete=models.CASCADE)
     content = models.TextField(default="")
     pull = models.BooleanField(default=False, editable=False)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.url
