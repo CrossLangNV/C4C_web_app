@@ -85,7 +85,7 @@ export class ApiService {
     //   new Website("1", "name", "htp://url", "bla", []),
     // ]);
     return this.http.post<Website>(
-      `${this.API_URL}/website/`,
+      `${this.API_URL}/websites`,
       this.websiteAdapter.encode(website)
     );
   }
