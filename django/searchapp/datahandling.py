@@ -24,18 +24,22 @@ def score_documents(django_documents):
             js = response.json()
             logger.info("Got response: " + json.dumps(js))
             accepted_probability = js["accepted_probability"]
-            AcceptanceState.objects.create(
-                value=AcceptanceStateValue.ACCEPTED if accepted_probability > 0.5 else AcceptanceStateValue.REJECTED,
+            AcceptanceState.objects.update_or_create(
+                probability_model="auto classifier",
                 document=django_doc,
-                probability_model='auto classifier',
-                accepted_probability=accepted_probability
+                defaults={
+                    'value': AcceptanceStateValue.ACCEPTED if accepted_probability > 0.5 else AcceptanceStateValue.REJECTED,
+                    'accepted_probability': accepted_probability
+                }
             )
         else:
-            AcceptanceState.objects.create(
-                value=AcceptanceStateValue.UNVALIDATED,
+            AcceptanceState.objects.update_or_create(
+                probability_model="auto classifier",
                 document=django_doc,
-                probability_model='auto classifier',
-                accepted_probability=0
+                defaults={
+                    'value': AcceptanceStateValue.UNVALIDATED,
+                    'accepted_probability': 0
+                }
             )
 
 
