@@ -2,7 +2,7 @@
   <h4>
     {{ document.websiteName }} :
     <span *ngIf="document.titlePrefix">{{ document.titlePrefix }} : </span>
-    <a href="{{ document.url }}">{{ document.title || "no title" }} </a>
+    <a href="{{ document.url }}">{{ document.title || "(no title)" }} </a>
   </h4>
 
   <p>
@@ -24,7 +24,7 @@
     <hr class="my-4" />
     <samp class="text-justify">{{ document.content }}</samp>
   </div>
-  <div>
+  <div *ngIf="document.attachments.length">
     <hr class="my-4" />
     <p><b>Attachments:</b></p>
     <table>
