@@ -23,6 +23,7 @@ export class DocumentListComponent implements OnInit {
   page: any = 1;
   previousPage: any;
   pageSize = 5;
+  showOnlyOwn: false;
   stats = {
     unValidatedSize: 0,
     unValidatedPercent: 0,
@@ -42,7 +43,6 @@ export class DocumentListComponent implements OnInit {
   userIcon: IconDefinition;
   filters = [
     { id: 'none', name: 'Filter..' },
-    { id: 'own', name: '..Validated by me' },
     { id: 'unvalidated', name: '..Unvalidated' },
     { id: 'accepted', name: '..Accepted' },
     { id: 'rejected', name: '..Rejected' },
@@ -76,7 +76,8 @@ export class DocumentListComponent implements OnInit {
         this.keyword,
         this.filterType,
         this.currentDjangoUser.username,
-        this.websiteFilter
+        this.websiteFilter,
+        this.showOnlyOwn
       )
       .subscribe((result) => {
         this.documents$ = result.results;
@@ -122,5 +123,10 @@ export class DocumentListComponent implements OnInit {
       this.previousPage = page;
       this.fetchDocuments();
     }
+  }
+
+  filterResetPage() {
+    this.page = 1;
+    this.fetchDocuments();
   }
 }
