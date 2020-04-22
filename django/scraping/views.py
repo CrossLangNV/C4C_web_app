@@ -40,8 +40,6 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
         spider_type = request.POST.get('spider_type')
         logger.info("Starting spider: " + spider +
                     " with type: " + spider_type)
-        if not spider_type:
-            return JsonResponse({'error': 'Missing spider type'})
 
         if not spider:
             return JsonResponse({'error': 'Missing spider'})
