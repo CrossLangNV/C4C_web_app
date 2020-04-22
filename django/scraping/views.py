@@ -1,5 +1,6 @@
 import os
 
+import logging
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
@@ -14,6 +15,8 @@ from scrapyd_api import ScrapydAPI
 from .models import ScrapingTask
 from .serializers import ScrapingTaskSerializer
 
+logger = logging.getLogger(__name__)
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
@@ -26,7 +29,7 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
         scraped_tasks = ScrapingTask.objects.all()
         # FIXME: get list from http://localhost:6800/listspiders.json?project=default ?
         spiders = [{"id": "bis"}, {"id": "eiopa"}, {"id": "esma"}, {
-            "id": "eurlex", "type": "directions"}, {"id": "eurlex", "type": "decisions"}, {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
+            "id": "eurlex", "type": "directives"}, {"id": "eurlex", "type": "decisions"}, {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
             {"id": "eba", "type": "guidelines"}, {
                 "id": "eba", "type": "recommendations"},
         ]
@@ -35,6 +38,8 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
     # new scraping task
     def post(self, request, spider):
         spider_type = request.POST.get('spider_type')
+        logger.info("Starting spider: " + spider +
+                    " with type: " + spider_type)
         if not spider_type:
             return JsonResponse({'error': 'Missing spider type'})
 
@@ -56,7 +61,7 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
 
         # schedule scraping task
         scrapyd_task_id = self.scrapyd.schedule(
-            self.scrapyd_project, spider, settings=settings)
+            self.scrapyd_project, spider, settings=settings, spider_type=spider_type)
 
         # Store the scheduler_id
         scraping_task.scheduler_id = scrapyd_task_id

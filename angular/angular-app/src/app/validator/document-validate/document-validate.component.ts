@@ -112,6 +112,7 @@ export class DocumentValidateComponent implements OnInit {
   }
 
   openModal(targetModal, attachmentId: string) {
+    this.attachment = new Attachment('', '', '', '', '');
     this.modalService.open(targetModal, {
       centered: true,
       backdrop: 'static',
