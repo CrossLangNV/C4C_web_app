@@ -229,12 +229,13 @@ class DocumentListAPIView(ListCreateAPIView):
         keyword = self.request.GET.get('keyword', "")
         if keyword:
             q = q.filter(title__icontains=keyword)
-        filtertype = self.request.GET.get('filterType', "")
-        if filtertype == "own":
+        showOnlyOwn = self.request.GET.get('showOnlyOwn', "")
+        if showOnlyOwn == "true":
             username = self.request.GET.get('userName', "")
             q = q.filter(acceptance_states__user__username=username)
-            q = q.filter(Q(acceptance_states__value="Accepted") |
-                         Q(acceptance_states__value="Rejected"))
+            # q = q.filter(Q(acceptance_states__value="Accepted") |
+            #              Q(acceptance_states__value="Rejected"))
+        filtertype = self.request.GET.get('filterType', "")
         if filtertype == "unvalidated":
             q = q.filter(Q(acceptance_states__isnull=True) |
                          Q(acceptance_states__value="Unvalidated"))
@@ -402,5 +403,8 @@ def celex_get_xhtml(request):
         headers = {"Accept": "application/xhtml+xml", "Accept-Language": "eng"}
         response = requests.get(
             "http://publications.europa.eu/resource/celex/" + celex_id, headers=headers)
-        logger.info(response.text)
+        if response.status_code != 200:
+            headers = {"Accept": "text/html", "Accept-Language": "eng"}
+            response = requests.get(
+                "http://publications.europa.eu/resource/celex/" + celex_id, headers=headers)
         return Response(response.text)
