@@ -128,7 +128,7 @@
               [routerLink]="[
                 { outlets: { secondary: ['document', document.id] } }
               ]"
-              >{{ document.title | truncate: [80, "..."] || "no title" }}</a
+              >{{ document.title || "(no title)" | truncate: [80, "..."] }}</a
             >&nbsp;
             <span
               *ngIf="document.comments.length > 0"
@@ -149,11 +149,15 @@
           <td>
             <p-chips [(ngModel)]="document.acceptance_states" disabled="true" styleClass="p-chips-state">
               <ng-template let-state pTemplate="state">
-                <div [className]="state.value | lowercase" *ngIf="state.user" pTooltip="created: {{state.created_at | date: 'short'}}, last updated: {{state.updated_at | date: 'short'}}" tooltipPosition="top">
+                <div [className]="state.value | lowercase" *ngIf="state.user"
+                  pTooltip="created: {{state.created_at | date: 'short'}}, last updated: {{state.updated_at | date: 'short'}}"
+                  tooltipPosition="top">
                   {{ state.value }} - {{ state.user.username }}
                   <fa-icon [icon]="userIcon"></fa-icon>
                 </div>
-                <div [className]="state.value | lowercase" *ngIf="state.probability_model" pTooltip="confidence: {{state.accepted_probability | number: '1.0-3'}}, created: {{state.created_at | date: 'short'}}, last updated: {{state.updated_at | date: 'short'}}" tooltipPosition="top">
+                <div [className]="state.value | lowercase" *ngIf="state.probability_model"
+                  pTooltip="confidence: {{state.accepted_probability | number: '1.0-3'}}, created: {{state.created_at | date: 'short'}}, last updated: {{state.updated_at | date: 'short'}}"
+                  tooltipPosition="top">
                   {{ state.value }} - {{ state.probability_model }}
                   <fa-icon [icon]="chipIcon"></fa-icon>
                 </div>
