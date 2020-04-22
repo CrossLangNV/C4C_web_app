@@ -8,7 +8,7 @@ from urllib.request import urlopen, Request
 from django.core.files.base import ContentFile
 from django.db import transaction
 
-from searchapp.models import Document, Attachment, Website
+from searchapp.models import Document, Attachment, Website, AcceptanceState, AcceptanceStateValue
 
 logger = logging.getLogger(__name__)
 
@@ -17,16 +17,26 @@ logger = logging.getLogger(__name__)
 def score_documents(django_documents):
     for django_doc in django_documents:
         url = os.environ['DOCUMENT_CLASSIFIER_URL'] + "/classify_doc"
-        if(len(django_doc.summary)):
+        if (len(django_doc.summary)):
             data = {'document': django_doc.summary}
             response = requests.post(url, json=data)
             logger.info("Sending content: " + json.dumps(data))
             js = response.json()
             logger.info("Got response: " + json.dumps(js))
-            django_doc.accepted_probability = js["accepted_probability"]
+            accepted_probability = js["accepted_probability"]
+            AcceptanceState.objects.create(
+                value=AcceptanceStateValue.ACCEPTED if accepted_probability > 0.5 else AcceptanceStateValue.REJECTED,
+                document=django_doc,
+                probability_model='auto classifier',
+                accepted_probability=accepted_probability
+            )
         else:
-            django_doc.accepted_probability = 0
-        django_doc.save()
+            AcceptanceState.objects.create(
+                value=AcceptanceStateValue.UNVALIDATED,
+                document=django_doc,
+                probability_model='auto classifier',
+                accepted_probability=0
+            )
 
 
 @transaction.atomic

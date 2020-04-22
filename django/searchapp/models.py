@@ -39,7 +39,6 @@ class Document(models.Model):
     summary = models.TextField(default="", blank=True)
     content = models.TextField(default="", blank=True)
     various = models.TextField(default="", blank=True)
-    accepted_probability = models.FloatField(default=0.0, blank=True)
 
     pull = models.BooleanField(default=False, editable=False)
 
@@ -79,9 +78,11 @@ class AcceptanceState(models.Model):
                              default=AcceptanceStateValue.UNVALIDATED)
     document = models.ForeignKey(
         'Document', related_name='acceptance_states', on_delete=models.CASCADE)
-    user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    user = models.ForeignKey('auth.User', on_delete=models.CASCADE, blank=True, null=True)
+    probability_model = models.CharField(max_length=50, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    accepted_probability = models.FloatField(default=0.0, blank=True)
 
 
 class Attachment(models.Model):
