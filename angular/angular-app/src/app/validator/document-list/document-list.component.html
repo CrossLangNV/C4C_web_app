@@ -131,7 +131,7 @@
               [routerLink]="[
                 { outlets: { secondary: ['document', document.id] } }
               ]"
-              >{{ document.title | truncate: [80, "..."] }}</a
+              >{{ document.title | truncate: [80, "..."] || "no title" }}</a
             >&nbsp;
             <span
               *ngIf="document.comments.length > 0"

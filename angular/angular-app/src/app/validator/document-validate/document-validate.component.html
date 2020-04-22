@@ -2,7 +2,7 @@
   <h4>
     {{ document.websiteName }} :
     <span *ngIf="document.titlePrefix">{{ document.titlePrefix }} : </span>
-    <a href="{{ document.url }}">{{ document.title }} </a>
+    <a href="{{ document.url }}">{{ document.title || "no title" }} </a>
   </h4>
 
   <p>
