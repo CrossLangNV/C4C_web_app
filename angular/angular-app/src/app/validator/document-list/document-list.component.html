@@ -113,9 +113,6 @@
           <th scope="col" sortable="document" (sort)="onSort($event)">Title</th>
           <th scope="col" sortable="tags" (sort)="onSort($event)">Tags</th>
           <th scope="col" sortable="users" (sort)="onSort($event)">States</th>
-          <th scope="col" sortable="confidence" (sort)="onSort($event)">
-            Confidence
-          </th>
           <!-- <th scope="col" sortable="autoclassify" (sort)="onSort($event)">
         Auto-classify
       </th> -->
@@ -151,16 +148,17 @@
           <td>
             <p-chips [(ngModel)]="document.acceptance_states" disabled="true">
               <ng-template let-state pTemplate="state">
-                {{ state.value }} - {{ state.user.username }}
-                <fa-icon [icon]="userIcon"></fa-icon>
+                <div *ngIf="state.user" pTooltip="created: {{state.created_at | date: 'short'}}, last updated: {{state.updated_at | date: 'short'}}" tooltipPosition="top">
+                  {{ state.value }} - {{ state.user.username }}
+                  <fa-icon [icon]="userIcon"></fa-icon>
+                </div>
+                <div *ngIf="state.probability_model" pTooltip="confidence: {{state.accepted_probability | number: '1.0-3'}}, created: {{state.created_at | date: 'short'}}, last updated: {{state.updated_at | date: 'short'}}" tooltipPosition="top">
+                  {{ state.value }} - {{ state.probability_model }}
+                  <fa-icon [icon]="chipIcon"></fa-icon>
+                </div>
               </ng-template>
             </p-chips>
           </td>
-          <td
-            *ngIf="document.accepted_probability > 0"
-            [innerHTML]="document.accepted_probability | number: '1.0-3'"
-          ></td>
-          <td *ngIf="document.accepted_probability == 0">-</td>
         </tr>
       </tbody>
     </table>

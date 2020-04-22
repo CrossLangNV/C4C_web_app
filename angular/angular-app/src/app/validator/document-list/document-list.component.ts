@@ -7,7 +7,7 @@ import { Document, DocumentResults } from 'src/app/shared/models/document';
 import { Subject } from 'rxjs';
 import { Tag } from 'src/app/shared/models/tag';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { faUserAlt } from '@fortawesome/free-solid-svg-icons';
+import { faUserAlt, faMicrochip } from '@fortawesome/free-solid-svg-icons';
 import { DjangoUser } from 'src/app/shared/models/django_user';
 import { AuthenticationService } from 'src/app/core/auth/authentication.service';
 
@@ -41,6 +41,7 @@ export class DocumentListComponent implements OnInit {
   filterType: string = 'none';
   keyword: string;
   userIcon: IconDefinition;
+  chipIcon: IconDefinition;
   filters = [
     { id: 'none', name: 'Filter..' },
     { id: 'unvalidated', name: '..Unvalidated' },
@@ -86,6 +87,7 @@ export class DocumentListComponent implements OnInit {
   }
   ngOnInit() {
     this.userIcon = faUserAlt;
+    this.chipIcon = faMicrochip;
     this.authenticationService.currentDjangoUser.subscribe(
       (x) => (this.currentDjangoUser = x)
     );
