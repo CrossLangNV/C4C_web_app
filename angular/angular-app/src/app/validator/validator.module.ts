@@ -6,6 +6,7 @@ import { ValidatorRoutingModule } from './validator-routing.module';
 import { DocumentValidateComponent } from './document-validate/document-validate.component';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ChipsModule } from 'primeng/chips';
+import { TooltipModule } from 'primeng/tooltip';
 import { TruncatePipe } from '../shared/pipelines/truncate';
 
 @NgModule({
@@ -19,6 +20,7 @@ import { TruncatePipe } from '../shared/pipelines/truncate';
     SharedModule,
     SelectButtonModule,
     ChipsModule,
+    TooltipModule,
     ValidatorRoutingModule,
   ],
 })
