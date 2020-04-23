@@ -218,6 +218,30 @@ class SmallResultsSetPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 1000
 
+    def get_paginated_response(self, data):
+        q1 = Document.objects.all()
+        q2 = q1.filter(Q(acceptance_states__isnull=True) |
+                       Q(acceptance_states__value="Unvalidated"))
+        q3 = q1.filter(acceptance_states__value="Rejected").exclude(
+            acceptance_states__probability_model__isnull=False)
+        q4 = q1.filter(acceptance_states__value="Accepted").exclude(
+            acceptance_states__probability_model__isnull=False)
+        q5 = q1.filter(acceptance_states__value="Rejected").exclude(
+            acceptance_states__probability_model__isnull=True)
+        q6 = q1.filter(acceptance_states__value="Accepted").exclude(
+            acceptance_states__probability_model__isnull=True)
+
+        return Response({
+            'count': self.page.paginator.count,
+            'count_total': len(q1),
+            'count_unvalidated': len(q2),
+            'count_rejected': len(q3),
+            'count_validated': len(q4),
+            'count_autorejected': len(q5),
+            'count_autovalidated': len(q6),
+            'results': data
+        })
+
 
 class DocumentListAPIView(ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
