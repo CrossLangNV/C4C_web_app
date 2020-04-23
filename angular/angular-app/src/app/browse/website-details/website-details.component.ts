@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import { switchMap } from 'rxjs/operators';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faTrashAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
-import { SelectItem, ConfirmationService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { ApiAdminService } from 'src/app/core/services/api.admin.service';
 import { AcceptanceState } from 'src/app/shared/models/acceptanceState';
 
@@ -83,39 +83,39 @@ export class WebsiteDetailsComponent implements OnInit {
     this.addIcon = faPlus;
   }
 
-  // onDelete() {
-  //   this.confirmationService.confirm({
-  //     message: 'Do you want to delete this website?',
-  //     accept: () => {
-  //       this.apiService
-  //         .deleteWebsite(this.website.id)
-  //         .subscribe((website) => this.router.navigate(['/website/']));
-  //     },
-  //   });
-  // }
+  onDelete() {
+    this.confirmationService.confirm({
+      message: 'Do you want to delete this website?',
+      accept: () => {
+        this.apiService
+          .deleteWebsite(this.website.id)
+          .subscribe((website) => this.router.navigate(['/websites']));
+      },
+    });
+  }
 
-  // onNameChanged(event: any) {
-  //   this.website.name = event.target.value;
-  //   this.apiService.updateWebsite(this.website).subscribe((website) => {
-  //     this.website = website as Website;
-  //     this.titleIsBeingEdited = false;
-  //   });
-  // }
+  onNameChanged(event: any) {
+    this.website.name = event.target.value;
+    this.apiService.updateWebsite(this.website).subscribe((website) => {
+      this.website = website as Website;
+      this.titleIsBeingEdited = false;
+    });
+  }
 
-  // onUrlChanged(event: any) {
-  //   this.website.url = event.target.value;
-  //   this.apiService.updateWebsite(this.website).subscribe((website) => {
-  //     this.website = website as Website;
-  //     this.urlIsBeingEdited = false;
-  //   });
-  // }
+  onUrlChanged(event: any) {
+    this.website.url = event.target.value;
+    this.apiService.updateWebsite(this.website).subscribe((website) => {
+      this.website = website as Website;
+      this.urlIsBeingEdited = false;
+    });
+  }
 
-  // onContentChanged(event: any) {
-  //   event.preventDefault();
-  //   this.website.content = event.target.value;
-  //   this.apiService.updateWebsite(this.website).subscribe((website) => {
-  //     this.website = website as Website;
-  //     this.contentIsBeingEdited = false;
-  //   });
-  // }
+  onContentChanged(event: any) {
+    event.preventDefault();
+    this.website.content = event.target.value;
+    this.apiService.updateWebsite(this.website).subscribe((website) => {
+      this.website = website as Website;
+      this.contentIsBeingEdited = false;
+    });
+  }
 }
