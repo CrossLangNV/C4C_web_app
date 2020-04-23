@@ -24,7 +24,10 @@ SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [h for h in os.environ.get('DJANGO_ALLOWED_HOSTS', "localhost django").split(" ")]
+ALLOWED_HOSTS = [h for h in os.environ.get(
+    'DJANGO_ALLOWED_HOSTS', "localhost django").split(" ")]
+CORS_ORIGIN_WHITELIST = [h for h in os.environ.get(
+    'DJANGO_CORS_ORIGIN_WHITELIST', "http://localhost:4200 http://localhost:8080").split(" ")]
 
 # Application definition
 
@@ -37,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_cleanup.apps.CleanupConfig',
     'rest_framework',
+    'drf_yasg',
     'oauth2_provider',
     'social_django',
     'rest_framework_social_oauth2',
@@ -57,11 +61,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-CORS_ORIGIN_WHITELIST = (
-    'http://localhost:4200',
-    'http://localhost:8080',
-)
 
 ROOT_URLCONF = 'project.urls'
 
@@ -140,6 +139,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'auth': {
+            'type': 'oauth2',
+            'tokenUrl': os.environ['DJANGO_BASE_URL'] + '/auth/token',
+            'flow': 'password',
+            'scopes': {
+            }
+        }
+    }
+}
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -182,3 +193,7 @@ LOGIN_URL = 'searchapp:login'
 LOGIN_REDIRECT_URL = 'searchapp:websites'
 LOGOUT_URL = 'searchapp:logout'
 LOGOUT_REDIRECT_URL = 'searchapp:login'
+
+# Play nice with REST Framework
+# See https://stackoverflow.com/questions/42212122/why-django-urls-end-with-a-slash
+APPEND_SLASH = False

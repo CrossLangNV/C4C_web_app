@@ -2,14 +2,16 @@
 // `ng build --prod` replaces `environment.ts` with `environment.prod.ts`.
 // The list of file replacements can be found in `angular.json`.
 
+// See env.js under /assets
+// According to https://pumpingco.de/blog/environment-variables-angular-docker/
 export const environment = {
-  ANGULAR_PRODUCTION: 'false',
-  ANGULAR_DJANGO_API_URL: 'http://localhost:8000/searchapp/api',
-  ANGULAR_DJANGO_API_ADMIN_URL: 'http://localhost:8000/admin/api',
-  ANGULAR_DJANGO_AUTH_URL: 'http://localhost:8000/auth',
-  ANGULAR_GOOGLE_CLIENT_ID: '540501250122-2k39tbh973rc7ufpl2nioor6muejkvok.apps.googleusercontent.com',
-  ANGULAR_DJANGO_CLIENT_ID: 'iLGzC0VKWPG5nrlGEByWRO2zo5gXn1gTzKGVHWUa',
-  ANGULAR_DJANGO_CLIENT_SECRET: 'vLY4j1po4bb0LfvXwEB5j0EkxuWROQOFtFDt6FrRd74ITsPUHUwhyjQAzlC0JcWqVl4GxrytaWip6zeONW5KPtmNbMQnijfFJFCZ7lnDxvzdstKGbJXMtYS9BLk6GzR2',
+  ANGULAR_PRODUCTION: window['env']['ANGULAR_PRODUCTION'],
+  ANGULAR_DJANGO_API_URL: window['env']['ANGULAR_DJANGO_API_URL'],
+  ANGULAR_DJANGO_API_ADMIN_URL: window['env']['ANGULAR_DJANGO_API_ADMIN_URL'],
+  ANGULAR_DJANGO_AUTH_URL: window['env']['ANGULAR_DJANGO_AUTH_URL'],
+  ANGULAR_GOOGLE_CLIENT_ID: window['env']['ANGULAR_GOOGLE_CLIENT_ID'],
+  ANGULAR_DJANGO_CLIENT_ID: window['env']['ANGULAR_DJANGO_CLIENT_ID'],
+  ANGULAR_DJANGO_CLIENT_SECRET: window['env']['ANGULAR_DJANGO_CLIENT_SECRET'],
 };
 
 /*

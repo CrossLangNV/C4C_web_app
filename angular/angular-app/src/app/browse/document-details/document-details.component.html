@@ -1,42 +1,60 @@
-<h4>{{ document.title }}</h4>
-<div class="font-italic small">Date of document:</div>
-<p class="font-italic small mb-5">{{ document.date }}</p>
+<div class="jumbotron">
+  <h4>{{ document.title }}</h4>
+  <div class="font-italic small">Date of document:</div>
+  <p class="font-italic small mb-5">{{ document.date }}</p>
 
-<p><b>Type:</b> {{ document.type }}</p>
-<h6></h6>
-<p><b>Title prefix:</b> {{ document.titlePrefix }}</p>
-<p><b>Acceptance state:</b></p>
-<p-selectButton styleClass="mb-4" [options]="stateValues" [(ngModel)]="acceptanceState.value" (onChange)="onStateChange($event)"> -->
-</p-selectButton>
-<p><b>From:&nbsp;</b> <a href="{{ document.url }}">{{ document.url }}</a></p>
-<p><b>Summary:</b></p>
-<div>
-  <p class="col-lg-7 text-justify mb-5">{{ document.summary }}</p>
-</div>
-<p-panel styleClass="my-2" header="Attachments">
-  <ul class="list-group my-2">
-    <li class="list-group-item" *ngFor="let attachment of attachments">
-      <a href="{{ attachment.file }}">{{ attachment.file }}</a>
-      <p-scrollPanel [style]="{width: '100%', height: '200px'}">
-        {{ attachment.content }}
-      </p-scrollPanel>
-      <div class="delete-attachment my-2">
-        <button class="btn btn-secondary" (click)="onDeleteAttachment(attachment)">
-          <fa-icon [icon]="deleteIcon"></fa-icon> Delete
-        </button>
-      </div>
-    </li>
-  </ul>
-</p-panel>
-<p class="mt-4"><b>Add file</b></p>
-<div class="add-attachment">
-  <p-fileUpload name="file" customUpload="true" accept=".pdf" [auto]="true" (uploadHandler)="onAddFile($event)">
-  </p-fileUpload>
-</div>
-<div class="delete-document mt-5">
-  <button class="btn btn-danger" (click)="onDelete()">
-    <fa-icon [icon]="deleteIcon"></fa-icon> Delete document
-  </button>
-  <p-confirmDialog header="Confirmation" icon="pi pi-exclamation-triangle">
-  </p-confirmDialog>
+  <p><b>Type:</b> {{ document.type }}</p>
+  <h6></h6>
+  <p><b>Title prefix:</b> {{ document.titlePrefix }}</p>
+  <p><b>Acceptance state:</b></p>
+  <p-selectButton
+    styleClass="mb-4"
+    [options]="stateValues"
+    [(ngModel)]="acceptanceState.value"
+    (onChange)="onStateChange($event)"
+  >
+  </p-selectButton>
+  <p>
+    <b>From:&nbsp;</b> <a href="{{ document.url }}">{{ document.url }}</a>
+  </p>
+  <p><b>Summary:</b></p>
+  <div>
+    <p class="col-lg-7 text-justify mb-5">{{ document.summary }}</p>
+  </div>
+  <p-panel styleClass="my-2" header="Attachments">
+    <ul class="list-group my-2">
+      <li class="list-group-item" *ngFor="let attachment of attachments">
+        <a href="{{ attachment.file }}">{{ attachment.file }}</a>
+        <p-scrollPanel [style]="{ width: '100%', height: '200px' }">
+          {{ attachment.content }}
+        </p-scrollPanel>
+        <div class="delete-attachment my-2">
+          <button
+            class="btn btn-secondary"
+            (click)="onDeleteAttachment(attachment)"
+          >
+            <fa-icon [icon]="deleteIcon"></fa-icon> Delete
+          </button>
+        </div>
+      </li>
+    </ul>
+  </p-panel>
+  <p class="mt-4"><b>Add file</b></p>
+  <div class="add-attachment">
+    <p-fileUpload
+      name="file"
+      customUpload="true"
+      accept=".pdf"
+      [auto]="true"
+      (uploadHandler)="onAddFile($event)"
+    >
+    </p-fileUpload>
+  </div>
+  <div class="delete-document mt-5">
+    <button class="btn btn-danger" (click)="onDelete()">
+      <fa-icon [icon]="deleteIcon"></fa-icon> Delete document
+    </button>
+    <p-confirmDialog header="Confirmation" icon="pi pi-exclamation-triangle">
+    </p-confirmDialog>
+  </div>
 </div>

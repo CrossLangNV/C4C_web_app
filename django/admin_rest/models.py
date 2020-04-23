@@ -6,6 +6,10 @@ from rest_framework.serializers import ModelSerializer
 
 from admin_rest import permissions
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class AlreadyRegistered(Exception):
     pass
@@ -83,11 +87,13 @@ class RestFulAdminSite:
                 )
 
             if model in self._registry:
-                raise AlreadyRegistered('The model %s is already registered' % model.__name__)
+                raise AlreadyRegistered(
+                    'The model %s is already registered' % model.__name__)
             options.update({
                 "__doc__": self.generate_docs(model)
             })
-            view_class = type("%sAdmin" % model.__name__, (view_class,), options)
+            view_class = type("%sAdmin" % model.__name__,
+                              (view_class,), options)
             # self.set_docs(view_class, model)
             # Instantiate the admin class to save in the registry
             self._registry[model] = view_class
@@ -122,7 +128,8 @@ class RestFulAdminSite:
             model_or_iterable = [model_or_iterable]
         for model in model_or_iterable:
             if model not in self._registry:
-                raise NotRegistered('The model %s is not registered' % model.__name__)
+                raise NotRegistered(
+                    'The model %s is not registered' % model.__name__)
             del self._registry[model]
 
     def is_registered(self, model):
@@ -147,13 +154,15 @@ class RestFulAdminSite:
                 view_set.serializer_class = serializer_class
 
             view_sets.append(view_set)
-            router.register('%s/%s' % (model._meta.app_label, model._meta.model_name), view_set)
+            router.register('%s/%s' % (model._meta.app_label,
+                                       model._meta.model_name), view_set)
 
         return router.urls + self._url_patterns
 
     @property
     def urls(self):
-        return self.get_urls(), 'django_restful_admin', 'django_restful_admin'
+        urls = self.get_urls(), 'django_restful_admin', 'django_restful_admin'
+        return urls
 
 
 site = RestFulAdminSite()

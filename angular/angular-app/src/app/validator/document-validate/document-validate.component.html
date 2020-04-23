@@ -1,0 +1,141 @@
+<div class="jumbotron m-2" *ngIf="document; else elseBlock">
+  <h4>
+    {{ document.websiteName }} :
+    <span *ngIf="document.titlePrefix">{{ document.titlePrefix }} : </span>
+    <a (click)="goToLink(document.url)" class="text-primary"
+      >{{ document.title || "(no title)" }}
+    </a>
+  </h4>
+
+  <p>
+    <span class="font-italic">{{ document.date | date }}</span>
+  </p>
+  <p *ngIf="document.type" class=""><u>Type:</u> {{ document.type }}</p>
+  <p *ngIf="document.author" class=""><u>Author:</u> {{ document.author }}</p>
+  <p *ngIf="document.celex" class=""><u>Celex:</u> {{ document.celex }}</p>
+  <p *ngIf="document.eli" class=""><u>Eli:</u> {{ document.eli }}</p>
+  <p *ngIf="document.status" class=""><u>Status:</u> {{ document.status }}</p>
+  <p *ngIf="document.various" class="">
+    <u>Various:</u> {{ document.various }}
+  </p>
+  <div *ngIf="document.summary">
+    <hr class="my-4" />
+    <samp class="text-justify">{{ document.summary }}</samp>
+  </div>
+  <div *ngIf="document.content">
+    <hr class="my-4" />
+    <samp class="text-justify">{{ document.content }}</samp>
+  </div>
+  <div *ngIf="document.attachments.length || document.celex">
+    <hr class="my-4" />
+    <p><b>Attachments:</b></p>
+    <table>
+      <tr *ngFor="let attachment of document.attachments">
+        <td>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="openModal(editProfileModal, attachment.id)"
+          >
+            {{ attachment.url }}
+          </button>
+        </td>
+      </tr>
+      <tr *ngIf="document.celex">
+        <td>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="openModal(editProfileModal, 'CELEX:' + document.celex)"
+          >
+            HTML
+          </button>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <hr class="my-4" />
+  <div>
+    <p><b>Choose Acceptance State:</b></p>
+    <p-selectButton
+      styleClass="mb-4"
+      [options]="stateValues"
+      [(ngModel)]="document.acceptanceStateValue"
+      (onChange)="onStateChange($event)"
+    >
+    </p-selectButton>
+  </div>
+  <!-- <div>
+    <p><b>Choose Classification:</b></p>
+    <p-selectButton
+      styleClass="mb-4"
+      [options]="cities"
+      [(ngModel)]="selectedCity"
+    ></p-selectButton>
+  </div> -->
+  <div *ngIf="comments.length">
+    <p><b>Comments:</b></p>
+    <div class="card" *ngFor="let comment of comments">
+      <div class="card-header">
+        {{ comment.username }} ({{
+          comment.createdAt | date: "MMM d, y - h:mm a"
+        }})
+      </div>
+      <div class="card-body">
+        <p class="card-text">{{ comment.value }}</p>
+        <div class="delete-comment my-2">
+          <button class="btn btn-secondary" (click)="onDeleteComment(comment)">
+            <fa-icon [icon]="deleteIcon"></fa-icon> Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <form (ngSubmit)="onAddComment()" #addCommentForm="ngForm">
+      <div class="form-group">
+        <label for="comment"><b>New comment:</b></label>
+        <textarea
+          type="text"
+          class="form-control"
+          id="comment"
+          [(ngModel)]="newComment.value"
+          name="comment"
+        ></textarea>
+      </div>
+      <button type="submit" class="btn btn-success">Add</button>
+    </form>
+  </div>
+  <ng-template #elseBlock>
+    <p>Select a document above.</p>
+  </ng-template>
+</div>
+
+<!-- Modal dialog-->
+<ng-template #editProfileModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title" id="editProfileLabel">
+      Attachment: {{ attachment.url }}
+    </h5>
+    <button
+      type="button"
+      class="close"
+      (click)="modal.dismiss()"
+      aria-label="Close"
+    >
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+
+  <div [innerHTML]="attachment.content" class="modal-body"></div>
+  <div class="modal-footer">
+    <a (click)="goToLink(attachment.url)" class="text-primary">
+      <button type="button" class="btn btn-primary">
+        See original
+      </button>
+    </a>
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
+      Close
+    </button>
+  </div>
+</ng-template>

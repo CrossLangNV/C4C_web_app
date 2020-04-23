@@ -3,18 +3,20 @@ from django.contrib.auth.models import User
 
 from admin_rest.models import site as rest_site
 
-from .models import Website, Attachment, Document, AcceptanceState, Comment
+from .models import Website, Attachment, Document, AcceptanceState, Comment, Tag
 
 admin.site.register(Website)
 admin.site.register(Document)
 admin.site.register(Attachment)
 admin.site.register(AcceptanceState)
 admin.site.register(Comment)
+admin.site.register(Tag)
 
 rest_site.register(Website)
 rest_site.register(Document)
 rest_site.register(Attachment)
 rest_site.register(AcceptanceState)
 rest_site.register(Comment)
+rest_site.register(Tag)
 
 rest_site.register(User)

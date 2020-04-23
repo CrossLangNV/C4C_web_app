@@ -6,11 +6,11 @@ import { map, filter } from 'rxjs/operators';
 import { User, UserAdapter } from 'src/app/shared/models/user';
 import {
   AcceptanceState,
-  AcceptanceStateAdapter
+  AcceptanceStateAdapter,
 } from 'src/app/shared/models/acceptanceState';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ApiAdminService {
   API_URL = Environment.ANGULAR_DJANGO_API_ADMIN_URL;
@@ -23,23 +23,26 @@ export class ApiAdminService {
 
   public getUsers(): Observable<User[]> {
     return this.http
-      .get<User[]>(`${this.API_URL}auth/user`)
+      .get<User[]>(`${this.API_URL}/auth/user/`)
       .pipe(
-        map((items: any[]) => items.map(item => this.userAdapter.adapt(item)))
+        map((items: any[]) => items.map((item) => this.userAdapter.adapt(item)))
       );
   }
 
   public getUser(id: string): Observable<User> {
     return this.http
-      .get<User>(`${this.API_URL}auth/user/${id}`)
-      .pipe(map(item => this.userAdapter.adapt(item)));
+      .get<User>(`${this.API_URL}/auth/user/${id}/`)
+      .pipe(map((item) => this.userAdapter.adapt(item)));
   }
 
   public getStates(): Observable<AcceptanceState[]> {
+    // FIXME: does this exist ?
     return this.http
-      .get<AcceptanceState[]>(`${this.API_URL}searchapp/acceptancestate`)
+      .get<AcceptanceState[]>(`${this.API_URL}/searchapp/acceptancestate/`)
       .pipe(
-        map((items: any[]) => items.map(item => this.stateAdapter.adapt(item)))
+        map((items: any[]) =>
+          items.map((item) => this.stateAdapter.adapt(item))
+        )
       );
   }
 }
