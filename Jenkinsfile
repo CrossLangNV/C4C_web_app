@@ -17,7 +17,7 @@ pipeline {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
                             def customImage = docker.build("ctlg-manager/django:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile.prod .")
                             customImage.push()
-                            customImage.push("latest")
+                            customImage.push("${env.BRANCH_NAME}-latest")
                         }
                     }
                 }
@@ -26,7 +26,7 @@ pipeline {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
                             def customImage = docker.build("ctlg-manager/angular:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
                             customImage.push()
-                            customImage.push("latest")
+                            customImage.push("${env.BRANCH_NAME}-latest")
                         }
                     }
                 }
@@ -35,7 +35,7 @@ pipeline {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
                             def customImage = docker.build("ctlg-manager/scrapyd:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
                             customImage.push()
-                            customImage.push("latest")
+                            customImage.push("${env.BRANCH_NAME}-latest")
                         }
                     }
                 }
@@ -44,7 +44,7 @@ pipeline {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
                             def customImage = docker.build("ctlg-manager/solr:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
                             customImage.push()
-                            customImage.push("latest")
+                            customImage.push("${env.BRANCH_NAME}-latest")
                         }
                     }
                 }
