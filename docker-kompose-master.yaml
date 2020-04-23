@@ -1,7 +1,7 @@
 version: '3'
 services:
   angular:
-    image: docker.crosslang.com/ctlg-manager/angular:latest
+    image: docker.crosslang.com/ctlg-manager/angular:master-latest
     ports:
      - "8080:80"
     env_file:
@@ -13,7 +13,7 @@ services:
       kompose.service.expose.tls-secret: "angular-certificate"
 
   django:
-    image: docker.crosslang.com/ctlg-manager/django:latest
+    image: docker.crosslang.com/ctlg-manager/django:master-latest
     ports:
       - "8000:8000"
     command: bash -c "python manage.py makemigrations &&
@@ -27,7 +27,7 @@ services:
       kompose.service.expose.tls-secret: "django-certificate"
 
   scrapyd:
-    image: docker.crosslang.com/ctlg-manager/scrapyd:latest
+    image: docker.crosslang.com/ctlg-manager/scrapyd:master-latest
     ports:
       - "6800:6800"
     command: scrapyd
@@ -40,7 +40,7 @@ services:
       kompose.service.expose.tls-secret: "scrapyd-certificate"
 
   solr:
-    image: docker.crosslang.com/ctlg-manager/solr:latest
+    image: docker.crosslang.com/ctlg-manager/solr:master-latest
     ports:
       - "8983:8983"
     volumes:
