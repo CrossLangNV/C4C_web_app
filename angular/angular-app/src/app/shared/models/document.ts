@@ -4,6 +4,12 @@ import { Attachment } from './attachment';
 
 export interface DocumentResults {
   count: number;
+  count_total: number;
+  count_unvalidated: number;
+  count_rejected: number;
+  count_validated: number;
+  count_autorejected: number;
+  count_autovalidated: number;
   next: string;
   previous: string;
   results: Document[];

@@ -25,13 +25,15 @@ export class DocumentListComponent implements OnInit {
   pageSize = 5;
   showOnlyOwn: false;
   stats = {
+    total: 0,
     unValidatedSize: 0,
+    validatedSize: 0,
+    validatedPercent: 0,
     unValidatedPercent: 0,
     autoValidatedSize: 0,
     autoValidatedPercent: 0,
     autoRejectedSize: 0,
     autoRejectedPercent: 0,
-    autoRejectedSizeCSS: 'width: 30%',
     humanRejectedSize: 0,
     humanRejectedPercent: 0,
     humanAcceptedSize: 0,
@@ -83,6 +85,17 @@ export class DocumentListComponent implements OnInit {
       .subscribe((result) => {
         this.documents$ = result.results;
         this.collectionSize = result.count;
+        this.stats.total = result.count_total;
+        this.stats.validatedSize =
+          result.count_total - result.count_unvalidated;
+        this.stats.validatedPercent = Math.round(
+          (this.stats.validatedSize / result.count_total) * 100
+        );
+        this.stats.unValidatedSize = result.count_unvalidated;
+        this.stats.humanRejectedSize = result.count_rejected;
+        this.stats.humanAcceptedSize = result.count_validated;
+        this.stats.autoRejectedPercent = result.count_autorejected;
+        this.stats.autoValidatedSize = result.count_autovalidated;
       });
   }
   ngOnInit() {
