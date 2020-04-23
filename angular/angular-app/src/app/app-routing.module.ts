@@ -6,6 +6,7 @@ import { AuthGuard } from './core/guards/auth.guard';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
+  { path: '', redirectTo: '/validator', pathMatch: 'full' },
   {
     path: 'browse',
     loadChildren: () =>
@@ -29,8 +30,9 @@ const routes: Routes = [
       import('./validator/validator.module').then((m) => m.ValidatorModule),
     canActivate: [AuthGuard],
   },
+
   // otherwise redirect to home
-  { path: '**', redirectTo: 'validator' },
+  { path: '**', redirectTo: '/validator' },
 ];
 
 export const AppRoutingModule = RouterModule.forRoot(routes);

@@ -18,7 +18,6 @@ import { AuthenticationService } from 'src/app/core/auth/authentication.service'
 })
 export class DocumentListComponent implements OnInit {
   documents$: Document[];
-  documentsResults$: Observable<DocumentResults>;
   selectedId: number;
   page: any = 1;
   previousPage: any;

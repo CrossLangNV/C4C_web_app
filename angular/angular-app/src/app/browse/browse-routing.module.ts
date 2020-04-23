@@ -6,52 +6,51 @@ import { WebsiteAddComponent } from './website-add/website-add.component';
 import { DocumentAddComponent } from './document-add/document-add.component';
 
 const routes: Routes = [
-  { path: '', redirectTo: '/browse/website', pathMatch: 'full' },
   {
     path: 'website',
     data: {
-      breadcrumb: 'Websites'
+      breadcrumb: 'Websites',
     },
     children: [
       {
         path: '',
-        component: WebsiteListComponent
+        component: WebsiteListComponent,
       },
       {
         path: 'add',
         component: WebsiteAddComponent,
         data: {
-          breadcrumb: 'Add'
-        }
+          breadcrumb: 'Add',
+        },
       },
       {
         path: ':websiteId',
         data: {
-          breadcrumb: ''
+          breadcrumb: '',
         },
         children: [
           {
             path: '',
-            component: WebsiteDetailsComponent
+            component: WebsiteDetailsComponent,
           },
           {
             path: 'add',
             component: DocumentAddComponent,
             data: {
-              breadcrumb: 'Add'
-            }
+              breadcrumb: 'Add',
+            },
           },
           {
             path: 'document/:documentId',
             data: {
-              breadcrumb: ''
+              breadcrumb: '',
             },
-            component: DocumentDetailsComponent
-          }
-        ]
-      }
-    ]
-  }
+            component: DocumentDetailsComponent,
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 export const BrowseRoutingModule = RouterModule.forChild(routes);

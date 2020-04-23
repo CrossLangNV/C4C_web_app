@@ -60,9 +60,10 @@
           <div class="col">
             <hr class="my-2" />
             <div class="d-flex progress justify-content-between p-0">
-              Unvalidated : {{ stats.unValidatedSize }} Auto-rejected :
+              Total: {{ stats.total }} Unvalidated :
+              {{ stats.unValidatedSize }} Auto-rejected :
               {{ stats.autoRejectedSize }} Auto-validated :
-              {{ stats.autoValidatedSize }} Total: {{ stats.total }}
+              {{ stats.autoValidatedSize }}
               <div>
                 Documents found: <u>{{ collectionSize }}</u>
               </div>
@@ -125,8 +126,10 @@
                   [className]="state.value | lowercase"
                   *ngIf="state.user"
                   pTooltip="created: {{
-                    state.created_at | date: 'short'
-                  }}, last updated: {{ state.updated_at | date: 'short' }}"
+                    state.created_at | date: 'MMM d, y - h:mm a'
+                  }}&#013;last updated: {{
+                    state.updated_at | date: 'MMM d, y - h:mm a'
+                  }}"
                   tooltipPosition="top"
                 >
                   {{ state.user.username }}
@@ -137,9 +140,11 @@
                   *ngIf="state.probability_model"
                   pTooltip="confidence: {{
                     state.accepted_probability | number: '1.0-3'
-                  }}, created: {{
-                    state.created_at | date: 'short'
-                  }}, last updated: {{ state.updated_at | date: 'short' }}"
+                  }}&#013;created: {{
+                    state.created_at | date: 'MMM d, y - h:mm a'
+                  }}&#013;last updated: {{
+                    state.updated_at | date: 'MMM d, y - h:mm a'
+                  }}"
                   tooltipPosition="top"
                 >
                   {{ state.probability_model }}
