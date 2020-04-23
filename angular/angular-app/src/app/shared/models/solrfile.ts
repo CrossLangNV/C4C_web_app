@@ -18,7 +18,7 @@ export class SolrFile {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SolrFileAdapter implements Adapter<SolrFile> {
   adapt(item: any): SolrFile {
@@ -41,7 +41,7 @@ export class SolrFileAdapter implements Adapter<SolrFile> {
       attr_date: solrFile.date,
       language: solrFile.language,
       doc_type: solrFile.docType,
-      content: solrFile.content
+      content: solrFile.content,
     };
   }
 }

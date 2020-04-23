@@ -1,7 +1,9 @@
 import uuid
 
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
+
 
 from searchapp.solr_call import solr_add, solr_delete, solr_add_file
 
@@ -31,13 +33,17 @@ class Document(models.Model):
     url = models.URLField(unique=True)
     eli = models.URLField(default="", blank=True)
 
-    website = models.ForeignKey('Website', related_name='documents', on_delete=models.CASCADE)
+    website = models.ForeignKey(
+        'Website', related_name='documents', on_delete=models.CASCADE)
 
     summary = models.TextField(default="", blank=True)
     content = models.TextField(default="", blank=True)
     various = models.TextField(default="", blank=True)
 
     pull = models.BooleanField(default=False, editable=False)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.title
@@ -70,17 +76,26 @@ class AcceptanceState(models.Model):
     value = models.CharField(max_length=20,
                              choices=AcceptanceStateValue.choices,
                              default=AcceptanceStateValue.UNVALIDATED)
-    document = models.ForeignKey('Document', related_name='acceptance_states', on_delete=models.CASCADE)
-    user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    document = models.ForeignKey(
+        'Document', related_name='acceptance_states', on_delete=models.CASCADE)
+    user = models.ForeignKey('auth.User', on_delete=models.CASCADE, blank=True, null=True)
+    probability_model = models.CharField(max_length=50, blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    accepted_probability = models.FloatField(default=0.0, blank=True)
 
 
 class Attachment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     file = models.FileField()
     url = models.URLField(unique=True)
-    document = models.ForeignKey('Document', related_name='attachments', on_delete=models.CASCADE)
+    document = models.ForeignKey(
+        'Document', related_name='attachments', on_delete=models.CASCADE)
     content = models.TextField(default="")
     pull = models.BooleanField(default=False, editable=False)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.url
@@ -88,7 +103,8 @@ class Attachment(models.Model):
     def save(self, *args, **kwargs):
         # add and index data to Solr when it wasn't pulled from Solr first
         if not self.pull and self.file.name:
-            solr_add_file('files', self.file, self.id, self.url, str(self.document.id))
+            solr_add_file('files', self.file, self.id,
+                          self.url, str(self.document.id))
 
         super().save(*args, **kwargs)
 
@@ -97,7 +113,20 @@ class Attachment(models.Model):
         solr_delete(core='files', id=str(self.id))
         super().delete(*args, **kwargs)
 
+
 class Comment(models.Model):
     value = models.TextField()
-    document = models.ForeignKey('Document', related_name='comments', on_delete=models.CASCADE)
+    document = models.ForeignKey(
+        'Document', related_name='comments', on_delete=models.CASCADE)
     user = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class Tag(models.Model):
+    value = models.CharField(max_length=50)
+    document = models.ForeignKey(
+        'Document', related_name='tags', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.value

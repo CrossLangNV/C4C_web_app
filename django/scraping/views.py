@@ -1,5 +1,6 @@
 import os
 
+import logging
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
@@ -14,6 +15,8 @@ from scrapyd_api import ScrapydAPI
 from .models import ScrapingTask
 from .serializers import ScrapingTaskSerializer
 
+logger = logging.getLogger(__name__)
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
@@ -24,15 +27,27 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
     def get(self, request):
         # render overview page
         scraped_tasks = ScrapingTask.objects.all()
-        return render(request, self.template_name, {'scraped_tasks': scraped_tasks, 'nav': 'scraping'})
+        # FIXME: get list from http://localhost:6800/listspiders.json?project=default ?
+        spiders = [{"id": "bis"}, {"id": "eiopa"}, {"id": "esma"}, {
+            "id": "eurlex", "type": "directives"}, {"id": "eurlex", "type": "decisions"}, {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
+            {"id": "eba", "type": "guidelines"}, {
+                "id": "eba", "type": "recommendations"},
+        ]
+        return render(request, self.template_name, {'scraped_tasks': scraped_tasks, 'nav': 'scraping', 'spiders': spiders})
 
     # new scraping task
     def post(self, request, spider):
+        spider_type = request.POST.get('spider_type')
+        logger.info("Starting spider: " + spider +
+                    " with type: " + spider_type)
+
         if not spider:
             return JsonResponse({'error': 'Missing spider'})
 
         scraping_task = ScrapingTask.objects.create(
-            spider=spider
+            spider=spider,
+            spider_type=spider_type
+
         )
         scraping_task.save()
 
@@ -43,7 +58,12 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
         }
 
         # schedule scraping task
-        scrapyd_task_id = self.scrapyd.schedule(self.scrapyd_project, spider, settings=settings)
+        scrapyd_task_id = self.scrapyd.schedule(
+            self.scrapyd_project, spider, settings=settings, spider_type=spider_type)
+
+        # Store the scheduler_id
+        scraping_task.scheduler_id = scrapyd_task_id
+        scraping_task.save()
 
         return redirect('scraping:scraping')
 
@@ -60,7 +80,8 @@ class ScrapingTaskListView(ListCreateAPIView):
         serializer_read = ScrapingTaskSerializer(queryset, many=True)
         for task_data in serializer_read.data:
             if task_data['scheduler_id']:
-                status = self.scrapyd.job_status(self.scrapyd_project, task_data['scheduler_id'])
+                status = self.scrapyd.job_status(
+                    self.scrapyd_project, task_data['scheduler_id'])
                 task = ScrapingTask.objects.get(pk=task_data['id'])
                 task.status = status
                 task.save()
@@ -95,7 +116,8 @@ class ScrapingTaskView(RetrieveDestroyAPIView):
         task_qs = queryset.filter(pk=self.kwargs['pk'])
         task = task_qs[0]
         if task.scheduler_id:
-            status = self.scrapyd.job_status(self.scrapyd_project, task.scheduler_id)
+            status = self.scrapyd.job_status(
+                self.scrapyd_project, task.scheduler_id)
             task.status = status
             task.save()
         return task

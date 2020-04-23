@@ -1,43 +1,65 @@
-<div class="form-group">
-  <label for="content">Search for:</label>
-  <input id="content" type="text" name="content" class="form-control" [(ngModel)]="searchTerm"
-    (ngModelChange)="onSearch($event)" />
-  <label [ngPlural]="collectionSize">
-    <ng-template ngPluralCase="=0">
-    </ng-template>
-    <ng-template ngPluralCase="=1">
-      {{collectionSize}} matching file found
-    </ng-template>
-    <ng-template ngPluralCase="other">
-      {{ collectionSize }} matching files found
-    </ng-template>
-  </label>
-</div>
+<div class="jumbotron">
+  <div class="form-group">
+    <label for="content">Search for:</label>
+    <input
+      id="content"
+      type="text"
+      name="content"
+      class="form-control"
+      [(ngModel)]="searchTerm"
+      (ngModelChange)="onSearch($event)"
+    />
+    <label [ngPlural]="collectionSize">
+      <ng-template ngPluralCase="=0"> </ng-template>
+      <ng-template ngPluralCase="=1">
+        {{ collectionSize }} matching file found
+      </ng-template>
+      <ng-template ngPluralCase="other">
+        {{ collectionSize }} matching files found
+      </ng-template>
+    </label>
+  </div>
 
-<h3>Files</h3>
+  <h3>Files</h3>
 
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th scope="col" sortable="document" (sort)="onSort($event)">Document</th>
-      <th scope="col" sortable="content" (sort)="onSort($event)">Content</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let file of files">
-      <td><a routerLink="/browse/website/{{file.website}}/document/{{file.documentId}}">{{file.documentTitle}}</a></td>
-      <td [innerHTML]="file.content"></td>
-    </tr>
-  </tbody>
-</table>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th scope="col" sortable="document" (sort)="onSort($event)">
+          Document
+        </th>
+        <th scope="col" sortable="content" (sort)="onSort($event)">Content</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let file of files">
+        <td>
+          <a
+            routerLink="/browse/website/{{ file.website }}/document/{{
+              file.documentId
+            }}"
+            >{{ file.documentTitle }}</a
+          >
+        </td>
+        <td [innerHTML]="file.content"></td>
+      </tr>
+    </tbody>
+  </table>
 
-<div class="d-flex justify-content-between p-2">
-  <ngb-pagination [collectionSize]="collectionSize" [(page)]="page" [pageSize]="pageSize" [maxSize]=10 [ellipses]=true>
-  </ngb-pagination>
+  <div class="d-flex justify-content-between p-2">
+    <ngb-pagination
+      [collectionSize]="collectionSize"
+      [(page)]="page"
+      [pageSize]="pageSize"
+      [maxSize]="10"
+      [ellipses]="true"
+    >
+    </ngb-pagination>
 
-  <select class="custom-select" style="width: auto" [(ngModel)]="pageSize">
-    <option [ngValue]="10">10 items per page</option>
-    <option [ngValue]="50">50 items per page</option>
-    <option [ngValue]="100">100 items per page</option>
-  </select>
+    <select class="custom-select" style="width: auto;" [(ngModel)]="pageSize">
+      <option [ngValue]="10">10 items per page</option>
+      <option [ngValue]="50">50 items per page</option>
+      <option [ngValue]="100">100 items per page</option>
+    </select>
+  </div>
 </div>

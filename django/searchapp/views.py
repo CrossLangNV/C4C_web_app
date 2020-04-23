@@ -1,5 +1,5 @@
 import logging
-
+import requests
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse_lazy
@@ -9,29 +9,23 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIV
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .datahandling import sync_documents, sync_attachments
+from .datahandling import sync_documents, sync_attachments, score_documents
 from .forms import DocumentForm, WebsiteForm
-from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment
-from .permissions import IsOwner
+from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
+from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
-    CommentSerializer
+    CommentSerializer, TagSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
 
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
-class FilmSearchView(TemplateView):
-    template_name = "searchapp/film_search.html"
-    search_term = "*"
-    results = []
+import json
+import logging
+from django.db.models import Q
 
-    def get(self, request, *args, **kwargs):
-        if request.GET.get('term'):
-            self.search_term = request.GET['term']
-
-        self.results = solr_search(core="films", term=self.search_term)
-        print(self.results)
-        context = {'results': self.results, 'count': len(self.results), 'search_term': self.search_term,
-                   'nav': 'films'}
-        return render(request, self.template_name, context)
+logger = logging.getLogger(__name__)
 
 
 class DocumentSearchView(TemplateView):
@@ -44,7 +38,6 @@ class DocumentSearchView(TemplateView):
             self.search_term = request.GET['term']
 
         self.results = solr_search(core="documents", term=self.search_term)
-        print(self.results)
         context = {'results': self.results, 'count': len(self.results), 'search_term': self.search_term,
                    'nav': 'documents'}
         return render(request, self.template_name, context)
@@ -70,12 +63,18 @@ class WebsiteDetailView(DetailView):
         # call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
         website = Website.objects.get(pk=self.kwargs['pk'])
-        django_documents = Document.objects.filter(website=website).order_by('id')
+        django_documents = Document.objects.filter(
+            website=website).order_by('id')
         sync = self.request.GET.get('sync', False)
         if sync:
             # query Solr for available documents and sync with Django
-            solr_documents = solr_search_website_sorted(core='documents', website=website.name.lower())
+            solr_documents = solr_search_website_sorted(
+                core='documents', website=website.name.lower())
             sync_documents(website, solr_documents, django_documents)
+        score = self.request.GET.get('score', False)
+        if score:
+            # get confidence score
+            score_documents(django_documents)
         # add to context to be used in template
         context['documents'] = django_documents
         return context
@@ -95,8 +94,10 @@ class DocumentDetailView(PermissionRequiredMixin, DetailView):
         solr_document = solr_search_id(core='documents', id=str(document.id))
         sync_documents(document.website, solr_document, [document])
         # query Solr for attachments
-        solr_files = solr_search_document_id_sorted(core='files', document_id=str(document.id))
-        django_attachments = Attachment.objects.filter(document=document).order_by('id')
+        solr_files = solr_search_document_id_sorted(
+            core='files', document_id=str(document.id))
+        django_attachments = Attachment.objects.filter(
+            document=document).order_by('id')
         sync_attachments(document, solr_files, django_attachments)
         context['attachments'] = django_attachments
         return context
@@ -164,6 +165,7 @@ class WebsiteDeleteView(DeleteView):
 
 
 class WebsiteListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = WebsiteSerializer
 
     def get_queryset(self):
@@ -172,28 +174,103 @@ class WebsiteListAPIView(ListCreateAPIView):
 
 
 class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     queryset = Website.objects.all()
     serializer_class = WebsiteSerializer
     logger = logging.getLogger(__name__)
 
     def get_object(self):
+        self.logger.info("In website detail view")
         queryset = self.get_queryset()
         website_qs = queryset.filter(pk=self.kwargs['pk'])
         website = website_qs[0]
-        django_documents = Document.objects.filter(website=website).order_by('id')
+        django_documents = Document.objects.filter(
+            website=website).order_by('id')
         sync = self.request.GET.get('sync', False)
         if sync:
-            solr_documents = solr_search_website_sorted(core='documents', website=website.name.lower())
+            solr_documents = solr_search_website_sorted(
+                core='documents', website=website.name.lower())
             sync_documents(website, solr_documents, django_documents)
+        else:
+            self.logger.info("Not syncing")
+        score = self.request.GET.get('score', False)
+        if score:
+            # get confidence score
+            score_documents(django_documents)
+
         return website
 
 
+class LargeResultsSetPagination(PageNumberPagination):
+    page_size = 1000
+    page_size_query_param = 'page_size'
+    max_page_size = 10000
+
+
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 100
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
+
+class SmallResultsSetPagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
+    def get_paginated_response(self, data):
+        q1 = Document.objects.all()
+        q2 = q1.filter(Q(acceptance_states__isnull=True) |
+                       Q(acceptance_states__value="Unvalidated"))
+        q3 = q1.filter(acceptance_states__value="Rejected").exclude(
+            acceptance_states__probability_model__isnull=False)
+        q4 = q1.filter(acceptance_states__value="Accepted").exclude(
+            acceptance_states__probability_model__isnull=False)
+        q5 = q1.filter(acceptance_states__value="Rejected").exclude(
+            acceptance_states__probability_model__isnull=True)
+        q6 = q1.filter(acceptance_states__value="Accepted").exclude(
+            acceptance_states__probability_model__isnull=True)
+
+        return Response({
+            'count': self.page.paginator.count,
+            'count_total': len(q1),
+            'count_unvalidated': len(q2),
+            'count_rejected': len(q3),
+            'count_validated': len(q4),
+            'count_autorejected': len(q5),
+            'count_autovalidated': len(q6),
+            'results': data
+        })
+
+
 class DocumentListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = DocumentSerializer
+    pagination_class = SmallResultsSetPagination
 
     def get_queryset(self):
-        queryset = Document.objects.all()
-        return queryset
+        q = Document.objects.all()
+        keyword = self.request.GET.get('keyword', "")
+        if keyword:
+            q = q.filter(title__icontains=keyword)
+        showOnlyOwn = self.request.GET.get('showOnlyOwn', "")
+        if showOnlyOwn == "true":
+            username = self.request.GET.get('userName', "")
+            q = q.filter(acceptance_states__user__username=username)
+            q = q.filter(Q(acceptance_states__value="Accepted") |
+                         Q(acceptance_states__value="Rejected"))
+        filtertype = self.request.GET.get('filterType', "")
+        if filtertype == "unvalidated":
+            q = q.filter(Q(acceptance_states__isnull=True) |
+                         Q(acceptance_states__value="Unvalidated"))
+        if filtertype == "accepted":
+            q = q.filter(acceptance_states__value="Accepted")
+        if filtertype == "rejected":
+            q = q.filter(acceptance_states__value="Rejected")
+        website = self.request.GET.get('website', "")
+        if website:
+            q = q.filter(website__name__iexact=website)
+        return q.order_by("-created_at")
 
 
 class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
@@ -212,19 +289,23 @@ class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
             sync_documents(document.website, solr_document, [document])
         if with_attachments:
             # query Solr for attachments
-            solr_files = solr_search_document_id_sorted(core='files', document_id=str(document.id))
-            django_attachments = Attachment.objects.filter(document=document).order_by('id')
+            solr_files = solr_search_document_id_sorted(
+                core='files', document_id=str(document.id))
+            django_attachments = Attachment.objects.filter(
+                document=document).order_by('id')
             if sync:
                 sync_attachments(document, solr_files, django_attachments)
         return document
 
 
 class AttachmentListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
 
 
 class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
 
@@ -232,8 +313,9 @@ class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
         queryset = self.get_queryset()
         attachment_qs = queryset.filter(pk=self.kwargs['pk'])
         attachment = attachment_qs[0]
-        solr_attachment = solr_search_id(core='files', id=str(attachment.id))[0]
-        if not attachment.content:
+        solr_attachment = solr_search_id(
+            core='files', id=str(attachment.id))[0]
+        if not attachment.content and "content" in solr_attachment:
             attachment.content = solr_attachment['content']
         return attachment
 
@@ -282,14 +364,26 @@ class CommentListAPIView(ListCreateAPIView):
         return self.create(request, *args, **kwargs)
 
 
-class CommentDetailAPIView(RetrieveUpdateAPIView):
-    permission_classes = [permissions.IsAuthenticated, IsOwner]
+class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrSuperUser]
     serializer_class = CommentSerializer
     queryset = Comment.objects.all()
 
     def put(self, request, *args, **kwargs):
         request.data['user'] = request.user.id
         return self.update(request, *args, **kwargs)
+
+
+class TagListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
+
+
+class TagDetailAPIView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
 
 
 class IsSuperUserAPIView(APIView):
@@ -325,27 +419,16 @@ class SolrDocument(APIView):
         return Response(solr_document)
 
 
-class FilmList(APIView):
-    """
-    View all films.
-    """
-
-    def get(self, request, format=None):
-        """
-        Return a list of all films.
-        """
-        films = solr_search(core="films", term="*")
-        return Response(films)
-
-
-class Film(APIView):
-    """
-    Search for a film.
-    """
-
-    def get(self, request, search_term, format=None):
-        """
-        Return a list of found films.
-        """
-        films = solr_search(core="films", term=search_term)
-        return Response(films)
+@api_view(['GET'])
+def celex_get_xhtml(request):
+    if request.method == 'GET':
+        celex_id = request.GET["celex_id"]
+        logger.info(celex_id)
+        headers = {"Accept": "application/xhtml+xml", "Accept-Language": "eng"}
+        response = requests.get(
+            "http://publications.europa.eu/resource/celex/" + celex_id, headers=headers)
+        if response.status_code != 200:
+            headers = {"Accept": "text/html", "Accept-Language": "eng"}
+            response = requests.get(
+                "http://publications.europa.eu/resource/celex/" + celex_id, headers=headers)
+        return Response(response.text)

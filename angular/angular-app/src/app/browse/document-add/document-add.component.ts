@@ -11,7 +11,7 @@ import { AcceptanceState } from 'src/app/shared/models/acceptanceState';
 @Component({
   selector: 'app-document-add',
   templateUrl: './document-add.component.html',
-  styleUrls: ['./document-add.component.css']
+  styleUrls: ['./document-add.component.css'],
 })
 export class DocumentAddComponent implements OnInit {
   websiteId: string;
@@ -28,8 +28,8 @@ export class DocumentAddComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.apiService.getStateValues().subscribe(states => {
-      states.forEach(state => {
+    this.apiService.getStateValues().subscribe((states) => {
+      states.forEach((state) => {
         this.allStates.push({ label: state, value: state });
       });
     });
@@ -44,9 +44,18 @@ export class DocumentAddComponent implements OnInit {
       new Date(),
       '',
       '',
+      '',
       this.websiteId,
       '',
       '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      [],
+      [],
       [],
       false
     );
@@ -55,7 +64,7 @@ export class DocumentAddComponent implements OnInit {
 
   onSubmit() {
     this.submitted = true;
-    this.apiService.createDocument(this.document).subscribe(document => {
+    this.apiService.createDocument(this.document).subscribe((document) => {
       console.log(document);
       this.apiService
         .updateState(
@@ -66,7 +75,7 @@ export class DocumentAddComponent implements OnInit {
             this.acceptanceState
           )
         )
-        .subscribe(state =>
+        .subscribe((state) =>
           this.router.navigate(['/website/' + this.websiteId])
         );
     });

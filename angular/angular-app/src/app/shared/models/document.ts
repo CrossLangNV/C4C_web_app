@@ -1,6 +1,19 @@
 import { Injectable } from '@angular/core';
 import { Adapter } from './adapter';
+import { Attachment } from './attachment';
 
+export interface DocumentResults {
+  count: number;
+  count_total: number;
+  count_unvalidated: number;
+  count_rejected: number;
+  count_validated: number;
+  count_autorejected: number;
+  count_autovalidated: number;
+  next: string;
+  previous: string;
+  results: Document[];
+}
 export class Document {
   constructor(
     public id: string,
@@ -9,17 +22,26 @@ export class Document {
     public type: string,
     public date: Date,
     public acceptanceState: string,
+    public acceptanceStateValue: string,
     public url: string,
     public website: string,
+    public websiteName: string,
     public summary: string,
     public content: string,
-    public attachmentIds: string[],
+    public various: string,
+    public celex: string,
+    public eli: string,
+    public status: string,
+    public author: string,
+    public attachments: Attachment[],
+    public commentIds: string[],
+    public tags: string[],
     public pull: boolean
   ) {}
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DocumentAdapter implements Adapter<Document> {
   adapt(item: any): Document {
@@ -30,11 +52,20 @@ export class DocumentAdapter implements Adapter<Document> {
       item.type,
       new Date(item.date),
       item.acceptance_state,
+      item.acceptance_state_value,
       item.url,
       item.website,
+      item.website_name,
       item.summary,
       item.content,
+      item.various,
+      item.celex,
+      item.eli,
+      item.status,
+      item.author,
       item.attachments,
+      item.comments,
+      item.tags,
       item.pull
     );
   }
@@ -47,12 +78,21 @@ export class DocumentAdapter implements Adapter<Document> {
       type: document.type,
       date: stringDate,
       acceptance_state: document.acceptanceState,
+      acceptance_state_value: document.acceptanceStateValue,
       url: document.url,
       website: document.website,
+      website_name: document.websiteName,
       summary: document.summary,
       content: document.content,
-      attachments: document.attachmentIds,
-      pull: document.pull
+      various: document.various,
+      celex: document.celex,
+      eli: document.eli,
+      status: document.status,
+      author: document.author,
+      attachments: document.attachments,
+      comments: document.commentIds,
+      tags: document.tags,
+      pull: document.pull,
     };
   }
 }

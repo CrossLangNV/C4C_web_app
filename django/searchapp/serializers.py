@@ -1,7 +1,11 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from searchapp.models import Attachment, Document, Website, AcceptanceState, Comment
+from searchapp.models import Attachment, Document, Website, AcceptanceState, Comment, Tag
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class WebsiteSerializer(serializers.ModelSerializer):
@@ -12,10 +16,44 @@ class WebsiteSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = '__all__'
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        exclude = ['password']
+
+
+class AcceptanceStateSerializer(serializers.ModelSerializer):
+    document = serializers.PrimaryKeyRelatedField(
+        queryset=Document.objects.all())
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = AcceptanceState
+        fields = '__all__'
+
+
+class AttachmentWithoutContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attachment
+        exclude = ['content', 'file']
+
+
 class DocumentSerializer(serializers.ModelSerializer):
-    website = serializers.PrimaryKeyRelatedField(queryset=Website.objects.all())
-    attachments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    website = serializers.PrimaryKeyRelatedField(
+        queryset=Website.objects.all())
+    website_name = serializers.SerializerMethodField()
+    attachments = AttachmentWithoutContentSerializer(many=True, read_only=True)
+    comments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    acceptance_states = AcceptanceStateSerializer(many=True, read_only=True)
     acceptance_state = serializers.SerializerMethodField()
+    acceptance_state_value = serializers.SerializerMethodField()
 
     def get_acceptance_state(self, document):
         user = self.context['request'].user
@@ -32,22 +70,26 @@ class DocumentSerializer(serializers.ModelSerializer):
             state_id = new_unvalidated_state.id
         return state_id
 
+    def get_acceptance_state_value(self, document):
+        user = self.context['request'].user
+        qs = AcceptanceState.objects.filter(document=document, user=user)
+        res = qs.values_list('value', flat=True)
+        if len(res):
+            return res[0]
+        else:
+            return None
+
+    def get_website_name(self, document):
+        return document.website.name
+
     class Meta:
         model = Document
         fields = '__all__'
 
 
-class AcceptanceStateSerializer(serializers.ModelSerializer):
-    document = serializers.PrimaryKeyRelatedField(queryset=Document.objects.all())
-    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
-
-    class Meta:
-        model = AcceptanceState
-        fields = '__all__'
-
-
 class AttachmentSerializer(serializers.ModelSerializer):
-    document = serializers.PrimaryKeyRelatedField(queryset=Document.objects.all())
+    document = serializers.PrimaryKeyRelatedField(
+        queryset=Document.objects.all())
 
     class Meta:
         model = Attachment
@@ -55,7 +97,8 @@ class AttachmentSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    document = serializers.PrimaryKeyRelatedField(queryset=Document.objects.all())
+    document = serializers.PrimaryKeyRelatedField(
+        queryset=Document.objects.all())
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
 
     class Meta:

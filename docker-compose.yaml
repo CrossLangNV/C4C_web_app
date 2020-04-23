@@ -1,0 +1,65 @@
+version: '3'
+services:
+  angular:
+    build: ./angular
+    ports: 
+      - "8080:80"
+    env_file:
+      - ./secrets/django-docker.env
+    depends_on: 
+      - django
+
+  django:
+    build: ./django
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./secrets/django-docker.env
+    volumes:
+      - ./django:/django
+    command: bash -c "python manage.py makemigrations --merge --noinput &&
+      python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    restart:
+      always
+    depends_on:
+      - postgres
+      - solr
+      - scrapyd
+
+  scrapyd:
+    build: ./scrapy
+    ports: 
+      - "6800:6800"
+    env_file:
+      - ./secrets/django-docker.env
+    volumes: 
+      - ./scrapy:/scrapy
+    command: scrapyd
+
+  solr:
+    image: solr:8.4-slim
+    ports:
+      - "8983:8983"
+    volumes:
+      - solr:/var/solr
+      - ./solr/documents:/opt/solr/server/solr/configsets/documents:ro
+      - ./solr/files:/opt/solr/server/solr/configsets/files:ro
+    command: solr-precreate documents /opt/solr/server/solr/configsets/documents
+
+  postgres:
+    image: postgres:alpine
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./secrets/django-docker.env
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+  docclass:
+    image: docker.crosslang.com/ctlg-manager/docclass:latest
+    ports:
+      - "5000:5000"
+
+volumes:
+  solr:
+  postgres:
