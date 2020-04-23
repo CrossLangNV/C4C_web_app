@@ -136,7 +136,7 @@
                   [className]="state.value | lowercase"
                   *ngIf="state.probability_model"
                   pTooltip="confidence: {{
-                    state.accepted_probability | number: '1.0-3'
+                    state.accepted_probability | percent: '1.0-2'
                   }}, created: {{
                     state.created_at | date: 'short'
                   }}, last updated: {{ state.updated_at | date: 'short' }}"
