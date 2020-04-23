@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute, ParamMap } from '@angular/router';
-import { Observable } from 'rxjs';
 import { ApiService } from 'src/app/core/services/api.service';
 import { switchMap } from 'rxjs/operators';
 import { Document } from 'src/app/shared/models/document';
@@ -12,7 +11,6 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { AuthenticationService } from 'src/app/core/auth/authentication.service';
 import { DjangoUser } from 'src/app/shared/models/django_user';
-import { compileNgModuleFromRender2 } from '@angular/compiler/src/render3/r3_module_compiler';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { Attachment } from 'src/app/shared/models/attachment';
 
@@ -22,7 +20,7 @@ import { Attachment } from 'src/app/shared/models/attachment';
   styleUrls: ['./document-validate.component.css'],
 })
 export class DocumentValidateComponent implements OnInit {
-  document$: Observable<Document>;
+  document: Document;
   stateValues: SelectItem[] = [];
   cities: SelectItem[];
   selectedCities: string[] = [];
@@ -59,12 +57,12 @@ export class DocumentValidateComponent implements OnInit {
         this.stateValues.push({ label: state, value: state });
       });
     });
-    this.document$ = this.route.paramMap.pipe(
+    this.route.paramMap.pipe(
       switchMap((params: ParamMap) =>
         this.service.getDocumentSyncWithAttachments(params.get('documentId'))
       )
-    );
-    this.document$.subscribe((document) => {
+    ).subscribe((document) => {
+      this.document = document;
       this.newComment.documentId = document.id;
       this.comments = [];
       if (document.commentIds) {
@@ -82,19 +80,11 @@ export class DocumentValidateComponent implements OnInit {
   }
 
   onStateChange(event) {
-    this.route.paramMap
-      .pipe(
-        switchMap((params: ParamMap) =>
-          this.service.getDocument(params.get('documentId'))
-        )
-      )
-      .subscribe((document) => {
         // FIXME: can we abract the the acceptanceState.id  via the API (should not be know externally ?)
-        this.acceptanceState.id = document.acceptanceState;
-        this.acceptanceState.value = event.value;
-        this.acceptanceState.documentId = document.id;
-        this.service.updateState(this.acceptanceState).subscribe();
-      });
+    this.acceptanceState.id = this.document.acceptanceState;
+    this.acceptanceState.value = event.value;
+    this.acceptanceState.documentId = this.document.id;
+    this.service.updateState(this.acceptanceState).subscribe();
   }
 
   onAddComment() {

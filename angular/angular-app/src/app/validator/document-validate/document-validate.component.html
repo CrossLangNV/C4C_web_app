@@ -1,4 +1,4 @@
-<div class="jumbotron" *ngIf="document$ | async as document; else elseBlock">
+<div class="jumbotron" *ngIf="document; else elseBlock">
   <h4>
     {{ document.websiteName }} :
     <span *ngIf="document.titlePrefix">{{ document.titlePrefix }} : </span>
