@@ -60,10 +60,12 @@
           <div class="col">
             <hr class="my-2" />
             <div class="d-flex progress justify-content-between p-0">
-              Total: {{ stats.total }} Unvalidated :
-              {{ stats.unValidatedSize }} Auto-rejected :
-              {{ stats.autoRejectedSize }} Auto-validated :
-              {{ stats.autoValidatedSize }}
+              <div>
+                Total: <u>{{ stats.total }}</u> Unvalidated :
+                <u>{{ stats.unValidatedSize }}</u> Auto-rejected :
+                <u>{{ stats.autoRejectedSize }}</u> Auto-validated :
+                <u>{{ stats.autoValidatedSize }} </u>
+              </div>
               <div>
                 Documents found: <u>{{ collectionSize }}</u>
               </div>
