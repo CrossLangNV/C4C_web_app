@@ -15,7 +15,7 @@ pipeline {
                 dir('django'){
                     script {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
-                            def customImage = docker.build("ctlg-manager/django:${env.BUILD_ID}", "-f Dockerfile.prod .")
+                            def customImage = docker.build("ctlg-manager/django:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile.prod .")
                             customImage.push()
                             customImage.push("latest")
                         }
@@ -24,7 +24,7 @@ pipeline {
                 dir('angular'){
                     script {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
-                            def customImage = docker.build("ctlg-manager/angular:${env.BUILD_ID}", "-f Dockerfile .")
+                            def customImage = docker.build("ctlg-manager/angular:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
                             customImage.push()
                             customImage.push("latest")
                         }
@@ -33,7 +33,7 @@ pipeline {
                 dir('scrapy'){
                     script {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
-                            def customImage = docker.build("ctlg-manager/scrapyd:${env.BUILD_ID}", "-f Dockerfile .")
+                            def customImage = docker.build("ctlg-manager/scrapyd:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
                             customImage.push()
                             customImage.push("latest")
                         }
@@ -42,7 +42,7 @@ pipeline {
                 dir('solr'){
                     script {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
-                            def customImage = docker.build("ctlg-manager/solr:${env.BUILD_ID}", "-f Dockerfile .")
+                            def customImage = docker.build("ctlg-manager/solr:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
                             customImage.push()
                             customImage.push("latest")
                         }
