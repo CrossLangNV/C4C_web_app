@@ -1,6 +1,6 @@
 <!-- <h3>Documents</h3> -->
 
-<div class="jumbotron p-1 m-0">
+<div class="jumbotron p-1 m-2">
   <div class="form-group">
     <div class="row">
       <div class="col">
@@ -62,45 +62,17 @@
             <div class="d-flex progress justify-content-between p-0">
               Unvalidated : {{ stats.unValidatedSize }} Auto-rejected :
               {{ stats.autoRejectedSize }} Auto-validated :
-              {{ stats.autoValidatedSize }}
+              {{ stats.autoValidatedSize }} Total: {{ stats.total }}
               <div>
                 Documents found: <u>{{ collectionSize }}</u>
               </div>
-              <!-- <div
-                class="progress-bar"
-                role="progressbar"
-                style="width: 15%;"
-                aria-valuenow="15"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                ngbTooltip="345 Documents"
-              >
-                Unvalidated(15%)
-              </div>
-              <div
-                class="progress-bar bg-info"
-                role="progressbar"
-                style="width: 30%;"
-                aria-valuenow="30"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                ngbTooltip="1043 Documents"
-              >
-                Auto-rejected(30%)
-              </div>
-              <div
-                class="progress-bar bg-success"
-                role="progressbar"
-                style="width: 55%;"
-                aria-valuenow="55"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                ngbTooltip="7366 Documents"
-              >
-                Auto-validated(55%)
-              </div>
-            </div> -->
             </div>
+            <hr class="my-2" />
+            <ngb-progressbar
+              [showValue]="true"
+              type="success"
+              [value]="stats.validatedPercent"
+            ></ngb-progressbar>
           </div>
         </div>
       </div>
@@ -113,9 +85,6 @@
           <th scope="col" sortable="document" (sort)="onSort($event)">Title</th>
           <th scope="col" sortable="tags" (sort)="onSort($event)">Tags</th>
           <th scope="col" sortable="users" (sort)="onSort($event)">States</th>
-          <!-- <th scope="col" sortable="autoclassify" (sort)="onSort($event)">
-        Auto-classify
-      </th> -->
         </tr>
       </thead>
       <tbody>
@@ -128,7 +97,7 @@
               [routerLink]="[
                 { outlets: { secondary: ['document', document.id] } }
               ]"
-              >{{ document.title || "(no title)" | truncate: [80, "..."] }}</a
+              >{{ document.title || "(no title)" | truncate: [120, "..."] }}</a
             >&nbsp;
             <span
               *ngIf="document.comments.length > 0"

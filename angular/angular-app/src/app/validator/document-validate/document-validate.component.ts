@@ -135,4 +135,7 @@ export class DocumentValidateComponent implements OnInit {
   onSubmit() {
     this.modalService.dismissAll();
   }
+  goToLink(url: string) {
+    window.open(url, '_blank');
+  }
 }
