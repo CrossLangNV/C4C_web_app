@@ -16,3 +16,24 @@ app-document-list {
 app-document-validate {
   width: 99%;
 }
+
+.p-chips-state.ui-chips > ul.ui-inputtext .ui-chips-token {
+  background: none;
+  padding: 0px;
+  margin: 0px;
+}
+
+.rejected {
+  background: red;
+  padding: 0.2145em 0.429em;
+}
+
+.unvalidated {
+  background: grey;
+  padding: 0.2145em 0.429em;
+}
+
+.accepted {
+  background: green;
+  padding: 0.2145em 0.429em;
+}
