@@ -80,7 +80,9 @@
     <p><b>Comments:</b></p>
     <div class="card" *ngFor="let comment of comments">
       <div class="card-header">
-        {{ comment.username }} ({{ comment.createdAt }})
+        {{ comment.username }} ({{
+          comment.createdAt | date: "MMM d, y - h:mm  "
+        }})
       </div>
       <div class="card-body">
         <p class="card-text">{{ comment.value }}</p>
