@@ -94,9 +94,11 @@
         <tr *ngIf="documents$ && documents$.length == 0">
           <td colspan="5">No results.</td>
         </tr>
-        <tr *ngFor="let document of documents$">
+        <tr *ngFor="let document of documents$; let i = index">
           <td>
             <a
+              (click)="setIndex(i)"
+              [class.font-weight-bold]="selectedIndex === i"
               [routerLink]="[
                 { outlets: { secondary: ['document', document.id] } }
               ]"
