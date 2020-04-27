@@ -62,6 +62,7 @@ export class DocumentListComponent implements OnInit {
   websiteFilter: string = 'none';
   searchTermChanged: Subject<string> = new Subject<string>();
   currentDjangoUser: DjangoUser;
+  selectedIndex: number = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -142,5 +143,9 @@ export class DocumentListComponent implements OnInit {
   filterResetPage() {
     this.page = 1;
     this.fetchDocuments();
+  }
+
+  setIndex(index: number) {
+    this.selectedIndex = index;
   }
 }
