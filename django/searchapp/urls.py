@@ -114,6 +114,10 @@ urlpatterns = [
     path('api/celex', views.celex_get_xhtml,
          name='celex_get_api'),
 
+    # Document stats
+    path('api/stats', views.document_stats,
+         name='document_stats'),
+
     # Super
     path('api/super', views.IsSuperUserAPIView.as_view(), name='super_api'),
 
