@@ -6,6 +6,7 @@ import { WebsiteAddComponent } from './website-add/website-add.component';
 import { DocumentAddComponent } from './document-add/document-add.component';
 
 const routes: Routes = [
+  { path: '', redirectTo: '/browse/website', pathMatch: 'full' },
   {
     path: 'website',
     data: {
