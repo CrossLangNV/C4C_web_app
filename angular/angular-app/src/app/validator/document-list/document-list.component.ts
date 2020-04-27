@@ -114,6 +114,11 @@ export class DocumentListComponent implements OnInit {
         this.keyword = model;
         this.fetchDocuments();
       });
+    this.service.messageSource.asObservable().subscribe((value: string) => {
+      if (value == 'refresh') {
+        this.fetchDocuments();
+      }
+    });
   }
 
   onSearch(keyword: string) {
