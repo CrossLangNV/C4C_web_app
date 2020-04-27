@@ -205,6 +205,10 @@ export class ApiService {
     );
   }
 
+  public getDocumentStats(): Observable<any> {
+    return this.http.get<string[]>(`${this.API_URL}/stats`);
+  }
+
   public getStateValues(): Observable<string[]> {
     return this.http.get<string[]>(`${this.API_URL}/state/value`);
   }

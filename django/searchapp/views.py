@@ -218,30 +218,6 @@ class SmallResultsSetPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 1000
 
-    def get_paginated_response(self, data):
-        q1 = Document.objects.all()
-        q2 = q1.filter(Q(acceptance_states__isnull=True) |
-                       Q(acceptance_states__value="Unvalidated"))
-        q3 = q1.filter(acceptance_states__value="Rejected").exclude(
-            acceptance_states__probability_model__isnull=False)
-        q4 = q1.filter(acceptance_states__value="Accepted").exclude(
-            acceptance_states__probability_model__isnull=False)
-        q5 = q1.filter(acceptance_states__value="Rejected").exclude(
-            acceptance_states__probability_model__isnull=True)
-        q6 = q1.filter(acceptance_states__value="Accepted").exclude(
-            acceptance_states__probability_model__isnull=True)
-
-        return Response({
-            'count': self.page.paginator.count,
-            'count_total': len(q1),
-            'count_unvalidated': len(q2),
-            'count_rejected': len(q3),
-            'count_validated': len(q4),
-            'count_autorejected': len(q5),
-            'count_autovalidated': len(q6),
-            'results': data
-        })
-
 
 class DocumentListAPIView(ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -253,8 +229,8 @@ class DocumentListAPIView(ListCreateAPIView):
         keyword = self.request.GET.get('keyword', "")
         if keyword:
             q = q.filter(title__icontains=keyword)
-        showOnlyOwn = self.request.GET.get('showOnlyOwn', "")
-        if showOnlyOwn == "true":
+        showonlyown = self.request.GET.get('showOnlyOwn', "")
+        if showonlyown == "true":
             username = self.request.GET.get('userName', "")
             q = q.filter(acceptance_states__user__username=username)
             q = q.filter(Q(acceptance_states__value="Accepted") |
@@ -432,3 +408,22 @@ def celex_get_xhtml(request):
             response = requests.get(
                 "http://publications.europa.eu/resource/celex/" + celex_id, headers=headers)
         return Response(response.text)
+
+
+@api_view(['GET'])
+def document_stats(request):
+    if request.method == 'GET':
+        q1 = Document.objects.all()
+        q2 = q1.exclude(Q(acceptance_states__value="Rejected")
+                        | Q(acceptance_states__value="Accepted"))
+        q5 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
+            acceptance_states__probability_model__isnull=False))
+        q6 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
+            acceptance_states__probability_model__isnull=False))
+
+        return Response({
+            'count_total': len(q1),
+            'count_unvalidated': len(q2),
+            'count_autorejected': len(q5),
+            'count_autovalidated': len(q6),
+        })

@@ -72,7 +72,7 @@ export class DocumentListComponent implements OnInit {
   ) {}
 
   fetchDocuments() {
-    console.log(this.filterType);
+    // Fetch documents list
     this.service
       .getDocumentResults(
         this.page,
@@ -83,20 +83,23 @@ export class DocumentListComponent implements OnInit {
         this.showOnlyOwn
       )
       .subscribe((result) => {
+        this.selectedIndex = null;
         this.documents$ = result.results;
         this.collectionSize = result.count;
-        this.stats.total = result.count_total;
-        this.stats.validatedSize =
-          result.count_total - result.count_unvalidated;
-        this.stats.validatedPercent = Math.round(
-          (this.stats.validatedSize / result.count_total) * 100
-        );
-        this.stats.unValidatedSize = result.count_unvalidated;
-        this.stats.humanRejectedSize = result.count_rejected;
-        this.stats.humanAcceptedSize = result.count_validated;
-        this.stats.autoRejectedPercent = result.count_autorejected;
-        this.stats.autoValidatedSize = result.count_autovalidated;
       });
+    // Fetch statistics
+    this.service.getDocumentStats().subscribe((result) => {
+      this.stats.total = result.count_total;
+      this.stats.validatedSize = result.count_total - result.count_unvalidated;
+      this.stats.validatedPercent = Math.round(
+        (this.stats.validatedSize / result.count_total) * 100
+      );
+      this.stats.unValidatedSize = result.count_unvalidated;
+      this.stats.humanRejectedSize = result.count_rejected;
+      this.stats.humanAcceptedSize = result.count_validated;
+      this.stats.autoRejectedSize = result.count_autorejected;
+      this.stats.autoValidatedSize = result.count_autovalidated;
+    });
   }
   ngOnInit() {
     this.userIcon = faUserAlt;
