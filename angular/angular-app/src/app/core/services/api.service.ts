@@ -113,7 +113,8 @@ export class ApiService {
     filterType: string,
     userName: string,
     website: string,
-    showOnlyOwn: boolean
+    showOnlyOwn: boolean,
+    filterTag: string
   ): Observable<DocumentResults> {
     var pageQuery = page ? '?page=' + page : '';
     if (searchTerm) {
@@ -130,6 +131,9 @@ export class ApiService {
     }
     if (showOnlyOwn) {
       pageQuery = pageQuery + '&showOnlyOwn=' + showOnlyOwn;
+    }
+    if (filterTag) {
+      pageQuery = pageQuery + '&tag=' + filterTag;
     }
     return this.http.get<DocumentResults>(
       `${this.API_URL}/documents${pageQuery}`
