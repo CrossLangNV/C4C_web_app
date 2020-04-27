@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { Environment } from '../../../environments/environment-variables';
 import { SolrFile, SolrFileAdapter } from '../../shared/models/solrfile';
 import { map } from 'rxjs/operators';
@@ -24,7 +24,8 @@ import { Tag, TagAdapter } from 'src/app/shared/models/tag';
 })
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
-  //API_URL = 'localhost:3001';
+
+  messageSource: Subject<string>;
 
   constructor(
     private http: HttpClient,
@@ -35,7 +36,9 @@ export class ApiService {
     private stateAdapter: AcceptanceStateAdapter,
     private commentAdapter: CommentAdapter,
     private tagAdapter: TagAdapter
-  ) {}
+  ) {
+    this.messageSource = new Subject<string>();
+  }
 
   public getSolrFiles(): Observable<SolrFile[]> {
     return this.http
@@ -110,7 +113,8 @@ export class ApiService {
     filterType: string,
     userName: string,
     website: string,
-    showOnlyOwn: boolean
+    showOnlyOwn: boolean,
+    filterTag: string
   ): Observable<DocumentResults> {
     var pageQuery = page ? '?page=' + page : '';
     if (searchTerm) {
@@ -127,6 +131,9 @@ export class ApiService {
     }
     if (showOnlyOwn) {
       pageQuery = pageQuery + '&showOnlyOwn=' + showOnlyOwn;
+    }
+    if (filterTag) {
+      pageQuery = pageQuery + '&tag=' + filterTag;
     }
     return this.http.get<DocumentResults>(
       `${this.API_URL}/documents${pageQuery}`
