@@ -127,4 +127,7 @@ urlpatterns = [
          views.SolrFile.as_view(), name='solr_file_search_api'),
     path('api/solrdocument/<id>', views.SolrDocument.as_view(),
          name='solr_document_api'),
+
+    # Export
+    path('api/export', views.ExportDocuments.as_view(), name='export_api'),
 ]

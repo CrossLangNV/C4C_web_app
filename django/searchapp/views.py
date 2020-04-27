@@ -1,11 +1,26 @@
+import io
+import itertools
 import logging
+import os
+import shutil
+from http.client import HTTPResponse
+from operator import itemgetter
+from wsgiref.util import FileWrapper
+from zipfile import ZipFile
+from django.http import HttpResponse
+
 import requests
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.db.models import Q
+from django.http import FileResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
+from jsonlines import jsonlines
 from rest_framework import permissions
+from rest_framework.decorators import api_view
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveUpdateAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -17,15 +32,8 @@ from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerial
     CommentSerializer, TagSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
 
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-
-import json
-import logging
-from django.db.models import Q
-
 logger = logging.getLogger(__name__)
+workpath = os.path.dirname(os.path.abspath(__file__))
 
 
 class DocumentSearchView(TemplateView):
@@ -393,6 +401,58 @@ class SolrDocument(APIView):
     def get(self, request, id, format=None):
         solr_document = solr_search_id(core='documents', id=id)
         return Response(solr_document)
+
+
+class ExportDocuments(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        files = solr_search(core="files", term="*")
+        # group files by document
+        files = sorted(files, key=itemgetter('attr_document_id'))
+        file_groups = []
+        doc_keys = []
+        for key, group in itertools.groupby(files, key=itemgetter('attr_document_id')):
+            file_groups.append(list(group))
+            doc_keys.append(key)
+
+        # each group of files shares the same doc
+        # write .jsonl file for each doc containing 1 or more files
+        for group in file_groups:
+            doc_id = group[0]['attr_document_id'][0]
+            doc = solr_search_id(core="documents", id=doc_id)
+            # document must exist
+            if doc:
+                with jsonlines.open(workpath + '/export/jsonl/doc_' + doc_id + '.jsonl', mode='w') as f:
+                    f.write(doc[0])
+                    # json line for each file
+                    for file in group:
+                        f.write(file)
+
+        # create zip file for all .jsonl files
+        zip_filename = 'exported_docs.zip'
+        # open BytesIO to grab in-memory ZIP contents
+        b = io.BytesIO()
+        zf = ZipFile(b, "w")
+        for folder_name, subfolders, filenames in os.walk(workpath + '/export/jsonl'):
+            for filename in filenames:
+                file_path = os.path.join(folder_name, filename)
+                zf.write(file_path, os.path.relpath(file_path, folder_name))
+        zf.close()
+        # clear export folder
+        for filename in os.listdir(workpath + '/export'):
+            file_path = os.path.join(workpath + '/export', filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                logger.error('Failed to delete %s. Reason: %s' % (file_path, e))
+        # return zip
+        response = HttpResponse(b.getvalue(), content_type='application/x-zip-compressed')
+        response['Content-Disposition'] = 'attachment; filename="%s"' % zip_filename
+        return response
 
 
 @api_view(['GET'])
