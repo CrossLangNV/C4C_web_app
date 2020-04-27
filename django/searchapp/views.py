@@ -245,8 +245,8 @@ class DocumentListAPIView(ListCreateAPIView):
                          Q(acceptance_states__value="Rejected"))
         filtertype = self.request.GET.get('filterType', "")
         if filtertype == "unvalidated":
-            q = q.filter(Q(acceptance_states__isnull=True) |
-                         Q(acceptance_states__value="Unvalidated"))
+            q = q.exclude(Q(acceptance_states__value="Rejected")
+                          | Q(acceptance_states__value="Accepted"))
         if filtertype == "accepted":
             q = q.filter(acceptance_states__value="Accepted")
         if filtertype == "rejected":
@@ -254,6 +254,9 @@ class DocumentListAPIView(ListCreateAPIView):
         website = self.request.GET.get('website', "")
         if website:
             q = q.filter(website__name__iexact=website)
+        tag = self.request.GET.get('tag', "")
+        if tag:
+            q = q.filter(tags__value=tag)
         return q.order_by("-created_at")
 
 
