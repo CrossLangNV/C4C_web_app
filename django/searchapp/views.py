@@ -410,26 +410,16 @@ class ExportDocuments(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
-        files = solr_search(core="files", term="*")
-        # group files by document
-        files = sorted(files, key=itemgetter('attr_document_id'))
-        file_groups = []
-        doc_keys = []
-        for key, group in itertools.groupby(files, key=itemgetter('attr_document_id')):
-            file_groups.append(list(group))
-            doc_keys.append(key)
-
-        # each group of files shares the same doc
-        # write .jsonl file for each doc containing 1 or more files
-        for group in file_groups:
-            doc_id = group[0]['attr_document_id'][0]
-            doc = solr_search_id(core="documents", id=doc_id)
-            # document must exist
-            if doc:
-                with jsonlines.open(workpath + '/export/jsonl/doc_' + doc_id + '.jsonl', mode='w') as f:
-                    f.write(doc[0])
-                    # json line for each file
-                    for file in group:
+        websites = Website.objects.all()
+        for website in websites:
+            os.makedirs(workpath + '/export/jsonl/' + website.name)
+            documents = solr_search(core='documents', term='website:' + website.name)
+            for document in documents:
+                files = solr_search_document_id_sorted(core='files', document_id=document['id'])
+                with jsonlines.open(workpath + '/export/jsonl/' + website.name + '/doc_' + document['id'] + '.jsonl',
+                                    mode='w') as f:
+                    f.write(document)
+                    for file in files:
                         f.write(file)
 
         # create zip file for all .jsonl files
@@ -437,10 +427,10 @@ class ExportDocuments(APIView):
         # open BytesIO to grab in-memory ZIP contents
         b = io.BytesIO()
         zf = ZipFile(b, "w")
-        for folder_name, subfolders, filenames in os.walk(workpath + '/export/jsonl'):
+        for root, subfolders, filenames in os.walk(workpath + '/export/jsonl'):
             for filename in filenames:
-                file_path = os.path.join(folder_name, filename)
-                zf.write(file_path, os.path.relpath(file_path, folder_name))
+                file_path = os.path.join(root, filename)
+                zf.write(file_path, os.path.relpath(file_path, workpath + '/export/jsonl'))
         zf.close()
         # clear export folder
         for filename in os.listdir(workpath + '/export'):
