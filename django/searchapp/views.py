@@ -412,7 +412,8 @@ class ExportDocuments(APIView):
     def get(self, request, format=None):
         websites = Website.objects.all()
         for website in websites:
-            os.makedirs(workpath + '/export/jsonl/' + website.name)
+            if not os.path.exists(workpath + '/export/jsonl/' + website.name):
+                os.makedirs(workpath + '/export/jsonl/' + website.name)
             documents = solr_search(core='documents', term='website:' + website.name)
             for document in documents:
                 files = solr_search_document_id_sorted(core='files', document_id=document['id'])
