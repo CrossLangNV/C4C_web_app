@@ -3,10 +3,12 @@ import os
 import pysolr
 
 
+ROW_LIMIT = 50000
+
 def solr_search(core="", term=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search = get_results_highlighted(client.search(term,
-                                                   **{'rows': 10000, 'hl': 'on', 'hl.fl': '*',
+                                                   **{'rows': ROW_LIMIT, 'hl': 'on', 'hl.fl': '*',
                                                       'hl.snippets': 100, 'hl.maxAnalyzedChars': 1000000,
                                                       'hl.simple.pre': '<span class="highlight">',
                                                       'hl.simple.post': '</span>'}))
@@ -15,28 +17,28 @@ def solr_search(core="", term=""):
 
 def solr_search_id(core="", id=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    search = get_results(client.search('id:' + id, **{'rows': 10000}))
+    search = get_results(client.search('id:' + id, **{'rows': ROW_LIMIT}))
     return search
 
 
 def solr_search_id_sorted(core="", id=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search = get_results(client.search(
-        'id:' + id, **{'rows': 10000, 'sort': 'id asc'}))
+        'id:' + id, **{'rows': ROW_LIMIT, 'sort': 'id asc'}))
     return search
 
 
 def solr_search_website_sorted(core="", website=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search = get_results(client.search(
-        'website:' + website, **{'rows': 10000, 'sort': 'id asc'}))
+        'website:' + website, **{'rows': ROW_LIMIT, 'sort': 'id asc'}))
     return search
 
 
 def solr_search_document_id_sorted(core="", document_id=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search = get_results(client.search(
-        'attr_document_id:"' + document_id + '"', **{'rows': 10000, 'sort': 'id asc'}))
+        'attr_document_id:"' + document_id + '"', **{'rows': ROW_LIMIT, 'sort': 'id asc'}))
     return search
 
 
