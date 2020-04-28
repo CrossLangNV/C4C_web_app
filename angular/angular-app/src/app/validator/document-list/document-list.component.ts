@@ -7,7 +7,12 @@ import { Document, DocumentResults } from 'src/app/shared/models/document';
 import { Subject } from 'rxjs';
 import { Tag } from 'src/app/shared/models/tag';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { faUserAlt, faMicrochip } from '@fortawesome/free-solid-svg-icons';
+import {
+  faUserAlt,
+  faMicrochip,
+  faSyncAlt,
+  faStopCircle,
+} from '@fortawesome/free-solid-svg-icons';
 import { DjangoUser } from 'src/app/shared/models/django_user';
 import { AuthenticationService } from 'src/app/core/auth/authentication.service';
 
@@ -22,7 +27,8 @@ export class DocumentListComponent implements OnInit {
   page: any = 1;
   previousPage: any;
   pageSize = 5;
-  showOnlyOwn: false;
+  showOnlyOwn: boolean = false;
+  filterActive: boolean = false;
   stats = {
     total: 0,
     unValidatedSize: 0,
@@ -40,9 +46,12 @@ export class DocumentListComponent implements OnInit {
   };
   collectionSize = 0;
   filterType: string = 'none';
-  keyword: string;
+  filterTag: string = '';
+  keyword: string = '';
   userIcon: IconDefinition;
   chipIcon: IconDefinition;
+  reloadIcon: IconDefinition = faSyncAlt;
+  resetIcon: IconDefinition = faStopCircle;
   filters = [
     { id: 'none', name: 'Filter..' },
     { id: 'unvalidated', name: '..Unvalidated' },
@@ -62,6 +71,7 @@ export class DocumentListComponent implements OnInit {
   websiteFilter: string = 'none';
   searchTermChanged: Subject<string> = new Subject<string>();
   currentDjangoUser: DjangoUser;
+  selectedIndex: string = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -71,7 +81,8 @@ export class DocumentListComponent implements OnInit {
   ) {}
 
   fetchDocuments() {
-    console.log(this.filterType);
+    this.checkFilters();
+    // Fetch documents list
     this.service
       .getDocumentResults(
         this.page,
@@ -79,23 +90,26 @@ export class DocumentListComponent implements OnInit {
         this.filterType,
         this.currentDjangoUser.username,
         this.websiteFilter,
-        this.showOnlyOwn
+        this.showOnlyOwn,
+        this.filterTag
       )
       .subscribe((result) => {
         this.documents$ = result.results;
         this.collectionSize = result.count;
-        this.stats.total = result.count_total;
-        this.stats.validatedSize =
-          result.count_total - result.count_unvalidated;
-        this.stats.validatedPercent = Math.round(
-          (this.stats.validatedSize / result.count_total) * 100
-        );
-        this.stats.unValidatedSize = result.count_unvalidated;
-        this.stats.humanRejectedSize = result.count_rejected;
-        this.stats.humanAcceptedSize = result.count_validated;
-        this.stats.autoRejectedPercent = result.count_autorejected;
-        this.stats.autoValidatedSize = result.count_autovalidated;
       });
+    // Fetch statistics
+    this.service.getDocumentStats().subscribe((result) => {
+      this.stats.total = result.count_total;
+      this.stats.validatedSize = result.count_total - result.count_unvalidated;
+      this.stats.validatedPercent = Math.round(
+        (this.stats.validatedSize / result.count_total) * 100
+      );
+      this.stats.unValidatedSize = result.count_unvalidated;
+      this.stats.humanRejectedSize = result.count_rejected;
+      this.stats.humanAcceptedSize = result.count_validated;
+      this.stats.autoRejectedSize = result.count_autorejected;
+      this.stats.autoValidatedSize = result.count_autovalidated;
+    });
   }
   ngOnInit() {
     this.userIcon = faUserAlt;
@@ -110,6 +124,11 @@ export class DocumentListComponent implements OnInit {
         this.keyword = model;
         this.fetchDocuments();
       });
+    this.service.messageSource.asObservable().subscribe((value: string) => {
+      if (value == 'refresh') {
+        this.fetchDocuments();
+      }
+    });
   }
 
   onSearch(keyword: string) {
@@ -131,6 +150,11 @@ export class DocumentListComponent implements OnInit {
     this.service.deleteTag(event.value.id).subscribe();
   }
 
+  onClickTag(event) {
+    this.filterTag = event.value.value;
+    this.fetchDocuments();
+  }
+
   loadPage(page: number) {
     if (page !== this.previousPage) {
       this.page = page;
@@ -141,6 +165,28 @@ export class DocumentListComponent implements OnInit {
 
   filterResetPage() {
     this.page = 1;
+    this.fetchDocuments();
+  }
+
+  setIndex(index: string) {
+    this.selectedIndex = index;
+  }
+
+  checkFilters() {
+    this.filterActive =
+      this.keyword.length > 0 ||
+      this.filterTag.length > 0 ||
+      this.showOnlyOwn ||
+      this.filterType != 'none' ||
+      this.websiteFilter != 'none';
+  }
+
+  resetFilters() {
+    this.keyword = '';
+    this.filterTag = '';
+    this.showOnlyOwn = false;
+    this.filterType = 'none';
+    this.websiteFilter = 'none';
     this.fetchDocuments();
   }
 }

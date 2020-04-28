@@ -57,34 +57,39 @@ export class DocumentValidateComponent implements OnInit {
         this.stateValues.push({ label: state, value: state });
       });
     });
-    this.route.paramMap.pipe(
-      switchMap((params: ParamMap) =>
-        this.service.getDocumentSyncWithAttachments(params.get('documentId'))
+    this.route.paramMap
+      .pipe(
+        switchMap((params: ParamMap) =>
+          this.service.getDocumentSyncWithAttachments(params.get('documentId'))
+        )
       )
-    ).subscribe((document) => {
-      this.document = document;
-      this.newComment.documentId = document.id;
-      this.comments = [];
-      if (document.commentIds) {
-        document.commentIds.forEach((commentId) => {
-          this.service.getComment(commentId).subscribe((comment) => {
-            this.adminService.getUser(comment.userId).subscribe((user) => {
-              comment.username = user.username;
+      .subscribe((document) => {
+        this.document = document;
+        this.newComment.documentId = document.id;
+        this.comments = [];
+        if (document.commentIds) {
+          document.commentIds.forEach((commentId) => {
+            this.service.getComment(commentId).subscribe((comment) => {
+              this.adminService.getUser(comment.userId).subscribe((user) => {
+                comment.username = user.username;
+              });
+              this.comments.push(comment);
             });
-            this.comments.push(comment);
           });
-        });
-      }
-    });
+        }
+      });
     this.deleteIcon = faTrashAlt;
   }
 
   onStateChange(event) {
-        // FIXME: can we abract the the acceptanceState.id  via the API (should not be know externally ?)
+    // FIXME: can we abract the the acceptanceState.id  via the API (should not be know externally ?)
     this.acceptanceState.id = this.document.acceptanceState;
     this.acceptanceState.value = event.value;
     this.acceptanceState.documentId = this.document.id;
-    this.service.updateState(this.acceptanceState).subscribe();
+    this.service.updateState(this.acceptanceState).subscribe((result) => {
+      // Update document list
+      this.service.messageSource.next('refresh');
+    });
   }
 
   onAddComment() {
@@ -92,12 +97,14 @@ export class DocumentValidateComponent implements OnInit {
       comment.username = this.currentDjangoUser.username;
       this.comments.push(comment);
       this.newComment.value = '';
+      this.service.messageSource.next('refresh');
     });
   }
 
   onDeleteComment(comment: Comment) {
     this.service.deleteComment(comment.id).subscribe((response) => {
       this.comments = this.comments.filter((item) => item.id !== comment.id);
+      this.service.messageSource.next('refresh');
     });
   }
 

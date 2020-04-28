@@ -114,6 +114,10 @@ urlpatterns = [
     path('api/celex', views.celex_get_xhtml,
          name='celex_get_api'),
 
+    # Document stats
+    path('api/stats', views.document_stats,
+         name='document_stats'),
+
     # Super
     path('api/super', views.IsSuperUserAPIView.as_view(), name='super_api'),
 
@@ -123,4 +127,7 @@ urlpatterns = [
          views.SolrFile.as_view(), name='solr_file_search_api'),
     path('api/solrdocument/<id>', views.SolrDocument.as_view(),
          name='solr_document_api'),
+
+    # Export
+    path('api/export', views.ExportDocuments.as_view(), name='export_api'),
 ]

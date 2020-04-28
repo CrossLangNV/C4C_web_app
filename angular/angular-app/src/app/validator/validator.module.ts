@@ -6,6 +6,7 @@ import { ValidatorRoutingModule } from './validator-routing.module';
 import { DocumentValidateComponent } from './document-validate/document-validate.component';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ChipsModule } from 'primeng/chips';
+import { InputSwitchModule } from 'primeng/inputswitch';
 import { TooltipModule } from 'primeng/tooltip';
 import { TruncatePipe } from '../shared/pipelines/truncate';
 
@@ -20,6 +21,7 @@ import { TruncatePipe } from '../shared/pipelines/truncate';
     SharedModule,
     SelectButtonModule,
     ChipsModule,
+    InputSwitchModule,
     TooltipModule,
     ValidatorRoutingModule,
   ],
