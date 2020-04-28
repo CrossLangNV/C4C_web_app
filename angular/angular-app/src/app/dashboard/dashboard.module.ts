@@ -4,9 +4,13 @@ import { DashboardRoutingModule } from './dashboard-routing.module';
 import { SharedModule } from '../shared/shared.module';
 import { DocumentListComponent } from './document-list/document-list.component';
 import { TableModule } from 'primeng/table';
-
+import { NgbdSortableHeaderDirective } from './document-list/document-list.component';
 @NgModule({
-  declarations: [UserListComponent, DocumentListComponent],
-  imports: [SharedModule, DashboardRoutingModule, TableModule]
+  declarations: [
+    UserListComponent,
+    DocumentListComponent,
+    NgbdSortableHeaderDirective,
+  ],
+  imports: [SharedModule, DashboardRoutingModule, TableModule],
 })
 export class DashboardModule {}
