@@ -1,11 +1,26 @@
+import io
+import itertools
 import logging
+import os
+import shutil
+from http.client import HTTPResponse
+from operator import itemgetter
+from wsgiref.util import FileWrapper
+from zipfile import ZipFile
+from django.http import HttpResponse
+
 import requests
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.db.models import Q
+from django.http import FileResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
+from jsonlines import jsonlines
 from rest_framework import permissions
+from rest_framework.decorators import api_view
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveUpdateAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -17,15 +32,8 @@ from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerial
     CommentSerializer, TagSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
 
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-
-import json
-import logging
-from django.db.models import Q
-
 logger = logging.getLogger(__name__)
+workpath = os.path.dirname(os.path.abspath(__file__))
 
 
 class DocumentSearchView(TemplateView):
@@ -218,30 +226,6 @@ class SmallResultsSetPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 1000
 
-    def get_paginated_response(self, data):
-        q1 = Document.objects.all()
-        q2 = q1.filter(Q(acceptance_states__isnull=True) |
-                       Q(acceptance_states__value="Unvalidated"))
-        q3 = q1.filter(acceptance_states__value="Rejected").exclude(
-            acceptance_states__probability_model__isnull=False)
-        q4 = q1.filter(acceptance_states__value="Accepted").exclude(
-            acceptance_states__probability_model__isnull=False)
-        q5 = q1.filter(acceptance_states__value="Rejected").exclude(
-            acceptance_states__probability_model__isnull=True)
-        q6 = q1.filter(acceptance_states__value="Accepted").exclude(
-            acceptance_states__probability_model__isnull=True)
-
-        return Response({
-            'count': self.page.paginator.count,
-            'count_total': len(q1),
-            'count_unvalidated': len(q2),
-            'count_rejected': len(q3),
-            'count_validated': len(q4),
-            'count_autorejected': len(q5),
-            'count_autovalidated': len(q6),
-            'results': data
-        })
-
 
 class DocumentListAPIView(ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -253,16 +237,16 @@ class DocumentListAPIView(ListCreateAPIView):
         keyword = self.request.GET.get('keyword', "")
         if keyword:
             q = q.filter(title__icontains=keyword)
-        showOnlyOwn = self.request.GET.get('showOnlyOwn', "")
-        if showOnlyOwn == "true":
+        showonlyown = self.request.GET.get('showOnlyOwn', "")
+        if showonlyown == "true":
             username = self.request.GET.get('userName', "")
             q = q.filter(acceptance_states__user__username=username)
             q = q.filter(Q(acceptance_states__value="Accepted") |
                          Q(acceptance_states__value="Rejected"))
         filtertype = self.request.GET.get('filterType', "")
         if filtertype == "unvalidated":
-            q = q.filter(Q(acceptance_states__isnull=True) |
-                         Q(acceptance_states__value="Unvalidated"))
+            q = q.exclude(Q(acceptance_states__value="Rejected")
+                          | Q(acceptance_states__value="Accepted"))
         if filtertype == "accepted":
             q = q.filter(acceptance_states__value="Accepted")
         if filtertype == "rejected":
@@ -270,6 +254,9 @@ class DocumentListAPIView(ListCreateAPIView):
         website = self.request.GET.get('website', "")
         if website:
             q = q.filter(website__name__iexact=website)
+        tag = self.request.GET.get('tag', "")
+        if tag:
+            q = q.filter(tags__value=tag)
         return q.order_by("-created_at")
 
 
@@ -419,6 +406,58 @@ class SolrDocument(APIView):
         return Response(solr_document)
 
 
+class ExportDocuments(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        files = solr_search(core="files", term="*")
+        # group files by document
+        files = sorted(files, key=itemgetter('attr_document_id'))
+        file_groups = []
+        doc_keys = []
+        for key, group in itertools.groupby(files, key=itemgetter('attr_document_id')):
+            file_groups.append(list(group))
+            doc_keys.append(key)
+
+        # each group of files shares the same doc
+        # write .jsonl file for each doc containing 1 or more files
+        for group in file_groups:
+            doc_id = group[0]['attr_document_id'][0]
+            doc = solr_search_id(core="documents", id=doc_id)
+            # document must exist
+            if doc:
+                with jsonlines.open(workpath + '/export/jsonl/doc_' + doc_id + '.jsonl', mode='w') as f:
+                    f.write(doc[0])
+                    # json line for each file
+                    for file in group:
+                        f.write(file)
+
+        # create zip file for all .jsonl files
+        zip_filename = 'exported_docs.zip'
+        # open BytesIO to grab in-memory ZIP contents
+        b = io.BytesIO()
+        zf = ZipFile(b, "w")
+        for folder_name, subfolders, filenames in os.walk(workpath + '/export/jsonl'):
+            for filename in filenames:
+                file_path = os.path.join(folder_name, filename)
+                zf.write(file_path, os.path.relpath(file_path, folder_name))
+        zf.close()
+        # clear export folder
+        for filename in os.listdir(workpath + '/export'):
+            file_path = os.path.join(workpath + '/export', filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                logger.error('Failed to delete %s. Reason: %s' % (file_path, e))
+        # return zip
+        response = HttpResponse(b.getvalue(), content_type='application/x-zip-compressed')
+        response['Content-Disposition'] = 'attachment; filename="%s"' % zip_filename
+        return response
+
+
 @api_view(['GET'])
 def celex_get_xhtml(request):
     if request.method == 'GET':
@@ -432,3 +471,22 @@ def celex_get_xhtml(request):
             response = requests.get(
                 "http://publications.europa.eu/resource/celex/" + celex_id, headers=headers)
         return Response(response.text)
+
+
+@api_view(['GET'])
+def document_stats(request):
+    if request.method == 'GET':
+        q1 = Document.objects.all()
+        q2 = q1.exclude(Q(acceptance_states__value="Rejected")
+                        | Q(acceptance_states__value="Accepted"))
+        q5 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
+            acceptance_states__probability_model__isnull=False))
+        q6 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
+            acceptance_states__probability_model__isnull=False))
+
+        return Response({
+            'count_total': len(q1),
+            'count_unvalidated': len(q2),
+            'count_autorejected': len(q5),
+            'count_autovalidated': len(q6),
+        })
