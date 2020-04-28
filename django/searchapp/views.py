@@ -434,15 +434,15 @@ class ExportDocuments(APIView):
                 zf.write(file_path, os.path.relpath(file_path, workpath + '/export/jsonl'))
         zf.close()
         # clear export folder
-        for filename in os.listdir(workpath + '/export'):
-            file_path = os.path.join(workpath + '/export', filename)
-            try:
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                logger.error('Failed to delete %s. Reason: %s' % (file_path, e))
+        # for filename in os.listdir(workpath + '/export'):
+        #     file_path = os.path.join(workpath + '/export', filename)
+        #     try:
+        #         if os.path.isfile(file_path) or os.path.islink(file_path):
+        #             os.unlink(file_path)
+        #         elif os.path.isdir(file_path):
+        #             shutil.rmtree(file_path)
+        #     except Exception as e:
+        #         logger.error('Failed to delete %s. Reason: %s' % (file_path, e))
         # return zip
         response = HttpResponse(b.getvalue(), content_type='application/x-zip-compressed')
         response['Content-Disposition'] = 'attachment; filename="%s"' % zip_filename
