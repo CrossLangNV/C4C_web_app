@@ -248,9 +248,9 @@ class DocumentListAPIView(ListCreateAPIView):
             q = q.exclude(Q(acceptance_states__value="Rejected")
                           | Q(acceptance_states__value="Accepted"))
         if filtertype == "accepted":
-            q = q.filter(acceptance_states__value="Accepted")
+            q = q.filter(acceptance_states__value="Accepted").distinct()
         if filtertype == "rejected":
-            q = q.filter(acceptance_states__value="Rejected")
+            q = q.filter(acceptance_states__value="Rejected").distinct()
         website = self.request.GET.get('website', "")
         if website:
             q = q.filter(website__name__iexact=website)
@@ -414,9 +414,11 @@ class ExportDocuments(APIView):
         for website in websites:
             if not os.path.exists(workpath + '/export/jsonl/' + website.name):
                 os.makedirs(workpath + '/export/jsonl/' + website.name)
-            documents = solr_search(core='documents', term='website:' + website.name)
+            documents = solr_search(
+                core='documents', term='website:' + website.name)
             for document in documents:
-                files = solr_search_document_id_sorted(core='files', document_id=document['id'])
+                files = solr_search_document_id_sorted(
+                    core='files', document_id=document['id'])
                 with jsonlines.open(workpath + '/export/jsonl/' + website.name + '/doc_' + document['id'] + '.jsonl',
                                     mode='w') as f:
                     f.write(document)
@@ -431,7 +433,8 @@ class ExportDocuments(APIView):
         for root, subfolders, filenames in os.walk(workpath + '/export/jsonl'):
             for filename in filenames:
                 file_path = os.path.join(root, filename)
-                zf.write(file_path, os.path.relpath(file_path, workpath + '/export/jsonl'))
+                zf.write(file_path, os.path.relpath(
+                    file_path, workpath + '/export/jsonl'))
         zf.close()
         # clear export folder
         for filename in os.listdir(workpath + '/export'):
@@ -442,9 +445,11 @@ class ExportDocuments(APIView):
                 elif os.path.isdir(file_path):
                     shutil.rmtree(file_path)
             except Exception as e:
-                logger.error('Failed to delete %s. Reason: %s' % (file_path, e))
+                logger.error('Failed to delete %s. Reason: %s' %
+                             (file_path, e))
         # return zip
-        response = HttpResponse(b.getvalue(), content_type='application/x-zip-compressed')
+        response = HttpResponse(
+            b.getvalue(), content_type='application/x-zip-compressed')
         response['Content-Disposition'] = 'attachment; filename="%s"' % zip_filename
         return response
 
@@ -470,6 +475,8 @@ def document_stats(request):
         q1 = Document.objects.all()
         q2 = q1.exclude(Q(acceptance_states__value="Rejected")
                         | Q(acceptance_states__value="Accepted"))
+        q3 = q1.filter(acceptance_states__value="Accepted").distinct()
+        q4 = q1.filter(acceptance_states__value="Rejected").distinct()
         q5 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
             acceptance_states__probability_model__isnull=False))
         q6 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
@@ -478,6 +485,8 @@ def document_stats(request):
         return Response({
             'count_total': len(q1),
             'count_unvalidated': len(q2),
+            'count_accepted': len(q3),
+            'count_rejected': len(q4),
             'count_autorejected': len(q5),
             'count_autovalidated': len(q6),
         })

@@ -5,6 +5,7 @@ import pysolr
 
 ROW_LIMIT = 50000
 
+
 def solr_search(core="", term=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search = get_results_highlighted(client.search(term,
@@ -79,6 +80,9 @@ def solr_add_file(core, file, file_id, file_url, document_id):
 
 
 def solr_delete(core, id):
-    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    client.delete(id=id)
-    client.commit()
+    try:
+        client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+        client.delete(id=id)
+        client.commit()
+    except pysolr.SolrError:
+        pass
