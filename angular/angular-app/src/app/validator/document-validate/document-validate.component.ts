@@ -13,11 +13,13 @@ import { AuthenticationService } from 'src/app/core/auth/authentication.service'
 import { DjangoUser } from 'src/app/shared/models/django_user';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { Attachment } from 'src/app/shared/models/attachment';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-document-validate',
   templateUrl: './document-validate.component.html',
   styleUrls: ['./document-validate.component.css'],
+  providers: [MessageService],
 })
 export class DocumentValidateComponent implements OnInit {
   document: Document;
@@ -37,7 +39,8 @@ export class DocumentValidateComponent implements OnInit {
     private service: ApiService,
     private adminService: ApiAdminService,
     private authenticationService: AuthenticationService,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private messageService: MessageService
   ) {}
 
   ngOnInit() {
@@ -89,6 +92,16 @@ export class DocumentValidateComponent implements OnInit {
     this.service.updateState(this.acceptanceState).subscribe((result) => {
       // Update document list
       this.service.messageSource.next('refresh');
+      let severity = {
+        Accepted: 'success',
+        Rejected: 'error',
+        Unvalidated: 'info',
+      };
+      this.messageService.add({
+        severity: severity[event.value],
+        summary: 'Acceptance State',
+        detail: 'Set to "' + event.value + '"',
+      });
     });
   }
 
@@ -129,9 +142,11 @@ export class DocumentValidateComponent implements OnInit {
       });
     }
   }
+
   onSubmit() {
     this.modalService.dismissAll();
   }
+
   goToLink(url: string) {
     window.open(url, '_blank');
   }
