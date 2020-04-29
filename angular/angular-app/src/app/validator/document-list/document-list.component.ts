@@ -26,23 +26,24 @@ export class DocumentListComponent implements OnInit {
   selectedId: number;
   page: any = 1;
   previousPage: any;
+  data: any;
   pageSize = 5;
   showOnlyOwn: boolean = false;
   filterActive: boolean = false;
   stats = {
     total: 0,
-    unValidatedSize: 0,
+    unvalidatedSize: 0,
+    unvalidatedPercent: 0,
     validatedSize: 0,
     validatedPercent: 0,
-    unValidatedPercent: 0,
     autoValidatedSize: 0,
     autoValidatedPercent: 0,
     autoRejectedSize: 0,
     autoRejectedPercent: 0,
-    humanRejectedSize: 0,
-    humanRejectedPercent: 0,
-    humanAcceptedSize: 0,
-    humanAcceptedPercent: 0,
+    rejectedSize: 0,
+    rejectedPercent: 0,
+    acceptedSize: 0,
+    acceptedPercent: 0,
   };
   collectionSize = 0;
   filterType: string = 'none';
@@ -104,9 +105,18 @@ export class DocumentListComponent implements OnInit {
       this.stats.validatedPercent = Math.round(
         (this.stats.validatedSize / result.count_total) * 100
       );
-      this.stats.unValidatedSize = result.count_unvalidated;
-      this.stats.humanRejectedSize = result.count_rejected;
-      this.stats.humanAcceptedSize = result.count_validated;
+      this.stats.unvalidatedSize = result.count_unvalidated;
+      this.stats.unvalidatedPercent = Math.round(
+        (this.stats.unvalidatedSize / result.count_total) * 100
+      );
+      this.stats.acceptedSize = result.count_accepted;
+      this.stats.acceptedPercent = Math.round(
+        (this.stats.acceptedSize / result.count_total) * 100
+      );
+      this.stats.rejectedSize = result.count_rejected;
+      this.stats.rejectedPercent = Math.round(
+        (this.stats.rejectedSize / result.count_total) * 100
+      );
       this.stats.autoRejectedSize = result.count_autorejected;
       this.stats.autoValidatedSize = result.count_autovalidated;
     });
@@ -188,5 +198,22 @@ export class DocumentListComponent implements OnInit {
     this.filterType = 'none';
     this.websiteFilter = 'none';
     this.fetchDocuments();
+  }
+
+  updateChart(event: Event) {
+    this.data = {
+      labels: ['Unvalidated', 'Accepted', 'Rejected'],
+      datasets: [
+        {
+          data: [
+            this.stats.unvalidatedPercent,
+            this.stats.acceptedPercent,
+            this.stats.rejectedPercent,
+          ],
+          backgroundColor: ['#36A2EB', '#28A745', '#F47677'],
+          hoverBackgroundColor: ['#36A2EB', '#28A745', '#F47677'],
+        },
+      ],
+    };
   }
 }
