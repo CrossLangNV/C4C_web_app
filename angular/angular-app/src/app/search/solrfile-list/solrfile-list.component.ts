@@ -81,6 +81,7 @@ export class SolrFileListComponent implements OnInit {
       this.cachedSolrFilesBeforeSort.forEach(file => {
         this.apiService.getDocument(file.documentId).subscribe(document => {
           file.website = document.website;
+          file.documentTitle = document.title;
         });
       });
       this.cachedSolrFiles = [...this.cachedSolrFilesBeforeSort];
