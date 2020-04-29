@@ -122,7 +122,7 @@ urlpatterns = [
     path('api/super', views.IsSuperUserAPIView.as_view(), name='super_api'),
 
     # Solrfiles
-    path('api/solrfiles', views.SolrFileList.as_view(), name='solr_file_list_api'),
+    path('api/solrfiles/', views.SolrFileList.as_view(), name='solr_file_list_api'),
     path('api/solrfiles/<search_term>',
          views.SolrFile.as_view(), name='solr_file_search_api'),
     path('api/solrdocument/<id>', views.SolrDocument.as_view(),
