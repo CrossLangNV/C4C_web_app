@@ -7,6 +7,7 @@ import { DocumentValidateComponent } from './document-validate/document-validate
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ChipsModule } from 'primeng/chips';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { TruncatePipe } from '../shared/pipelines/truncate';
 
@@ -22,6 +23,7 @@ import { TruncatePipe } from '../shared/pipelines/truncate';
     SelectButtonModule,
     ChipsModule,
     InputSwitchModule,
+    ToastModule,
     TooltipModule,
     ValidatorRoutingModule,
   ],
