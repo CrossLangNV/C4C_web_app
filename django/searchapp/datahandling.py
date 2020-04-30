@@ -8,6 +8,8 @@ from urllib.request import urlopen, Request
 from django.core.files.base import ContentFile
 from django.db import transaction
 
+from django.core.serializers.json import DjangoJSONEncoder
+
 from searchapp.models import Document, Attachment, Website, AcceptanceState, AcceptanceStateValue
 
 logger = logging.getLogger(__name__)
@@ -18,7 +20,14 @@ def score_documents(django_documents):
     for django_doc in django_documents:
         url = os.environ['DOCUMENT_CLASSIFIER_URL'] + "/classify_doc"
         if (len(django_doc.summary)):
-            data = {'document': django_doc.summary}
+            date_json = json.dumps(
+                django_doc.date,
+                sort_keys=True,
+                indent=1,
+                cls=DjangoJSONEncoder
+            )
+            logger.info(date_json)
+            data = {'title': django_doc.title, 'date': date_json}
             response = requests.post(url, json=data)
             logger.info("Sending content: " + json.dumps(data))
             js = response.json()
