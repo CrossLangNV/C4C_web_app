@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def score_documents(django_documents):
     for django_doc in django_documents:
         url = os.environ['DOCUMENT_CLASSIFIER_URL'] + "/classify_doc"
-        if (len(django_doc.summary)):
+        if (len(django_doc.title)):
             date_json = json.dumps(
                 django_doc.date,
                 sort_keys=True,

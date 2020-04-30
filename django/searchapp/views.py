@@ -205,6 +205,8 @@ class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
         if score:
             # get confidence score
             score_documents(django_documents)
+        else:
+            self.logger.info("Not scoring")
 
         return website
 
