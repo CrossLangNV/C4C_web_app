@@ -78,11 +78,22 @@ class AcceptanceState(models.Model):
                              default=AcceptanceStateValue.UNVALIDATED)
     document = models.ForeignKey(
         'Document', related_name='acceptance_states', on_delete=models.CASCADE)
-    user = models.ForeignKey('auth.User', on_delete=models.CASCADE, blank=True, null=True)
+    user = models.ForeignKey(
+        'auth.User', on_delete=models.CASCADE, blank=True, null=True)
     probability_model = models.CharField(max_length=50, blank=True, null=True)
+    accepted_probability = models.FloatField(default=0.0, blank=True)
+
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-    accepted_probability = models.FloatField(default=0.0, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['document_id', 'user_id'], name="unique_per_doc_and_user"),
+            models.UniqueConstraint(
+                fields=['document_id', 'probability_model'], name="unique_per_doc_and_model")
+
+        ]
 
 
 class Attachment(models.Model):
