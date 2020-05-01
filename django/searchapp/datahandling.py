@@ -15,19 +15,12 @@ from searchapp.models import Document, Attachment, Website, AcceptanceState, Acc
 logger = logging.getLogger(__name__)
 
 
-@transaction.atomic
 def score_documents(django_documents):
     for django_doc in django_documents:
         url = os.environ['DOCUMENT_CLASSIFIER_URL'] + "/classify_doc"
         if (len(django_doc.title)):
-            date_json = json.dumps(
-                django_doc.date,
-                sort_keys=True,
-                indent=1,
-                cls=DjangoJSONEncoder
-            )
-            logger.info(date_json)
-            data = {'title': django_doc.title, 'date': date_json}
+            data = {'title': django_doc.title,
+                    'date': django_doc.date.strftime("%Y-%m-%d")}
             response = requests.post(url, json=data)
             logger.info("Sending content: " + json.dumps(data))
             js = response.json()
@@ -52,7 +45,6 @@ def score_documents(django_documents):
             )
 
 
-@transaction.atomic
 def sync_documents(website, solr_documents, django_documents):
     for solr_doc, django_doc_id in align_lists(solr_documents, django_documents):
         if solr_doc is None:
@@ -89,9 +81,9 @@ def sync_documents(website, solr_documents, django_documents):
             logger.info('solr document id: ' + str(solr_doc['id']))
 
 
-@transaction.atomic
 def sync_attachments(document, solr_files, django_attachments):
     for solr_file, django_attachment_id in align_lists(solr_files, django_attachments):
+        logger.info("SYNCATT: working on " + str(django_attachment_id))
         if solr_file is None:
             break
         elif django_attachment_id is None:
@@ -101,7 +93,7 @@ def sync_attachments(document, solr_files, django_attachments):
                 document=document,
                 pull=True
             )
-            # save_file_from_url(new_django_attachment, solr_file)
+           # save_file_from_url(new_django_attachment, solr_file)
         elif str(django_attachment_id) == solr_file['id']:
             update_attachment(Attachment.objects.get(
                 pk=django_attachment_id), solr_file)

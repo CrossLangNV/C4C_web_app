@@ -31,6 +31,7 @@ from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
+from .tasks import score_documents_task, sync_documents_task, sync_attachments_task
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -71,20 +72,14 @@ class WebsiteDetailView(DetailView):
         # call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
         website = Website.objects.get(pk=self.kwargs['pk'])
-        django_documents = Document.objects.filter(
-            website=website).order_by('id')
         sync = self.request.GET.get('sync', False)
         if sync:
             # query Solr for available documents and sync with Django
-            solr_documents = solr_search_website_sorted(
-                core='documents', website=website.name.lower())
-            sync_documents(website, solr_documents, django_documents)
+            sync_documents_task(website.id)
         score = self.request.GET.get('score', False)
         if score:
             # get confidence score
-            score_documents(django_documents)
-        # add to context to be used in template
-        context['documents'] = django_documents
+            score_documents_task(website.id)
         return context
 
 
@@ -189,22 +184,16 @@ class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         self.logger.info("In website detail view")
-        queryset = self.get_queryset()
-        website_qs = queryset.filter(pk=self.kwargs['pk'])
-        website = website_qs[0]
-        django_documents = Document.objects.filter(
-            website=website).order_by('id')
+        website = Website.objects.get(pk=self.kwargs['pk'])
         sync = self.request.GET.get('sync', False)
         if sync:
-            solr_documents = solr_search_website_sorted(
-                core='documents', website=website.name.lower())
-            sync_documents(website, solr_documents, django_documents)
+            sync_documents_task(website.id)
         else:
             self.logger.info("Not syncing")
         score = self.request.GET.get('score', False)
         if score:
             # get confidence score
-            score_documents(django_documents)
+            score_documents_task(website.id)
         else:
             self.logger.info("Not scoring")
 
@@ -267,13 +256,12 @@ class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
     serializer_class = DocumentSerializer
 
     def get_object(self):
-        queryset = self.get_queryset()
-        document_qs = queryset.filter(pk=self.kwargs['pk'])
-        document = document_qs[0]
+        document = Document.objects.get(pk=self.kwargs['pk'])
         with_attachments = self.request.GET.get('with_attachments', False)
         sync = self.request.GET.get('sync', False)
-        solr_document = solr_search_id(core='documents', id=str(document.id))
         if sync:
+            solr_document = solr_search_id(
+                core='documents', id=str(document.id))
             sync_documents(document.website, solr_document, [document])
         if with_attachments:
             # query Solr for attachments
