@@ -25,7 +25,7 @@ class BISSpider(scrapy.Spider):
         for meta in metas:
             if 'property' in meta.attrs and meta.attrs['property'] == 'og:title':
                 title = meta.attrs['content']
-                newdict.update({"title": title})
+                newdict.update({"title": title.strip()})
             if 'name' in meta.attrs and meta.attrs['name'] == 'keywords':
                 keywords = meta.attrs['content']
                 newdict.update({"keywords": keywords})
@@ -82,12 +82,12 @@ class BISSpider(scrapy.Spider):
     def parse(self, response):
         # type 1, 2, 7: Standards, Guidelines and Sound practices
         return scrapy.FormRequest('https://www.bis.org/doclist/bcbspubls.htm',
-                                     formdata={
-                                         "bcbspubltypes": {"1", "2", "7"},
-                                         "paging_length": "25",
-                                         "page": "1",
-                                         "sort_list": "date_desc",
-                                         "theme": "bcbspubls"}, callback=self.find_number_of_pages)
+                                  formdata={
+                                      "bcbspubltypes": {"1", "2", "7"},
+                                      "paging_length": "25",
+                                      "page": "1",
+                                      "sort_list": "date_desc",
+                                      "theme": "bcbspubls"}, callback=self.find_number_of_pages)
 
     def find_number_of_pages(self, response):
         soup = bs4.BeautifulSoup(response.text, features="html.parser")
@@ -109,4 +109,3 @@ class BISSpider(scrapy.Spider):
         for element in all_publications_on_a_page:
             new_url = base_url + element['href']
             yield scrapy.Request(new_url, callback=self.get_metadata)
-    
