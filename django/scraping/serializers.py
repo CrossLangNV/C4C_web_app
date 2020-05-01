@@ -1,17 +1,10 @@
 from rest_framework import serializers
 
-from .models import ScrapingTaskItem, ScrapingTask
-
-
-class ScrapingTaskItemSerializer(serializers.ModelSerializer):
-    task = serializers.PrimaryKeyRelatedField(queryset=ScrapingTask.objects.all())
-
-    class Meta:
-        model = ScrapingTaskItem
-        fields = ['id', 'task', 'data', 'date']
+from .models import ScrapingTask
 
 
 class ScrapingTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScrapingTask
-        fields = ['id', 'scheduler_id', 'spider', 'spider_type', 'status', 'date']
+        fields = ['id', 'scheduler_id', 'spider',
+                  'spider_type', 'status', 'date']
