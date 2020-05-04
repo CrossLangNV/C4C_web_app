@@ -12,7 +12,7 @@ from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
 from jsonlines import jsonlines
-from rest_framework import permissions
+from rest_framework import permissions, filters
 from rest_framework.decorators import api_view
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveUpdateAPIView
 from rest_framework.pagination import PageNumberPagination
@@ -218,6 +218,8 @@ class DocumentListAPIView(ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = DocumentSerializer
     pagination_class = SmallResultsSetPagination
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['title', 'date']
 
     def get_queryset(self):
         q = Document.objects.all()

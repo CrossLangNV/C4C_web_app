@@ -126,7 +126,8 @@ export class ApiService {
     userName: string,
     website: string,
     showOnlyOwn: boolean,
-    filterTag: string
+    filterTag: string,
+    sortBy: string
   ): Observable<DocumentResults> {
     var pageQuery = page ? '?page=' + page : '';
     if (searchTerm) {
@@ -146,6 +147,9 @@ export class ApiService {
     }
     if (filterTag) {
       pageQuery = pageQuery + '&tag=' + filterTag;
+    }
+    if (sortBy) {
+      pageQuery = pageQuery += '&ordering=' + sortBy;
     }
     return this.http.get<DocumentResults>(
       `${this.API_URL}/documents${pageQuery}`
