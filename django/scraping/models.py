@@ -8,9 +8,3 @@ class ScrapingTask(models.Model):
     spider_type = models.CharField(max_length=100, default="")
     status = models.CharField(max_length=100, default="")
     date = models.DateTimeField(default=timezone.now)
-
-
-class ScrapingTaskItem(models.Model):
-    task = models.ForeignKey('ScrapingTask', on_delete=models.CASCADE, related_name='items')
-    data = models.TextField()  # crawled data
-    date = models.DateTimeField(default=timezone.now)

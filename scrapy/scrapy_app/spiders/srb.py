@@ -50,7 +50,6 @@ class SRBScraperSpider(scrapy.Spider):
             newdict.update({"summary": description})
         return newdict
 
-
     def parse(self, response):
         parsed_uri = urlparse(response.url)
         base_url = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
@@ -68,7 +67,7 @@ class SRBScraperSpider(scrapy.Spider):
             yield scrapy.Request(response.urljoin(next_page_url))
 
         '''
+
     def parse_single(self, element):
         data = self.get_metadata(element)
-        print(data)
         return data

@@ -7,7 +7,10 @@ import { DocumentValidateComponent } from './document-validate/document-validate
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { ChipsModule } from 'primeng/chips';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
+import { ChartModule } from 'primeng/chart';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TruncatePipe } from '../shared/pipelines/truncate';
 
 @NgModule({
@@ -22,7 +25,10 @@ import { TruncatePipe } from '../shared/pipelines/truncate';
     SelectButtonModule,
     ChipsModule,
     InputSwitchModule,
+    ToastModule,
     TooltipModule,
+    ChartModule,
+    OverlayPanelModule,
     ValidatorRoutingModule,
   ],
 })
