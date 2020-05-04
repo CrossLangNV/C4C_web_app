@@ -30,17 +30,6 @@ const rotate: { [key: string]: SortDirection } = {
   desc: '',
   '': 'asc',
 };
-export const compare = (v1, v2) => {
-  if (v1 === v2) {
-    return 0;
-  } else if (v1 === null || v1 === undefined) {
-    return 1;
-  } else if (v2 === null || v2 === undefined) {
-    return -1;
-  } else {
-    return v1 < v2 ? -1 : 1;
-  }
-};
 
 export interface SortEvent {
   column: string;
@@ -78,12 +67,12 @@ export class DocumentListComponent implements OnInit {
 
   documents$: Document[];
   selectedId: number;
-  page: any = 1;
+  page = 1;
   previousPage: any;
   data: any;
   pageSize = 5;
-  showOnlyOwn: boolean = false;
-  filterActive: boolean = false;
+  showOnlyOwn = false;
+  filterActive = false;
   stats = {
     total: 0,
     unvalidatedSize: 0,
@@ -100,9 +89,10 @@ export class DocumentListComponent implements OnInit {
     acceptedPercent: 0,
   };
   collectionSize = 0;
-  filterType: string = 'none';
-  filterTag: string = '';
-  keyword: string = '';
+  filterType = 'none';
+  filterTag = '';
+  keyword = '';
+  sortBy = '-date';
   userIcon: IconDefinition;
   chipIcon: IconDefinition;
   reloadIcon: IconDefinition = faSyncAlt;
@@ -123,7 +113,7 @@ export class DocumentListComponent implements OnInit {
     { id: 'srb', name: '..SRB' },
     { id: 'eba', name: '..EBA' },
   ];
-  websiteFilter: string = 'none';
+  websiteFilter = 'none';
   searchTermChanged: Subject<string> = new Subject<string>();
   currentDjangoUser: DjangoUser;
   selectedIndex: string = null;
@@ -146,7 +136,8 @@ export class DocumentListComponent implements OnInit {
         this.currentDjangoUser.username,
         this.websiteFilter,
         this.showOnlyOwn,
-        this.filterTag
+        this.filterTag,
+        this.sortBy
       )
       .subscribe((result) => {
         this.documents$ = result.results;
@@ -207,14 +198,14 @@ export class DocumentListComponent implements OnInit {
       }
     });
 
-    // sorting documents
+    // sorting documents, default date descending (-date)
     if (direction === '') {
-      this.documents$ = [...this.documents$];
+      this.sortBy = '-date';
+      this.fetchDocuments();
     } else {
-      this.documents$ = this.documents$.sort((a, b) => {
-        const res = compare(a[column], b[column]);
-        return direction === 'asc' ? res : -res;
-      });
+      this.sortBy = direction === 'asc' ? '' : '-';
+      this.sortBy += column;
+      this.fetchDocuments();
     }
   }
 
