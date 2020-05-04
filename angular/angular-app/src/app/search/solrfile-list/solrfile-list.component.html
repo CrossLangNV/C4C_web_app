@@ -48,6 +48,7 @@
 
   <div class="d-flex justify-content-between p-2">
     <ngb-pagination
+      (pageChange)="loadPage($event)"
       [collectionSize]="collectionSize"
       [(page)]="page"
       [pageSize]="pageSize"
