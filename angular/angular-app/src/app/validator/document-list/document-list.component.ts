@@ -1,9 +1,17 @@
-import { Observable } from 'rxjs';
-import { switchMap, distinctUntilChanged, debounceTime } from 'rxjs/operators';
-import { Component, OnInit } from '@angular/core';
-import { Router, ActivatedRoute, ParamMap } from '@angular/router';
+import { distinctUntilChanged, debounceTime } from 'rxjs/operators';
+import {
+  Component,
+  OnInit,
+  Directive,
+  Input,
+  Output,
+  ViewChildren,
+  QueryList,
+  EventEmitter,
+} from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ApiService } from 'src/app/core/services/api.service';
-import { Document, DocumentResults } from 'src/app/shared/models/document';
+import { Document } from 'src/app/shared/models/document';
 import { Subject } from 'rxjs';
 import { Tag } from 'src/app/shared/models/tag';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
@@ -12,9 +20,43 @@ import {
   faMicrochip,
   faSyncAlt,
   faStopCircle,
+  faSort,
+  faSortUp,
+  faSortDown
 } from '@fortawesome/free-solid-svg-icons';
 import { DjangoUser } from 'src/app/shared/models/django_user';
 import { AuthenticationService } from 'src/app/core/auth/authentication.service';
+
+export type SortDirection = 'asc' | 'desc' | '';
+const rotate: { [key: string]: SortDirection } = {
+  asc: 'desc',
+  desc: '',
+  '': 'asc',
+};
+
+export interface SortEvent {
+  column: string;
+  direction: SortDirection;
+}
+
+@Directive({
+  selector: 'th[sortable]',
+  host: {
+    '[class.asc]': 'direction === "asc"',
+    '[class.desc]': 'direction === "desc"',
+    '(click)': 'rotate()',
+  },
+})
+export class NgbdSortableHeaderDirective {
+  @Input() sortable: string;
+  @Input() direction: SortDirection = '';
+  @Output() sort = new EventEmitter<SortEvent>();
+
+  rotate() {
+    this.direction = rotate[this.direction];
+    this.sort.emit({ column: this.sortable, direction: this.direction });
+  }
+}
 
 @Component({
   selector: 'app-document-list',
@@ -22,14 +64,18 @@ import { AuthenticationService } from 'src/app/core/auth/authentication.service'
   styleUrls: ['./document-list.component.css'],
 })
 export class DocumentListComponent implements OnInit {
+  @ViewChildren(NgbdSortableHeaderDirective) headers: QueryList<
+    NgbdSortableHeaderDirective
+  >;
+
   documents$: Document[];
   selectedId: number;
-  page: any = 1;
+  page = 1;
   previousPage: any;
   data: any;
   pageSize = 5;
-  showOnlyOwn: boolean = false;
-  filterActive: boolean = false;
+  showOnlyOwn = false;
+  filterActive = false;
   stats = {
     total: 0,
     unvalidatedSize: 0,
@@ -46,13 +92,15 @@ export class DocumentListComponent implements OnInit {
     acceptedPercent: 0,
   };
   collectionSize = 0;
-  filterType: string = 'none';
-  filterTag: string = '';
-  keyword: string = '';
+  filterType = 'none';
+  filterTag = '';
+  keyword = '';
+  sortBy = '-date';
   userIcon: IconDefinition;
   chipIcon: IconDefinition;
   reloadIcon: IconDefinition = faSyncAlt;
   resetIcon: IconDefinition = faStopCircle;
+  sortIcon: IconDefinition = faSort;
   filters = [
     { id: 'none', name: 'Filter..' },
     { id: 'unvalidated', name: '..Unvalidated' },
@@ -69,7 +117,7 @@ export class DocumentListComponent implements OnInit {
     { id: 'srb', name: '..SRB' },
     { id: 'eba', name: '..EBA' },
   ];
-  websiteFilter: string = 'none';
+  websiteFilter = 'none';
   searchTermChanged: Subject<string> = new Subject<string>();
   currentDjangoUser: DjangoUser;
   selectedIndex: string = null;
@@ -92,7 +140,8 @@ export class DocumentListComponent implements OnInit {
         this.currentDjangoUser.username,
         this.websiteFilter,
         this.showOnlyOwn,
-        this.filterTag
+        this.filterTag,
+        this.sortBy
       )
       .subscribe((result) => {
         this.documents$ = result.results;
@@ -143,6 +192,27 @@ export class DocumentListComponent implements OnInit {
 
   onSearch(keyword: string) {
     this.searchTermChanged.next(keyword);
+  }
+
+  onSort({ column, direction }: SortEvent) {
+    // resetting other headers
+    this.headers.forEach((header) => {
+      if (header.sortable !== column) {
+        header.direction = '';
+      }
+    });
+
+    // sorting documents, default date descending (-date)
+    if (direction === '') {
+      this.sortBy = '-date';
+      this.sortIcon = faSort;
+      this.fetchDocuments();
+    } else {
+      this.sortBy = direction === 'asc' ? '' : '-';
+      this.sortIcon = direction === 'asc' ? faSortUp : faSortDown;
+      this.sortBy += column;
+      this.fetchDocuments();
+    }
   }
 
   onAddTag(event, tags, documentId) {
