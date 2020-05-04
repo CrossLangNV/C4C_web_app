@@ -16,7 +16,7 @@ class ScrapyAppPipeline(FilesPipeline):
         self.django_api_url = os.environ['DJANGO_SCRAPING_API_URL']
         self.logger = logging.getLogger(__name__)
         super().__init__(
-            store_uri=os.environ['SCRAPY_FILES_FOLDER'] + 'files', *args, **kwargs)
+            store_uri=os.environ['SCRAPY_FILES_FOLDER'] + 'files/' + crawler.spider.name, *args, **kwargs)
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -44,7 +44,7 @@ class ScrapyAppPipeline(FilesPipeline):
         for file_result in file_results:
             pdf_id = str(uuid.uuid5(uuid.NAMESPACE_URL, file_result['url']))
             file = open(os.environ['SCRAPY_FILES_FOLDER'] +
-                        'files/' + file_result['path'], mode='rb')
+                        'files/' + info.spider.name + "/" + file_result['path'], mode='rb')
             solr_add_file('files', file, pdf_id,
                           file_result['url'], item['id'])
 
