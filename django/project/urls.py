@@ -17,12 +17,14 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include
 from django.urls import path
+from django.views.generic import RedirectView
 
 from project import settings
 
 from admin_rest.models import site
 
 urlpatterns = [
+    path('', RedirectView.as_view(url='admin/', permanent=True)),
     path('admin/api/', site.urls),
     path('admin/', admin.site.urls),
     path('searchapp/', include(('searchapp.urls', 'searchapp'), namespace="searchapp")),
