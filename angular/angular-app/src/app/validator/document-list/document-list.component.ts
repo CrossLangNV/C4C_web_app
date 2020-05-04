@@ -20,6 +20,9 @@ import {
   faMicrochip,
   faSyncAlt,
   faStopCircle,
+  faSort,
+  faSortUp,
+  faSortDown
 } from '@fortawesome/free-solid-svg-icons';
 import { DjangoUser } from 'src/app/shared/models/django_user';
 import { AuthenticationService } from 'src/app/core/auth/authentication.service';
@@ -97,6 +100,7 @@ export class DocumentListComponent implements OnInit {
   chipIcon: IconDefinition;
   reloadIcon: IconDefinition = faSyncAlt;
   resetIcon: IconDefinition = faStopCircle;
+  sortIcon: IconDefinition = faSort;
   filters = [
     { id: 'none', name: 'Filter..' },
     { id: 'unvalidated', name: '..Unvalidated' },
@@ -201,9 +205,11 @@ export class DocumentListComponent implements OnInit {
     // sorting documents, default date descending (-date)
     if (direction === '') {
       this.sortBy = '-date';
+      this.sortIcon = faSort;
       this.fetchDocuments();
     } else {
       this.sortBy = direction === 'asc' ? '' : '-';
+      this.sortIcon = direction === 'asc' ? faSortUp : faSortDown;
       this.sortBy += column;
       this.fetchDocuments();
     }
