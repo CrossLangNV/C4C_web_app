@@ -1,9 +1,17 @@
-import { Observable } from 'rxjs';
-import { switchMap, distinctUntilChanged, debounceTime } from 'rxjs/operators';
-import { Component, OnInit } from '@angular/core';
-import { Router, ActivatedRoute, ParamMap } from '@angular/router';
+import { distinctUntilChanged, debounceTime } from 'rxjs/operators';
+import {
+  Component,
+  OnInit,
+  Directive,
+  Input,
+  Output,
+  ViewChildren,
+  QueryList,
+  EventEmitter,
+} from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ApiService } from 'src/app/core/services/api.service';
-import { Document, DocumentResults } from 'src/app/shared/models/document';
+import { Document } from 'src/app/shared/models/document';
 import { Subject } from 'rxjs';
 import { Tag } from 'src/app/shared/models/tag';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
@@ -16,12 +24,58 @@ import {
 import { DjangoUser } from 'src/app/shared/models/django_user';
 import { AuthenticationService } from 'src/app/core/auth/authentication.service';
 
+export type SortDirection = 'asc' | 'desc' | '';
+const rotate: { [key: string]: SortDirection } = {
+  asc: 'desc',
+  desc: '',
+  '': 'asc',
+};
+export const compare = (v1, v2) => {
+  if (v1 === v2) {
+    return 0;
+  } else if (v1 === null || v1 === undefined) {
+    return 1;
+  } else if (v2 === null || v2 === undefined) {
+    return -1;
+  } else {
+    return v1 < v2 ? -1 : 1;
+  }
+};
+
+export interface SortEvent {
+  column: string;
+  direction: SortDirection;
+}
+
+@Directive({
+  selector: 'th[sortable]',
+  host: {
+    '[class.asc]': 'direction === "asc"',
+    '[class.desc]': 'direction === "desc"',
+    '(click)': 'rotate()',
+  },
+})
+export class NgbdSortableHeaderDirective {
+  @Input() sortable: string;
+  @Input() direction: SortDirection = '';
+  @Output() sort = new EventEmitter<SortEvent>();
+
+  rotate() {
+    this.direction = rotate[this.direction];
+    this.sort.emit({ column: this.sortable, direction: this.direction });
+  }
+}
+
 @Component({
   selector: 'app-document-list',
   templateUrl: './document-list.component.html',
   styleUrls: ['./document-list.component.css'],
 })
 export class DocumentListComponent implements OnInit {
+  @ViewChildren(NgbdSortableHeaderDirective) headers: QueryList<
+    NgbdSortableHeaderDirective
+  >;
+
   documents$: Document[];
   selectedId: number;
   page: any = 1;
@@ -143,6 +197,25 @@ export class DocumentListComponent implements OnInit {
 
   onSearch(keyword: string) {
     this.searchTermChanged.next(keyword);
+  }
+
+  onSort({ column, direction }: SortEvent) {
+    // resetting other headers
+    this.headers.forEach((header) => {
+      if (header.sortable !== column) {
+        header.direction = '';
+      }
+    });
+
+    // sorting documents
+    if (direction === '') {
+      this.documents$ = [...this.documents$];
+    } else {
+      this.documents$ = this.documents$.sort((a, b) => {
+        const res = compare(a[column], b[column]);
+        return direction === 'asc' ? res : -res;
+      });
+    }
   }
 
   onAddTag(event, tags, documentId) {
