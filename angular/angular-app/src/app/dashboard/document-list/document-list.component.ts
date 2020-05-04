@@ -76,7 +76,7 @@ export class DocumentListComponent implements OnInit {
   constructor(private apiService: ApiService) {}
 
   ngOnInit() {
-    this.apiService.getSolrFiles().subscribe(files => {
+    this.apiService.getSolrFiles(this.page, this.pageSize).subscribe(files => {
       this.cachedSolrFilesBeforeSort = files as SolrFile[];
       this.cachedSolrFilesBeforeSort.forEach(file => {
         this.apiService.getDocument(file.documentId).subscribe(document => {
@@ -90,7 +90,7 @@ export class DocumentListComponent implements OnInit {
       .pipe(debounceTime(200), distinctUntilChanged())
       .subscribe(model => {
         this.searchTerm = model;
-        this.apiService.searchSolrFiles(this.searchTerm).subscribe(files => {
+        this.apiService.searchSolrFiles(this.page, this.pageSize, this.searchTerm).subscribe(files => {
           this.cachedSolrFilesBeforeSort = files as SolrFile[];
           this.cachedSolrFilesBeforeSort.forEach(file => {
             this.apiService.getDocument(file.documentId).subscribe(document => {
@@ -105,10 +105,11 @@ export class DocumentListComponent implements OnInit {
   }
 
   get files(): SolrFile[] {
-    return this.cachedSolrFiles.slice(
-      (this.page - 1) * this.pageSize,
-      (this.page - 1) * this.pageSize + this.pageSize
-    );
+    // return this.cachedSolrFiles.slice(
+    //   (this.page - 1) * this.pageSize,
+    //   (this.page - 1) * this.pageSize + this.pageSize
+    // );
+    return this.cachedSolrFiles;
   }
 
   set files(files: SolrFile[]) {

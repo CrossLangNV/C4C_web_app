@@ -2,7 +2,6 @@ import os
 
 import pysolr
 
-
 ROW_LIMIT = 50000
 
 
@@ -14,6 +13,23 @@ def solr_search(core="", term=""):
                                                       'hl.simple.pre': '<span class="highlight">',
                                                       'hl.simple.post': '</span>'}))
     return search
+
+
+def solr_search_paginated(core="", term="", page_number=1, rows_per_page=10):
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    # solr page starts at 0
+    page_number = int(page_number) - 1
+    start = page_number * int(rows_per_page)
+    result = client.search(term,
+                           **{'rows': rows_per_page,
+                              'start': start,
+                              'hl': 'on', 'hl.fl': '*',
+                              'hl.snippets': 100, 'hl.maxAnalyzedChars': 1000000,
+                              'hl.simple.pre': '<span class="highlight">',
+                              'hl.simple.post': '</span>'})
+    search = get_results_highlighted(result)
+    num_found = result.raw_response['response']['numFound']
+    return num_found, search
 
 
 def solr_search_id(core="", id=""):
