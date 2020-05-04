@@ -111,13 +111,13 @@ class Attachment(models.Model):
     def __str__(self):
         return self.url
 
-    def save(self, *args, **kwargs):
-        # add and index data to Solr when it wasn't pulled from Solr first
-        if not self.pull and self.file.name:
-            solr_add_file('files', self.file, self.id,
-                          self.url, str(self.document.id))
+    # def save(self, *args, **kwargs):
+    #     # add and index data to Solr when it wasn't pulled from Solr first
+    #     if not self.pull and self.file.name:
+    #         solr_add_file('files', self.file, self.id,
+    #                       self.url, str(self.document.id))
 
-        super().save(*args, **kwargs)
+    #     super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         # delete from Solr
