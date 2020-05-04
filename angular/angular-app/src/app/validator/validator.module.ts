@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DocumentListComponent } from './document-list/document-list.component';
+import { DocumentListComponent, NgbdSortableHeaderDirective } from './document-list/document-list.component';
 import { SharedModule } from '../shared/shared.module';
 import { ValidatorRoutingModule } from './validator-routing.module';
 import { DocumentValidateComponent } from './document-validate/document-validate.component';
@@ -16,6 +16,7 @@ import { TruncatePipe } from '../shared/pipelines/truncate';
 @NgModule({
   declarations: [
     DocumentListComponent,
+    NgbdSortableHeaderDirective,
     DocumentValidateComponent,
     TruncatePipe,
   ],
