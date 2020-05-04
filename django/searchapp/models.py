@@ -30,7 +30,7 @@ class Document(models.Model):
 
     date = models.DateTimeField(default=timezone.now)
 
-    url = models.URLField(unique=True)
+    url = models.URLField(max_length=1000, unique=True)
     eli = models.URLField(default="", blank=True)
 
     website = models.ForeignKey(
@@ -99,7 +99,7 @@ class AcceptanceState(models.Model):
 class Attachment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     file = models.FileField()
-    url = models.URLField(unique=True)
+    url = models.URLField(max_length=1000, unique=True)
     document = models.ForeignKey(
         'Document', related_name='attachments', on_delete=models.CASCADE)
     content = models.TextField(default="")

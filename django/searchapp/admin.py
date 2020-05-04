@@ -44,9 +44,13 @@ def sync_attachments(modeladmin, request, queryset):
 
 
 class WebsiteAdmin(admin.ModelAdmin):
-    list_display = ['name']
+    list_display = ['name', 'count_documents']
     ordering = ['name']
     actions = [sync_documents, score_documents, sync_attachments]
+
+    def count_documents(self, doc):
+        return doc.documents.count()
+    count_documents.short_description = "Documents"
 
 
 admin.site.register(Website, WebsiteAdmin)
