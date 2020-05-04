@@ -30,7 +30,7 @@ class Document(models.Model):
 
     date = models.DateTimeField(default=timezone.now)
 
-    url = models.URLField(unique=True)
+    url = models.URLField(max_length=1000, unique=True)
     eli = models.URLField(default="", blank=True)
 
     website = models.ForeignKey(
@@ -78,17 +78,28 @@ class AcceptanceState(models.Model):
                              default=AcceptanceStateValue.UNVALIDATED)
     document = models.ForeignKey(
         'Document', related_name='acceptance_states', on_delete=models.CASCADE)
-    user = models.ForeignKey('auth.User', on_delete=models.CASCADE, blank=True, null=True)
+    user = models.ForeignKey(
+        'auth.User', on_delete=models.CASCADE, blank=True, null=True)
     probability_model = models.CharField(max_length=50, blank=True, null=True)
+    accepted_probability = models.FloatField(default=0.0, blank=True)
+
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-    accepted_probability = models.FloatField(default=0.0, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['document_id', 'user_id'], name="unique_per_doc_and_user"),
+            models.UniqueConstraint(
+                fields=['document_id', 'probability_model'], name="unique_per_doc_and_model")
+
+        ]
 
 
 class Attachment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     file = models.FileField()
-    url = models.URLField(unique=True)
+    url = models.URLField(max_length=1000, unique=True)
     document = models.ForeignKey(
         'Document', related_name='attachments', on_delete=models.CASCADE)
     content = models.TextField(default="")

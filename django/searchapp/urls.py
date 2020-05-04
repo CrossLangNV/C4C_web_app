@@ -20,6 +20,8 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
+import os
+
 from searchapp import views
 
 schema_view = get_schema_view(
@@ -31,6 +33,7 @@ schema_view = get_schema_view(
         contact=openapi.Contact(email="nobody@crosslang.com"),
         license=openapi.License(name="BSD License"),
     ),
+    url=os.environ['DJANGO_BASE_URL'],
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
@@ -122,7 +125,7 @@ urlpatterns = [
     path('api/super', views.IsSuperUserAPIView.as_view(), name='super_api'),
 
     # Solrfiles
-    path('api/solrfiles', views.SolrFileList.as_view(), name='solr_file_list_api'),
+    path('api/solrfiles/', views.SolrFileList.as_view(), name='solr_file_list_api'),
     path('api/solrfiles/<search_term>',
          views.SolrFile.as_view(), name='solr_file_search_api'),
     path('api/solrdocument/<id>', views.SolrDocument.as_view(),

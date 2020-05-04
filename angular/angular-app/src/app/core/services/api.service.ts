@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
 import { Environment } from '../../../environments/environment-variables';
 import { SolrFile, SolrFileAdapter } from '../../shared/models/solrfile';
-import { map } from 'rxjs/operators';
+import { map, flatMap } from 'rxjs/operators';
 import {
   Document,
   DocumentAdapter,
@@ -40,23 +40,35 @@ export class ApiService {
     this.messageSource = new Subject<string>();
   }
 
-  public getSolrFiles(): Observable<SolrFile[]> {
+  public getSolrFiles(pageNumber: number, pageSize: number): Observable<any[]> {
     return this.http
-      .get<SolrFile[]>(`${this.API_URL}/solrfiles`)
+      .get<any[]>(
+        `${this.API_URL}/solrfiles/?pageNumber=${pageNumber}&pageSize=${pageSize}`
+      )
       .pipe(
-        map((data: any[]) =>
-          data.map((item) => this.solrFileAdapter.adapt(item))
-        )
+        map((data: any[]) => {
+          const result = [data[0]];
+          result.push(data[1].map((item) => this.solrFileAdapter.adapt(item)));
+          return result;
+        })
       );
   }
 
-  public searchSolrFiles(term: string): Observable<SolrFile[]> {
+  public searchSolrFiles(
+    pageNumber: number,
+    pageSize: number,
+    term: string
+  ): Observable<any[]> {
     return this.http
-      .get<SolrFile[]>(`${this.API_URL}/solrfiles/${term}`)
+      .get<any[]>(
+        `${this.API_URL}/solrfiles/${term}?pageNumber=${pageNumber}&pageSize=${pageSize}`
+      )
       .pipe(
-        map((data: any[]) =>
-          data.map((item) => this.solrFileAdapter.adapt(item))
-        )
+        map((data: any[]) => {
+          const result = [data[0]];
+          result.push(data[1].map((item) => this.solrFileAdapter.adapt(item)));
+          return result;
+        })
       );
   }
 

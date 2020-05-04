@@ -16,8 +16,8 @@ services:
     image: docker.crosslang.com/ctlg-manager/django:develop-latest
     ports:
       - "8000:8000"
-    command: bash -c "python manage.py makemigrations &&
-      python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: bash -c "python manage.py makemigrations --merge --noinput &&
+      python manage.py migrate --noinput && python manage.py process_tasks & python manage.py runserver 0.0.0.0:8000"
     env_file:
       - ./secrets/django-docker.env.sample
     labels:
@@ -30,6 +30,8 @@ services:
     image: docker.crosslang.com/ctlg-manager/scrapyd:develop-latest
     ports:
       - "6800:6800"
+    volumes:
+      - scrapy:/var/lib/scrapyd
     command: scrapyd
     env_file:
       - secrets/django-docker.env.sample
@@ -75,3 +77,4 @@ services:
 volumes:
   solr:
   postgres:
+  scrapy:

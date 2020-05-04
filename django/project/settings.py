@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'searchapp',
     'scraping',
     'admin_rest',
+    'background_task',
 ]
 
 MIDDLEWARE = [

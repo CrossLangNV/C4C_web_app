@@ -6,7 +6,7 @@ import {
   Input,
   Output,
   QueryList,
-  ViewChildren
+  ViewChildren,
 } from '@angular/core';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -17,7 +17,7 @@ export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
   asc: 'desc',
   desc: '',
-  '': 'asc'
+  '': 'asc',
 };
 export const compare = (v1, v2) => {
   if (v1 === v2) {
@@ -41,8 +41,8 @@ export interface SortEvent {
   host: {
     '[class.asc]': 'direction === "asc"',
     '[class.desc]': 'direction === "desc"',
-    '(click)': 'rotate()'
-  }
+    '(click)': 'rotate()',
+  },
 })
 export class NgbdSortableHeaderDirective {
   @Input() sortable: string;
@@ -58,7 +58,7 @@ export class NgbdSortableHeaderDirective {
 @Component({
   selector: 'app-solrfile-list',
   templateUrl: './solrfile-list.component.html',
-  styleUrls: ['./solrfile-list.component.css']
+  styleUrls: ['./solrfile-list.component.css'],
 })
 export class SolrFileListComponent implements OnInit {
   @ViewChildren(NgbdSortableHeaderDirective) headers: QueryList<
@@ -66,7 +66,8 @@ export class SolrFileListComponent implements OnInit {
   >;
 
   page = 1;
-  pageSize = 10;
+  previousPage = 0;
+  pageSize = 5;
   cachedSolrFilesBeforeSort = [];
   cachedSolrFiles = [];
   searchTerm = '';
@@ -75,44 +76,66 @@ export class SolrFileListComponent implements OnInit {
 
   constructor(private apiService: ApiService) {}
 
-  ngOnInit() {
-    this.apiService.getSolrFiles().subscribe(files => {
-      this.cachedSolrFilesBeforeSort = files as SolrFile[];
-      this.cachedSolrFilesBeforeSort.forEach(file => {
-        this.apiService.getDocument(file.documentId).subscribe(document => {
-          file.website = document.website;
-        });
-      });
-      this.cachedSolrFiles = [...this.cachedSolrFilesBeforeSort];
-      this.collectionSize = this.cachedSolrFiles.length;
-    });
-    this.searchTermChanged
-      .pipe(debounceTime(200), distinctUntilChanged())
-      .subscribe(model => {
-        this.searchTerm = model;
-        this.apiService.searchSolrFiles(this.searchTerm).subscribe(files => {
-          this.cachedSolrFilesBeforeSort = files as SolrFile[];
-          this.cachedSolrFilesBeforeSort.forEach(file => {
-            this.apiService.getDocument(file.documentId).subscribe(document => {
-              file.website = document.website;
-              file.documentTitle = document.title;
-            });
+  fetchSolrFiles(searchTerm) {
+    if (searchTerm === '') {
+      this.apiService
+        .getSolrFiles(this.page, this.pageSize)
+        .subscribe((data) => {
+          this.collectionSize = data[0];
+          this.cachedSolrFilesBeforeSort = data[1] as SolrFile[];
+          this.cachedSolrFilesBeforeSort.forEach((file) => {
+            this.apiService
+              .getDocument(file.documentId)
+              .subscribe((document) => {
+                file.website = document.website;
+                file.documentTitle = document.title;
+              });
           });
           this.cachedSolrFiles = [...this.cachedSolrFilesBeforeSort];
-          this.collectionSize = this.cachedSolrFiles.length;
         });
+    } else {
+      this.apiService
+        .searchSolrFiles(this.page, this.pageSize, this.searchTerm)
+        .subscribe((data) => {
+          this.collectionSize = data[0];
+          this.cachedSolrFilesBeforeSort = data[1] as SolrFile[];
+          this.cachedSolrFilesBeforeSort.forEach((file) => {
+            this.apiService
+              .getDocument(file.documentId)
+              .subscribe((document) => {
+                file.website = document.website;
+                file.documentTitle = document.title;
+              });
+          });
+          this.cachedSolrFiles = [...this.cachedSolrFilesBeforeSort];
+        });
+    }
+  }
+
+  ngOnInit() {
+    this.fetchSolrFiles('');
+    this.searchTermChanged
+      .pipe(debounceTime(200), distinctUntilChanged())
+      .subscribe((model) => {
+        this.searchTerm = model;
+        this.fetchSolrFiles(this.searchTerm);
       });
   }
 
   get files(): SolrFile[] {
-    return this.cachedSolrFiles.slice(
-      (this.page - 1) * this.pageSize,
-      (this.page - 1) * this.pageSize + this.pageSize
-    );
+    return this.cachedSolrFiles;
   }
 
   set files(files: SolrFile[]) {
     this.files = files;
+  }
+
+  loadPage(page: number) {
+    if (page !== this.previousPage) {
+      this.page = page;
+      this.previousPage = page;
+      this.fetchSolrFiles(this.searchTerm);
+    }
   }
 
   onSearch(searchTerm: string) {
@@ -121,7 +144,7 @@ export class SolrFileListComponent implements OnInit {
 
   onSort({ column, direction }: SortEvent) {
     // resetting other headers
-    this.headers.forEach(header => {
+    this.headers.forEach((header) => {
       if (header.sortable !== column) {
         header.direction = '';
       }

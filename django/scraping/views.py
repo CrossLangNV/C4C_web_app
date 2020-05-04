@@ -26,7 +26,7 @@ class ScrapingTemplateView(View, ContextMixin, TemplateResponseMixin):
 
     def get(self, request):
         # render overview page
-        scraped_tasks = ScrapingTask.objects.all()
+        scraped_tasks = ScrapingTask.objects.all().order_by("-date")
         # FIXME: get list from http://localhost:6800/listspiders.json?project=default ?
         spiders = [{"id": "bis"}, {"id": "eiopa"}, {"id": "esma"}, {
             "id": "eurlex", "type": "directives"}, {"id": "eurlex", "type": "decisions"}, {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
