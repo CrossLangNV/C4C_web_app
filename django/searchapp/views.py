@@ -1,18 +1,13 @@
 import io
-import itertools
 import logging
 import os
 import shutil
-from http.client import HTTPResponse
-from operator import itemgetter
-from wsgiref.util import FileWrapper
 from zipfile import ZipFile
-from django.http import HttpResponse
 
 import requests
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Q
-from django.http import FileResponse
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
@@ -30,7 +25,8 @@ from .models import Website, Document, Attachment, AcceptanceState, AcceptanceSt
 from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
-from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted
+from .solr_call import solr_search, solr_search_id, solr_search_website_sorted, solr_search_document_id_sorted, \
+    solr_search_paginated
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -386,16 +382,18 @@ class SolrFileList(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
-        files = solr_search(core="files", term="*")
-        return Response(files)
+        result = solr_search_paginated(core="files", term='*', page_number=request.GET.get('pageNumber', 1),
+                                      rows_per_page=request.GET.get('pageSize', 1))
+        return Response(result)
 
 
 class SolrFile(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, search_term, format=None):
-        files = solr_search(core="files", term=search_term)
-        return Response(files)
+        result = solr_search_paginated(core="files", term=search_term, page_number=request.GET.get('pageNumber', 1),
+                                      rows_per_page=request.GET.get('pageSize', 1))
+        return Response(result)
 
 
 class SolrDocument(APIView):
