@@ -67,7 +67,7 @@ export class SolrFileListComponent implements OnInit {
 
   page = 1;
   previousPage = 0;
-  pageSize = 10;
+  pageSize = 5;
   cachedSolrFilesBeforeSort = [];
   cachedSolrFiles = [];
   searchTerm = '';

@@ -27,6 +27,9 @@ export class WebsiteDetailsComponent implements OnInit {
   adminMode = false;
   acceptanceStates: AcceptanceState[] = [];
   acceptanceStatesByDocument = new Map<string, AcceptanceState[]>();
+  page = 1;
+  pageSize = 5;
+  totalDocuments = 0;
 
   constructor(
     private route: ActivatedRoute,
@@ -52,35 +55,49 @@ export class WebsiteDetailsComponent implements OnInit {
         )
         .subscribe((website) => {
           this.website = website;
-          website.documentIds.forEach((id) => {
-            this.apiService.getDocument(id).subscribe((document) => {
-              if (isAdmin) {
-                const docAcceptanceStates = this.acceptanceStates.filter(
-                  (state) => state.documentId === id
-                );
-                docAcceptanceStates.map((state) => {
-                  this.apiAdminService
-                    .getUser(state.userId)
-                    .subscribe((user) => {
-                      state.username = user.username;
-                    });
-                });
-                this.acceptanceStatesByDocument.set(id, docAcceptanceStates);
-                this.documents.push(document);
-              } else {
-                this.apiService
-                  .getState(document.acceptanceState)
-                  .subscribe((state) => {
-                    document.acceptanceState = state.value;
-                    this.documents.push(document);
-                  });
-              }
-            });
-          });
+          this.totalDocuments = website.documentIds.length;
+          this.loadDocuments(this.paginateDocuments(this.page, this.pageSize), isAdmin);
         });
     });
     this.deleteIcon = faTrashAlt;
     this.addIcon = faPlus;
+  }
+
+  paginateDocuments(page: number, pageSize: number) {
+    return this.website.documentIds.slice((page - 1) * pageSize, page * pageSize);
+  }
+
+  loadDocuments(documentIds: string[], isAdmin: boolean) {
+    this.documents = [];
+    documentIds.forEach((id) => {
+      this.apiService.getDocument(id).subscribe((document) => {
+        if (isAdmin) {
+          const docAcceptanceStates = this.acceptanceStates.filter(
+            (state) => state.documentId === id
+          );
+          docAcceptanceStates.map((state) => {
+            this.apiAdminService
+              .getUser(state.userId)
+              .subscribe((user) => {
+                state.username = user.username;
+              });
+          });
+          this.acceptanceStatesByDocument.set(id, docAcceptanceStates);
+          this.documents.push(document);
+        } else {
+          this.apiService
+            .getState(document.acceptanceState)
+            .subscribe((state) => {
+              document.acceptanceState = state.value;
+              this.documents.push(document);
+            });
+        }
+      });
+    });
+  }
+
+  loadPage(page: number) {
+    this.loadDocuments(this.paginateDocuments(page, this.pageSize), this.adminMode);
   }
 
   onDelete() {
