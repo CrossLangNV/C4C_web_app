@@ -9,7 +9,7 @@ services:
     labels:
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
-      kompose.service.expose: "angular.dgfisma.crosslang.com"
+      kompose.service.expose: "angular.dev.dgfisma.crosslang.com"
       kompose.service.expose.tls-secret: "angular-certificate"
 
   django:
@@ -23,7 +23,7 @@ services:
     labels:
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
-      kompose.service.expose: "django.dgfisma.crosslang.com"
+      kompose.service.expose: "django.dev.dgfisma.crosslang.com"
       kompose.service.expose.tls-secret: "django-certificate"
 
   scrapyd:
@@ -39,7 +39,7 @@ services:
       kompose.volume.size: 20Gi
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
-      kompose.service.expose: "scrapyd.dgfisma.crosslang.com"
+      kompose.service.expose: "scrapyd.dev.dgfisma.crosslang.com"
       kompose.service.expose.tls-secret: "scrapyd-certificate"
 
   solr:
@@ -53,7 +53,7 @@ services:
       kompose.volume.size: 10Gi
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
-      kompose.service.expose: "solr.dgfisma.crosslang.com"
+      kompose.service.expose: "solr.dev.dgfisma.crosslang.com"
       kompose.service.expose.tls-secret: "solr-certificate"
 
   postgres:
