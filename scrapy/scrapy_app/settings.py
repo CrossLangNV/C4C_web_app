@@ -98,8 +98,8 @@ HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 HTTPCACHE_POLICY = 'scrapy.extensions.httpcache.RFC2616Policy'
 HTTPCACHE_GZIP = True
 
-# Exit on first error
-CLOSESPIDER_ERRORCOUNT = 1
+# Exit on first error (TEMP DISABLED)
+CLOSESPIDER_ERRORCOUNT = 0
 
 COMPRESSION_ENABLED = True
 
