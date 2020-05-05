@@ -189,6 +189,10 @@ class EurLexSpider(scrapy.Spider):
             date_texts = relationships.findAll('dd', attrs={'class': None})
             all_relationships_legal_basis = []
             all_relationships_proposal = []
+            # FIXME
+            # newdict.update({'relationships_oj_link': redirect_link_value})
+            # UnboundLocalError: local variable 'redirect_link_value' referenced before assignment
+            redirect_link_value = ''
             for element in date_texts[1:]:
                 common_index = date_texts.index(element)
                 rel_category = date_types[common_index].getText().split(':')[
