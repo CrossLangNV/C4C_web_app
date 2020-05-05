@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.models import User
 
 from admin_rest.models import site as rest_site
-from .tasks import sync_documents_task, score_documents_task, sync_attachments_task, scrape_website_task
+from .tasks import sync_documents_task, score_documents_task, sync_attachments_task
 
 from .models import Website, Attachment, Document, AcceptanceState, Comment, Tag
 
@@ -43,16 +43,10 @@ def sync_attachments(modeladmin, request, queryset):
         sync_attachments_task(website.id)
 
 
-def scrape_website(modeladmin, request, queryset):
-    for website in queryset:
-        scrape_website_task(website.id)
-
-
 class WebsiteAdmin(admin.ModelAdmin):
     list_display = ['name', 'count_documents']
     ordering = ['name']
-    actions = [sync_documents, score_documents,
-               sync_attachments, scrape_website]
+    actions = [sync_documents, score_documents, sync_attachments]
 
     def count_documents(self, doc):
         return doc.documents.count()

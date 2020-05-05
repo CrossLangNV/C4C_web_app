@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'crispy_forms',
     'searchapp',
+    'scraping',
     'admin_rest',
     'background_task',
 ]
