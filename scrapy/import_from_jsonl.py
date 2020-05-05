@@ -30,11 +30,18 @@ with jsonlines.open(args.jsonl) as reader:
             for url in item['pdf_docs']:
                 pdf_id = str(uuid.uuid5(uuid.NAMESPACE_URL, url))
                 path = os.path.basename(url)
-                file = open(os.environ['SCRAPY_FILES_FOLDER'] +
-                            'files/' + item['website'] + "/" + path, mode='rb')
-                print('Processing file: ' + str(file.name) + ' (' + pdf_id + ')')
-                solr_add_file('files', file, pdf_id, url, item['id'])
-                count_files += 1
+                filename = os.environ['SCRAPY_FILES_FOLDER'] + \
+                    'files/' + item['website'] + "/" + path
+                try:
+                    file = open(filename, mode='rb')
+                    print('Processing file: ' +
+                          str(file.name) + ' (' + pdf_id + ')')
+                    solr_add_file('files', file, pdf_id, url, item['id'])
+                    count_files += 1
+                except IOError:
+                    print("File '" + filename + "' not accessible")
+                finally:
+                    file.close()
 
 print('Process ' + str(count_docs) +
       ' document and ' + str(count_files)+' files')
