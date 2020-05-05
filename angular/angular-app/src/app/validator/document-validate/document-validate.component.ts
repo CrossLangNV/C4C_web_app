@@ -63,7 +63,7 @@ export class DocumentValidateComponent implements OnInit {
     this.route.paramMap
       .pipe(
         switchMap((params: ParamMap) =>
-          this.service.getDocumentSyncWithAttachments(params.get('documentId'))
+          this.service.getDocument(params.get('documentId'))
         )
       )
       .subscribe((document) => {

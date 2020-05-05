@@ -20,6 +20,7 @@ RUN pip install -r requirements.txt
 
 # Copy spiders
 COPY scrapy.cfg /scrapy
+COPY import_from_jsonl.py /scrapy
 COPY scrapy_app /scrapy/scrapy_app
 
 CMD scrapyd
