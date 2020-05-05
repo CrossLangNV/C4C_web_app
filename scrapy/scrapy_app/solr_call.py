@@ -5,7 +5,6 @@ import pysolr
 
 def solr_add(core="", docs=[]):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    print(docs)
     client.add(docs, commit=True)
 
 

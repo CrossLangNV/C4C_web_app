@@ -102,3 +102,14 @@ HTTPCACHE_GZIP = True
 CLOSESPIDER_ERRORCOUNT = 1
 
 COMPRESSION_ENABLED = True
+
+
+# Export feeds
+FEEDS = {
+    '/var/lib/scrapyd/feeds/items-%(name)s-%(time)s.jsonl': {
+        'format': 'jsonlines',
+        'encoding': 'utf8',
+        'store_empty': False,
+        'fields': None,
+    }
+}
