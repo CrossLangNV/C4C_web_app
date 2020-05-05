@@ -23,13 +23,15 @@ class EurLexSpider(scrapy.Spider):
     def __init__(self, spider_type=None, *args, **kwargs):
         super(EurLexSpider, self).__init__(*args, **kwargs)
         if not spider_type:
-            logging.log(logging.WARNING, 'EurLex spider_type not given, default to DECISIONS')
+            logging.log(logging.WARNING,
+                        'EurLex spider_type not given, default to DECISIONS')
             spider_type = EurLexType.DECISIONS
         else:
             spider_type_arg = spider_type.upper()
             # this can throw a KeyError if spider_type_arg is not known in the enum
             spider_type = EurLexType[spider_type_arg]
-            logging.log(logging.INFO, 'EurLex spider_type: ' + spider_type.name)
+            logging.log(logging.INFO, 'EurLex spider_type: ' +
+                        spider_type.name)
         self.start_urls = [spider_type.value]
 
     def get_metadata(self, response):
@@ -55,7 +57,8 @@ class EurLexSpider(scrapy.Spider):
                 status = status.getText().replace('\n', '')
                 newdict.update({"status": status})
 
-            various = body.findAll(lambda tag: tag.name == 'p' and not tag.attrs)
+            various = body.findAll(
+                lambda tag: tag.name == 'p' and not tag.attrs)
             if various:
                 for x in various:
                     x = x.find('a')
@@ -63,9 +66,13 @@ class EurLexSpider(scrapy.Spider):
                         eli = x['href']
                         newdict.update({'ELI': eli})
 
-            uniq_code = various[0].getText().replace('\n', '')
-            pages_etc = various[1].getText().replace('\n', '')
-            newdict.update({'various': str(uniq_code + ', ' + pages_etc)})
+                uniq_code = various[0].getText().replace('\n', '')
+                if(len(various) > 1):
+                    pages_etc = various[1].getText().replace('\n', '')
+                    newdict.update(
+                        {'various': str(uniq_code + ', ' + pages_etc)})
+                else:
+                    newdict.update({'various': str(uniq_code)})
 
         oj = soup.find('div', {'id': 'PP2Contents'})
         # only store english pdf doc url(s)
@@ -92,7 +99,8 @@ class EurLexSpider(scrapy.Spider):
                     date_value = datetime.strptime(value[0], self.date_format)
                 else:
                     date_value = datetime(MAXYEAR, 1, 1)
-                date_info = value[1].replace('\n', ' ').strip() if len(value) > 1 else 'n/a'
+                date_info = value[1].replace(
+                    '\n', ' ').strip() if len(value) > 1 else 'n/a'
                 # date of document is our main "date"
                 if date_type == 'date of document':
                     newdict.update({"date": date_value})
@@ -114,15 +122,19 @@ class EurLexSpider(scrapy.Spider):
             for (x, y) in zip(classifications_types, classifications_data):
                 ref_codes = y.findAll('a')
                 for ref_code in ref_codes:
-                    all_classifications_type.append(x.getText().split(':')[0].lower())
+                    all_classifications_type.append(
+                        x.getText().split(':')[0].lower())
                     element_name = ref_code.getText().replace('\n', '')
-                    ref_code = str(ref_code['href']).replace('./../../../', base_url)
+                    ref_code = str(ref_code['href']).replace(
+                        './../../../', base_url)
                     element_code = re.search('CODED=(.*)&', ref_code)
                     element_code = element_code.group(1)
                     all_classifications_label.append(element_name)
-                    all_classifications_code.append(element_code if element_code else 'n/a')
+                    all_classifications_code.append(
+                        element_code if element_code else 'n/a')
 
-            newdict.update({"classifications_label": all_classifications_label})
+            newdict.update(
+                {"classifications_label": all_classifications_label})
             newdict.update({"classifications_type": all_classifications_type})
             newdict.update({"classifications_code": all_classifications_code})
 
@@ -147,7 +159,8 @@ class EurLexSpider(scrapy.Spider):
             procedure_types = procedure.findAll('dt')
             procedure_data = procedure.findAll('dd')
             for (x, y) in zip(procedure_types, procedure_data):
-                procedure_type = x.getText().split(':')[0].lower().replace('\n', '')
+                procedure_type = x.getText().split(
+                    ':')[0].lower().replace('\n', '')
                 if procedure_type == 'procedure number':
                     for number in y.getText().split('\n'):
                         if number.strip():
@@ -156,7 +169,8 @@ class EurLexSpider(scrapy.Spider):
                 elif procedure_type == 'link':
                     procedure_links = y.findAll('a')
                     if procedure_links is not None:
-                        name = procedure_links[0].getText().replace('\n', '').strip()
+                        name = procedure_links[0].getText().replace(
+                            '\n', '').strip()
                         link = procedure_links[0]['href']
                         all_procedures_links_name.append(name)
                         all_procedures_links_url.append(link)
@@ -165,7 +179,8 @@ class EurLexSpider(scrapy.Spider):
                     newdict.update({'procedure_' + procedure_type: value})
 
             newdict.update({"procedures_number": all_procedures_number})
-            newdict.update({"procedures_links_name": all_procedures_links_name})
+            newdict.update(
+                {"procedures_links_name": all_procedures_links_name})
             newdict.update({"procedures_links_url": all_procedures_links_url})
 
         relationships = soup.find('div', {'id': 'PPLinked_Contents'})
@@ -176,27 +191,33 @@ class EurLexSpider(scrapy.Spider):
             all_relationships_proposal = []
             for element in date_texts[1:]:
                 common_index = date_texts.index(element)
-                rel_category = date_types[common_index].getText().split(':')[0].replace('\n', '').lower()
+                rel_category = date_types[common_index].getText().split(':')[
+                    0].replace('\n', '').lower()
                 redirect_link_value = ''
                 redirect_links = element.findAll('a')
                 for redirect_link in redirect_links:
                     redirect_link_text = redirect_link.getText()
-                    redirect_link_url = redirect_link['href'].replace('./../../../', base_url)
+                    redirect_link_url = redirect_link['href'].replace(
+                        './../../../', base_url)
                     if 'CELEX' in redirect_link_url:
                         redirect_link_value = redirect_link_text
                     else:
                         redirect_link_value = redirect_link_url
                     if rel_category == 'legal basis':
-                        all_relationships_legal_basis.append(redirect_link_value)
+                        all_relationships_legal_basis.append(
+                            redirect_link_value)
                     elif rel_category == 'proposal':
                         all_relationships_proposal.append(redirect_link_value)
             # treaty is always the first
-            newdict.update({'relationships_treaty': date_texts[0].getText().replace('\n', '')})
+            newdict.update(
+                {'relationships_treaty': date_texts[0].getText().replace('\n', '')})
             # oj link is always the last
             newdict.update({'relationships_oj_link': redirect_link_value})
 
-            newdict.update({"relationships_legal_basis": all_relationships_legal_basis})
-            newdict.update({"relationships_proposal": all_relationships_proposal})
+            newdict.update(
+                {"relationships_legal_basis": all_relationships_legal_basis})
+            newdict.update(
+                {"relationships_proposal": all_relationships_proposal})
 
             amendment_to = relationships.find('tbody')
             all_amendments_relation = []
@@ -214,20 +235,29 @@ class EurLexSpider(scrapy.Spider):
                         relation = td[0].getText().replace('\n', '')
                         act = td[1].getText().replace('\n', '')
                         comment = td[2].getText().replace('\n', '')
-                        subdivision_concerned = td[3].getText().replace('\n', '')
+                        subdivision_concerned = td[3].getText().replace(
+                            '\n', '')
                         as_from = td[4].getText().replace('\n', '')
                         to = td[5].getText().replace('\n', '')
                         n += 1
-                        all_amendments_relation.append(relation if relation else 'n/a')
+                        all_amendments_relation.append(
+                            relation if relation else 'n/a')
                         all_amendments_act.append(act if act else 'n/a')
-                        all_amendments_comment.append(comment if comment else 'n/a')
-                        all_amendments_subdivision.append(subdivision_concerned if subdivision_concerned else 'n/a')
-                        all_amendments_from.append(datetime.strptime(as_from, self.date_format) if as_from else 'n/a')
-                        all_amendments_to.append(datetime.strptime(to, self.date_format) if to else 'n/a')
-                    newdict.update({'amendments_relation': all_amendments_relation})
+                        all_amendments_comment.append(
+                            comment if comment else 'n/a')
+                        all_amendments_subdivision.append(
+                            subdivision_concerned if subdivision_concerned else 'n/a')
+                        all_amendments_from.append(datetime.strptime(
+                            as_from, self.date_format) if as_from else 'n/a')
+                        all_amendments_to.append(datetime.strptime(
+                            to, self.date_format) if to else 'n/a')
+                    newdict.update(
+                        {'amendments_relation': all_amendments_relation})
                     newdict.update({'amendments_act': all_amendments_act})
-                    newdict.update({'amendments_comment': all_amendments_comment})
-                    newdict.update({'amendments_subdivision': all_amendments_subdivision})
+                    newdict.update(
+                        {'amendments_comment': all_amendments_comment})
+                    newdict.update(
+                        {'amendments_subdivision': all_amendments_subdivision})
                     newdict.update({'amendments_from': all_amendments_from})
                     newdict.update({'amendments_to': all_amendments_to})
 
@@ -241,7 +271,8 @@ class EurLexSpider(scrapy.Spider):
             }
             yield scrapy.Request(meta['doc_link'], callback=self.parse_single, meta=meta)
 
-        next_page_url = response.css("a[title='Next Page']::attr(href)").extract_first()
+        next_page_url = response.css(
+            "a[title='Next Page']::attr(href)").extract_first()
         if next_page_url is not None:
             yield scrapy.Request(response.urljoin(next_page_url))
 
