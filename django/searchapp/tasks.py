@@ -5,7 +5,9 @@ from .models import Website, Document, Attachment
 from .datahandling import score_documents, sync_documents, sync_attachments
 from .solr_call import solr_search_website_sorted, solr_search_document_id_sorted
 
+from scrapyd_api import ScrapydAPI
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -43,3 +45,28 @@ def sync_attachments_task(website_id):
         attachments = Attachment.objects.filter(
             document=document).order_by('id')
         sync_attachments(document, solr_files, attachments)
+
+
+@background(schedule=timezone.now())
+def scrape_website_task(website_id):
+    logger.info("Scraping with WEBSITE: " + str(website_id))
+    # lookup website and start scraping
+    website = Website.objects.get(pk=website_id)
+    # custom settings for spider
+    settings = {
+        'task_id': '1'
+    }
+    spiders = [{"id": "bis"}, {"id": "eiopa"}, {"id": "esma"}, {
+        "id": "eurlex", "type": "directives"}, {"id": "eurlex", "type": "decisions"}, {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
+        {"id": "eba", "type": "guidelines"}, {
+        "id": "eba", "type": "recommendations"},
+    ]
+    for spider in spiders:
+        if spider['id'].lower() == website.name.lower():
+            scrapyd = ScrapydAPI(os.environ['SCRAPYD_URL'])
+            scrapyd_project = 'default'
+            if 'type' not in spider:
+                spider['type'] = ''
+            # schedule scraping task
+            scrapyd_task_id = scrapyd.schedule(
+                'default', spider['id'], settings=settings, spider_type=spider['type'])
