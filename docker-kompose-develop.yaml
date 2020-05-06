@@ -23,6 +23,7 @@ services:
     labels:
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
+      kompose.service.expose: "true"
 
   django_nginx:
     image: docker.crosslang.com/ctlg-manager/django_nginx:develop-latest
