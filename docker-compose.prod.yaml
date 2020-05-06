@@ -5,32 +5,41 @@ services:
     ports: 
       - "8080:80"
     env_file:
-      - ./secrets/django-docker.env
+      - ./secrets/django-docker.env.prod
     depends_on: 
       - django
 
   django:
     build: ./django
-    ports:
-      - "8000:8000"
     env_file:
-      - ./secrets/django-docker.env
+      - ./secrets/django-docker.env.prod
     volumes:
       - ./django:/django
+      - static_volume:/django/static
+      - media_volume:/django/media
     command: ./start.sh
-    restart:
-      always
     depends_on:
       - postgres
       - solr
       - scrapyd
+
+  django_nginx:
+    restart: always
+    build: ./django/nginx
+    volumes:
+      - static_volume:/django/static
+      - media_volume:/django/media
+    depends_on:
+      - django
+    ports:
+      - "0.0.0.0:8000:8000"
 
   scrapyd:
     build: ./scrapy
     ports: 
       - "6800:6800"
     env_file:
-      - ./secrets/django-docker.env
+      - ./secrets/django-docker.env.prod
     volumes: 
       - ./scrapy:/scrapy
     command: scrapyd
@@ -50,7 +59,7 @@ services:
     ports:
       - "5432:5432"
     env_file:
-      - ./secrets/django-docker.env
+      - ./secrets/django-docker.env.prod
     volumes:
       - postgres:/var/lib/postgresql/data
 
@@ -62,3 +71,5 @@ services:
 volumes:
   solr:
   postgres:
+  static_volume:
+  media_volume:
