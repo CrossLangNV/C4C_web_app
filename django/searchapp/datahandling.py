@@ -56,7 +56,7 @@ def sync_documents(website, solr_documents, django_documents):
             new_django_doc = Document.objects.create(
                 id=solr_doc['id'],
                 url=solr_doc['url'][0],
-                celex=solr_doc.get('celex', [''])[0],
+                celex=solr_doc.get('celex', [''])[0][:20],
                 eli=solr_doc.get('ELI', [''])[0],
                 title_prefix=solr_doc.get('title_prefix', [''])[0],
                 title=solr_doc.get('title', [''])[0],
