@@ -28,6 +28,7 @@ from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerial
 from .solr_call import solr_search, solr_search_id, solr_search_document_id_sorted, \
     solr_search_paginated
 from .tasks import score_documents_task, sync_documents_task
+from urllib.parse import quote
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -374,7 +375,7 @@ class SolrFileList(APIView):
 
     def get(self, request, format=None):
         result = solr_search_paginated(core="files", term='*', page_number=request.GET.get('pageNumber', 1),
-                                      rows_per_page=request.GET.get('pageSize', 1))
+                                       rows_per_page=request.GET.get('pageSize', 1))
         return Response(result)
 
 
@@ -383,7 +384,7 @@ class SolrFile(APIView):
 
     def get(self, request, search_term, format=None):
         result = solr_search_paginated(core="files", term=search_term, page_number=request.GET.get('pageNumber', 1),
-                                      rows_per_page=request.GET.get('pageSize', 1))
+                                       rows_per_page=request.GET.get('pageSize', 1))
         return Response(result)
 
 
@@ -446,7 +447,7 @@ class ExportDocuments(APIView):
 @api_view(['GET'])
 def celex_get_xhtml(request):
     if request.method == 'GET':
-        celex_id = request.GET["celex_id"]
+        celex_id = quote(request.GET["celex_id"])
         logger.info(celex_id)
         headers = {"Accept": "application/xhtml+xml", "Accept-Language": "eng"}
         response = requests.get(
