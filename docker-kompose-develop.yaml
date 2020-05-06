@@ -14,7 +14,7 @@ services:
 
   django:
     image: docker.crosslang.com/ctlg-manager/django:develop-latest
-    command: "./django/start.sh"
+    command: "./start.sh"
     volumes:
       - static_volume:/django/static
       - media_volume:/django/media
