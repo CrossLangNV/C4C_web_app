@@ -12,6 +12,9 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ChartModule } from 'primeng/chart';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TruncatePipe } from '../shared/pipelines/truncate';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
+import { NgbDateAdapter, NgbDateNativeAdapter } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
@@ -30,7 +33,12 @@ import { TruncatePipe } from '../shared/pipelines/truncate';
     TooltipModule,
     ChartModule,
     OverlayPanelModule,
+    ConfirmDialogModule,
     ValidatorRoutingModule,
   ],
+  providers: [
+    ConfirmationService,
+    { provide: NgbDateAdapter, useClass: NgbDateNativeAdapter }
+  ]
 })
 export class ValidatorModule {}
