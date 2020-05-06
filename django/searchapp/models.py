@@ -1,6 +1,5 @@
 import uuid
 
-from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 
@@ -94,6 +93,7 @@ class AcceptanceState(models.Model):
                 fields=['document_id', 'probability_model'], name="unique_per_doc_and_model")
 
         ]
+        ordering = ['user']
 
 
 class Attachment(models.Model):
