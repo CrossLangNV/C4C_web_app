@@ -15,6 +15,8 @@ services:
   django:
     image: docker.crosslang.com/ctlg-manager/django:develop-latest
     command: "./start.sh"
+    ports:
+      - "8000:8000"
     volumes:
       - static_volume:/django/static
       - media_volume:/django/media
@@ -23,7 +25,6 @@ services:
     labels:
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
-      kompose.service.expose: "true"
 
   django_nginx:
     image: docker.crosslang.com/ctlg-manager/django_nginx:develop-latest
