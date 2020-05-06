@@ -120,10 +120,12 @@ export class DocumentValidateComponent implements OnInit {
       message: 'Do you want to delete this comment?',
       accept: () => {
         this.service.deleteComment(comment.id).subscribe((response) => {
-          this.comments = this.comments.filter((item) => item.id !== comment.id);
+          this.comments = this.comments.filter(
+            (item) => item.id !== comment.id
+          );
           this.service.messageSource.next('refresh');
         });
-      }
+      },
     });
   }
 
@@ -139,7 +141,14 @@ export class DocumentValidateComponent implements OnInit {
     if (attachmentId.startsWith('CELEX:')) {
       attachmentId = attachmentId.replace(/CELEX:/g, '');
       this.service.getEURLEXxhtml(attachmentId).subscribe((xhtml) => {
-        this.attachment = new Attachment(attachmentId, '', '', '', xhtml);
+        this.attachment = new Attachment(
+          attachmentId,
+          '',
+          this.document.url,
+          '',
+          xhtml
+        );
+        console.log(this.attachment.url);
       });
     } else {
       this.service.getAttachment(attachmentId).subscribe((attachment) => {
