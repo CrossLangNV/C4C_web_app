@@ -13,7 +13,7 @@ import { AuthenticationService } from 'src/app/core/auth/authentication.service'
 import { DjangoUser } from 'src/app/shared/models/django_user';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { Attachment } from 'src/app/shared/models/attachment';
-import { MessageService } from 'primeng/api';
+import { MessageService, ConfirmationService } from 'primeng/api';
 
 @Component({
   selector: 'app-document-validate',
@@ -40,7 +40,8 @@ export class DocumentValidateComponent implements OnInit {
     private adminService: ApiAdminService,
     private authenticationService: AuthenticationService,
     private modalService: NgbModal,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit() {
@@ -115,9 +116,14 @@ export class DocumentValidateComponent implements OnInit {
   }
 
   onDeleteComment(comment: Comment) {
-    this.service.deleteComment(comment.id).subscribe((response) => {
-      this.comments = this.comments.filter((item) => item.id !== comment.id);
-      this.service.messageSource.next('refresh');
+    this.confirmationService.confirm({
+      message: 'Do you want to delete this comment?',
+      accept: () => {
+        this.service.deleteComment(comment.id).subscribe((response) => {
+          this.comments = this.comments.filter((item) => item.id !== comment.id);
+          this.service.messageSource.next('refresh');
+        });
+      }
     });
   }
 
