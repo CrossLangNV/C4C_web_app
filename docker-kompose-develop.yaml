@@ -14,12 +14,23 @@ services:
 
   django:
     image: docker.crosslang.com/ctlg-manager/django:develop-latest
-    ports:
-      - "8000:8000"
-    command: bash -c "python manage.py makemigrations --merge --noinput &&
-      python manage.py migrate --noinput && python manage.py process_tasks & python manage.py runserver 0.0.0.0:8000"
+    command: "./django/start.sh"
+    volumes:
+      - static_volume:/django/static
+      - media_volume:/django/media
     env_file:
       - ./secrets/django-docker.env.sample
+    labels:
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+
+  django_nginx:
+    image: docker.crosslang.com/ctlg-manager/django_nginx:develop-latest
+    volumes:
+      - static_volume:/django/static
+      - media_volume:/django/media
+    ports:
+      - "8000:8000"
     labels:
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
@@ -79,3 +90,5 @@ volumes:
   solr:
   postgres:
   scrapy:
+  static_volume:
+  media_volume:

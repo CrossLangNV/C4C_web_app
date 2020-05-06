@@ -21,6 +21,15 @@ pipeline {
                         }
                     }
                 }
+                dir('django/nginx'){
+                    script {
+                        docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
+                            def customImage = docker.build("ctlg-manager/django_nginx:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
+                            customImage.push()
+                            customImage.push("${env.BRANCH_NAME}-latest")
+                        }
+                    }
+                }
                 dir('angular'){
                     script {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
