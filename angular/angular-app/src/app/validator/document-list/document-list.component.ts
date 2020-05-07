@@ -74,6 +74,8 @@ export class DocumentListComponent implements OnInit {
   previousPage: any;
   data1: any;
   data2: any;
+  options1: any;
+  options2: any;
   pageSize = 5;
   showOnlyOwn = false;
   filterActive = false;
@@ -160,40 +162,53 @@ export class DocumentListComponent implements OnInit {
       // Human
       this.stats.unvalidatedSize =
         result.count_total - result.count_accepted - result.count_rejected;
-      this.stats.unvalidatedPercent = Math.round(
-        (this.stats.unvalidatedSize / result.count_total) * 100
-      );
+      this.stats.unvalidatedPercent =
+        (this.stats.unvalidatedSize / result.count_total) * 100;
+      this.stats.unvalidatedPercent =
+        Math.round((this.stats.unvalidatedPercent + Number.EPSILON) * 100) /
+        100;
       this.stats.acceptedSize = result.count_accepted;
-      this.stats.acceptedPercent = Math.round(
-        (this.stats.acceptedSize / result.count_total) * 100
-      );
+      this.stats.acceptedPercent =
+        (this.stats.acceptedSize / result.count_total) * 100;
+      this.stats.acceptedPercent =
+        Math.round((this.stats.acceptedPercent + Number.EPSILON) * 100) / 100;
       this.stats.rejectedSize = result.count_rejected;
-      this.stats.rejectedPercent = Math.round(
-        (this.stats.rejectedSize / result.count_total) * 100
-      );
+      this.stats.rejectedPercent =
+        (this.stats.rejectedSize / result.count_total) * 100;
+      this.stats.rejectedPercent =
+        Math.round((this.stats.rejectedPercent + Number.EPSILON) * 100) / 100;
       this.stats.validatedSize =
         result.count_total - this.stats.unvalidatedSize;
-      this.stats.validatedPercent = Math.round(
-        (this.stats.validatedSize / result.count_total) * 100
-      );
+      this.stats.validatedPercent =
+        (this.stats.validatedSize / result.count_total) * 100;
+      this.stats.validatedPercent =
+        Math.round((this.stats.validatedPercent + Number.EPSILON) * 100) / 100;
       // Classifier
       this.stats.autoUnvalidatedSize = result.count_autounvalidated;
-      this.stats.autoUnvalidatedPercent = Math.round(
-        (this.stats.autoUnvalidatedSize / result.count_total) * 100
-      );
+      this.stats.autoUnvalidatedPercent =
+        (this.stats.autoUnvalidatedSize / result.count_total) * 100;
+      this.stats.autoUnvalidatedPercent =
+        Math.round((this.stats.autoUnvalidatedPercent + Number.EPSILON) * 100) /
+        100;
       this.stats.autoAcceptedSize = result.count_autoaccepted;
-      this.stats.autoAcceptedPercent = Math.round(
-        (this.stats.autoAcceptedSize / result.count_total) * 100
-      );
+      this.stats.autoAcceptedPercent =
+        (this.stats.autoAcceptedSize / result.count_total) * 100;
+      this.stats.autoAcceptedPercent =
+        Math.round((this.stats.autoAcceptedPercent + Number.EPSILON) * 100) /
+        100;
       this.stats.autoRejectedSize = result.count_autorejected;
-      this.stats.autoRejectedPercent = Math.round(
-        (this.stats.autoRejectedSize / result.count_total) * 100
-      );
+      this.stats.autoRejectedPercent =
+        (this.stats.autoRejectedSize / result.count_total) * 100;
+      this.stats.autoRejectedPercent =
+        Math.round((this.stats.autoRejectedPercent + Number.EPSILON) * 100) /
+        100;
       this.stats.autoValidatedSize =
         result.count_total - result.count_autounvalidated;
-      this.stats.autoValidatedPercent = Math.round(
-        (this.stats.autoValidatedSize / result.count_total) * 100
-      );
+      this.stats.autoValidatedPercent =
+        (this.stats.autoValidatedSize / result.count_total) * 100;
+      this.stats.autoValidatedPercent =
+        Math.round((this.stats.autoValidatedPercent + Number.EPSILON) * 100) /
+        100;
     });
   }
   ngOnInit() {
@@ -311,7 +326,6 @@ export class DocumentListComponent implements OnInit {
       labels: ['Unvalidated', 'Accepted', 'Rejected'],
       datasets: [
         {
-          label: 'Auto-classification',
           data: [
             this.stats.autoUnvalidatedPercent,
             this.stats.autoAcceptedPercent,
@@ -322,6 +336,17 @@ export class DocumentListComponent implements OnInit {
         },
       ],
     };
+
+    this.options2 = {
+      title: {
+        display: true,
+        text: 'Auto classification',
+        fontSize: 16,
+      },
+      legend: {
+        position: 'bottom',
+      },
+    };
   }
 
   updateChart2(event: Event) {
@@ -331,7 +356,6 @@ export class DocumentListComponent implements OnInit {
       labels: ['Unvalidated', 'Accepted', 'Rejected'],
       datasets: [
         {
-          label: 'Human classification',
           data: [
             this.stats.unvalidatedPercent,
             this.stats.acceptedPercent,
@@ -341,6 +365,16 @@ export class DocumentListComponent implements OnInit {
           hoverBackgroundColor: ['#36A2EB', '#28A745', '#F47677'],
         },
       ],
+    };
+    this.options1 = {
+      title: {
+        display: true,
+        text: 'Human classification',
+        fontSize: 16,
+      },
+      legend: {
+        position: 'bottom',
+      },
     };
   }
 }
