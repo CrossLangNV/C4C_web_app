@@ -21,7 +21,7 @@ pipeline {
                     }
                     sh 'printenv'
                     sh "docker run -i --rm --env-file  ../secrets/django-docker.env.sample -v $WORKSPACE/django:/django ctlg-manager/django:${BRANCH_NAME}-${BUILD_ID} python manage.py collectstatic --noinput -c"
-                    sh "rm -R nginx/static ; cp -R static nginx"
+                    sh "rm -Rf nginx/static ; cp -R static nginx"
                 }
                 dir('django/nginx'){
                     script {
