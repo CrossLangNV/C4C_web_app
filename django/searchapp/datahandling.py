@@ -28,6 +28,9 @@ def score_documents(django_documents):
             logger.info("Got response: " + json.dumps(js))
             if 'accepted_probability' in js:
                 accepted_probability = js["accepted_probability"]
+                if accepted_probability > django_doc.acceptance_state_max_probability:
+                    django_doc.acceptance_state_max_probability = accepted_probability
+                    django_doc.save()
             else:
                 accepted_probability = 0
             AcceptanceState.objects.update_or_create(

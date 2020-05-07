@@ -220,7 +220,7 @@ class DocumentListAPIView(ListCreateAPIView):
     serializer_class = DocumentSerializer
     pagination_class = SmallResultsSetPagination
     filter_backends = [filters.OrderingFilter]
-    ordering_fields = ['title', 'date']
+    ordering_fields = ['title', 'date', 'acceptance_state_max_probability']
 
     def get_queryset(self):
         q = Document.objects.all()
