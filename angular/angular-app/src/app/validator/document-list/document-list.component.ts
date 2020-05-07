@@ -74,8 +74,26 @@ export class DocumentListComponent implements OnInit {
   previousPage: any;
   data1: any;
   data2: any;
-  options1: any;
-  options2: any;
+  options1 = {
+    title: {
+      display: true,
+      text: 'Auto classification',
+      fontSize: 16,
+    },
+    legend: {
+      position: 'bottom',
+    },
+  };
+  options2 = {
+    title: {
+      display: true,
+      text: 'Human classification',
+      fontSize: 16,
+    },
+    legend: {
+      position: 'bottom',
+    },
+  };
   pageSize = 5;
   showOnlyOwn = false;
   filterActive = false;
@@ -347,17 +365,6 @@ export class DocumentListComponent implements OnInit {
         },
       ],
     };
-
-    this.options2 = {
-      title: {
-        display: true,
-        text: 'Auto classification',
-        fontSize: 16,
-      },
-      legend: {
-        position: 'bottom',
-      },
-    };
   }
 
   updateChart2(event: Event) {
@@ -376,16 +383,6 @@ export class DocumentListComponent implements OnInit {
           hoverBackgroundColor: ['#36A2EB', '#28A745', '#F47677'],
         },
       ],
-    };
-    this.options1 = {
-      title: {
-        display: true,
-        text: 'Human classification',
-        fontSize: 16,
-      },
-      legend: {
-        position: 'bottom',
-      },
     };
   }
 }
