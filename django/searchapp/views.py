@@ -464,12 +464,18 @@ def document_stats(request):
     if request.method == 'GET':
         q1 = Document.objects.all()
         q2 = q1.exclude(Q(acceptance_states__value="Rejected")
-                        | Q(acceptance_states__value="Accepted"))
-        q3 = q1.filter(acceptance_states__value="Accepted").distinct()
-        q4 = q1.filter(acceptance_states__value="Rejected").distinct()
-        q5 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
+                        | Q(acceptance_states__value="Accepted") & Q(
+            acceptance_states__probability_model__isnull=True))
+        q3 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
+            acceptance_states__probability_model__isnull=True)).distinct()
+        q4 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
+            acceptance_states__probability_model__isnull=True)).distinct()
+        # FIXME: will be wrong when multiple auto-classifiers ?
+        q5 = q1.filter(Q(acceptance_states__value="Unvalidated") & Q(
             acceptance_states__probability_model__isnull=False))
         q6 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
+            acceptance_states__probability_model__isnull=False))
+        q7 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
             acceptance_states__probability_model__isnull=False))
 
         return Response({
@@ -477,6 +483,7 @@ def document_stats(request):
             'count_unvalidated': len(q2),
             'count_accepted': len(q3),
             'count_rejected': len(q4),
-            'count_autorejected': len(q5),
-            'count_autovalidated': len(q6),
+            'count_autounvalidated': len(q5),
+            'count_autoaccepted': len(q6),
+            'count_autorejected': len(q7),
         })
