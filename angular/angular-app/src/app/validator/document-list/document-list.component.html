@@ -53,10 +53,12 @@
             <hr class="my-2" />
             <div class="d-flex progress justify-content-between p-0">
               <div>
-                Total: <u>{{ stats.total }}</u> Unvalidated :
-                <u>{{ stats.unvalidatedSize }}</u> Auto-rejected :
+                Total: <u>{{ stats.total }}</u
+                ><!-- Unvalidated :
+                <u>{{ stats.unvalidatedSize }}</u>-->
+                Auto-rejected :
                 <u>{{ stats.autoRejectedSize }}</u> Auto-validated :
-                <u>{{ stats.autoValidatedSize }} </u>
+                <u>{{ stats.autoAcceptedSize }} </u>
               </div>
               <div>
                 Documents found: <u>{{ collectionSize }}</u>
@@ -74,22 +76,41 @@
             <ngb-progressbar
               [showValue]="true"
               type="success"
+              [value]="stats.autoValidatedPercent"
+              (click)="updateChart1($event)"
+              (click)="op1.toggle($event)"
+            ></ngb-progressbar>
+            <hr class="my-2" />
+            <ngb-progressbar
+              [showValue]="true"
+              type="success"
               [value]="stats.validatedPercent"
-              (click)="updateChart($event)"
-              (click)="op.toggle($event)"
+              (click)="updateChart2($event)"
+              (click)="op2.toggle($event)"
             ></ngb-progressbar>
           </div>
         </div>
       </div>
     </div>
 
-    <p-overlayPanel #op>
+    <p-overlayPanel #op1>
       <ng-template pTemplate>
         <p-chart
           width="350"
           height="350"
           type="doughnut"
-          [data]="data"
+          [data]="data1"
+        ></p-chart>
+      </ng-template>
+    </p-overlayPanel>
+
+    <p-overlayPanel #op2>
+      <ng-template pTemplate>
+        <p-chart
+          width="350"
+          height="350"
+          type="doughnut"
+          [data]="data2"
         ></p-chart>
       </ng-template>
     </p-overlayPanel>
@@ -98,8 +119,12 @@
     <table class="table table-striped table-bordered table-hover">
       <thead class="thead-dark">
         <tr>
-          <th scope="col" sortable="title" (sort)="onSort($event)"><fa-icon [icon]="titleSortIcon"></fa-icon> Title</th>
-          <th scope="col" sortable="date" (sort)="onSort($event)"><fa-icon [icon]="dateSortIcon"></fa-icon> Date</th>
+          <th scope="col" sortable="title" (sort)="onSort($event)">
+            <fa-icon [icon]="titleSortIcon"></fa-icon> Title
+          </th>
+          <th scope="col" sortable="date" (sort)="onSort($event)">
+            <fa-icon [icon]="dateSortIcon"></fa-icon> Date
+          </th>
           <th scope="col">Tags</th>
           <th scope="col">States</th>
         </tr>

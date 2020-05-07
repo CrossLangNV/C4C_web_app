@@ -26,10 +26,7 @@ def score_documents(django_documents):
             logger.info("Sending content: " + json.dumps(data))
             js = response.json()
             logger.info("Got response: " + json.dumps(js))
-            if 'accepted_probability' in js:
-                accepted_probability = js["accepted_probability"]
-            else:
-                accepted_probability = 0
+            accepted_probability = js["accepted_probability"]
             AcceptanceState.objects.update_or_create(
                 probability_model="auto classifier",
                 document=django_doc,

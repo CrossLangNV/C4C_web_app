@@ -74,12 +74,13 @@ class AcceptanceStateValue(models.TextChoices):
 class AcceptanceState(models.Model):
     value = models.CharField(max_length=20,
                              choices=AcceptanceStateValue.choices,
-                             default=AcceptanceStateValue.UNVALIDATED)
+                             default=AcceptanceStateValue.UNVALIDATED, db_index=True)
     document = models.ForeignKey(
         'Document', related_name='acceptance_states', on_delete=models.CASCADE)
     user = models.ForeignKey(
         'auth.User', on_delete=models.CASCADE, blank=True, null=True)
-    probability_model = models.CharField(max_length=50, blank=True, null=True)
+    probability_model = models.CharField(
+        max_length=50, blank=True, null=True, db_index=True)
     accepted_probability = models.FloatField(default=0.0, blank=True)
 
     created_at = models.DateTimeField(default=timezone.now)
