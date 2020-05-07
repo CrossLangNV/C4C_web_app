@@ -177,6 +177,10 @@ export class DocumentListComponent implements OnInit {
         (this.stats.validatedSize / result.count_total) * 100
       );
       // Classifier
+      this.stats.autoUnvalidatedSize = result.count_autounvalidated;
+      this.stats.autoUnvalidatedPercent = Math.round(
+        (this.stats.autoUnvalidatedSize / result.count_total) * 100
+      );
       this.stats.autoAcceptedSize = result.count_autoaccepted;
       this.stats.autoAcceptedPercent = Math.round(
         (this.stats.autoAcceptedSize / result.count_total) * 100
