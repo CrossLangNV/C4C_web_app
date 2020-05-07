@@ -22,7 +22,7 @@ import {
   faStopCircle,
   faSort,
   faSortUp,
-  faSortDown
+  faSortDown,
 } from '@fortawesome/free-solid-svg-icons';
 import { DjangoUser } from 'src/app/shared/models/django_user';
 import { AuthenticationService } from 'src/app/core/auth/authentication.service';
@@ -72,7 +72,8 @@ export class DocumentListComponent implements OnInit {
   selectedId: number;
   page = 1;
   previousPage: any;
-  data: any;
+  data1: any;
+  data2: any;
   pageSize = 5;
   showOnlyOwn = false;
   filterActive = false;
@@ -80,16 +81,20 @@ export class DocumentListComponent implements OnInit {
     total: 0,
     unvalidatedSize: 0,
     unvalidatedPercent: 0,
+    acceptedSize: 0,
+    acceptedPercent: 0,
+    rejectedSize: 0,
+    rejectedPercent: 0,
+    autoUnvalidatedSize: 0,
+    autoUnvalidatedPercent: 0,
+    autoAcceptedSize: 0,
+    autoAcceptedPercent: 0,
+    autoRejectedSize: 0,
+    autoRejectedPercent: 0,
     validatedSize: 0,
     validatedPercent: 0,
     autoValidatedSize: 0,
     autoValidatedPercent: 0,
-    autoRejectedSize: 0,
-    autoRejectedPercent: 0,
-    rejectedSize: 0,
-    rejectedPercent: 0,
-    acceptedSize: 0,
-    acceptedPercent: 0,
   };
   collectionSize = 0;
   filterType = 'none';
@@ -150,12 +155,11 @@ export class DocumentListComponent implements OnInit {
       });
     // Fetch statistics
     this.service.getDocumentStats().subscribe((result) => {
+      // Total
       this.stats.total = result.count_total;
-      this.stats.validatedSize = result.count_total - result.count_unvalidated;
-      this.stats.validatedPercent = Math.round(
-        (this.stats.validatedSize / result.count_total) * 100
-      );
-      this.stats.unvalidatedSize = result.count_unvalidated;
+      // Human
+      this.stats.unvalidatedSize =
+        result.count_total - result.count_accepted - result.count_rejected;
       this.stats.unvalidatedPercent = Math.round(
         (this.stats.unvalidatedSize / result.count_total) * 100
       );
@@ -167,8 +171,25 @@ export class DocumentListComponent implements OnInit {
       this.stats.rejectedPercent = Math.round(
         (this.stats.rejectedSize / result.count_total) * 100
       );
+      this.stats.validatedSize =
+        result.count_total - this.stats.unvalidatedSize;
+      this.stats.validatedPercent = Math.round(
+        (this.stats.validatedSize / result.count_total) * 100
+      );
+      // Classifier
+      this.stats.autoAcceptedSize = result.count_autoaccepted;
+      this.stats.autoAcceptedPercent = Math.round(
+        (this.stats.autoAcceptedSize / result.count_total) * 100
+      );
       this.stats.autoRejectedSize = result.count_autorejected;
-      this.stats.autoValidatedSize = result.count_autovalidated;
+      this.stats.autoRejectedPercent = Math.round(
+        (this.stats.autoRejectedSize / result.count_total) * 100
+      );
+      this.stats.autoValidatedSize =
+        result.count_total - result.count_autounvalidated;
+      this.stats.autoValidatedPercent = Math.round(
+        (this.stats.autoValidatedSize / result.count_total) * 100
+      );
     });
   }
   ngOnInit() {
@@ -279,11 +300,34 @@ export class DocumentListComponent implements OnInit {
     this.fetchDocuments();
   }
 
-  updateChart(event: Event) {
-    this.data = {
+  updateChart1(event: Event) {
+    console.log('UPDATECHART1');
+    console.log(this.stats);
+    this.data1 = {
       labels: ['Unvalidated', 'Accepted', 'Rejected'],
       datasets: [
         {
+          label: 'Auto-classification',
+          data: [
+            this.stats.autoUnvalidatedPercent,
+            this.stats.autoAcceptedPercent,
+            this.stats.autoRejectedPercent,
+          ],
+          backgroundColor: ['#36A2EB', '#28A745', '#F47677'],
+          hoverBackgroundColor: ['#36A2EB', '#28A745', '#F47677'],
+        },
+      ],
+    };
+  }
+
+  updateChart2(event: Event) {
+    console.log('UPDATECHART2');
+    console.log(this.stats);
+    this.data2 = {
+      labels: ['Unvalidated', 'Accepted', 'Rejected'],
+      datasets: [
+        {
+          label: 'Human classification',
           data: [
             this.stats.unvalidatedPercent,
             this.stats.acceptedPercent,
