@@ -20,6 +20,8 @@ pipeline {
                             customImage.push("${env.BRANCH_NAME}-latest")
                         }
                     }
+                    sh 'docker run -it --rm -p $PWD:/django ctlg-manager/django:${BRANCH_NAME}-${BUILD_ID} python manage.py collectstatic --noinput -c"
+                    sh 'rm -R nginx/static ; cp -R static nginx"
                 }
                 dir('django/nginx'){
                     script {

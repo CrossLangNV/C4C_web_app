@@ -17,9 +17,6 @@ services:
     command: "./start.sh"
     ports:
       - "8000:8000"
-    volumes:
-      - static_volume:/django/static
-      - media_volume:/django/media
     env_file:
       - ./secrets/django-docker.env.sample
     labels:
@@ -28,9 +25,6 @@ services:
 
   django_nginx:
     image: docker.crosslang.com/ctlg-manager/django_nginx:develop-latest
-    volumes:
-      - static_volume:/django/static
-      - media_volume:/django/media
     ports:
       - "8000:8000"
     labels:
@@ -92,5 +86,3 @@ volumes:
   solr:
   postgres:
   scrapy:
-  static_volume:
-  media_volume:
