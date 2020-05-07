@@ -128,7 +128,9 @@
             <fa-icon [icon]="dateSortIcon"></fa-icon> Date
           </th>
           <th scope="col">Tags</th>
-          <th scope="col">States</th>
+          <th scope="col" sortable="states" (sort)="onSort($event)">
+            <fa-icon [icon]="statesSortIcon"></fa-icon> States
+          </th>
         </tr>
       </thead>
       <tbody>
