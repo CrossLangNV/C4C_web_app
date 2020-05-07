@@ -109,6 +109,7 @@ export class DocumentListComponent implements OnInit {
   resetIcon: IconDefinition = faStopCircle;
   titleSortIcon: IconDefinition = faSort;
   dateSortIcon: IconDefinition = faSortDown;
+  statesSortIcon: IconDefinition = faSort;
   filters = [
     { id: 'none', name: 'Filter..' },
     { id: 'unvalidated', name: '..Unvalidated' },
@@ -248,17 +249,27 @@ export class DocumentListComponent implements OnInit {
       this.sortBy = '-date';
       this.titleSortIcon = faSort;
       this.dateSortIcon = faSortDown;
+      this.statesSortIcon = faSort;
       this.fetchDocuments();
     } else {
       this.sortBy = direction === 'asc' ? '' : '-';
+      if (column === 'states') {
+        column = 'acceptance_state_max_probability';
+      }
       this.sortBy += column;
       const sortIcon = direction === 'asc' ? faSortUp : faSortDown;
       if (column === 'title') {
         this.titleSortIcon = sortIcon;
         this.dateSortIcon = faSort;
-      } else {
+        this.statesSortIcon = faSort;
+      } else if (column === 'date') {
         this.dateSortIcon = sortIcon;
         this.titleSortIcon = faSort;
+        this.statesSortIcon = faSort;
+      } else {
+        this.statesSortIcon = sortIcon;
+        this.titleSortIcon = faSort;
+        this.dateSortIcon = faSort;
       }
       this.fetchDocuments();
     }
