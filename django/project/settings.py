@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'searchapp',
     'scraping',
     'admin_rest',
-    'background_task',
     'django_celery_results',
 ]
 

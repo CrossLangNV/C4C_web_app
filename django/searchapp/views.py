@@ -18,7 +18,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from scheduler.tasks import export_documents, export_delete
+from scheduler.tasks import export_documents, export_delete, sync_documents_task, score_documents_task
 from .datahandling import sync_documents, sync_attachments
 from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
@@ -27,7 +27,6 @@ from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerial
     CommentSerializer, TagSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_document_id_sorted, \
     solr_search_paginated
-from .tasks import score_documents_task, sync_documents_task
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -72,11 +71,11 @@ class WebsiteDetailView(DetailView):
         sync = self.request.GET.get('sync', False)
         if sync:
             # query Solr for available documents and sync with Django
-            sync_documents_task(website.id)
+            sync_documents_task.delay(website.id)
         score = self.request.GET.get('score', False)
         if score:
             # get confidence score
-            score_documents_task(website.id)
+            score_documents_task.delay(website.id)
         return context
 
 
