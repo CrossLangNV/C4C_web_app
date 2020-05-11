@@ -396,6 +396,7 @@ class SolrDocument(APIView):
 
 
 class ExportDocumentsLaunch(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
         task = export_documents.delay()
@@ -404,6 +405,7 @@ class ExportDocumentsLaunch(APIView):
 
 
 class ExportDocumentsStatus(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, task_id, format=None):
         result = AsyncResult(task_id)
@@ -411,6 +413,7 @@ class ExportDocumentsStatus(APIView):
 
 
 class ExportDocumentsDownload(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, task_id, format=None):
         # get zip for given task id from minio
