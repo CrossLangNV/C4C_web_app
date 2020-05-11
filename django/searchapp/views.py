@@ -1,3 +1,4 @@
+import base64
 import logging
 import os
 from datetime import datetime, timedelta
@@ -7,7 +8,7 @@ import requests
 from celery.result import AsyncResult
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Q
-from django.http import FileResponse
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
@@ -18,7 +19,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from scheduler.tasks import export_documents, export_delete_jsonl, export_delete_zip
+from scheduler.tasks import export_documents, export_delete_jsonl, export_delete_zip, export_get_zip
 from .datahandling import sync_documents, sync_attachments
 from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
@@ -31,7 +32,6 @@ from .tasks import score_documents_task, sync_documents_task
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
-export_path = '/django/scheduler/export/'
 
 
 class DocumentSearchView(TemplateView):
@@ -415,7 +415,11 @@ class ExportDocumentsDownload(APIView):
 
     def get(self, request, task_id, format=None):
         # return zip for given task id
-        response = FileResponse(open(export_path + task_id + '.zip', 'rb'), as_attachment=True)
+        base64_decoded = export_get_zip.delay(task_id).get()
+        base64_bytes = base64_decoded.encode('ascii')
+        zip_bytes = base64.b64decode(base64_bytes)
+        response = HttpResponse(zip_bytes, content_type='application/x-zip-compressed')
+        response['Content-Disposition'] = 'attachment; filename="%s"' % 'exported_docs.zip'
         # delete export/jsonl contents
         export_delete_jsonl.delay()
         # delete this zip file after 1 day
