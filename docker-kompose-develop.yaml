@@ -61,9 +61,6 @@ services:
     image: rabbitmq
     ports: 
       - "5672:5672"
-    labels:
-      kompose.image-pull-secret: "crosslang"
-      kompose.image-pull-policy: "Always"
 
   scrapyd:
     image: docker.crosslang.com/ctlg-manager/scrapyd:develop-latest
@@ -113,6 +110,14 @@ services:
     labels:
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
+
+  minio:
+    image: minio/minio
+    ports: 
+      - "9000:9000"
+    command: server /data
+    env_file:
+      - secrets/django-docker.env.sample
 
 volumes:
   solr:

@@ -24,6 +24,7 @@ services:
       - postgres
       - solr
       - scrapyd
+      - minio
 
   celery:
     build: ./django
@@ -37,6 +38,7 @@ services:
     depends_on: 
       - django
       - rabbitmq
+      - minio
 
   flower:
     build: ./django
@@ -90,6 +92,14 @@ services:
     image: docker.crosslang.com/ctlg-manager/docclass:latest
     ports:
       - "5000:5000"
+
+  minio:
+    image: minio/minio
+    command: server /data
+    ports: 
+      - "19000:9000"
+    env_file:
+      - ./secrets/django-docker.env
 
 volumes:
   solr:
