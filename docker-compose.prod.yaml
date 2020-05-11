@@ -34,6 +34,38 @@ services:
     ports:
       - "0.0.0.0:8000:8000"
 
+  celery:
+    build: ./django
+    command: celery -A scheduler worker -l info
+    volumes: 
+      - ./django:/django
+    env_file: 
+      - ./secrets/django-docker.env.prod
+    restart: 
+      always
+    depends_on: 
+      - django
+      - rabbitmq
+
+  flower:
+    build: ./django
+    ports:
+      - "5555:5555"
+    command: flower -A scheduler --port=5555
+    volumes: 
+      - ./django:/django
+    env_file: 
+      - ./secrets/django-docker.env.prod
+    restart: 
+      always
+    depends_on: 
+      - celery
+    
+  rabbitmq:
+    image: rabbitmq
+    ports: 
+      - "5672:5672"
+
   scrapyd:
     build: ./scrapy
     ports: 
