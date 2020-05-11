@@ -1,17 +1,16 @@
-import base64
 import logging
 import os
-from datetime import datetime, timedelta
 from urllib.parse import quote
 
 import requests
 from celery.result import AsyncResult
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import FileResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
+from minio import Minio
 from rest_framework import permissions, filters, status
 from rest_framework.decorators import api_view
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveUpdateAPIView
@@ -19,7 +18,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from scheduler.tasks import export_documents, export_delete_jsonl, export_delete_zip, export_get_zip
+from scheduler.tasks import export_documents, export_delete
 from .datahandling import sync_documents, sync_attachments
 from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
@@ -32,6 +31,7 @@ from .tasks import score_documents_task, sync_documents_task
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
+export_path = '/django/scheduler/export/'
 
 
 class DocumentSearchView(TemplateView):
@@ -414,17 +414,14 @@ class ExportDocumentsStatus(APIView):
 class ExportDocumentsDownload(APIView):
 
     def get(self, request, task_id, format=None):
-        # return zip for given task id
-        base64_decoded = export_get_zip.delay(task_id).get()
-        base64_bytes = base64_decoded.encode('ascii')
-        zip_bytes = base64.b64decode(base64_bytes)
-        response = HttpResponse(zip_bytes, content_type='application/x-zip-compressed')
+        # get zip for given task id from minio
+        minio_client = Minio('minio:9000', access_key=os.environ['MINIO_ACCESS_KEY'],
+                             secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+        file = minio_client.get_object('export', task_id + '.zip')
+        response = FileResponse(file, as_attachment=True)
         response['Content-Disposition'] = 'attachment; filename="%s"' % 'exported_docs.zip'
-        # delete export/jsonl contents
-        export_delete_jsonl.delay()
-        # delete this zip file after 1 day
-        tomorrow = datetime.utcnow() + timedelta(days=1)
-        export_delete_zip.s(task_id).apply_async(eta=tomorrow)
+        # delete export contents
+        export_delete.delay(task_id)
         return response
 
 
