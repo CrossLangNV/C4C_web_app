@@ -1,13 +1,13 @@
-from background_task import background
-from django.contrib.auth.models import User
-from django.utils import timezone
-from .models import Website, Document, Attachment
-from .datahandling import score_documents, sync_documents, sync_attachments
-from .solr_call import solr_search_website_sorted, solr_search_document_id_sorted
-
-from scrapyd_api import ScrapydAPI
 import logging
 import os
+
+from background_task import background
+from django.utils import timezone
+from scrapyd_api import ScrapydAPI
+
+from .datahandling import score_documents, sync_documents, sync_attachments
+from .models import Website, Document, Attachment
+from .solr_call import solr_search_website_sorted, solr_search_document_id_sorted
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +57,11 @@ def scrape_website_task(website_id):
         'task_id': '1'
     }
     spiders = [{"id": "bis"}, {"id": "eiopa"}, {"id": "esma"}, {
-        "id": "eurlex", "type": "directives"}, {"id": "eurlex", "type": "decisions"}, {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
-        {"id": "eba", "type": "guidelines"}, {
-        "id": "eba", "type": "recommendations"},
-    ]
+        "id": "eurlex", "type": "directives"}, {"id": "eurlex", "type": "decisions"},
+               {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
+               {"id": "eba", "type": "guidelines"}, {
+                   "id": "eba", "type": "recommendations"},
+               ]
     for spider in spiders:
         if spider['id'].lower() == website.name.lower():
             scrapyd = ScrapydAPI(os.environ['SCRAPYD_URL'])
