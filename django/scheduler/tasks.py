@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+import base64
 import logging
 import os
 import shutil
@@ -36,6 +37,14 @@ def export_documents(website_ids=None):
     # create zip file for all .jsonl files
     zip_destination = workpath + '/export/' + export_documents.request.id
     shutil.make_archive(zip_destination, 'zip', workpath + '/export/jsonl')
+
+
+@shared_task
+def export_get_zip(task_id):
+    file = open(workpath + '/export/' + task_id + '.zip', 'rb')
+    bytes = file.read()
+    base64_bytes = base64.b64encode(bytes)
+    return base64_bytes.decode('ascii')
 
 
 @shared_task
