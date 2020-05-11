@@ -132,5 +132,7 @@ urlpatterns = [
          name='solr_document_api'),
 
     # Export
-    path('api/export', views.ExportDocuments.as_view(), name='export_api'),
+    path('api/export/launch', views.ExportDocumentsLaunch.as_view(), name='export_launch_api'),
+    path('api/export/status/<task_id>', views.ExportDocumentsStatus.as_view(), name='export_status_api'),
+    path('api/export/download/<task_id>', views.ExportDocumentsDownload.as_view(), name='export_download_api'),
 ]

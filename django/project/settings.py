@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'scraping',
     'admin_rest',
     'background_task',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [

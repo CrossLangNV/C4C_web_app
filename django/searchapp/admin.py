@@ -1,12 +1,12 @@
+import logging
+
 from django.contrib import admin
 from django.contrib.auth.models import User
 
 from admin_rest.models import site as rest_site
-from .tasks import sync_documents_task, score_documents_task, sync_attachments_task, scrape_website_task
-
+from scheduler import tasks
 from .models import Website, Attachment, Document, AcceptanceState, Comment, Tag
-
-import logging
+from .tasks import sync_documents_task, score_documents_task, sync_attachments_task, scrape_website_task
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,13 @@ def score_documents(modeladmin, request, queryset):
         score_documents_task(website.id)
 
 
+def export_documents(modeladmin, request, queryset):
+    website_ids = []
+    for website in queryset:
+        website_ids.append(website.id)
+    tasks.export_documents.delay(website_ids)
+
+
 def sync_attachments(modeladmin, request, queryset):
     for website in queryset:
         sync_attachments_task(website.id)
@@ -51,11 +58,12 @@ def scrape_website(modeladmin, request, queryset):
 class WebsiteAdmin(admin.ModelAdmin):
     list_display = ['name', 'count_documents']
     ordering = ['name']
-    actions = [sync_documents, score_documents,
+    actions = [sync_documents, score_documents, export_documents,
                sync_attachments, scrape_website]
 
     def count_documents(self, doc):
         return doc.documents.count()
+
     count_documents.short_description = "Documents"
 
 
