@@ -19,9 +19,8 @@ from django.urls import include
 from django.urls import path
 from django.views.generic import RedirectView
 
-from project import settings
-
 from admin_rest.models import site
+from project import settings
 
 urlpatterns = [
     path('', RedirectView.as_view(url='admin/', permanent=True)),
@@ -30,7 +29,8 @@ urlpatterns = [
     path('searchapp/', include(('searchapp.urls', 'searchapp'), namespace="searchapp")),
     path('scraping/', include(('scraping.urls', 'scraping'), namespace="scraping")),
     path('social-auth/', include('social_django.urls', namespace="social-view")),
-    path('auth/', include('rest_framework_social_oauth2.urls'))
+    path('auth/', include('rest_framework_social_oauth2.urls')),
+    path('glossary/', include(('glossary.urls', 'glossary'), namespace="glossary")),
 ]
 
 if settings.DEBUG:
