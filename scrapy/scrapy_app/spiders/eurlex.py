@@ -74,16 +74,16 @@ class EurLexSpider(scrapy.Spider):
                 else:
                     newdict.update({'various': str(uniq_code)})
 
-        oj = soup.find('div', {'id': 'PP2Contents'})
-        # only store english pdf doc url(s)
-        if oj is not None:
-            pdf_docs = []
-            pdfs = oj.findAll('li')
-            for pdf in pdfs:
-                pdf = pdf.find('a')['href'].replace('./../../../', base_url)
-                if 'EN/TXT/PDF/' in pdf:
-                    pdf_docs.append(pdf)
-            newdict.update({"pdf_docs": pdf_docs})
+        # oj = soup.find('div', {'id': 'PP2Contents'})
+        # # only store english pdf doc url(s)
+        # if oj is not None:
+        #     pdf_docs = []
+        #     pdfs = oj.findAll('li')
+        #     for pdf in pdfs:
+        #         pdf = pdf.find('a')['href'].replace('./../../../', base_url)
+        #         if 'EN/TXT/PDF/' in pdf:
+        #             pdf_docs.append(pdf)
+        #     newdict.update({"pdf_docs": pdf_docs})
 
         dates = soup.find('div', {'id': 'PPDates_Contents'})
         if dates is not None:
