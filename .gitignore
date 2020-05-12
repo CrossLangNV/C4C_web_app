@@ -94,5 +94,7 @@ data/
 ngrok.exe
 twistd.pid
 django/media
+django/static
+django/scheduler/export
 scrapy/files
 .vscode

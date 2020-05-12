@@ -27,5 +27,8 @@ cd fisma-ctlg-manager
 patch -p0 templates/postgres-deployment.yaml ../../postgres-deployment.yaml.patch
 # work around: Cannot write to /var/solr as 8983:8983
 patch -p0 templates/solr-deployment.yaml ../../solr-deployment.yaml.patch
+# remove orig files
+find . -name \*.orig  -delete
+
 docker run --user $(id -u):$(id -g) -v $PWD:/fisma-ctlg-manager -v $PWD:/apps --rm alpine/helm:latest package /fisma-ctlg-manager --version $VERSION-$BRANCH
 curl -u $HELM_USERNAME:$HELM_PASSWORD https://nexus.crosslang.com/repository/helm-repo/ --upload-file fisma-ctlg-manager-$VERSION-$BRANCH.tgz

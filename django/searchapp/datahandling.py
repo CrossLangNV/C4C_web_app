@@ -20,12 +20,19 @@ def score_documents(django_documents):
         url = os.environ['DOCUMENT_CLASSIFIER_URL'] + "/classify_doc"
         if (len(django_doc.title)):
             data = {'title': django_doc.title,
-                    'date': django_doc.date.strftime("%Y-%m-%d")}
+                    'date': django_doc.date.strftime("%Y-%m-%d"),
+                    'status': django_doc.status}
             response = requests.post(url, json=data)
             logger.info("Sending content: " + json.dumps(data))
             js = response.json()
             logger.info("Got response: " + json.dumps(js))
-            accepted_probability = js["accepted_probability"]
+            if 'accepted_probability' in js:
+                accepted_probability = js["accepted_probability"]
+                if accepted_probability > django_doc.acceptance_state_max_probability:
+                    django_doc.acceptance_state_max_probability = accepted_probability
+                    django_doc.save()
+            else:
+                accepted_probability = 0
             AcceptanceState.objects.update_or_create(
                 probability_model="auto classifier",
                 document=django_doc,
