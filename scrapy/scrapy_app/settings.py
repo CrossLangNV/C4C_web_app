@@ -51,6 +51,9 @@ CONCURRENT_REQUESTS = 1
 # SPIDER_MIDDLEWARES = {
 #    'scrapy_app.middlewares.ScrapyAppSpiderMiddleware': 543,
 # }
+SPIDER_MIDDLEWARES = {
+    'scrapy_deltafetch.DeltaFetch': 100,
+}
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
@@ -90,19 +93,18 @@ FILES_STORE = 'files'
 
 # Enable and configure HTTP caching (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
-HTTPCACHE_ENABLED = True
-HTTPCACHE_EXPIRATION_SECS = 0
-HTTPCACHE_DIR = '/var/lib/scrapyd/httpcache'
-HTTPCACHE_IGNORE_HTTP_CODES = []
-HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
-HTTPCACHE_POLICY = 'scrapy.extensions.httpcache.RFC2616Policy'
-HTTPCACHE_GZIP = True
+# HTTPCACHE_ENABLED = True
+# HTTPCACHE_EXPIRATION_SECS = 0
+# HTTPCACHE_DIR = '/var/lib/scrapyd/httpcache'
+# HTTPCACHE_IGNORE_HTTP_CODES = []
+# HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+# HTTPCACHE_POLICY = 'scrapy.extensions.httpcache.RFC2616Policy'
+# HTTPCACHE_GZIP = True
 
 # Exit on first error (TEMP DISABLED)
 CLOSESPIDER_ERRORCOUNT = 0
 
 COMPRESSION_ENABLED = True
-
 
 # Export feeds
 FEEDS = {
@@ -113,3 +115,7 @@ FEEDS = {
         'fields': None,
     }
 }
+
+# Configure delta-fetch
+DELTAFETCH_ENABLED = True
+DELTAFETCH_DIR = '/var/lib/scrapyd/deltafetch'

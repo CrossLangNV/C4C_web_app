@@ -1,24 +1,24 @@
-import io
 import logging
 import os
-import shutil
-from zipfile import ZipFile
+from urllib.parse import quote
 
 import requests
+from celery.result import AsyncResult
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import FileResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
-from jsonlines import jsonlines
-from rest_framework import permissions, filters
+from minio import Minio
+from rest_framework import permissions, filters, status
 from rest_framework.decorators import api_view
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveUpdateAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from scheduler.tasks import export_documents, export_delete, sync_documents_task, score_documents_task
 from .datahandling import sync_documents, sync_attachments
 from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
@@ -27,10 +27,10 @@ from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerial
     CommentSerializer, TagSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_document_id_sorted, \
     solr_search_paginated
-from .tasks import score_documents_task, sync_documents_task
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
+export_path = '/django/scheduler/export/'
 
 
 class DocumentSearchView(TemplateView):
@@ -71,11 +71,11 @@ class WebsiteDetailView(DetailView):
         sync = self.request.GET.get('sync', False)
         if sync:
             # query Solr for available documents and sync with Django
-            sync_documents_task(website.id)
+            sync_documents_task.delay(website.id)
         score = self.request.GET.get('score', False)
         if score:
             # get confidence score
-            score_documents_task(website.id)
+            score_documents_task.delay(website.id)
         return context
 
 
@@ -219,7 +219,7 @@ class DocumentListAPIView(ListCreateAPIView):
     serializer_class = DocumentSerializer
     pagination_class = SmallResultsSetPagination
     filter_backends = [filters.OrderingFilter]
-    ordering_fields = ['title', 'date']
+    ordering_fields = ['title', 'date', 'acceptance_state_max_probability']
 
     def get_queryset(self):
         q = Document.objects.all()
@@ -395,58 +395,42 @@ class SolrDocument(APIView):
         return Response(solr_document)
 
 
-class ExportDocuments(APIView):
+class ExportDocumentsLaunch(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
-        websites = Website.objects.all()
-        for website in websites:
-            if not os.path.exists(workpath + '/export/jsonl/' + website.name):
-                os.makedirs(workpath + '/export/jsonl/' + website.name)
-            documents = solr_search(
-                core='documents', term='website:' + website.name)
-            for document in documents:
-                files = solr_search_document_id_sorted(
-                    core='files', document_id=document['id'])
-                with jsonlines.open(workpath + '/export/jsonl/' + website.name + '/doc_' + document['id'] + '.jsonl',
-                                    mode='w') as f:
-                    f.write(document)
-                    for file in files:
-                        f.write(file)
+        task = export_documents.delay()
+        response = {"task_id": task.task_id}
+        return Response(response, status=status.HTTP_202_ACCEPTED)
 
-        # create zip file for all .jsonl files
-        zip_filename = 'exported_docs.zip'
-        # open BytesIO to grab in-memory ZIP contents
-        b = io.BytesIO()
-        zf = ZipFile(b, "w")
-        for root, subfolders, filenames in os.walk(workpath + '/export/jsonl'):
-            for filename in filenames:
-                file_path = os.path.join(root, filename)
-                zf.write(file_path, os.path.relpath(
-                    file_path, workpath + '/export/jsonl'))
-        zf.close()
-        # clear export folder
-        for filename in os.listdir(workpath + '/export'):
-            file_path = os.path.join(workpath + '/export', filename)
-            try:
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                logger.error('Failed to delete %s. Reason: %s' %
-                             (file_path, e))
-        # return zip
-        response = HttpResponse(
-            b.getvalue(), content_type='application/x-zip-compressed')
-        response['Content-Disposition'] = 'attachment; filename="%s"' % zip_filename
+
+class ExportDocumentsStatus(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, task_id, format=None):
+        result = AsyncResult(task_id)
+        return Response(result.status, status=status.HTTP_200_OK)
+
+
+class ExportDocumentsDownload(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, task_id, format=None):
+        # get zip for given task id from minio
+        minio_client = Minio('minio:9000', access_key=os.environ['MINIO_ACCESS_KEY'],
+                             secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+        file = minio_client.get_object('export', task_id + '.zip')
+        response = FileResponse(file, as_attachment=True)
+        response['Content-Disposition'] = 'attachment; filename="%s"' % 'exported_docs.zip'
+        # delete export contents
+        export_delete.delay(task_id)
         return response
 
 
 @api_view(['GET'])
 def celex_get_xhtml(request):
     if request.method == 'GET':
-        celex_id = request.GET["celex_id"]
+        celex_id = quote(request.GET["celex_id"])
         logger.info(celex_id)
         headers = {"Accept": "application/xhtml+xml", "Accept-Language": "eng"}
         response = requests.get(
@@ -463,12 +447,18 @@ def document_stats(request):
     if request.method == 'GET':
         q1 = Document.objects.all()
         q2 = q1.exclude(Q(acceptance_states__value="Rejected")
-                        | Q(acceptance_states__value="Accepted"))
-        q3 = q1.filter(acceptance_states__value="Accepted").distinct()
-        q4 = q1.filter(acceptance_states__value="Rejected").distinct()
-        q5 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
+                        | Q(acceptance_states__value="Accepted") & Q(
+            acceptance_states__probability_model__isnull=True))
+        q3 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
+            acceptance_states__probability_model__isnull=True)).distinct()
+        q4 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
+            acceptance_states__probability_model__isnull=True)).distinct()
+        # FIXME: will be wrong when multiple auto-classifiers ?
+        q5 = q1.filter(Q(acceptance_states__value="Unvalidated") & Q(
             acceptance_states__probability_model__isnull=False))
         q6 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
+            acceptance_states__probability_model__isnull=False))
+        q7 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
             acceptance_states__probability_model__isnull=False))
 
         return Response({
@@ -476,6 +466,7 @@ def document_stats(request):
             'count_unvalidated': len(q2),
             'count_accepted': len(q3),
             'count_rejected': len(q4),
-            'count_autorejected': len(q5),
-            'count_autovalidated': len(q6),
+            'count_autounvalidated': len(q5),
+            'count_autoaccepted': len(q6),
+            'count_autorejected': len(q7),
         })

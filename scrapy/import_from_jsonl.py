@@ -40,8 +40,6 @@ with jsonlines.open(args.jsonl) as reader:
                     count_files += 1
                 except IOError:
                     print("File '" + filename + "' not accessible")
-                finally:
-                    file.close()
 
 print('Process ' + str(count_docs) +
       ' document and ' + str(count_files)+' files')

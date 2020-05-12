@@ -1,6 +1,5 @@
 import uuid
 
-from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 
@@ -45,6 +44,8 @@ class Document(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
+    acceptance_state_max_probability = models.FloatField(default=0.0)
+
     def __str__(self):
         return self.title
 
@@ -75,12 +76,13 @@ class AcceptanceStateValue(models.TextChoices):
 class AcceptanceState(models.Model):
     value = models.CharField(max_length=20,
                              choices=AcceptanceStateValue.choices,
-                             default=AcceptanceStateValue.UNVALIDATED)
+                             default=AcceptanceStateValue.UNVALIDATED, db_index=True)
     document = models.ForeignKey(
         'Document', related_name='acceptance_states', on_delete=models.CASCADE)
     user = models.ForeignKey(
         'auth.User', on_delete=models.CASCADE, blank=True, null=True)
-    probability_model = models.CharField(max_length=50, blank=True, null=True)
+    probability_model = models.CharField(
+        max_length=50, blank=True, null=True, db_index=True)
     accepted_probability = models.FloatField(default=0.0, blank=True)
 
     created_at = models.DateTimeField(default=timezone.now)
@@ -94,6 +96,7 @@ class AcceptanceState(models.Model):
                 fields=['document_id', 'probability_model'], name="unique_per_doc_and_model")
 
         ]
+        ordering = ['user']
 
 
 class Attachment(models.Model):

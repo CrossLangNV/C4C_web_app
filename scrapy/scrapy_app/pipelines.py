@@ -15,8 +15,12 @@ class ScrapyAppPipeline(FilesPipeline):
         self.crawler = crawler
         self.django_api_url = os.environ['DJANGO_SCRAPING_API_URL']
         self.logger = logging.getLogger(__name__)
+        if crawler.spider is None:
+            spider_name = "default"
+        else:
+            spider_name = crawler.spider.name
         super().__init__(
-            store_uri=os.environ['SCRAPY_FILES_FOLDER'] + 'files/' + crawler.spider.name, *args, **kwargs)
+            store_uri=os.environ['SCRAPY_FILES_FOLDER'] + 'files/' + spider_name, *args, **kwargs)
 
     @classmethod
     def from_crawler(cls, crawler):
