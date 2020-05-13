@@ -241,6 +241,7 @@ export class DocumentListComponent implements OnInit {
       .pipe(debounceTime(600), distinctUntilChanged())
       .subscribe((model) => {
         this.keyword = model;
+        this.page = 1;
         this.fetchDocuments();
       });
     this.service.messageSource.asObservable().subscribe((value: string) => {
