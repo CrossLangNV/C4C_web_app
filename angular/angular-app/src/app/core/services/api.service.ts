@@ -131,7 +131,7 @@ export class ApiService {
   ): Observable<DocumentResults> {
     var pageQuery = page ? '?page=' + page : '';
     if (searchTerm) {
-      pageQuery = '?keyword=' + searchTerm;
+      pageQuery = pageQuery + '&keyword=' + searchTerm;
     }
     if (filterType) {
       pageQuery = pageQuery + '&filterType=' + filterType;
