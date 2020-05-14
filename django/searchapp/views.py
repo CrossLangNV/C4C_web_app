@@ -28,6 +28,8 @@ from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerial
 from .solr_call import solr_search, solr_search_id, solr_search_document_id_sorted, \
     solr_search_paginated
 
+from django.views.decorators.cache import cache_page
+
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
 export_path = '/django/scheduler/export/'
@@ -442,6 +444,7 @@ def celex_get_xhtml(request):
         return Response(response.text)
 
 
+@cache_page(60 * 15)
 @api_view(['GET'])
 def document_stats(request):
     if request.method == 'GET':

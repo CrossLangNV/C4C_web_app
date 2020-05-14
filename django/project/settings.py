@@ -203,3 +203,15 @@ LOGOUT_REDIRECT_URL = 'searchapp:login'
 # Play nice with REST Framework
 # See https://stackoverflow.com/questions/42212122/why-django-urls-end-with-a-slash
 APPEND_SLASH = False
+
+# Caching
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/tmp/django_cache',
+        'TIMEOUT': 60,
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
+    }
+}
