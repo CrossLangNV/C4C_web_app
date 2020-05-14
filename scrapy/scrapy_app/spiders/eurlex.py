@@ -8,9 +8,6 @@ from urllib.parse import urlparse
 import bs4
 import scrapy
 
-LOG = logging.getLogger("pysolr")
-LOG.setLevel(logging.WARNING)
-
 
 class EurLexType(Enum):
     DECISIONS = 'https://eur-lex.europa.eu/search.html?qid=1583164503757&DB_TYPE_OF_ACT=decision&CASE_LAW_SUMMARY=false&DTS_DOM=ALL&excConsLeg=true&typeOfActStatus=DECISION&type=advanced&CASE_LAW_JURE_SUMMARY=false&SUBDOM_INIT=ALL_ALL&DTS_SUBDOM=ALL_ALL'
