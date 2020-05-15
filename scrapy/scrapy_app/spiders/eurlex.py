@@ -16,11 +16,11 @@ class EurLexType(Enum):
 
 
 class EurLexSpider(scrapy.Spider):
-    download_delay = 10.0
+    download_delay = 0.1
     name = 'eurlex'
     date_format = '%d/%m/%Y'
 
-    def __init__(self, spider_type=None, *args, **kwargs):
+    def __init__(self, spider_type=None, year=None, *args, **kwargs):
         super(EurLexSpider, self).__init__(*args, **kwargs)
         if not spider_type:
             logging.log(logging.WARNING,
@@ -32,7 +32,21 @@ class EurLexSpider(scrapy.Spider):
             spider_type = EurLexType[spider_type_arg]
             logging.log(logging.INFO, 'EurLex spider_type: ' +
                         spider_type.name)
-        self.start_urls = [spider_type.value]
+
+        if not year:
+            logging.log(logging.WARNING, 'No year given, fetching all years')
+            start_url = spider_type.value
+        else:
+            logging.log(logging.INFO, 'Fetching year: ' + year)
+            start_url = spider_type.value + "&DD_YEAR=" + year
+
+        self.start_urls = [start_url]
+
+    def date_safe(self, date_string):
+        try:
+            return datetime.strptime(date_string, self.date_format)
+        except:
+            return "n/a"
 
     def get_metadata(self, response):
         soup = bs4.BeautifulSoup(response.text, features="html.parser")
@@ -58,7 +72,8 @@ class EurLexSpider(scrapy.Spider):
                 newdict.update({"status": status})
 
             various = body.findAll(
-                lambda tag: tag.name == 'p' and not tag.attrs)
+                lambda tag: tag.name == 'p' and not tag.attrs
+            )
             if various:
                 for x in various:
                     x = x.find('a')
@@ -251,10 +266,10 @@ class EurLexSpider(scrapy.Spider):
                             comment if comment else 'n/a')
                         all_amendments_subdivision.append(
                             subdivision_concerned if subdivision_concerned else 'n/a')
-                        all_amendments_from.append(datetime.strptime(
-                            as_from, self.date_format) if as_from else 'n/a')
-                        all_amendments_to.append(datetime.strptime(
-                            to, self.date_format) if to else 'n/a')
+                        all_amendments_from.append(
+                            self.date_safe(as_from) if as_from else 'n/a')
+                        all_amendments_to.append(
+                            self.date_safe(to) if to else 'n/a')
                     newdict.update(
                         {'amendments_relation': all_amendments_relation})
                     newdict.update({'amendments_act': all_amendments_act})
