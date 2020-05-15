@@ -72,7 +72,8 @@ class EurLexSpider(scrapy.Spider):
                 newdict.update({"status": status})
 
             various = body.findAll(
-                lambda tag: tag.name == 'p' and not tag.attrs)
+                lambda tag: tag.name == 'p' and not tag.attrs
+            )
             if various:
                 for x in various:
                     x = x.find('a')
