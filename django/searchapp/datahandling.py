@@ -66,7 +66,7 @@ def sync_documents(website, solr_documents, django_documents):
                 celex=solr_doc.get('celex', [''])[0][:20],
                 eli=solr_doc.get('ELI', [''])[0],
                 title_prefix=solr_doc.get('title_prefix', [''])[0],
-                title=solr_doc.get('title', [''])[0],
+                title=solr_doc.get('title', [''])[0][:1000],
                 status=solr_doc.get('status', [''])[0][:100],
                 date=solr_doc_date,
                 type=solr_doc.get('type', [''])[0],
@@ -112,25 +112,32 @@ def sync_attachments(document, solr_files, django_attachments):
 
 def update_document(django_doc, solr_doc):
     logger.info('update django document with id ' + solr_doc['id'])
-    if 'date' in solr_doc:
-        solr_doc_date = solr_doc['date'][0].split('T')[0]
-        django_doc.date = datetime.strptime(solr_doc_date, '%Y-%m-%d')
     if 'url' in solr_doc:
         django_doc.url = solr_doc['url'][0]
+    if 'celex' in solr_doc:
+        django_doc.celex = solr_doc['celex'][0][:20]
+    if 'eli' in solr_doc:
+        django_doc.eli = solr_doc['eli'][0]
     if 'title_prefix' in solr_doc:
         django_doc.title_prefix = solr_doc['title_prefix'][0]
     if 'title' in solr_doc:
-        django_doc.title = solr_doc['title'][0]
+        django_doc.title = solr_doc['title'][0][:1000]
+    if 'status' in solr_doc:
+        django_doc.status = solr_doc['status'][0][:100]
+    if 'date' in solr_doc:
+        solr_doc_date = solr_doc['date'][0].split('T')[0]
+        django_doc.date = datetime.strptime(solr_doc_date, '%Y-%m-%d')
     if 'type' in solr_doc:
         django_doc.type = solr_doc['type'][0]
     if 'summary' in solr_doc:
         django_doc.summary = ''.join(x.strip() for x in solr_doc['summary'])
+    if 'content' in solr_doc:
+        django_doc.content = ''.join(x.strip() for x in solr_doc['content'])
+    if 'various' in solr_doc:
+        django_doc.various = ''.join(x.strip() for x in solr_doc['various'])
     if 'website' in solr_doc:
         django_doc.website = Website.objects.get(
             name__iexact=solr_doc['website'][0])
-    else:
-        # FIXME: is this safe ?
-        django_doc.acceptance_state = 'Unvalidated'
     django_doc.pull = False
     django_doc.save()
 

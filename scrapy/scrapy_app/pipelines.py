@@ -9,6 +9,10 @@ from scrapy.pipelines.files import FilesPipeline
 from scrapy_app.solr_call import solr_add, solr_add_file
 
 
+LOG = logging.getLogger("pysolr")
+LOG.setLevel(logging.WARNING)
+
+
 class ScrapyAppPipeline(FilesPipeline):
     def __init__(self, task_id, crawler, *args, **kwargs):
         self.task_id = task_id
@@ -43,7 +47,6 @@ class ScrapyAppPipeline(FilesPipeline):
 
     def item_completed(self, results, item, info):
         self.handle_document(item, info)
-        self.logger.info(results)
         file_results = [x for ok, x in results if ok]
         for file_result in file_results:
             pdf_id = str(uuid.uuid5(uuid.NAMESPACE_URL, file_result['url']))
