@@ -2,7 +2,7 @@ import os
 
 import pysolr
 
-ROW_LIMIT = 50000
+ROW_LIMIT = 250000
 
 
 def solr_search(core="", term=""):
