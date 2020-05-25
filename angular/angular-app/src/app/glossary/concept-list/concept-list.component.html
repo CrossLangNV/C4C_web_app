@@ -1,0 +1,13 @@
+<div class="jumbotron">
+  <h3>Concepts</h3>
+
+  <ul class="list-group list-group-flush">
+    <li
+      class="list-group-item mt-4 col-lg-7 px-4 py-4"
+      *ngFor="let concept of concepts"
+    >
+      <h4 class="mb-3">{{ concept.name }}</h4>
+      <p class="text-justify">{{ concept.definition }}</p>
+    </li>
+  </ul>
+</div>
