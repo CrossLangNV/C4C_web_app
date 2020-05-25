@@ -1,10 +1,25 @@
 from rest_framework import permissions
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from glossary.models import Concept
+from glossary.serializers import ConceptSerializer
 from searchapp.models import Document
 from searchapp.serializers import DocumentSerializer
 from searchapp.solr_call import solr_search_paginated
+
+
+class ConceptListAPIView(ListCreateAPIView):
+    # permission_classes = [permissions.IsAuthenticated]
+    queryset = Concept.objects.all()
+    serializer_class = ConceptSerializer
+
+
+class ConceptDetailAPIView(RetrieveUpdateDestroyAPIView):
+    # permission_classes = [permissions.IsAuthenticated]
+    queryset = Concept.objects.all()
+    serializer_class = ConceptSerializer
 
 
 class ConceptDocumentsAPIView(APIView):
