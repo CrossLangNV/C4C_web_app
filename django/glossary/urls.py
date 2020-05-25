@@ -34,7 +34,7 @@ urlpatterns = [
         'redoc', cache_timeout=0), name='schema-redoc'),
 
     # Concept
-    path('api/concept', views.ConceptListAPIView.as_view(), name='concept_api_list'),
+    path('api/concepts', views.ConceptListAPIView.as_view(), name='concept_api_list'),
     path('api/concept/<int:pk>', views.ConceptDetailAPIView.as_view(), name='concept_api_detail'),
     path('api/concept/<concept>', views.ConceptDocumentsAPIView.as_view(), name='concept_api_search'),
 ]
