@@ -3,6 +3,7 @@ import { Routes, RouterModule } from '@angular/router';
 import { SolrFileListComponent } from './search/solrfile-list/solrfile-list.component';
 import { LoginComponent } from './shared/login-component/login.component';
 import { AuthGuard } from './core/guards/auth.guard';
+import { ConceptListComponent } from './glossary/concept-list/concept-list.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -11,6 +12,11 @@ const routes: Routes = [
     path: 'browse',
     loadChildren: () =>
       import('./browse/browse.module').then((m) => m.BrowseModule),
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'glossary',
+    component: ConceptListComponent,
     canActivate: [AuthGuard],
   },
   {

@@ -18,12 +18,14 @@ import {
 } from 'src/app/shared/models/acceptanceState';
 import { Comment, CommentAdapter } from 'src/app/shared/models/comment';
 import { Tag, TagAdapter } from 'src/app/shared/models/tag';
+import { Concept, ConceptAdapter } from 'src/app/shared/models/concept';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
+  API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
 
   messageSource: Subject<string>;
 
@@ -35,7 +37,8 @@ export class ApiService {
     private attachmentAdapter: AttachmentAdapter,
     private stateAdapter: AcceptanceStateAdapter,
     private commentAdapter: CommentAdapter,
-    private tagAdapter: TagAdapter
+    private tagAdapter: TagAdapter,
+    private conceptAdapter: ConceptAdapter
   ) {
     this.messageSource = new Subject<string>();
   }
@@ -280,5 +283,19 @@ export class ApiService {
 
   public isAdmin(): Observable<boolean> {
     return this.http.get<boolean>(`${this.API_URL}/super`);
+  }
+
+  //
+  // GLOSSARY //
+  //
+
+  public getConcepts(): Observable<Concept[]> {
+    return this.http
+      .get<Concept[]>(`${this.API_GLOSSARY_URL}/concepts`)
+      .pipe(
+        map((data: any[]) =>
+          data.map((item) => this.conceptAdapter.adapt(item))
+        )
+      );
   }
 }

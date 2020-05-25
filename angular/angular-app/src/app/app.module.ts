@@ -8,6 +8,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SharedModule } from './shared/shared.module';
 import { BrowseModule } from './browse/browse.module';
 import { AppRoutingModule } from './app-routing.module';
+import { GlossaryModule } from './glossary/glossary.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -17,6 +18,7 @@ import { AppRoutingModule } from './app-routing.module';
     BrowserModule,
     BrowserAnimationsModule,
     CoreModule,
+    GlossaryModule,
     SearchModule,
     BrowseModule,
   ],

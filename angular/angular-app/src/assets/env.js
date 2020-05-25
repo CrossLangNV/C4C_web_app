@@ -2,9 +2,11 @@
   window["env"] = window["env"] || {};
 
   // Environment variables
-  window["env"]["ANGULAR_PRODUCTION"] = "false";
+  window["env"]["ANGULAR_PRODUCTION"] = "true";
   window["env"]["ANGULAR_DJANGO_API_URL"] =
     "http://localhost:8000/searchapp/api";
+  window["env"]["ANGULAR_DJANGO_API_GLOSSARY_URL"] =
+    "http://localhost:8000/glossary/api";
   window["env"]["ANGULAR_DJANGO_API_ADMIN_URL"] =
     "http://localhost:8000/admin/api";
   window["env"]["ANGULAR_DJANGO_AUTH_URL"] = "http://localhost:8000/auth";
