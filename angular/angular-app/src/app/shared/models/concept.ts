@@ -3,7 +3,7 @@ import { Adapter } from './adapter';
 
 export class Concept {
   constructor(
-    public id: number,
+    public id: string,
     public name: string,
     public definition: string,
     public documentIds: string[]
