@@ -1,0 +1,24 @@
+<div *ngIf="concept">
+  <div class="jumbotron">
+    <h3 class="mb-4">CONCEPT: {{ concept.name }}</h3>
+    <h4>Occurs in:</h4>
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item mt-4 col-lg-7 px-4 py-4" *ngFor="let doc of documents">
+        <h4 class="mb-3">
+          <a routerLink="/browse/website/{{ doc.website }}/document/{{ doc.id }}">{{ doc.title }}</a>&nbsp;<span
+            *ngIf="doc.pull" class="badge badge-secondary">NEW</span>
+        </h4>
+        <p class="small font-italic">{{ doc.date }}</p>
+        <p>Acceptance state: {{ doc.acceptanceState }}</p>
+        <div>
+          <p>
+            <a href="{{ doc.url }}">{{ doc.url }}</a>
+          </p>
+        </div>
+        <div>
+          <p class="text-justify">{{ doc.summary }}</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>

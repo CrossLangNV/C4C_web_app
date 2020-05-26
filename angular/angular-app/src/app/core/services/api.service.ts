@@ -298,4 +298,10 @@ export class ApiService {
         )
       );
   }
+
+  public getConcept(id: string): Observable<Concept> {
+    return this.http
+      .get<Concept>(`${this.API_GLOSSARY_URL}/concept/${id}`)
+      .pipe(map((item) => this.conceptAdapter.adapt(item)));
+  }
 }
