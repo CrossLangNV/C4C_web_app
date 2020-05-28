@@ -59,7 +59,14 @@ class ScrapyAppPipeline(FilesPipeline):
 
     def handle_document(self, item, info):
         item['task'] = self.task_id
-        item['website'] = info.spider.name
         item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url']))
-        # add/update and index item to Solr
-        solr_add(core="documents", docs=[item])
+        if item.get('doc_summary'):
+            self.handle_document_summary(item)
+        else:
+            item['website'] = info.spider.name
+            # add/update and index document to Solr
+            solr_add(core="documents", docs=[item])
+
+    def handle_document_summary(self, item):
+        solr_add(core="summaries", docs=[item])
+

@@ -5,7 +5,6 @@ from datetime import datetime, MAXYEAR
 from enum import Enum
 from urllib.parse import urlparse
 
-import bs4
 import scrapy
 
 
@@ -30,8 +29,7 @@ class EurLexSpider(scrapy.Spider):
             spider_type_arg = spider_type.upper()
             # this can throw a KeyError if spider_type_arg is not known in the enum
             spider_type = EurLexType[spider_type_arg]
-            logging.log(logging.INFO, 'EurLex spider_type: ' +
-                        spider_type.name)
+            logging.log(logging.INFO, 'EurLex spider_type: ' + spider_type.name)
 
         if not year:
             logging.log(logging.WARNING, 'No year given, fetching all years')
@@ -48,99 +46,125 @@ class EurLexSpider(scrapy.Spider):
         except:
             return "n/a"
 
-    def get_metadata(self, response):
-        soup = bs4.BeautifulSoup(response.text, features="html.parser")
+    def parse(self, response):
+        for h2 in response.css("div.EurlexContent div.SearchResult"):
+            meta = {
+                'doc_link': h2.css("::attr(name)").extract_first().replace('/AUTO/', '/EN/ALL/')
+            }
+            yield scrapy.Request(meta['doc_link'], callback=self.parse_document, meta=meta)
+
+        next_page_url = response.css("a[title='Next Page']::attr(href)").extract_first()
+        if next_page_url is not None:
+            yield scrapy.Request(response.urljoin(next_page_url))
+
+    def parse_document(self, response):
         parsed_uri = urlparse(response.url)
         base_url = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
-        newdict = {}
+        result_dict = {}
 
-        celex = soup.find('h1', {'class': 'DocumentTitle'}).getText()
-        celex = str(celex).split()
-        newdict.update({'celex': celex[1]})
+        celex = response.url.split(':')[-1]
+        result_dict['celex'] = celex
 
-        body = soup.find('div', {'class': 'panel-body'})
-        if body is not None:
-
-            title = body.find('p', {'id': 'englishTitle'})
+        body = response.css('div.panel-body')
+        if body:
+            title = body.xpath('.//p[@id="englishTitle"]')
             if title:
-                title = title.getText().replace('\n', ' ')
-                newdict.update({"title": title})
+                title = title.xpath('.//text()').get().replace('\n', ' ').strip()
+                result_dict['title'] = title
 
-            status = body.find('p', {'class': 'forceIndicator'})
+            status = body.css('p.forceIndicator')
             if status:
-                status = status.getText().replace('\n', '')
-                newdict.update({"status": status})
+                status = ''.join(status.xpath('.//text()').getall()).replace('\n', ' ').strip().split(':')[0]
+                result_dict['status'] = status
 
-            various = body.findAll(
-                lambda tag: tag.name == 'p' and not tag.attrs
-            )
+            various = body.xpath('.//p[not(@*)]')
             if various:
-                for x in various:
-                    x = x.find('a')
-                    if x:
-                        eli = x['href']
-                        newdict.update({'ELI': eli})
+                links = various.xpath('.//a/@href').getall()
+                for link in links:
+                    if 'eli' in link:
+                        result_dict['ELI'] = link
+                        break
 
-                uniq_code = various[0].getText().replace('\n', '')
-                if(len(various) > 1):
-                    pages_etc = various[1].getText().replace('\n', '')
-                    newdict.update(
-                        {'various': str(uniq_code + ', ' + pages_etc)})
-                else:
-                    newdict.update({'various': str(uniq_code)})
+                various_text = ''.join(various.xpath('.//em//text()').getall()).replace('\n', ' ').strip()
+                result_dict['various'] = various_text
 
-        # oj = soup.find('div', {'id': 'PP2Contents'})
-        # # only store english pdf doc url(s)
-        # if oj is not None:
-        #     pdf_docs = []
-        #     pdfs = oj.findAll('li')
-        #     for pdf in pdfs:
-        #         pdf = pdf.find('a')['href'].replace('./../../../', base_url)
-        #         if 'EN/TXT/PDF/' in pdf:
-        #             pdf_docs.append(pdf)
-        #     newdict.update({"pdf_docs": pdf_docs})
+        self.parse_dates(response, result_dict)
+        self.parse_classifications(response, result_dict)
+        self.parse_misc(response, result_dict)
+        self.parse_procedures(response, result_dict)
+        self.parse_relationships(response, result_dict)
+        # self.parse_content(response, result_dict)
 
-        dates = soup.find('div', {'id': 'PPDates_Contents'})
-        if dates is not None:
+        result_dict.update({'url': response.url})
+
+        summary_link = response.xpath("//li[@class='legissumTab']/a/@href").get()
+        if summary_link:
+            summary_link_abs = summary_link.replace('./../../../', base_url)
+            yield scrapy.Request(summary_link_abs, callback=self.parse_document_summary)
+        yield result_dict
+
+    def parse_document_summary(self, response):
+        result_dict = {}
+        result_dict['doc_summary'] = True
+        # check if multiple summaries are listed
+        if response.xpath("//div[@id='documentView']//table//tr/th[text()='Summary reference']").get():
+            pass
+        else:
+            result_dict['url'] = response.url
+            celex = response.url.split(':')[-1]
+            result_dict['celex'] = celex
+            title = response.xpath('//div[@id="PP1Contents"]//p/text()').get()
+            result_dict['title'] = title
+            self.parse_classifications(response, result_dict)
+            self.parse_dates(response, result_dict)
+            self.parse_misc(response, result_dict)
+            result_dict['html_content'] = response.xpath('//div[@id="text"]').get()
+            return result_dict
+
+    def parse_dates(self, response, result_dict):
+        dates = response.xpath('//div[@id="PPDates_Contents"]')
+        if dates:
             all_dates = []
             all_dates_type = []
             all_dates_info = []
-            date_texts = dates.findAll('dd')
-            date_types = dates.findAll('dt')
-            for (x, y) in zip(date_types, date_texts):
-                date_type = x.getText().split(':')[0].lower()
-                value = y.getText().split(';')
-                if '/' in value[0]:
-                    date_value = datetime.strptime(value[0], self.date_format)
+            date_types = dates.xpath('.//dt')
+            date_texts = dates.xpath('.//dd')
+            for (t, d) in zip(date_types, date_texts):
+                date_type = t.xpath('.//text()').get().split(':')[0].lower()
+                misc_value = d.xpath('.//text()').get().split(';')
+                if '/' in misc_value[0]:
+                    date_value = datetime.strptime(misc_value[0], self.date_format)
                 else:
                     date_value = datetime(MAXYEAR, 1, 1)
-                date_info = value[1].replace(
-                    '\n', ' ').strip() if len(value) > 1 else 'n/a'
+                date_info = misc_value[1].replace(
+                    '\n', ' ').strip() if len(misc_value) > 1 else 'n/a'
                 # date of document is our main "date"
                 if date_type == 'date of document':
-                    newdict.update({"date": date_value})
+                    result_dict['date'] = date_value
                 # handle other date_types to be appended to "dates"
                 all_dates_type.append(date_type)
                 all_dates.append(date_value)
                 all_dates_info.append(date_info)
-            newdict.update({"dates": all_dates})
-            newdict.update({"dates_type": all_dates_type})
-            newdict.update({"dates_info": all_dates_info})
+            result_dict.update({"dates": all_dates})
+            result_dict.update({"dates_type": all_dates_type})
+            result_dict.update({"dates_info": all_dates_info})
 
-        classifications = soup.find('div', {'id': 'PPClass_Contents'})
-        if classifications is not None:
-            classifications_data = classifications.findAll('dd')
-            classifications_types = classifications.findAll('dt')
+    def parse_classifications(self, response, result_dict):
+        base_url = '{uri.scheme}://{uri.netloc}/'.format(uri=urlparse(response.url))
+        classifications = response.xpath('//div[@id="PPClass_Contents"]')
+        if classifications:
+            classifications_types = classifications.xpath('.//dt')
+            classifications_data = classifications.xpath('.//dd')
             all_classifications_type = []
             all_classifications_label = []
             all_classifications_code = []
             for (x, y) in zip(classifications_types, classifications_data):
-                ref_codes = y.findAll('a')
+                ref_codes = y.xpath('.//a')
                 for ref_code in ref_codes:
                     all_classifications_type.append(
-                        x.getText().split(':')[0].lower())
-                    element_name = ref_code.getText().replace('\n', '')
-                    ref_code = str(ref_code['href']).replace(
+                        x.xpath('.//text()').get().split(':')[0].lower())
+                    element_name = ref_code.xpath('.//text()').get().replace('\n', '')
+                    ref_code = str(ref_code.xpath('.//@href').get()).replace(
                         './../../../', base_url)
                     element_code = re.search('CODED=(.*)&', ref_code)
                     element_code = element_code.group(1)
@@ -148,153 +172,132 @@ class EurLexSpider(scrapy.Spider):
                     all_classifications_code.append(
                         element_code if element_code else 'n/a')
 
-            newdict.update(
+            result_dict.update(
                 {"classifications_label": all_classifications_label})
-            newdict.update({"classifications_type": all_classifications_type})
-            newdict.update({"classifications_code": all_classifications_code})
+            result_dict.update({"classifications_type": all_classifications_type})
+            result_dict.update({"classifications_code": all_classifications_code})
 
-        miscellaneous = soup.find('div', {'id': 'PPMisc_Contents'})
-        if miscellaneous is not None:
-            misc_texts = miscellaneous.findAll('dd')
-            misc_types = miscellaneous.findAll('dt')
-            for (x, y) in zip(misc_types, misc_texts):
-                misc_type = x.getText().split(':')[0].lower()
-                value = y.getText().replace('\n', ' ').strip()
-                misc_value = value
+    def parse_misc(self, response, result_dict):
+        misc = response.xpath('//div[@id="PPMisc_Contents"]')
+        if misc:
+            misc_types = misc.xpath('.//dt')
+            misc_data = misc.xpath('.//dd')
+            for (t, d) in zip(misc_types, misc_data):
+                misc_type = t.xpath('.//text()').get().split(':')[0].lower()
+                misc_value = d.xpath('.//text()').get().replace('\n', '').strip()
                 # save 'form' value also as general document type value
-                if misc_type == 'form':
-                    newdict.update({"type": value})
-                newdict.update({'misc_' + misc_type: value})
+                if misc_type == 'form' and not result_dict.get('doc_summary'):
+                    result_dict['type'] = misc_value
+                result_dict.update({'misc_' + misc_type: misc_value})
 
-        procedure = soup.find('div', {'id': 'PPProc_Contents'})
-        if procedure is not None:
+    def parse_procedures(self, response, result_dict):
+        procedures = response.xpath('//div[@id="PPProc_Contents"]')
+        if procedures:
             all_procedures_links_url = []
             all_procedures_links_name = []
             all_procedures_number = []
-            procedure_types = procedure.findAll('dt')
-            procedure_data = procedure.findAll('dd')
-            for (x, y) in zip(procedure_types, procedure_data):
-                procedure_type = x.getText().split(
-                    ':')[0].lower().replace('\n', '')
+            procedure_types = procedures.xpath('.//dt')
+            procedure_data = procedures.xpath('.//dd')
+            for (t, d) in zip(procedure_types, procedure_data):
+                procedure_type = t.xpath('.//text()').get().split(':')[0].lower().replace('\n', '')
                 if procedure_type == 'procedure number':
-                    for number in y.getText().split('\n'):
+                    for number in d.xpath('.//text()').get().split('\n'):
                         if number.strip():
                             all_procedures_number.append(number.strip())
 
                 elif procedure_type == 'link':
-                    procedure_links = y.findAll('a')
-                    if procedure_links is not None:
-                        name = procedure_links[0].getText().replace(
-                            '\n', '').strip()
-                        link = procedure_links[0]['href']
+                    procedure_link = d.xpath('.//a')
+                    if procedure_link:
+                        name = procedure_link.xpath('.//text()').get().replace('\n', '').strip()
+                        link = procedure_link.xpath('./@href').get()
                         all_procedures_links_name.append(name)
                         all_procedures_links_url.append(link)
                 else:
-                    value = y.getText().replace('\n', ' ').strip()
-                    newdict.update({'procedure_' + procedure_type: value})
+                    proc_misc_value = d.xpath('.//text()').get().replace('\n', ' ').strip()
+                    result_dict.update({'procedure_' + procedure_type: proc_misc_value})
 
-            newdict.update({"procedures_number": all_procedures_number})
-            newdict.update(
+            result_dict.update({"procedures_number": all_procedures_number})
+            result_dict.update(
                 {"procedures_links_name": all_procedures_links_name})
-            newdict.update({"procedures_links_url": all_procedures_links_url})
+            result_dict.update({"procedures_links_url": all_procedures_links_url})
 
-        relationships = soup.find('div', {'id': 'PPLinked_Contents'})
-        if relationships is not None:
-            date_types = relationships.findAll('dt', attrs={'class': None})
-            date_texts = relationships.findAll('dd', attrs={'class': None})
+    def parse_relationships(self, response, result_dict):
+        base_url = '{uri.scheme}://{uri.netloc}/'.format(uri=urlparse(response.url))
+        relationships = response.xpath('//div[@id="PPLinked_Contents"]')
+        if relationships:
+            rel_types = relationships.xpath('.//dt[not(@class)]')
+            rel_texts = relationships.xpath('.//dd[not(@class)]')
             all_relationships_legal_basis = []
             all_relationships_proposal = []
-            # FIXME
-            # newdict.update({'relationships_oj_link': redirect_link_value})
-            # UnboundLocalError: local variable 'redirect_link_value' referenced before assignment
             redirect_link_value = ''
-            for element in date_texts[1:]:
-                common_index = date_texts.index(element)
-                rel_category = date_types[common_index].getText().split(':')[
-                    0].replace('\n', '').lower()
+            # treaty is always the first
+            result_dict.update(
+                {'relationships_treaty': ''.join(rel_texts[0].xpath('.//text()').getall()).replace('\n', ' ').strip()})
+            # iterate over next relationships
+            for rel_text in rel_texts[1:]:
+                common_index = rel_texts.index(rel_text)
+                rel_category = rel_types[common_index].xpath('.//text()').get().split(':')[0].replace('\n', '').lower()
                 redirect_link_value = ''
-                redirect_links = element.findAll('a')
+                redirect_links = rel_text.xpath('.//a')
                 for redirect_link in redirect_links:
-                    redirect_link_text = redirect_link.getText()
-                    redirect_link_url = redirect_link['href'].replace(
-                        './../../../', base_url)
+                    redirect_link_text = redirect_link.xpath('.//text()').get()
+                    redirect_link_url = redirect_link.xpath('./@href').get().replace('./../../../', base_url)
                     if 'CELEX' in redirect_link_url:
                         redirect_link_value = redirect_link_text
                     else:
                         redirect_link_value = redirect_link_url
                     if rel_category == 'legal basis':
-                        all_relationships_legal_basis.append(
-                            redirect_link_value)
+                        all_relationships_legal_basis.append(redirect_link_value)
                     elif rel_category == 'proposal':
                         all_relationships_proposal.append(redirect_link_value)
-            # treaty is always the first
-            newdict.update(
-                {'relationships_treaty': date_texts[0].getText().replace('\n', '')})
             # oj link is always the last
-            newdict.update({'relationships_oj_link': redirect_link_value})
+            result_dict.update({'relationships_oj_link': redirect_link_value})
 
-            newdict.update(
-                {"relationships_legal_basis": all_relationships_legal_basis})
-            newdict.update(
-                {"relationships_proposal": all_relationships_proposal})
+            result_dict.update({"relationships_legal_basis": all_relationships_legal_basis})
+            result_dict.update({"relationships_proposal": all_relationships_proposal})
 
-            amendment_to = relationships.find('tbody')
+            amendment_to = relationships.xpath('.//tbody')
             all_amendments_relation = []
             all_amendments_act = []
             all_amendments_comment = []
             all_amendments_subdivision = []
             all_amendments_from = []
             all_amendments_to = []
-            if amendment_to is not None:
-                rows = amendment_to.findAll('tr')
-                if rows is not None:
+            if amendment_to:
+                rows = amendment_to.xpath('.//tr')
+                if rows:
                     n = 0
                     for tr in rows:
-                        td = tr.findAll('td')
-                        relation = td[0].getText().replace('\n', '')
-                        act = td[1].getText().replace('\n', '')
-                        comment = td[2].getText().replace('\n', '')
-                        subdivision_concerned = td[3].getText().replace(
-                            '\n', '')
-                        as_from = td[4].getText().replace('\n', '')
-                        to = td[5].getText().replace('\n', '')
+                        td = tr.xpath('.//td')
+                        relation = td[0].xpath('.//text()').get(default='').replace('\n', '')
+                        act = td[1].xpath('.//text()').get(default='').replace('\n', '')
+                        comment = td[2].xpath('.//text()').get(default='').replace('\n', '')
+                        subdivision_concerned = td[3].xpath('.//text()').get(default='').replace('\n', '')
+                        as_from = td[4].xpath('.//text()').get(default='').replace('\n', '')
+                        to = td[5].xpath('.//text()').get(default='').replace('\n', '')
                         n += 1
-                        all_amendments_relation.append(
-                            relation if relation else 'n/a')
+                        all_amendments_relation.append(relation if relation else 'n/a')
                         all_amendments_act.append(act if act else 'n/a')
-                        all_amendments_comment.append(
-                            comment if comment else 'n/a')
-                        all_amendments_subdivision.append(
-                            subdivision_concerned if subdivision_concerned else 'n/a')
-                        all_amendments_from.append(
-                            self.date_safe(as_from) if as_from else 'n/a')
-                        all_amendments_to.append(
-                            self.date_safe(to) if to else 'n/a')
-                    newdict.update(
-                        {'amendments_relation': all_amendments_relation})
-                    newdict.update({'amendments_act': all_amendments_act})
-                    newdict.update(
-                        {'amendments_comment': all_amendments_comment})
-                    newdict.update(
-                        {'amendments_subdivision': all_amendments_subdivision})
-                    newdict.update({'amendments_from': all_amendments_from})
-                    newdict.update({'amendments_to': all_amendments_to})
+                        all_amendments_comment.append(comment if comment else 'n/a')
+                        all_amendments_subdivision.append(subdivision_concerned if subdivision_concerned else 'n/a')
+                        all_amendments_from.append(self.date_safe(as_from) if as_from else 'n/a')
+                        all_amendments_to.append(self.date_safe(to) if to else 'n/a')
+                    result_dict.update({'amendments_relation': all_amendments_relation})
+                    result_dict.update({'amendments_act': all_amendments_act})
+                    result_dict.update({'amendments_comment': all_amendments_comment})
+                    result_dict.update({'amendments_subdivision': all_amendments_subdivision})
+                    result_dict.update({'amendments_from': all_amendments_from})
+                    result_dict.update({'amendments_to': all_amendments_to})
 
-        newdict.update({'url': response.url})
-        return newdict
-
-    def parse(self, response):
-        for h2 in response.css("div.EurlexContent div.SearchResult"):
-            meta = {
-                'doc_link': h2.css("::attr(name)").extract_first().replace('/AUTO/', '/EN/ALL/')
-            }
-            yield scrapy.Request(meta['doc_link'], callback=self.parse_single, meta=meta)
-
-        next_page_url = response.css(
-            "a[title='Next Page']::attr(href)").extract_first()
-        if next_page_url is not None:
-            yield scrapy.Request(response.urljoin(next_page_url))
-
-    def parse_single(self, response):
-        data = self.get_metadata(response)
-        return data
+    def parse_content(self, response, result_dict):
+        base_url = '{uri.scheme}://{uri.netloc}/'.format(uri=urlparse(response.url))
+        oj = response.xpath('//div[@id="PP2Contents"]')
+        # only store english pdf doc url(s)
+        if oj is not None:
+            pdf_docs = []
+            pdfs = oj.xpath('.//li')
+            for pdf in pdfs:
+                pdf = pdf.xpath('.//a/@href').get().replace('./../../../', base_url)
+                if 'EN/TXT/PDF/' in pdf:
+                    pdf_docs.append(pdf)
+            result_dict.update({"pdf_docs": pdf_docs})
