@@ -77,7 +77,8 @@ services:
       - solr:/var/solr
       - ./solr/documents:/opt/solr/server/solr/configsets/documents:ro
       - ./solr/files:/opt/solr/server/solr/configsets/files:ro
-    command: solr-precreate documents /opt/solr/server/solr/configsets/documents
+      # - ./solr/summaries:/opt/solr/server/solr/configsets/summaries:ro
+    command: solr-precreate summaries #/opt/solr/server/solr/configsets/summaries
 
   postgres:
     image: postgres:alpine
