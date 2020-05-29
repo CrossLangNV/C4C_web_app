@@ -191,7 +191,7 @@ class EurLexSpider(scrapy.Spider):
             misc_data = misc.xpath('.//dd')
             for (t, d) in zip(misc_types, misc_data):
                 misc_type = t.xpath('.//text()').get().split(':')[0].lower()
-                misc_value = d.xpath('.//text()').get().replace('\n', '').strip()
+                misc_value = ''.join(d.xpath('.//text()').getall()).replace('\n', ' ').strip()
                 # save 'form' value also as general document type value
                 if misc_type == 'form' and not result_dict.get('doc_summary'):
                     result_dict['type'] = misc_value
@@ -206,21 +206,21 @@ class EurLexSpider(scrapy.Spider):
             procedure_types = procedures.xpath('.//dt')
             procedure_data = procedures.xpath('.//dd')
             for (t, d) in zip(procedure_types, procedure_data):
-                procedure_type = t.xpath('.//text()').get().split(':')[0].lower().replace('\n', '')
+                procedure_type = ''.join(t.xpath('.//text()').getall()).replace('\n', ' ').strip().split(
+                    ':')[0].lower()
                 if procedure_type == 'procedure number':
-                    for number in d.xpath('.//text()').get().split('\n'):
-                        if number.strip():
-                            all_procedures_number.append(number.strip())
+                    for number in d.xpath('.//a/text()').getall():
+                        all_procedures_number.append(number)
 
                 elif procedure_type == 'link':
                     procedure_link = d.xpath('.//a')
                     if procedure_link:
-                        name = procedure_link.xpath('.//text()').get().replace('\n', '').strip()
+                        name = procedure_link.xpath('./b/text()').get().replace('\n', ' ').strip()
                         link = procedure_link.xpath('./@href').get()
                         all_procedures_links_name.append(name)
                         all_procedures_links_url.append(link)
                 else:
-                    proc_misc_value = d.xpath('.//text()').get().replace('\n', ' ').strip()
+                    proc_misc_value = ''.join(d.xpath('.//text()').getall()).replace('\n', ' ').strip()
                     result_dict.update({'procedure_' + procedure_type: proc_misc_value})
 
             result_dict.update({"procedures_number": all_procedures_number})
