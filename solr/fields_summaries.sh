@@ -1,7 +1,7 @@
 #!/bin/bash
 
 COLLECTION="summaries"
-SOLR_HOST="http://localhost:8983"
+SOLR_HOST="https://solr.dev.dgfisma.crosslang.com"
 
 JSON='{"add-field": [
 {"name":"title",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
@@ -32,5 +32,5 @@ JSON_DYNAMIC_FIELDS='{"add-dynamic-field": [
 ]
 }'
 
-curl -k -X POST -H 'Content-type:application/json' --data-binary "$JSON" $SOLR_HOST/solr/$COLLECTION/schema
-curl -k -X POST -H 'Content-type:application/json' --data-binary "$JSON_DYNAMIC_FIELDS" $SOLR_HOST/solr/$COLLECTION/schema
+curl -k -X POST --user crosslang:isthebest -H 'Content-type:application/json' --data-binary "$JSON" $SOLR_HOST/solr/$COLLECTION/schema
+curl -k -X POST --user crosslang:isthebest -H 'Content-type:application/json' --data-binary "$JSON_DYNAMIC_FIELDS" $SOLR_HOST/solr/$COLLECTION/schema
