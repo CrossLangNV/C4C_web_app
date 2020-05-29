@@ -131,13 +131,12 @@ class EurLexSpider(scrapy.Spider):
             date_texts = dates.xpath('.//dd')
             for (t, d) in zip(date_types, date_texts):
                 date_type = t.xpath('.//text()').get().split(':')[0].lower()
-                misc_value = d.xpath('.//text()').get().split(';')
-                if '/' in misc_value[0]:
-                    date_value = datetime.strptime(misc_value[0], self.date_format)
+                date_value_all = ''.join(d.xpath('.//text()').getall()).split(';')
+                if '/' in date_value_all[0]:
+                    date_value = datetime.strptime(date_value_all[0], self.date_format)
                 else:
                     date_value = datetime(MAXYEAR, 1, 1)
-                date_info = misc_value[1].replace(
-                    '\n', ' ').strip() if len(misc_value) > 1 else 'n/a'
+                date_info = date_value_all[1].replace('\n', ' ').strip() if len(date_value_all) > 1 else 'n/a'
                 # date of document is our main "date"
                 if date_type == 'date of document':
                     result_dict['date'] = date_value
@@ -158,19 +157,16 @@ class EurLexSpider(scrapy.Spider):
             all_classifications_type = []
             all_classifications_label = []
             all_classifications_code = []
-            for (x, y) in zip(classifications_types, classifications_data):
-                ref_codes = y.xpath('.//a')
+            for (t, d) in zip(classifications_types, classifications_data):
+                ref_codes = d.xpath('.//a')
                 for ref_code in ref_codes:
-                    all_classifications_type.append(
-                        x.xpath('.//text()').get().split(':')[0].lower())
-                    element_name = ref_code.xpath('.//text()').get().replace('\n', '')
-                    ref_code = str(ref_code.xpath('.//@href').get()).replace(
-                        './../../../', base_url)
+                    all_classifications_type.append(t.xpath('.//text()').get().split(':')[0].lower())
+                    element_name = ''.join(ref_code.xpath('.//text()').getall()).replace('\n', ' ').strip()
+                    ref_code = str(ref_code.xpath('.//@href').get()).replace('./../../../', base_url)
                     element_code = re.search('CODED=(.*)&', ref_code)
                     element_code = element_code.group(1)
                     all_classifications_label.append(element_name)
-                    all_classifications_code.append(
-                        element_code if element_code else 'n/a')
+                    all_classifications_code.append(element_code if element_code else 'n/a')
 
             result_dict.update(
                 {"classifications_label": all_classifications_label})
@@ -256,25 +252,25 @@ class EurLexSpider(scrapy.Spider):
             result_dict.update({"relationships_legal_basis": all_relationships_legal_basis})
             result_dict.update({"relationships_proposal": all_relationships_proposal})
 
-            amendment_to = relationships.xpath('.//tbody')
+            amendments = relationships.xpath('.//tbody')
             all_amendments_relation = []
             all_amendments_act = []
             all_amendments_comment = []
             all_amendments_subdivision = []
             all_amendments_from = []
             all_amendments_to = []
-            if amendment_to:
-                rows = amendment_to.xpath('.//tr')
+            if amendments:
+                rows = amendments.xpath('.//tr')
                 if rows:
                     n = 0
                     for tr in rows:
                         td = tr.xpath('.//td')
-                        relation = td[0].xpath('.//text()').get(default='').replace('\n', '')
-                        act = td[1].xpath('.//text()').get(default='').replace('\n', '')
-                        comment = td[2].xpath('.//text()').get(default='').replace('\n', '')
-                        subdivision_concerned = td[3].xpath('.//text()').get(default='').replace('\n', '')
-                        as_from = td[4].xpath('.//text()').get(default='').replace('\n', '')
-                        to = td[5].xpath('.//text()').get(default='').replace('\n', '')
+                        relation = td[0].xpath('.//text()').get(default='').replace('\n', ' ').strip()
+                        act = td[1].xpath('.//a//text()').get(default='').replace('\n', ' ').strip()
+                        comment = td[2].xpath('.//text()').get(default='').replace('\n', ' ').strip()
+                        subdivision_concerned = td[3].xpath('.//text()').get(default='').replace('\n', ' ').strip()
+                        as_from = td[4].xpath('.//text()').get(default='').replace('\n', ' ').strip()
+                        to = td[5].xpath('.//text()').get(default='').replace('\n', ' ').strip()
                         n += 1
                         all_amendments_relation.append(relation if relation else 'n/a')
                         all_amendments_act.append(act if act else 'n/a')
