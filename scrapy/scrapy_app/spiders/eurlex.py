@@ -48,10 +48,8 @@ class EurLexSpider(scrapy.Spider):
 
     def parse(self, response):
         for h2 in response.css("div.EurlexContent div.SearchResult"):
-            meta = {
-                'doc_link': h2.css("::attr(name)").extract_first().replace('/AUTO/', '/EN/ALL/')
-            }
-            yield scrapy.Request(meta['doc_link'], callback=self.parse_document, meta=meta)
+            doc_link = h2.css("::attr(name)").extract_first().replace('/AUTO/', '/EN/ALL/')
+            yield scrapy.Request(doc_link, callback=self.parse_document)
 
         next_page_url = response.css("a[title='Next Page']::attr(href)").extract_first()
         if next_page_url is not None:
@@ -104,22 +102,35 @@ class EurLexSpider(scrapy.Spider):
         yield result_dict
 
     def parse_document_summary(self, response):
+        base_url = '{uri.scheme}://{uri.netloc}/'.format(uri=urlparse(response.url))
+
+        # check if multiple summaries are listed, follow links if so
+        if response.xpath("//div[@id='documentView']//table//tr/th[text()='Summary reference']").get():
+            summary_links = response.xpath('//tbody//td//a/@href').getall()
+            # preserve celex of document
+            meta = {
+                'celex': response.url.split(':')[-1]
+            }
+            for link in summary_links:
+                link_abs = link.replace('./../../../', base_url)
+                yield scrapy.Request(link_abs, callback=self.parse_document_summary_single, meta=meta)
+        else:
+            self.parse_document_summary_single(response)
+
+    def parse_document_summary_single(self, response):
         result_dict = {}
         result_dict['doc_summary'] = True
-        # check if multiple summaries are listed
-        if response.xpath("//div[@id='documentView']//table//tr/th[text()='Summary reference']").get():
-            pass
-        else:
-            result_dict['url'] = response.url
-            celex = response.url.split(':')[-1]
-            result_dict['celex'] = celex
-            title = response.xpath('//div[@id="PP1Contents"]//p/text()').get()
-            result_dict['title'] = title
-            self.parse_classifications(response, result_dict)
-            self.parse_dates(response, result_dict)
-            self.parse_misc(response, result_dict)
-            result_dict['html_content'] = response.xpath('//div[@id="text"]').get()
-            return result_dict
+        result_dict['url'] = response.url
+        # use received celex if available
+        celex = response.meta.get('celex', response.url.split(':')[-1])
+        result_dict['celex'] = celex
+        title = response.xpath('//div[@id="PP1Contents"]//p/text()').get()
+        result_dict['title'] = title
+        self.parse_classifications(response, result_dict)
+        self.parse_dates(response, result_dict)
+        self.parse_misc(response, result_dict)
+        result_dict['html_content'] = response.xpath('//div[@id="text"]').get()
+        return result_dict
 
     def parse_dates(self, response, result_dict):
         dates = response.xpath('//div[@id="PPDates_Contents"]')
