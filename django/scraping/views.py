@@ -109,7 +109,7 @@ class ScrapingTaskListView(ListCreateAPIView):
                                                      spider_date_end=date_end)
                 ScrapingTaskItem.objects.create(scheduler_id=scheduler_id, task=scraping_task)
 
-            else:
+            elif scraping_task.spider == 'eurlex':
                 # launch spider per 10 years
                 year_stop = 1959
                 today = datetime.today()
@@ -121,7 +121,11 @@ class ScrapingTaskListView(ListCreateAPIView):
                                                          spider_date_start=start,
                                                          spider_date_end=end)
                     ScrapingTaskItem.objects.create(scheduler_id=scheduler_id, task=scraping_task)
-                return Response(serializer.data, status=201)
+            else:
+                scheduler_id = self.scrapyd.schedule(self.scrapyd_project, scraping_task.spider, settings=settings,
+                                                     spider_type=scraping_task.spider_type)
+                ScrapingTaskItem.objects.create(scheduler_id=scheduler_id, task=scraping_task)
+            return Response(serializer.data, status=201)
 
         return Response(serializer.errors, status=400)
 
