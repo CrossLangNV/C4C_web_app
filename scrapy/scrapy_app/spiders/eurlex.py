@@ -67,8 +67,11 @@ class EurLexSpider(scrapy.Spider):
         if body:
             title = body.xpath('.//p[@id="englishTitle"]')
             if title:
-                title = title.xpath('.//text()').get().replace('\n', ' ').strip()
-                result_dict['title'] = title
+                title_raw_text = title.xpath('.//text()').get()
+                # englishTitle element can still be empty
+                if title_raw_text:
+                    title = title_raw_text.replace('\n', ' ').strip()
+                    result_dict['title'] = title
 
             status = body.css('p.forceIndicator')
             if status:
