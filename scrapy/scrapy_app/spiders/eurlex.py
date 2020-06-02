@@ -19,7 +19,7 @@ class EurLexSpider(scrapy.Spider):
     name = 'eurlex'
     date_format = '%d/%m/%Y'
 
-    def __init__(self, spider_type=None, year=None, *args, **kwargs):
+    def __init__(self, spider_type=None, spider_date_start=None, spider_date_end=None, *args, **kwargs):
         super(EurLexSpider, self).__init__(*args, **kwargs)
         if not spider_type:
             logging.log(logging.WARNING,
@@ -31,12 +31,12 @@ class EurLexSpider(scrapy.Spider):
             spider_type = EurLexType[spider_type_arg]
             logging.log(logging.INFO, 'EurLex spider_type: ' + spider_type.name)
 
-        if not year:
-            logging.log(logging.WARNING, 'No year given, fetching all years')
+        if not spider_date_start or not spider_date_end:
+            logging.log(logging.WARNING, 'No date range given, fetching all')
             start_url = spider_type.value
         else:
-            logging.log(logging.INFO, 'Fetching year: ' + year)
-            start_url = spider_type.value + "&DD_YEAR=" + year
+            logging.log(logging.INFO, 'Fetching from: %s, to: %s', spider_date_start, spider_date_end)
+            start_url = spider_type.value + "&date0=DD:" + spider_date_start + '|' + spider_date_end
 
         self.start_urls = [start_url]
 
