@@ -67,6 +67,8 @@ JSON='{"add-field": [
 {"name":"relationships_proposal",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"relationships_treaty",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 
+{"name":"consolidated_versions",           "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+
 {"name":"spider",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"task",            "type":"plongs","stored":true,"indexed":true,"multiValued":true},
 ]
