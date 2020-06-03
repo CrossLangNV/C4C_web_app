@@ -18,6 +18,15 @@
   <p *ngIf="document.various" class="">
     <u>Various:</u> {{ document.various }}
   </p>
+  <div *ngIf="consolidatedVersions">
+    <hr class="my-4" />
+    <p><b>Consolidated versions:</b></p>
+    <div *ngFor="let consolidated of consolidatedVersions | keyvalue">
+      <button type="button" class="btn btn-primary my-1" (click)="openModal(editProfileModal, 'CELEX:' + consolidated.key)">
+        {{ consolidated.value | date }}
+      </button>
+    </div>
+  </div>
   <div *ngIf="document.summary">
     <hr class="my-4" />
     <samp class="text-justify">{{ document.summary }}</samp>
