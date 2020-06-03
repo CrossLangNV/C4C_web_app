@@ -23,6 +23,7 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 })
 export class DocumentValidateComponent implements OnInit {
   document: Document;
+  consolidatedVersions = new Map();
   stateValues: SelectItem[] = [];
   cities: SelectItem[];
   selectedCities: string[] = [];
@@ -69,6 +70,21 @@ export class DocumentValidateComponent implements OnInit {
       )
       .subscribe((document) => {
         this.document = document;
+        this.service
+          .getSolrDocument(this.document.id)
+          .subscribe((solrDocument) => {
+            solrDocument[0].consolidated_versions.forEach((consolidated) => {
+              let consolidatedDate = consolidated.split('-')[1];
+              consolidatedDate = new Date(
+                consolidatedDate.substring(0, 4) +
+                  '-' +
+                  consolidatedDate.substring(4, 6) +
+                  '-' +
+                  consolidatedDate.substring(6)
+              );
+              this.consolidatedVersions.set(consolidated, consolidatedDate);
+            });
+          });
         this.newComment.documentId = document.id;
         this.comments = [];
         if (document.commentIds) {
