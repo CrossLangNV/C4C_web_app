@@ -114,7 +114,7 @@ class ScrapingTaskListView(ListCreateAPIView):
                 year_stop = 1959
                 today = datetime.today()
                 for year in range(today.year, year_stop, -10):
-                    start = '0101' + str(year - 10)
+                    start = '0101' + str(year - 9)
                     end = '3112' + str(year)
                     scheduler_id = self.scrapyd.schedule(self.scrapyd_project, scraping_task.spider, settings=settings,
                                                          spider_type=scraping_task.spider_type,
