@@ -94,6 +94,7 @@ class EurLexSpider(scrapy.Spider):
         self.parse_misc(response, result_dict)
         self.parse_procedures(response, result_dict)
         self.parse_relationships(response, result_dict)
+        self.parse_consolidated_versions(response, result_dict)
         # self.parse_content(response, result_dict)
 
         result_dict.update({'url': response.url})
@@ -298,6 +299,18 @@ class EurLexSpider(scrapy.Spider):
                     result_dict.update({'amendments_subdivision': all_amendments_subdivision})
                     result_dict.update({'amendments_from': all_amendments_from})
                     result_dict.update({'amendments_to': all_amendments_to})
+
+    def parse_consolidated_versions(self, response, result_dict):
+        consolidated_links = response.xpath(
+            '//dt[contains(text(), "consolidated versions:")]/following-sibling::dd[1]//a')
+        if consolidated_links:
+            consolidated_celex_ids = []
+            for link_sel in consolidated_links:
+                link = link_sel.xpath('./@href').get()
+                celex = link.split(':')[-1]
+                consolidated_celex_ids.append(celex)
+            result_dict['consolidated_versions'] = consolidated_celex_ids
+
 
     def parse_content(self, response, result_dict):
         base_url = '{uri.scheme}://{uri.netloc}/'.format(uri=urlparse(response.url))
