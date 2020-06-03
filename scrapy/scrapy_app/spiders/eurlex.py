@@ -118,7 +118,7 @@ class EurLexSpider(scrapy.Spider):
                 link_abs = link.replace('./../../../', base_url)
                 yield scrapy.Request(link_abs, callback=self.parse_document_summary_single, meta=meta)
         else:
-            self.parse_document_summary_single(response)
+            yield self.parse_document_summary_single(response)
 
     def parse_document_summary_single(self, response):
         result_dict = {}
