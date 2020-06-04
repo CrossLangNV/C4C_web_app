@@ -18,7 +18,7 @@
   <p *ngIf="document.various" class="">
     <u>Various:</u> {{ document.various }}
   </p>
-  <div *ngIf="consolidatedVersions">
+  <div *ngIf="consolidatedVersions.size > 0">
     <hr class="my-4" />
     <p><b>Consolidated versions:</b></p>
     <div *ngFor="let consolidated of consolidatedVersions | keyvalue">
