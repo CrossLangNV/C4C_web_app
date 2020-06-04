@@ -311,16 +311,20 @@ class EurLexSpider(scrapy.Spider):
                 consolidated_celex_ids.append(celex)
             result_dict['consolidated_versions'] = consolidated_celex_ids
 
-
     def parse_content(self, response, result_dict):
-        base_url = '{uri.scheme}://{uri.netloc}/'.format(uri=urlparse(response.url))
-        oj = response.xpath('//div[@id="PP2Contents"]')
-        # only store english pdf doc url(s)
-        if oj is not None:
-            pdf_docs = []
-            pdfs = oj.xpath('.//li')
-            for pdf in pdfs:
-                pdf = pdf.xpath('.//a/@href').get().replace('./../../../', base_url)
-                if 'EN/TXT/PDF/' in pdf:
-                    pdf_docs.append(pdf)
-            result_dict.update({"pdf_docs": pdf_docs})
+        # get html content first, if available
+        content = response.xpath('//div[@id="text"]').get()
+        if content:
+            result_dict['content'] = content
+        else:
+            base_url = '{uri.scheme}://{uri.netloc}/'.format(uri=urlparse(response.url))
+            oj = response.xpath('//div[@id="PP2Contents"]')
+            # only store english pdf doc url(s)
+            if oj is not None:
+                pdf_docs = []
+                pdfs = oj.xpath('.//li')
+                for pdf in pdfs:
+                    pdf = pdf.xpath('.//a/@href').get().replace('./../../../', base_url)
+                    if 'EN/TXT/PDF/' in pdf:
+                        pdf_docs.append(pdf)
+                result_dict.update({"pdf_docs": pdf_docs})
