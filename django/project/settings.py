@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'glossary',
     'admin_rest',
     'django_celery_results',
+    'minio_storage',
 ]
 
 MIDDLEWARE = [
@@ -186,6 +187,20 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
+
+DEFAULT_FILE_STORAGE = "minio_storage.storage.MinioMediaStorage"
+STATICFILES_STORAGE = "minio_storage.storage.MinioStaticStorage"
+MINIO_STORAGE_ENDPOINT = 'minio:9000'
+MINIO_STORAGE_ACCESS_KEY = os.environ['MINIO_ACCESS_KEY']
+MINIO_STORAGE_SECRET_KEY = os.environ['MINIO_SECRET_KEY']
+MINIO_STORAGE_USE_HTTPS = False
+MINIO_STORAGE_MEDIA_BUCKET_NAME = 'local-media'
+MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
+MINIO_STORAGE_STATIC_BUCKET_NAME = 'local-static'
+MINIO_STORAGE_AUTO_CREATE_STATIC_BUCKET = True
+
+MINIO_STORAGE_MEDIA_URL = os.environ['MINIO_STORAGE_MEDIA_URL']
+MINIO_STORAGE_STATIC_URL = os.environ['MINIO_STORAGE_STATIC_URL']
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
