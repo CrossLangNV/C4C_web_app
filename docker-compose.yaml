@@ -102,6 +102,11 @@ services:
     env_file:
       - ./secrets/django-docker.env
 
+  tika:
+    image: apache/tika
+    ports:
+      - "9998:9998"
+
 volumes:
   solr:
   postgres:

@@ -1,14 +1,11 @@
-import requests
+import json
 import logging
 import os
-import json
 from datetime import datetime
 from urllib.request import urlopen, Request
 
+import requests
 from django.core.files.base import ContentFile
-from django.db import transaction
-
-from django.core.serializers.json import DjangoJSONEncoder
 
 from searchapp.models import Document, Attachment, Website, AcceptanceState, AcceptanceStateValue
 
@@ -98,9 +95,9 @@ def sync_attachments(document, solr_files, django_attachments):
                 id=solr_file['id'],
                 url=solr_file['attr_url'][0],
                 document=document,
-                pull=True
+                extracted=True
             )
-           # save_file_from_url(new_django_attachment, solr_file)
+        # save_file_from_url(new_django_attachment, solr_file)
         elif str(django_attachment_id) == solr_file['id']:
             update_attachment(Attachment.objects.get(
                 pk=django_attachment_id), solr_file)
@@ -147,7 +144,7 @@ def update_attachment(django_attachment, solr_file):
     django_attachment.url = solr_file['attr_url'][0]
     django_attachment.document = Document.objects.get(
         pk=solr_file['attr_document_id'][0])
-    django_attachment.pull = False
+    django_attachment.extracted = False
     django_attachment.save()
 
 

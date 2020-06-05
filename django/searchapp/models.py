@@ -1,10 +1,11 @@
+import binascii
 import uuid
 
 from django.db import models
 from django.utils import timezone
 
-
-from searchapp.solr_call import solr_add, solr_delete, solr_add_file
+from scheduler.pdf_handling import pdf_extract
+from searchapp.solr_call import solr_add, solr_delete
 
 
 class Website(models.Model):
@@ -39,6 +40,10 @@ class Document(models.Model):
     content = models.TextField(default="", blank=True)
     various = models.TextField(default="", blank=True)
 
+    file = models.FileField(null=True, blank=True)
+    file_url = models.URLField(max_length=1000, unique=True, null=True, blank=True)
+    extract_text = models.BooleanField(default=False)
+
     pull = models.BooleanField(default=False, editable=False)
 
     created_at = models.DateTimeField(default=timezone.now)
@@ -59,6 +64,14 @@ class Document(models.Model):
                 elif field != '_state':
                     solr_doc[field] = value
             solr_add(core="documents", docs=[solr_doc])
+
+        # extract text from file if indicated
+        if self.extract_text and self.file.name:
+            pdf_extract.delay(
+                binascii.b2a_base64(self.file.read(), newline=False).decode('utf-8'),
+                str(self.id)
+            )
+
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -106,26 +119,13 @@ class Attachment(models.Model):
     document = models.ForeignKey(
         'Document', related_name='attachments', on_delete=models.CASCADE)
     content = models.TextField(default="")
-    pull = models.BooleanField(default=False, editable=False)
+    extracted = models.BooleanField(default=False, editable=False)
 
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.url
-
-    def save(self, *args, **kwargs):
-        # add and index data to Solr when it wasn't pulled from Solr first
-        if not self.pull and self.file.name:
-            solr_add_file('files', self.file, self.id,
-                          self.url, str(self.document.id))
-
-        super().save(*args, **kwargs)
-
-    def delete(self, *args, **kwargs):
-        # delete from Solr
-        solr_delete(core='files', id=str(self.id))
-        super().delete(*args, **kwargs)
 
 
 class Comment(models.Model):
