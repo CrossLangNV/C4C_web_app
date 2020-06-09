@@ -78,11 +78,6 @@ def get_results_highlighted(response):
     return results
 
 
-def solr_add(core="", docs=[]):
-    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    client.add(docs, commit=True)
-
-
 def solr_update(core, document):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     document_existing_result = client.search('id:' + str(document['id']))
