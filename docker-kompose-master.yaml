@@ -123,6 +123,7 @@ services:
     labels:
       kompose.service.expose: "minio.dgfisma.crosslang.com"
       kompose.service.expose.tls-secret: "minio-certificate"
+      kompose.volume.size: 40Gi
 
   tika:
     image: apache/tika
