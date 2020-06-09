@@ -83,6 +83,21 @@ def solr_add(core="", docs=[]):
     client.add(docs, commit=True)
 
 
+def solr_update(core, document):
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    document_existing_result = client.search('id:' + str(document['id']))
+    if len(document_existing_result.docs) == 1:
+        document_existing = document_existing_result.docs[0]
+        for key, value in document.items():
+            if key == 'file':
+                document_existing[key] = value.name
+            elif key != 'id':
+                document_existing[key] = value
+        client.add([document_existing], commit=True)
+    else:
+        client.add([document], commit=True)
+
+
 def solr_add_file(core, file, file_id, file_url, document_id):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     extra_params = {

@@ -17,6 +17,7 @@ JSON='{"add-field": [
 {"name":"summary",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"various",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"content",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"content_html",     "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"pull",             "type":"boolean","stored":true,"indexed":true,"multiValued":true},
 {"name":"pdf_docs",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"pages",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
@@ -24,6 +25,9 @@ JSON='{"add-field": [
 {"name":"section",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"tags",             "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"keywords",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+
+{"name":"file",             "type":"text_general","stored":true,"indexed":true},
+{"name":"file_url",         "type":"text_general","stored":true,"indexed":true},
 
 {"name":"acceptance_state",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"accepted_probability",     "type":"pdoubles","stored":true,"indexed":true,"multiValued":true},

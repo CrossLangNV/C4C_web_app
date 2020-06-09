@@ -5,7 +5,7 @@ from django.db import models
 from django.utils import timezone
 
 from scheduler.pdf_handling import pdf_extract
-from searchapp.solr_call import solr_add, solr_delete
+from searchapp.solr_call import solr_delete, solr_update
 
 
 class Website(models.Model):
@@ -38,6 +38,7 @@ class Document(models.Model):
 
     summary = models.TextField(default="", blank=True)
     content = models.TextField(default="", blank=True)
+    content_html = models.TextField(default="", blank=True)
     various = models.TextField(default="", blank=True)
 
     file = models.FileField(null=True, blank=True)
@@ -61,9 +62,9 @@ class Document(models.Model):
             for field, value in self.__dict__.items():
                 if field == 'website_id':
                     solr_doc['website'] = self.website.name
-                elif field != '_state':
+                elif not field.startswith('_') and field != 'extract_text':
                     solr_doc[field] = value
-            solr_add(core="documents", docs=[solr_doc])
+            solr_update("documents", solr_doc)
 
         # extract text from file if indicated
         if self.extract_text and self.file.name:
