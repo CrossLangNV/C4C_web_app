@@ -1,5 +1,4 @@
 import os
-import sys
 
 # Scrapy settings for scrapy_app project
 #
@@ -76,7 +75,9 @@ ITEM_PIPELINES = {
     'scrapy_app.pipelines.ScrapyAppPipeline': 300,
 }
 
-FILES_STORE = 'files'
+FILES_STORE = os.environ['SCRAPY_FILES_FOLDER'] + 'files/'
+# Since files are uploaded to minio, clear the local files folder after 1 day
+FILES_EXPIRES = 1
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
