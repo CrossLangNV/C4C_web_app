@@ -4,11 +4,13 @@ import logging
 import os
 import shutil
 
+import requests
 from celery import shared_task
 from jsonlines import jsonlines
 from minio import Minio, ResponseError
 from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
 from scrapyd_api import ScrapydAPI
+from tika import parser
 
 from searchapp.datahandling import score_documents, sync_documents, sync_attachments
 from searchapp.models import Website, Document, Attachment
@@ -131,3 +133,53 @@ def scrape_website_task(website_id):
             # schedule scraping task
             scrapyd_task_id = scrapyd.schedule(
                 'default', spider['id'], settings=settings, spider_type=spider['type'])
+
+
+@shared_task
+def add_content_eurlex():
+    cellar_api_endpoint = 'http://publications.europa.eu/resource/celex/'
+    pdf_endpoint = 'https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:'
+
+    logger.info('Adding content to each eurlex document.')
+    website_eurlex = Website.objects.get(name='EurLex')
+    documents = Document.objects.filter(website=website_eurlex)
+
+    global headers
+    global response
+    global content_html
+
+    for document in documents:
+        logger.info('Requesting xhtml content for celex id: %s', document.celex)
+        headers = {'Accept': 'application/xhtml+xml', 'Accept-Language': 'eng'}
+        response = requests.get(cellar_api_endpoint + document.celex, headers=headers)
+        content_html = response.text
+        if response.status_code != 200:
+            logger.info('FALLBACK: Requesting html content for celex id: %s', document.celex)
+            headers = {'Accept': 'text/html', 'Accept-Language': 'eng'}
+            response = requests.get(cellar_api_endpoint + document.celex, headers=headers)
+            content_html = response.text
+            if response.status_code != 200:
+                logger.info('FALLBACK: Requesting pdf content for celex id: %s', document.celex)
+                response = requests.get(pdf_endpoint + document.celex)
+                if response.status_code == 200:
+                    logger.info('PARSE PDF WITH TIKA...')
+                    pdf_text = parser.from_buffer(response.content, xmlContent=True)
+                    if pdf_text['content'] is None:
+                        logger.error('Unable to parse pdf.')
+                        content_html = None
+                    else:
+                        content_html = pdf_text['content']
+                else:
+                    content_html = None
+
+            if content_html:
+                content = parser.from_buffer(content_html)['content']
+                # add to document model and save
+                logger.info('CONTENT_HTML:')
+                logger.info(content_html)
+                logger.info('CONTENT:')
+                logger.info(content)
+                document.content_html = content_html
+                document.content = content
+                document.pull = False
+                document.save()
