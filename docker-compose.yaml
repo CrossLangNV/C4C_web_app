@@ -38,7 +38,6 @@ services:
     depends_on: 
       - django
       - rabbitmq
-      - minio
 
   flower:
     build: ./django
@@ -101,6 +100,8 @@ services:
       - "19000:9000"
     env_file:
       - ./secrets/django-docker.env
+    volumes: 
+      - minio:/data
 
   tika:
     image: apache/tika
@@ -110,3 +111,4 @@ services:
 volumes:
   solr:
   postgres:
+  minio:

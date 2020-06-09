@@ -115,6 +115,8 @@ services:
     image: minio/minio
     ports: 
       - "9000:9000"
+    volumes: 
+      - minio:/data
     command: server /data
     env_file:
       - secrets/django-docker.env.sample
@@ -122,7 +124,13 @@ services:
       kompose.service.expose: "minio.dev.dgfisma.crosslang.com"
       kompose.service.expose.tls-secret: "minio-certificate"
 
+  tika:
+    image: apache/tika
+    ports:
+      - "9998:9998"
+
 volumes:
   solr:
   postgres:
   scrapy:
+  minio:

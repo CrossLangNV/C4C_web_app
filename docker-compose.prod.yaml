@@ -15,20 +15,16 @@ services:
       - ./secrets/django-docker.env.prod
     volumes:
       - ./django:/django
-      - static_volume:/django/static
-      - media_volume:/django/media
     command: ./start.sh
     depends_on:
       - postgres
       - solr
       - scrapyd
+      - minio
 
   django_nginx:
     restart: always
     build: ./django/nginx
-    volumes:
-      - static_volume:/django/static
-      - media_volume:/django/media
     depends_on:
       - django
     ports:
@@ -100,8 +96,22 @@ services:
     ports:
       - "5000:5000"
 
+  minio:
+    image: minio/minio
+    command: server /data
+    ports: 
+      - "19000:9000"
+    env_file:
+      - ./secrets/django-docker.env
+    volumes:
+      - minio:/data
+
+  tika:
+    image: apache/tika
+    ports:
+      - "9998:9998"
+
 volumes:
   solr:
   postgres:
-  static_volume:
-  media_volume:
+  minio:
