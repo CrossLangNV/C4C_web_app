@@ -141,7 +141,7 @@ def add_content_eurlex():
     pdf_endpoint = 'https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:'
 
     logger.info('Adding content to each eurlex document.')
-    website_eurlex = Website.objects.get(name='EurLex')
+    website_eurlex = Website.objects.get(name__iexact='eurlex')
     documents = Document.objects.filter(website=website_eurlex)
 
     global headers
