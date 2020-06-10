@@ -180,6 +180,7 @@ def add_content_eurlex():
                 logger.info('CONTENT:')
                 logger.info(content)
                 document.content_html = content_html
-                document.content = content
+                if content:
+                    document.content = content
                 document.pull = False
                 document.save()
