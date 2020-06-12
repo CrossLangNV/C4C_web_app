@@ -6,6 +6,7 @@ import shutil
 
 import requests
 from celery import shared_task
+from django.db.models.functions import Length
 from jsonlines import jsonlines
 from minio import Minio, ResponseError
 from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
@@ -135,14 +136,16 @@ def scrape_website_task(website_id):
                 'default', spider['id'], settings=settings, spider_type=spider['type'])
 
 
-@shared_task
+@shared_task(default_retry_delay=1 * 60, max_retries=10)
 def add_content_eurlex():
     cellar_api_endpoint = 'http://publications.europa.eu/resource/celex/'
     pdf_endpoint = 'https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:'
 
     logger.info('Adding content to each eurlex document.')
     website_eurlex = Website.objects.get(name__iexact='eurlex')
-    documents = Document.objects.filter(website=website_eurlex)
+    # filter on content_html length < 1
+    documents = Document.objects.annotate(text_len=Length('content_html')) \
+        .filter(website=website_eurlex, text_len__lt=1)
 
     global headers
     global response
@@ -172,15 +175,14 @@ def add_content_eurlex():
                 else:
                     content_html = None
 
-            if content_html:
-                content = parser.from_buffer(content_html)['content']
-                # add to document model and save
-                logger.info('CONTENT_HTML:')
-                logger.info(content_html)
-                logger.info('CONTENT:')
-                logger.info(content)
-                document.content_html = content_html
-                if content:
-                    document.content = content
-                document.pull = False
-                document.save()
+        if content_html:
+            content = parser.from_buffer(content_html)['content']
+            # add to document model and save
+            logger.info('Got content_html for: %s', document.celex)
+            document.content_html = content_html
+            if content:
+                logger.info('Parsed content from content_html for: %s', document.celex)
+                document.content = content
+            document.pull = False
+            document.save()
+            logger.info('Saved content for: %s', document.celex)
