@@ -2,6 +2,7 @@ amqp==2.5.2
 asgiref==3.2.7
 billiard==3.6.3.0
 celery==4.4.2
+celery-slack==0.4.1
 certifi==2020.4.5.1
 cffi==1.14.0
 chardet==3.0.4
@@ -22,6 +23,7 @@ django-oauth-toolkit==1.3.2
 django-rest-framework-social-oauth2==1.1.0
 djangorestframework==3.11.0
 drf-yasg==1.17.1
+ephem==3.7.7.1
 flower==0.9.4
 gunicorn==20.0.4
 humanize==0.5.1
