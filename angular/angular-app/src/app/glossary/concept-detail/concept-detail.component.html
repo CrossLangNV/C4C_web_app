@@ -31,9 +31,7 @@
           <td>
             {{ doc.date | date }}
           </td>
-          <td>
-
-          </td>
+          <td [innerHTML]="doc.content"></td>
         </tr>
       </tbody>
     </table>

@@ -42,12 +42,15 @@ export class ConceptDetailComponent implements OnInit {
 
   loadDocuments(documentIds: string[]) {
     this.documents = [];
-    documentIds.forEach((id) => {
-      this.apiService.getDocument(id).subscribe((document) => {
+    this.apiService
+    .searchSolrDocuments(this.page, this.pageSize, this.concept.name, documentIds)
+    .subscribe((data) => {
+      const solrDocuments = data[1];
+      solrDocuments.forEach((solrDoc) => {
         this.apiService
-          .getState(document.acceptanceState)
-          .subscribe((state) => {
-            document.acceptanceState = state.value;
+          .getDocument(solrDoc.id)
+          .subscribe((document) => {
+            document.content = solrDoc.content;
             this.documents.push(document);
           });
       });
