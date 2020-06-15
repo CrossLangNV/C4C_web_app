@@ -230,8 +230,8 @@ class DocumentListAPIView(ListCreateAPIView):
             q = q.filter(title__icontains=keyword)
         showonlyown = self.request.GET.get('showOnlyOwn', "")
         if showonlyown == "true":
-            username = self.request.GET.get('userName', "")
-            q = q.filter(Q(acceptance_states__user__username=username) & (Q(acceptance_states__value="Accepted") |
+            email = self.request.GET.get('email', "")
+            q = q.filter(Q(acceptance_states__user__email=email) & (Q(acceptance_states__value="Accepted") |
                                                                           Q(acceptance_states__value="Rejected")))
         filtertype = self.request.GET.get('filterType', "")
         if filtertype == "unvalidated":

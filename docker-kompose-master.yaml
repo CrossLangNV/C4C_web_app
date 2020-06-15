@@ -85,6 +85,8 @@ services:
     volumes:
       - solr:/var/solr
     command: solr-precreate documents /opt/solr/server/solr/configsets/documents
+    environment:
+      - SOLR_HEAP=1024m
     labels:
       kompose.volume.size: 10Gi
       kompose.image-pull-secret: "crosslang"
@@ -101,7 +103,7 @@ services:
     env_file:
       - secrets/django-docker.env.sample
     labels:
-      kompose.volume.size: 1Gi
+      kompose.volume.size: 10Gi
 
   docclass:
     image: docker.crosslang.com/ctlg-manager/docclass:latest
