@@ -85,6 +85,8 @@ services:
     volumes:
       - solr:/var/solr
     command: solr-precreate documents /opt/solr/server/solr/configsets/documents
+    environment:
+      - SOLR_HEAP=1024m
     labels:
       kompose.volume.size: 10Gi
       kompose.image-pull-secret: "crosslang"
