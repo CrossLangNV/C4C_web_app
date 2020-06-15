@@ -158,8 +158,6 @@ export class ConceptListComponent implements OnInit {
   }
 
   onAddTag(event, tags, conceptId) {
-    console.log('OKKK');
-    console.log(tags);
     const newTag = new ConceptTag('', event.value, conceptId);
     this.service.addConceptTag(newTag).subscribe((addedTag) => {
       // primeng automatically adds the string value first, delete this as workaround
