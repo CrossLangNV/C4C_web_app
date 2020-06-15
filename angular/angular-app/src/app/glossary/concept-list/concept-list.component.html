@@ -68,9 +68,7 @@
             <a
               (click)="setIndex(concept.id)"
               [class.font-weight-bold]="selectedIndex === concept.id"
-              [routerLink]="[
-                { outlets: { secondary: ['concept', concept.id] } }
-              ]"
+              [routerLink]="['/glossary/concepts', concept.id]"
               >{{ concept.name || "(no label)" }}</a
             >&nbsp;
             <span
@@ -84,7 +82,7 @@
               [(ngModel)]="concept.tags"
               allowDuplicate="false"
               field="value"
-              (onAdd)="onAddTag($event, concepts.tags, concept.id)"
+              (onAdd)="onAddTag($event, concept.tags, concept.id)"
               (onRemove)="onRemoveTag($event)"
               (onChipClick)="onClickTag($event)"
             ></p-chips>
