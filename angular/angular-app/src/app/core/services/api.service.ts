@@ -18,7 +18,15 @@ import {
 } from 'src/app/shared/models/acceptanceState';
 import { Comment, CommentAdapter } from 'src/app/shared/models/comment';
 import { Tag, TagAdapter } from 'src/app/shared/models/tag';
-import { Concept, ConceptAdapter } from 'src/app/shared/models/concept';
+import {
+  Concept,
+  ConceptAdapter,
+  ConceptResults,
+} from 'src/app/shared/models/concept';
+import {
+  ConceptTag,
+  ConceptTagAdapter,
+} from 'src/app/shared/models/ConceptTag';
 
 @Injectable({
   providedIn: 'root',
@@ -38,6 +46,7 @@ export class ApiService {
     private stateAdapter: AcceptanceStateAdapter,
     private commentAdapter: CommentAdapter,
     private tagAdapter: TagAdapter,
+    private conceptTagAdapter: ConceptTagAdapter,
     private conceptAdapter: ConceptAdapter
   ) {
     this.messageSource = new Subject<string>();
@@ -152,7 +161,7 @@ export class ApiService {
       pageQuery = pageQuery + '&tag=' + filterTag;
     }
     if (sortBy) {
-      pageQuery = pageQuery += '&ordering=' + sortBy;
+      pageQuery = pageQuery + '&ordering=' + sortBy;
     }
     return this.http.get<DocumentResults>(
       `${this.API_URL}/documents${pageQuery}`
@@ -293,19 +302,62 @@ export class ApiService {
   // GLOSSARY //
   //
 
-  public getConcepts(): Observable<Concept[]> {
-    return this.http
-      .get<Concept[]>(`${this.API_GLOSSARY_URL}/concepts`)
-      .pipe(
-        map((data: any[]) =>
-          data.map((item) => this.conceptAdapter.adapt(item))
-        )
-      );
+  public getConcepts(
+    page: number,
+    searchTerm: string,
+    filterTag: string,
+    sortBy: string
+  ): Observable<ConceptResults> {
+    var pageQuery = page ? '?page=' + page : '';
+    if (searchTerm) {
+      pageQuery = pageQuery + '&keyword=' + searchTerm;
+    }
+    if (filterTag) {
+      pageQuery = pageQuery + '&tag=' + filterTag;
+    }
+    if (sortBy) {
+      pageQuery = pageQuery + '&ordering=' + sortBy;
+    }
+    return this.http.get<ConceptResults>(
+      `${this.API_GLOSSARY_URL}/concepts${pageQuery}`
+    );
   }
 
   public getConcept(id: string): Observable<Concept> {
     return this.http
       .get<Concept>(`${this.API_GLOSSARY_URL}/concept/${id}`)
       .pipe(map((item) => this.conceptAdapter.adapt(item)));
+  }
+
+  public getConceptComment(id: string): Observable<Comment> {
+    return this.http
+      .get<Comment>(`${this.API_GLOSSARY_URL}/comment/${id}`)
+      .pipe(map((item) => this.commentAdapter.adapt(item)));
+  }
+
+  public addConceptComment(comment: Comment): Observable<Comment> {
+    return this.http
+      .post<Comment>(
+        `${this.API_GLOSSARY_URL}/comments`,
+        this.commentAdapter.encode(comment)
+      )
+      .pipe(map((item) => this.commentAdapter.adapt(item)));
+  }
+
+  public deleteConceptComment(id: string): Observable<any> {
+    return this.http.delete(`${this.API_GLOSSARY_URL}/comment/${id}`);
+  }
+
+  public addConceptTag(tag: ConceptTag): Observable<ConceptTag> {
+    return this.http
+      .post<ConceptTag>(
+        `${this.API_GLOSSARY_URL}/tags`,
+        this.conceptTagAdapter.encode(tag)
+      )
+      .pipe(map((item) => this.conceptTagAdapter.adapt(item)));
+  }
+
+  public deleteConceptTag(id: string): Observable<any> {
+    return this.http.delete(`${this.API_GLOSSARY_URL}/tag/${id}`);
   }
 }

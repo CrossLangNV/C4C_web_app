@@ -37,4 +37,26 @@ urlpatterns = [
     path('api/concepts', views.ConceptListAPIView.as_view(), name='concept_api_list'),
     path('api/concept/<int:pk>', views.ConceptDetailAPIView.as_view(), name='concept_api_detail'),
     path('api/concept/<concept>', views.ConceptDocumentsAPIView.as_view(), name='concept_api_search'),
+
+    # State
+    path('api/states', views.AcceptanceStateListAPIView.as_view(),
+         name='state_list_api'),
+    path('api/state/<int:pk>',
+         views.AcceptanceStateDetailAPIView.as_view(), name='state_detail_api'),
+    path('api/state/value', views.AcceptanceStateValueAPIView.as_view(),
+         name='state_value_api'),
+
+    # Comment
+    path('api/comments', views.CommentListAPIView.as_view(),
+         name='comment_list_api'),
+    path('api/comment/<int:pk>', views.CommentDetailAPIView.as_view(),
+         name='comment_detail_api'),
+
+    # Tag
+    path('api/tags', views.TagListAPIView.as_view(),
+         name='tag_list_api'),
+    path('api/tag/<int:pk>', views.TagDetailAPIView.as_view(),
+         name='tag_detail_api'),
+
 ]
+
