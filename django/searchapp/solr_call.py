@@ -15,18 +15,23 @@ def solr_search(core="", term=""):
     return search
 
 
-def solr_search_paginated(core="", term="", page_number=1, rows_per_page=10):
+def solr_search_paginated(core="", term="", page_number=1, rows_per_page=10, ids_to_filter_on=None):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     # solr page starts at 0
     page_number = int(page_number) - 1
     start = page_number * int(rows_per_page)
-    result = client.search(term,
-                           **{'rows': rows_per_page,
-                              'start': start,
-                              'hl': 'on', 'hl.fl': '*',
-                              'hl.snippets': 100, 'hl.maxAnalyzedChars': 1000000,
-                              'hl.simple.pre': '<span class="highlight">',
-                              'hl.simple.post': '</span>'})
+    if core == 'documents':
+        term = 'content:' + term
+    options = {'rows': rows_per_page,
+               'start': start,
+               'hl': 'on', 'hl.fl': '*',
+               'hl.snippets': 3, 'hl.maxAnalyzedChars': 1000000,
+               'hl.simple.pre': '<span class="highlight">',
+               'hl.simple.post': '</span>'}
+    if ids_to_filter_on:
+        fq_ids = 'id:(' + ' OR '.join(ids_to_filter_on) + ')'
+        options['fq'] = fq_ids
+    result = client.search(term, **options)
     search = get_results_highlighted(result)
     num_found = result.raw_response['response']['numFound']
     return num_found, search
