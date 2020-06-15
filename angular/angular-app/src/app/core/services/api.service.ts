@@ -126,7 +126,7 @@ export class ApiService {
     page: number,
     searchTerm: string,
     filterType: string,
-    userName: string,
+    email: string,
     website: string,
     showOnlyOwn: boolean,
     filterTag: string,
@@ -139,8 +139,8 @@ export class ApiService {
     if (filterType) {
       pageQuery = pageQuery + '&filterType=' + filterType;
     }
-    if (userName) {
-      pageQuery = pageQuery + '&userName=' + userName;
+    if (email) {
+      pageQuery = pageQuery + '&email=' + email;
     }
     if (website && website != 'none') {
       pageQuery = pageQuery + '&website=' + website;

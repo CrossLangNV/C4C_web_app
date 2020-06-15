@@ -84,6 +84,8 @@ services:
       - "8983:8983"
     volumes:
       - solr:/var/solr
+    environment:
+      - SOLR_HEAP=1024m
     command: solr-precreate summaries
     labels:
       kompose.volume.size: 10Gi
@@ -101,7 +103,7 @@ services:
     env_file:
       - secrets/django-docker.env.sample
     labels:
-      kompose.volume.size: 1Gi
+      kompose.volume.size: 10Gi
 
   docclass:
     image: docker.crosslang.com/ctlg-manager/docclass:latest
