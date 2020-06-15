@@ -1,17 +1,26 @@
 from rest_framework import permissions
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
 
-from glossary.models import Concept
-from glossary.serializers import ConceptSerializer
+from glossary.models import AcceptanceState, AcceptanceStateValue, Comment, Concept, Tag
+from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer
 from searchapp.models import Document
-from searchapp.serializers import DocumentSerializer
+from searchapp.serializers import CommentSerializer, DocumentSerializer
 from searchapp.solr_call import solr_search_paginated
+from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
+
+
+class SmallResultsSetPagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 
 class ConceptListAPIView(ListCreateAPIView):
     # permission_classes = [permissions.IsAuthenticated]
+    pagination_class = SmallResultsSetPagination
     queryset = Concept.objects.all()
     serializer_class = ConceptSerializer
 
@@ -35,7 +44,74 @@ class ConceptDocumentsAPIView(APIView):
             doc = Document.objects.get(id=doc_id)
             if doc:
                 documents.append(doc)
-        document_serializer = DocumentSerializer(instance=documents, many=True, context={'request': request})
+        document_serializer = DocumentSerializer(
+            instance=documents, many=True, context={'request': request})
 
         files_result.append(document_serializer.data)
         return Response(files_result)
+
+
+class TagListAPIView(ListCreateAPIView):
+    # permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
+
+
+class TagDetailAPIView(RetrieveUpdateDestroyAPIView):
+    # permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
+
+
+class AcceptanceStateValueAPIView(APIView):
+
+    def get(self, request, format=None):
+        return Response([state.value for state in AcceptanceStateValue])
+
+
+class AcceptanceStateListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AcceptanceStateSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = AcceptanceState.objects.filter(user=request.user)
+        serializer = AcceptanceStateSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
+        return self.create(request, *args, **kwargs)
+
+
+class AcceptanceStateDetailAPIView(RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsOwner]
+    serializer_class = AcceptanceStateSerializer
+    queryset = AcceptanceState.objects.all()
+
+    def put(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
+        return self.update(request, *args, **kwargs)
+
+
+class CommentListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CommentSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = Comment.objects.filter(user=request.user)
+        serializer = CommentSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
+        return self.create(request, *args, **kwargs)
+
+
+class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrSuperUser]
+    serializer_class = CommentSerializer
+    queryset = Comment.objects.all()
+
+    def put(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
+        return self.update(request, *args, **kwargs)
