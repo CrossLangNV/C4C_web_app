@@ -9,6 +9,7 @@ from django.db.models import Q
 from django.http import FileResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
+from django.views.decorators.cache import cache_page
 from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
 from minio import Minio
 from rest_framework import permissions, filters, status
@@ -27,8 +28,6 @@ from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerial
     CommentSerializer, TagSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_document_id_sorted, \
     solr_search_paginated
-
-from django.views.decorators.cache import cache_page
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -232,7 +231,7 @@ class DocumentListAPIView(ListCreateAPIView):
         if showonlyown == "true":
             email = self.request.GET.get('email', "")
             q = q.filter(Q(acceptance_states__user__email=email) & (Q(acceptance_states__value="Accepted") |
-                                                                          Q(acceptance_states__value="Rejected")))
+                                                                    Q(acceptance_states__value="Rejected")))
         filtertype = self.request.GET.get('filterType', "")
         if filtertype == "unvalidated":
             q = q.exclude(Q(acceptance_states__value="Rejected")
@@ -395,6 +394,16 @@ class SolrDocument(APIView):
     def get(self, request, id, format=None):
         solr_document = solr_search_id(core='documents', id=id)
         return Response(solr_document)
+
+
+class SolrDocumentSearch(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, search_term, format=None):
+        result = solr_search_paginated(core="documents", term=search_term, page_number=request.GET.get('pageNumber', 1),
+                                       rows_per_page=request.GET.get('pageSize', 1),
+                                       ids_to_filter_on=request.GET.getlist('id'))
+        return Response(result)
 
 
 class ExportDocumentsLaunch(APIView):
