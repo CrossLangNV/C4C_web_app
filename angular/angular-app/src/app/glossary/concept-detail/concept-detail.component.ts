@@ -28,7 +28,6 @@ export class ConceptDetailComponent implements OnInit {
       )
       .subscribe((concept) => {
         this.concept = concept;
-        this.totalDocuments = concept.documentIds.length;
         this.loadDocuments(this.paginateDocuments(this.page, this.pageSize));
       });
   }
@@ -45,6 +44,7 @@ export class ConceptDetailComponent implements OnInit {
     this.apiService
     .searchSolrDocuments(this.page, this.pageSize, this.concept.name, documentIds)
     .subscribe((data) => {
+      this.totalDocuments = data[0];
       const solrDocuments = data[1];
       solrDocuments.forEach((solrDoc) => {
         this.apiService
