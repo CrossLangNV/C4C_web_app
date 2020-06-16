@@ -160,7 +160,7 @@ def add_content_eurlex():
                                 quote(document.celex), headers=headers)
         content_html = response.text
         if response.status_code != 200:
-            logger.info("RESPONSE: " + response.text)
+            logger.info("RESPONSE: %s",  response.text)
             logger.info(
                 'FALLBACK: Requesting html content for celex id: %s', document.celex)
             headers = {'Accept': 'text/html', 'Accept-Language': 'eng'}
@@ -168,12 +168,10 @@ def add_content_eurlex():
                 cellar_api_endpoint + quote(document.celex), headers=headers)
             content_html = response.text
             if response.status_code != 200:
-                logger.info("RESPONSE: " + response.text)
+                logger.info("RESPONSE: %s", response.text)
                 logger.info(
                     'FALLBACK: Requesting pdf content for celex id: %s', document.celex)
                 response = requests.get(pdf_endpoint + document.celex)
-                logger.info("RESPONSE-LENGTH" +
-                            response.headers['Content-Length'])
                 if response.status_code == 200:
                     logger.info('PARSE PDF WITH TIKA...')
                     pdf_text = parser.from_buffer(
@@ -184,16 +182,20 @@ def add_content_eurlex():
                     else:
                         content_html = pdf_text['content']
                 else:
+                    logger.info("No content retreived for: %s", document.celex)
+                    logger.info(
+                        "--------------------------------------------------------------------")
                     content_html = None
 
         if content_html:
             content = parser.from_buffer(content_html)['content']
             # add to document model and save
-            logger.info('Got content_html for: %s', document.celex)
+            logger.info('Got content_html for: %s (%d)',
+                        document.celex, len(content_html))
             document.content_html = content_html
             if content:
                 logger.info(
-                    'Parsed content from content_html for: %s', document.celex)
+                    'Parsed content from content_html for: %s (%d)', document.celex, len(content))
                 document.content = content
             document.pull = False
             document.save()
