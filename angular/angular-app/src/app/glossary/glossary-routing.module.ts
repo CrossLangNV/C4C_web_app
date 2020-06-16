@@ -4,7 +4,7 @@ import { ConceptDetailComponent } from './concept-detail/concept-detail.componen
 
 const routes: Routes = [
   {
-    path: '',
+    path: 'glossary',
     data: {
       breadcrumb: 'Concepts',
     },
