@@ -1,7 +1,10 @@
 import { NgModule } from '@angular/core';
 import { SharedModule } from '../shared/shared.module';
 import { ConceptListComponent } from './concept-list/concept-list.component';
-import { ConceptDetailComponent } from './concept-detail/concept-detail.component';
+import {
+  ConceptDetailComponent,
+  NgbdSortableHeaderDirective,
+} from './concept-detail/concept-detail.component';
 import { GlossaryRoutingModule } from './glossary-routing.module';
 import { ChipsModule } from 'primeng/chips';
 import { ToastModule } from 'primeng/toast';
@@ -14,7 +17,11 @@ import {
   NgbDateNativeAdapter,
 } from '@ng-bootstrap/ng-bootstrap';
 @NgModule({
-  declarations: [ConceptListComponent, ConceptDetailComponent],
+  declarations: [
+    ConceptListComponent,
+    ConceptDetailComponent,
+    NgbdSortableHeaderDirective,
+  ],
   imports: [
     SharedModule,
     ChipsModule,

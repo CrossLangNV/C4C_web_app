@@ -88,12 +88,20 @@ export class ApiService {
     pageNumber: number,
     pageSize: number,
     term: string,
-    idsFilter: string[]
+    idsFilter: string[],
+    sortBy: string,
+    sortDirection: string
   ): Observable<any[]> {
     let requestUrl = `${this.API_URL}/solrdocument/search/${term}?pageNumber=${pageNumber}&pageSize=${pageSize}`;
     idsFilter.forEach((id) => {
       requestUrl += `&id=${id}`;
     });
+    if (sortBy) {
+      requestUrl += `&sortBy=${sortBy}`
+      if (sortDirection) {
+        requestUrl += `&sortDirection=${sortDirection}`
+      }
+    }
     return this.http.get<any[]>(requestUrl).pipe(
       map((data: any[]) => {
         const result = [data[0]];
