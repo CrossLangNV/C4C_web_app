@@ -117,6 +117,7 @@ export class ConceptDetailComponent implements OnInit {
   }
 
   loadPage(page: number) {
+    this.page = page;
     this.loadDocuments(this.paginateDocuments(page, this.pageSize));
   }
 
