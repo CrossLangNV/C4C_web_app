@@ -142,9 +142,7 @@
             <a
               (click)="setIndex(document.id)"
               [class.font-weight-bold]="selectedIndex === document.id"
-              [routerLink]="[
-                { outlets: { secondary: ['document', document.id] } }
-              ]"
+              [routerLink]="[document.id]"
               >{{ document.title || "(no title)" | truncate: [120, "..."] }}</a
             >&nbsp;
             <span
@@ -222,4 +220,5 @@
     </div>
     <hr class="my-2" />
   </div>
+  <router-outlet></router-outlet>
 </div>
