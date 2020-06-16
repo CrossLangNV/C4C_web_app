@@ -21,8 +21,8 @@ import {
   faSortDown,
 } from '@fortawesome/free-solid-svg-icons';
 import { Subject } from 'rxjs';
-import { Tag } from 'src/app/shared/models/tag';
 import { ConceptTag } from 'src/app/shared/models/ConceptTag';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -72,13 +72,14 @@ export class ConceptListComponent implements OnInit {
   pageSize = 5;
   keyword = '';
   filterTag = '';
-  sortBy = '-date';
+  sortBy = 'name';
+  filterType = 'none';
   searchTermChanged: Subject<string> = new Subject<string>();
   userIcon: IconDefinition = faUserAlt;
   chipIcon: IconDefinition = faMicrochip;
   reloadIcon: IconDefinition = faSyncAlt;
   resetIcon: IconDefinition = faStopCircle;
-  titleSortIcon: IconDefinition = faSort;
+  nameSortIcon: IconDefinition = faSort;
   dateSortIcon: IconDefinition = faSortDown;
   statesSortIcon: IconDefinition = faSort;
 
@@ -86,11 +87,24 @@ export class ConceptListComponent implements OnInit {
 
   ngOnInit() {
     this.fetchConcepts();
+    this.searchTermChanged
+      .pipe(debounceTime(600), distinctUntilChanged())
+      .subscribe((model) => {
+        this.keyword = model;
+        this.page = 1;
+        this.fetchConcepts();
+      });
   }
 
   fetchConcepts() {
     this.service
-      .getConcepts(this.page, this.keyword, this.filterTag, this.sortBy)
+      .getConcepts(
+        this.page,
+        this.keyword,
+        this.filterTag,
+        this.filterType,
+        this.sortBy
+      )
       .subscribe((results) => {
         this.concepts = results.results;
         this.collectionSize = results.count;
@@ -119,6 +133,7 @@ export class ConceptListComponent implements OnInit {
   }
 
   onSort({ column, direction }: SortEvent) {
+    console.log('sort(' + column + '/' + direction + ')');
     // resetting other headers
     this.headers.forEach((header) => {
       if (header.sortable !== column) {
@@ -128,8 +143,8 @@ export class ConceptListComponent implements OnInit {
 
     // sorting documents, default date descending (-date)
     if (direction === '') {
-      this.sortBy = '-date';
-      this.titleSortIcon = faSort;
+      this.sortBy = 'name';
+      this.nameSortIcon = faSort;
       this.dateSortIcon = faSortDown;
       this.statesSortIcon = faSort;
       this.fetchConcepts();
@@ -140,17 +155,17 @@ export class ConceptListComponent implements OnInit {
       }
       this.sortBy += column;
       const sortIcon = direction === 'asc' ? faSortUp : faSortDown;
-      if (column === 'title') {
-        this.titleSortIcon = sortIcon;
+      if (column === 'name') {
+        this.nameSortIcon = sortIcon;
         this.dateSortIcon = faSort;
         this.statesSortIcon = faSort;
       } else if (column === 'date') {
         this.dateSortIcon = sortIcon;
-        this.titleSortIcon = faSort;
+        this.nameSortIcon = faSort;
         this.statesSortIcon = faSort;
       } else {
         this.statesSortIcon = sortIcon;
-        this.titleSortIcon = faSort;
+        this.nameSortIcon = faSort;
         this.dateSortIcon = faSort;
       }
       this.fetchConcepts();
