@@ -3,9 +3,8 @@ import { ConceptListComponent } from './concept-list/concept-list.component';
 import { ConceptDetailComponent } from './concept-detail/concept-detail.component';
 
 const routes: Routes = [
-  { path: 'glossary', redirectTo: '/glossary/concepts', pathMatch: 'full' },
   {
-    path: 'concepts',
+    path: '',
     data: {
       breadcrumb: 'Concepts',
     },
@@ -14,19 +13,12 @@ const routes: Routes = [
         path: '',
         component: ConceptListComponent,
       },
-      {
-        path: ':conceptId',
-        data: {
-          breadcrumb: '',
-        },
-        children: [
-          {
-            path: '',
-            component: ConceptDetailComponent,
-          },
-        ],
-      },
     ],
+  },
+  {
+    path: 'concept/:conceptId',
+    component: ConceptDetailComponent,
+    outlet: 'secondary',
   },
 ];
 
