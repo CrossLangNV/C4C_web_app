@@ -1,10 +1,13 @@
 import { NgModule } from '@angular/core';
 import { SharedModule } from '../shared/shared.module';
 import {
+  ConceptDetailComponent,
+  ConceptDetailSortableHeaderDirective,
+} from './concept-detail/concept-detail.component';
+import {
   ConceptListComponent,
   NgbdSortableHeaderDirective,
 } from './concept-list/concept-list.component';
-import { ConceptDetailComponent } from './concept-detail/concept-detail.component';
 import { GlossaryRoutingModule } from './glossary-routing.module';
 import { ChipsModule } from 'primeng/chips';
 import { ToastModule } from 'primeng/toast';
@@ -21,6 +24,7 @@ import {
     ConceptListComponent,
     ConceptDetailComponent,
     NgbdSortableHeaderDirective,
+    ConceptDetailSortableHeaderDirective,
   ],
   imports: [
     SharedModule,
