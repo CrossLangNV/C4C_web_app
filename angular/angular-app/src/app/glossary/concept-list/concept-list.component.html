@@ -68,9 +68,10 @@
             <a
               (click)="setIndex(concept.id)"
               [class.font-weight-bold]="selectedIndex === concept.id"
-              [routerLink]="['/glossary/concepts', concept.id]"
-              >{{ concept.name || "(no label)" }}</a
-            >&nbsp;
+              [routerLink]="[
+                { outlets: { secondary: ['concept', concept.id] } }
+              ]"
+              >{{ concept.name || "(no label)" }}</a>&nbsp;
             <span
               *ngIf="concept.comments.length > 0"
               class="badge badge-secondary"
