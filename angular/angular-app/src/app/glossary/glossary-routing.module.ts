@@ -12,13 +12,14 @@ const routes: Routes = [
       {
         path: '',
         component: ConceptListComponent,
+        children: [
+          {
+            path: ':conceptId',
+            component: ConceptDetailComponent,
+          },
+        ],
       },
     ],
-  },
-  {
-    path: 'concept/:conceptId',
-    component: ConceptDetailComponent,
-    outlet: 'secondary',
   },
 ];
 

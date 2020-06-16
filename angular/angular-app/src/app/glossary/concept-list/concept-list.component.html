@@ -60,9 +60,7 @@
             <a
               (click)="setIndex(concept.id)"
               [class.font-weight-bold]="selectedIndex === concept.id"
-              [routerLink]="[
-                { outlets: { secondary: ['concept', concept.id] } }
-              ]"
+              [routerLink]="[concept.id]"
               >{{ concept.name || "(no label)" }}</a
             >&nbsp;
             <span
@@ -135,4 +133,5 @@
     </div>
     <hr class="my-2" />
   </div>
+  <router-outlet></router-outlet>
 </div>

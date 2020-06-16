@@ -26,7 +26,7 @@
             {{ doc.websiteName }}
           </td>
           <td>
-            <a [routerLink]="['/validator', {outlets:{secondary:['document', doc.id]}}]">
+            <a [routerLink]="['/validator', doc.id]">
               {{ doc.title }}
             </a>
           </td>
