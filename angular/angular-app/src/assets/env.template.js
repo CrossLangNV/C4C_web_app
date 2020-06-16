@@ -4,6 +4,7 @@
   // Environment variables
   window["env"]["ANGULAR_PRODUCTION"] = "${ANGULAR_PRODUCTION}";
   window["env"]["ANGULAR_DJANGO_API_URL"] = "${ANGULAR_DJANGO_API_URL}";
+  window["env"]["ANGULAR_DJANGO_API_GLOSSARY_URL"] = "${ANGULAR_DJANGO_API_GLOSSARY_URL}";
   window["env"]["ANGULAR_DJANGO_API_ADMIN_URL"] =
     "${ANGULAR_DJANGO_API_ADMIN_URL}";
   window["env"]["ANGULAR_DJANGO_AUTH_URL"] = "${ANGULAR_DJANGO_AUTH_URL}";
