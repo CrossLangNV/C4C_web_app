@@ -50,8 +50,8 @@
     <table class="table table-striped table-bordered table-hover">
       <thead class="thead-dark">
         <tr>
-          <th scope="col" sortable="title" (sort)="onSort($event)">
-            <fa-icon [icon]="titleSortIcon"></fa-icon> Label
+          <th scope="col" sortable="name" (sort)="onSort($event)">
+            <fa-icon [icon]="nameSortIcon"></fa-icon> Label
           </th>
           <th scope="col">Tags</th>
           <th scope="col" sortable="states" (sort)="onSort($event)">
@@ -71,7 +71,8 @@
               [routerLink]="[
                 { outlets: { secondary: ['concept', concept.id] } }
               ]"
-              >{{ concept.name || "(no label)" }}</a>&nbsp;
+              >{{ concept.name || "(no label)" }}</a
+            >&nbsp;
             <span
               *ngIf="concept.comments.length > 0"
               class="badge badge-secondary"
