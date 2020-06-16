@@ -333,11 +333,15 @@ export class ApiService {
     page: number,
     searchTerm: string,
     filterTag: string,
+    filterType: string,
     sortBy: string
   ): Observable<ConceptResults> {
     var pageQuery = page ? '?page=' + page : '';
     if (searchTerm) {
       pageQuery = pageQuery + '&keyword=' + searchTerm;
+    }
+    if (filterType) {
+      pageQuery = pageQuery + '&filterType=' + filterType;
     }
     if (filterTag) {
       pageQuery = pageQuery + '&tag=' + filterTag;

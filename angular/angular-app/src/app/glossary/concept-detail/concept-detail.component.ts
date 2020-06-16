@@ -29,7 +29,7 @@ export interface SortEvent {
     '(click)': 'rotate()',
   },
 })
-export class NgbdSortableHeaderDirective {
+export class ConceptDetailSortableHeaderDirective {
   @Input() sortable: string;
   @Input() direction: SortDirection = '';
   @Output() sort = new EventEmitter<SortEvent>();
@@ -46,8 +46,8 @@ export class NgbdSortableHeaderDirective {
   styleUrls: ['./concept-detail.component.css'],
 })
 export class ConceptDetailComponent implements OnInit {
-  @ViewChildren(NgbdSortableHeaderDirective) headers: QueryList<
-    NgbdSortableHeaderDirective
+  @ViewChildren(ConceptDetailSortableHeaderDirective) headers: QueryList<
+    ConceptDetailSortableHeaderDirective
   >;
   concept: Concept;
   documents: Document[] = [];
