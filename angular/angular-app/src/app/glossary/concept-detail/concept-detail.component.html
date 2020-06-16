@@ -12,8 +12,8 @@
           <th scope="col">
             Document title
           </th>
-          <th scope="col">
-            Date
+          <th scope="col" sortable="date" (sort)="onSort($event)">
+            <fa-icon [icon]="dateSortIcon"></fa-icon> Date
           </th>
           <th scope="col">
             Content
