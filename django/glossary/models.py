@@ -7,7 +7,7 @@ from django.utils import timezone
 class Concept(models.Model):
     name = models.CharField(max_length=200, unique=True)
     definition = models.TextField()
-    documents = models.ManyToManyField(Document, blank=True)
+    documents = models.ManyToManyField(Document, blank=True, editable=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
