@@ -12,7 +12,7 @@ from minio import Minio, ResponseError
 from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
 from scrapyd_api import ScrapydAPI
 from tika import parser
-
+from urllib.parse import quote
 from searchapp.datahandling import score_documents, sync_documents, sync_attachments
 from searchapp.models import Website, Document, Attachment
 from searchapp.solr_call import solr_search, solr_search_document_id_sorted, solr_search_website_sorted
@@ -55,7 +55,8 @@ def export_documents(website_ids=None):
         pass
     except ResponseError as err:
         raise
-    minio_client.fput_object('export', export_documents.request.id + '.zip', zip_destination + '.zip')
+    minio_client.fput_object(
+        'export', export_documents.request.id + '.zip', zip_destination + '.zip')
 
 
 @shared_task
@@ -121,10 +122,10 @@ def scrape_website_task(website_id):
     }
     spiders = [{"id": "bis"}, {"id": "eiopa"}, {"id": "esma"}, {
         "id": "eurlex", "type": "directives"}, {"id": "eurlex", "type": "decisions"},
-               {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
-               {"id": "eba", "type": "guidelines"}, {
-                   "id": "eba", "type": "recommendations"},
-               ]
+        {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
+        {"id": "eba", "type": "guidelines"}, {
+        "id": "eba", "type": "recommendations"},
+    ]
     for spider in spiders:
         if spider['id'].lower() == website.name.lower():
             scrapyd = ScrapydAPI(os.environ['SCRAPYD_URL'])
@@ -152,21 +153,31 @@ def add_content_eurlex():
     global content_html
 
     for document in documents:
-        logger.info('Requesting xhtml content for celex id: %s', document.celex)
+        logger.info('Requesting xhtml content for celex id: %s',
+                    document.celex)
         headers = {'Accept': 'application/xhtml+xml', 'Accept-Language': 'eng'}
-        response = requests.get(cellar_api_endpoint + document.celex, headers=headers)
+        response = requests.get(cellar_api_endpoint +
+                                quote(document.celex), headers=headers)
         content_html = response.text
         if response.status_code != 200:
-            logger.info('FALLBACK: Requesting html content for celex id: %s', document.celex)
+            logger.info("RESPONSE: " + response.text)
+            logger.info(
+                'FALLBACK: Requesting html content for celex id: %s', document.celex)
             headers = {'Accept': 'text/html', 'Accept-Language': 'eng'}
-            response = requests.get(cellar_api_endpoint + document.celex, headers=headers)
+            response = requests.get(
+                cellar_api_endpoint + quote(document.celex), headers=headers)
             content_html = response.text
             if response.status_code != 200:
-                logger.info('FALLBACK: Requesting pdf content for celex id: %s', document.celex)
+                logger.info("RESPONSE: " + response.text)
+                logger.info(
+                    'FALLBACK: Requesting pdf content for celex id: %s', document.celex)
                 response = requests.get(pdf_endpoint + document.celex)
+                logger.info("RESPONSE-LENGTH" +
+                            response.headers['Content-Length'])
                 if response.status_code == 200:
                     logger.info('PARSE PDF WITH TIKA...')
-                    pdf_text = parser.from_buffer(response.content, xmlContent=True)
+                    pdf_text = parser.from_buffer(
+                        response.content, xmlContent=True)
                     if pdf_text['content'] is None:
                         logger.error('Unable to parse pdf.')
                         content_html = None
@@ -181,7 +192,8 @@ def add_content_eurlex():
             logger.info('Got content_html for: %s', document.celex)
             document.content_html = content_html
             if content:
-                logger.info('Parsed content from content_html for: %s', document.celex)
+                logger.info(
+                    'Parsed content from content_html for: %s', document.celex)
                 document.content = content
             document.pull = False
             document.save()
