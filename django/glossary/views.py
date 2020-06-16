@@ -1,4 +1,4 @@
-from rest_framework import permissions
+from rest_framework import permissions, filters
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, RetrieveUpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,6 +10,7 @@ from searchapp.models import Document
 from searchapp.serializers import CommentSerializer, DocumentSerializer
 from searchapp.solr_call import solr_search_paginated
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
+from django.db.models import Q
 
 
 class SmallResultsSetPagination(PageNumberPagination):
@@ -23,6 +24,31 @@ class ConceptListAPIView(ListCreateAPIView):
     pagination_class = SmallResultsSetPagination
     queryset = Concept.objects.all()
     serializer_class = ConceptSerializer
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['name', 'acceptance_state_max_probability']
+
+    def get_queryset(self):
+        q = Concept.objects.all()
+        keyword = self.request.GET.get('keyword', "")
+        if keyword:
+            q = q.filter(name__icontains=keyword)
+        showonlyown = self.request.GET.get('showOnlyOwn', "")
+        if showonlyown == "true":
+            email = self.request.GET.get('email', "")
+            q = q.filter(Q(acceptance_states__user__email=email) & (Q(acceptance_states__value="Accepted") |
+                                                                    Q(acceptance_states__value="Rejected")))
+        filtertype = self.request.GET.get('filterType', "")
+        if filtertype == "unvalidated":
+            q = q.exclude(Q(acceptance_states__value="Rejected")
+                          | Q(acceptance_states__value="Accepted"))
+        if filtertype == "accepted":
+            q = q.filter(acceptance_states__value="Accepted").distinct()
+        if filtertype == "rejected":
+            q = q.filter(acceptance_states__value="Rejected").distinct()
+        tag = self.request.GET.get('tag', "")
+        if tag:
+            q = q.filter(tags__value=tag)
+        return q.order_by("name")
 
 
 class ConceptDetailAPIView(RetrieveUpdateDestroyAPIView):
