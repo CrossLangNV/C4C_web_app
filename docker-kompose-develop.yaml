@@ -85,7 +85,7 @@ services:
     volumes:
       - solr:/var/solr
     environment:
-      - SOLR_HEAP=2g
+      - SOLR_HEAP=4g
     command: solr-precreate summaries
     labels:
       kompose.volume.size: 10Gi
