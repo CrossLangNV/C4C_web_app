@@ -401,8 +401,10 @@ class SolrDocumentSearch(APIView):
 
     def get(self, request, search_term, format=None):
         result = solr_search_paginated(core="documents", term=search_term, page_number=request.GET.get('pageNumber', 1),
-                                       rows_per_page=request.GET.get('pageSize', 1),
-                                       ids_to_filter_on=request.GET.getlist('id'),
+                                       rows_per_page=request.GET.get(
+                                           'pageSize', 1),
+                                       ids_to_filter_on=request.GET.getlist(
+                                           'id'),
                                        sort_by=request.GET.get('sortBy'),
                                        sort_direction=request.GET.get('sortDirection'))
         return Response(result)
@@ -460,27 +462,27 @@ def celex_get_xhtml(request):
 def document_stats(request):
     if request.method == 'GET':
         q1 = Document.objects.all()
-        q2 = q1.exclude(Q(acceptance_states__value="Rejected")
-                        | Q(acceptance_states__value="Accepted") & Q(
-            acceptance_states__probability_model__isnull=True))
-        q3 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
-            acceptance_states__probability_model__isnull=True)).distinct()
-        q4 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
-            acceptance_states__probability_model__isnull=True)).distinct()
-        # FIXME: will be wrong when multiple auto-classifiers ?
-        q5 = q1.filter(Q(acceptance_states__value="Unvalidated") & Q(
-            acceptance_states__probability_model__isnull=False))
-        q6 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
-            acceptance_states__probability_model__isnull=False))
-        q7 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
-            acceptance_states__probability_model__isnull=False))
+        # q2 = q1.exclude(Q(acceptance_states__value="Rejected")
+        #                 | Q(acceptance_states__value="Accepted") & Q(
+        #     acceptance_states__probability_model__isnull=True))
+        # q3 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
+        #     acceptance_states__probability_model__isnull=True)).distinct()
+        # q4 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
+        #     acceptance_states__probability_model__isnull=True)).distinct()
+        # # FIXME: will be wrong when multiple auto-classifiers ?
+        # q5 = q1.filter(Q(acceptance_states__value="Unvalidated") & Q(
+        #     acceptance_states__probability_model__isnull=False))
+        # q6 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
+        #     acceptance_states__probability_model__isnull=False))
+        # q7 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
+        #     acceptance_states__probability_model__isnull=False))
 
         return Response({
             'count_total': len(q1),
-            'count_unvalidated': len(q2),
-            'count_accepted': len(q3),
-            'count_rejected': len(q4),
-            'count_autounvalidated': len(q5),
-            'count_autoaccepted': len(q6),
-            'count_autorejected': len(q7),
+            'count_unvalidated': 0,
+            'count_accepted': 0,
+            'count_rejected': 0,
+            'count_autounvalidated': 0,
+            'count_autoaccepted': 0,
+            'count_autorejected': 0
         })
