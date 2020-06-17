@@ -8,6 +8,7 @@ import {
   ConceptListComponent,
   NgbdSortableHeaderDirective,
 } from './concept-list/concept-list.component';
+import { ConceptDocumentDetailsComponent } from './concept-document-details/concept-document-details.component';
 import { GlossaryRoutingModule } from './glossary-routing.module';
 import { ChipsModule } from 'primeng/chips';
 import { ToastModule } from 'primeng/toast';
@@ -25,6 +26,7 @@ import {
     ConceptDetailComponent,
     NgbdSortableHeaderDirective,
     ConceptDetailSortableHeaderDirective,
+    ConceptDocumentDetailsComponent,
   ],
   imports: [
     SharedModule,

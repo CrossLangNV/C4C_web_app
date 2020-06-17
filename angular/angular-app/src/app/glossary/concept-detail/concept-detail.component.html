@@ -27,7 +27,7 @@
               {{ doc.websiteName }}
             </td>
             <td>
-              <a [routerLink]="['/validator', doc.id]">
+              <a [routerLink]="['/document', concept.id, doc.id]">
                 {{ doc.title }}
               </a>
             </td>
@@ -75,7 +75,7 @@
               {{ doc.websiteName }}
             </td>
             <td>
-              <a [routerLink]="['/validator', doc.id]">
+              <a [routerLink]="['/document', concept.id, doc.id]">
                 {{ doc.title }}
               </a>
             </td>
