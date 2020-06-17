@@ -1,6 +1,7 @@
 import { Routes, RouterModule } from '@angular/router';
 import { ConceptListComponent } from './concept-list/concept-list.component';
 import { ConceptDetailComponent } from './concept-detail/concept-detail.component';
+import { ConceptDocumentDetailsComponent } from './concept-document-details/concept-document-details.component';
 
 const routes: Routes = [
   {
@@ -18,6 +19,18 @@ const routes: Routes = [
             component: ConceptDetailComponent,
           },
         ],
+      },
+    ],
+  },
+  {
+    path: 'document',
+    data: {
+      breadcrumb: 'Concepts',
+    },
+    children: [
+      {
+        path: ':conceptId/:documentId',
+        component: ConceptDocumentDetailsComponent,
       },
     ],
   },
