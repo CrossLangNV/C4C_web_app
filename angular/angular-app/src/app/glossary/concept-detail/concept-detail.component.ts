@@ -50,16 +50,22 @@ export class ConceptDetailComponent implements OnInit {
     ConceptDetailSortableHeaderDirective
   >;
   concept: Concept;
-  documents: Document[] = [];
-  page = 1;
-  pageSize = 5;
-  totalDocuments = 0;
 
-  sortBy = 'date';
-  sortDirection = 'desc';
-  websiteSortIcon: IconDefinition = faSort;
-  titleSortIcon: IconDefinition = faSort;
-  dateSortIcon: IconDefinition = faSortDown;
+  occursIn: Document[] = [];
+  occursInPage = 1;
+  occursInPageSize = 5;
+  occursInTotal = 0;
+  occursInSortBy = 'date';
+  occursInSortDirection = 'desc';
+  occursInDateSortIcon: IconDefinition = faSortDown;
+
+  definedIn: Document[] = [];
+  definedInPage = 1;
+  definedInPageSize = 5;
+  definedInTotal = 0;
+  definedInSortBy = 'date';
+  definedInSortDirection = 'desc';
+  definedInDateSortIcon: IconDefinition = faSortDown;
 
   constructor(private route: ActivatedRoute, private apiService: ApiService) {}
 
@@ -72,7 +78,8 @@ export class ConceptDetailComponent implements OnInit {
       )
       .subscribe((concept) => {
         this.concept = concept;
-        this.loadDocuments(this.paginateDocuments(this.page, this.pageSize));
+        this.loadOccursInDocuments(this.paginateDocuments(this.occursInPage, this.occursInPageSize));
+        this.loadDefinedInDocuments(this.paginateDocuments(this.definedInPage, this.definedInPageSize));
       });
   }
 
@@ -83,45 +90,75 @@ export class ConceptDetailComponent implements OnInit {
     );
   }
 
-  loadDocuments(documentIds: string[]) {
-    this.documents = [];
+  loadOccursInDocuments(documentIds: string[]) {
+    this.occursIn = [];
     this.apiService
       .searchSolrDocuments(
-        this.page,
-        this.pageSize,
+        this.occursInPage,
+        this.occursInPageSize,
         this.concept.name,
         documentIds,
-        this.sortBy,
-        this.sortDirection
+        this.occursInSortBy,
+        this.occursInSortDirection
       )
       .subscribe((data) => {
-        this.totalDocuments = data[0];
+        this.occursInTotal = data[0];
         const solrDocuments = data[1];
-        this.documents = [];
-        const solrDocumentIds = solrDocuments.map(solrDoc => solrDoc.id);
-        this.getDocuments(solrDocumentIds).subscribe(documents => {
-          documents.forEach((document, index) => {
+        this.occursIn = [];
+        const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
+        this.getDocuments(solrDocumentIds).subscribe((occursIn) => {
+          occursIn.forEach((document, index) => {
             document.content = solrDocuments[index].content;
-            this.documents.push(document);
-          })
-        })
+            this.occursIn.push(document);
+          });
+        });
+      });
+  }
+
+  loadDefinedInDocuments(documentIds: string[]) {
+    this.definedIn = [];
+    this.apiService
+      .searchSolrDocuments(
+        this.definedInPage,
+        this.definedInPageSize,
+        this.concept.name + ' means',
+        documentIds,
+        this.definedInSortBy,
+        this.definedInSortDirection
+      )
+      .subscribe((data) => {
+        this.definedInTotal = data[0];
+        const solrDocuments = data[1];
+        this.definedIn = [];
+        const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
+        this.getDocuments(solrDocumentIds).subscribe((definedIn) => {
+          definedIn.forEach((document, index) => {
+            document.content = solrDocuments[index].content;
+            this.definedIn.push(document);
+          });
+        });
       });
   }
 
   getDocuments(ids: string[]): Observable<any[]> {
     let docObservables = [];
-    ids.forEach(id => {
+    ids.forEach((id) => {
       docObservables.push(this.apiService.getDocument(id));
     });
     return forkJoin(docObservables);
   }
 
-  loadPage(page: number) {
-    this.page = page;
-    this.loadDocuments(this.paginateDocuments(page, this.pageSize));
+  loadOccursInPage(page: number) {
+    this.occursInPage = page;
+    this.loadOccursInDocuments(this.paginateDocuments(page, this.occursInPageSize));
   }
 
-  onSort({ column, direction }: SortEvent) {
+  loadDefinedInPage(page: number) {
+    this.definedInPage = page;
+    this.loadOccursInDocuments(this.paginateDocuments(page, this.occursInPageSize));
+  }
+
+  onSortOccursIn({ column, direction }: SortEvent) {
     // resetting other headers
     this.headers.forEach((header) => {
       if (header.sortable !== column) {
@@ -129,32 +166,49 @@ export class ConceptDetailComponent implements OnInit {
       }
     });
 
-    // sorting documents, default date descending
+    // sorting occursIn, default date descending
     if (direction === '') {
-      this.sortBy = 'date';
-      this.sortDirection = 'desc';
-      this.websiteSortIcon = faSort;
-      this.titleSortIcon = faSort;
-      this.dateSortIcon = faSortDown;
-      this.loadDocuments(this.paginateDocuments(this.page, this.pageSize));
+      this.occursInSortBy = 'date';
+      this.occursInSortDirection = 'desc';
+      this.occursInDateSortIcon = faSortDown;
+      this.loadOccursInDocuments(this.paginateDocuments(this.occursInPage, this.occursInPageSize));
     } else {
-      this.sortDirection = direction;
-      this.sortBy = column;
+      this.occursInSortDirection = direction;
+      this.occursInSortBy = column;
       const sortIcon = direction === 'asc' ? faSortUp : faSortDown;
-      if (column === 'title') {
-        this.titleSortIcon = sortIcon;
-        this.dateSortIcon = faSort;
-        this.websiteSortIcon = faSort;
-      } else if (column === 'date') {
-        this.dateSortIcon = sortIcon;
-        this.titleSortIcon = faSort;
-        this.websiteSortIcon = faSort;
+      if (column === 'date') {
+        this.occursInDateSortIcon = sortIcon;
       } else {
-        this.websiteSortIcon = sortIcon;
-        this.titleSortIcon = faSort;
-        this.dateSortIcon = faSort;
+        this.occursInDateSortIcon = faSort;
       }
-      this.loadDocuments(this.paginateDocuments(this.page, this.pageSize));
+      this.loadOccursInDocuments(this.paginateDocuments(this.occursInPage, this.occursInPageSize));
+    }
+  }
+
+  onSortDefinedIn({ column, direction }: SortEvent) {
+    // resetting other headers
+    this.headers.forEach((header) => {
+      if (header.sortable !== column) {
+        header.direction = '';
+      }
+    });
+
+    // sorting definedIn, default date descending
+    if (direction === '') {
+      this.definedInSortBy = 'date';
+      this.definedInSortDirection = 'desc';
+      this.definedInDateSortIcon = faSortDown;
+      this.loadDefinedInDocuments(this.paginateDocuments(this.definedInPage, this.definedInPageSize));
+    } else {
+      this.definedInSortDirection = direction;
+      this.definedInSortBy = column;
+      const sortIcon = direction === 'asc' ? faSortUp : faSortDown;
+      if (column === 'date') {
+        this.definedInDateSortIcon = sortIcon;
+      } else {
+        this.definedInDateSortIcon = faSort;
+      }
+      this.loadDefinedInDocuments(this.paginateDocuments(this.definedInPage, this.definedInPageSize));
     }
   }
 }
