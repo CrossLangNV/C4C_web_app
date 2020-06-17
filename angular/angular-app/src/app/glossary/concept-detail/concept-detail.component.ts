@@ -124,7 +124,9 @@ export class ConceptDetailComponent implements OnInit {
         const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
         this.getDocuments(solrDocumentIds).subscribe((doc) => {
           doc.forEach((document, index) => {
-            document.content = solrDocuments[index].content;
+            let solrContent = solrDocuments[index].content;
+            solrContent = solrContent.map(text => text.replace('<span class=\"highlight\">means</span>', 'means'));
+            document.content = solrContent;
             this.definedIn.push(document);
           });
         });
