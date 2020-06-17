@@ -78,26 +78,19 @@ export class ConceptDetailComponent implements OnInit {
       )
       .subscribe((concept) => {
         this.concept = concept;
-        this.loadOccursInDocuments(this.paginateDocuments(this.occursInPage, this.occursInPageSize));
-        this.loadDefinedInDocuments(this.paginateDocuments(this.definedInPage, this.definedInPageSize));
+        this.loadOccursInDocuments();
+        this.loadDefinedInDocuments();
       });
   }
 
-  paginateDocuments(page: number, pageSize: number) {
-    return this.concept.documentIds.slice(
-      (page - 1) * pageSize,
-      page * pageSize
-    );
-  }
-
-  loadOccursInDocuments(documentIds: string[]) {
+  loadOccursInDocuments() {
     this.occursIn = [];
     this.apiService
       .searchSolrDocuments(
         this.occursInPage,
         this.occursInPageSize,
         this.concept.name,
-        documentIds,
+        [],
         this.occursInSortBy,
         this.occursInSortDirection
       )
@@ -106,8 +99,8 @@ export class ConceptDetailComponent implements OnInit {
         const solrDocuments = data[1];
         this.occursIn = [];
         const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
-        this.getDocuments(solrDocumentIds).subscribe((occursIn) => {
-          occursIn.forEach((document, index) => {
+        this.getDocuments(solrDocumentIds).subscribe((doc) => {
+          doc.forEach((document, index) => {
             document.content = solrDocuments[index].content;
             this.occursIn.push(document);
           });
@@ -115,14 +108,14 @@ export class ConceptDetailComponent implements OnInit {
       });
   }
 
-  loadDefinedInDocuments(documentIds: string[]) {
+  loadDefinedInDocuments() {
     this.definedIn = [];
     this.apiService
       .searchSolrDocuments(
         this.definedInPage,
         this.definedInPageSize,
         this.concept.name + ' means',
-        documentIds,
+        [],
         this.definedInSortBy,
         this.definedInSortDirection
       )
@@ -131,8 +124,8 @@ export class ConceptDetailComponent implements OnInit {
         const solrDocuments = data[1];
         this.definedIn = [];
         const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
-        this.getDocuments(solrDocumentIds).subscribe((definedIn) => {
-          definedIn.forEach((document, index) => {
+        this.getDocuments(solrDocumentIds).subscribe((doc) => {
+          doc.forEach((document, index) => {
             document.content = solrDocuments[index].content;
             this.definedIn.push(document);
           });
@@ -150,12 +143,12 @@ export class ConceptDetailComponent implements OnInit {
 
   loadOccursInPage(page: number) {
     this.occursInPage = page;
-    this.loadOccursInDocuments(this.paginateDocuments(page, this.occursInPageSize));
+    this.loadOccursInDocuments();
   }
 
   loadDefinedInPage(page: number) {
     this.definedInPage = page;
-    this.loadOccursInDocuments(this.paginateDocuments(page, this.occursInPageSize));
+    this.loadOccursInDocuments();
   }
 
   onSortOccursIn({ column, direction }: SortEvent) {
@@ -171,7 +164,7 @@ export class ConceptDetailComponent implements OnInit {
       this.occursInSortBy = 'date';
       this.occursInSortDirection = 'desc';
       this.occursInDateSortIcon = faSortDown;
-      this.loadOccursInDocuments(this.paginateDocuments(this.occursInPage, this.occursInPageSize));
+      this.loadOccursInDocuments();
     } else {
       this.occursInSortDirection = direction;
       this.occursInSortBy = column;
@@ -181,7 +174,7 @@ export class ConceptDetailComponent implements OnInit {
       } else {
         this.occursInDateSortIcon = faSort;
       }
-      this.loadOccursInDocuments(this.paginateDocuments(this.occursInPage, this.occursInPageSize));
+      this.loadOccursInDocuments();
     }
   }
 
@@ -198,7 +191,7 @@ export class ConceptDetailComponent implements OnInit {
       this.definedInSortBy = 'date';
       this.definedInSortDirection = 'desc';
       this.definedInDateSortIcon = faSortDown;
-      this.loadDefinedInDocuments(this.paginateDocuments(this.definedInPage, this.definedInPageSize));
+      this.loadDefinedInDocuments();
     } else {
       this.definedInSortDirection = direction;
       this.definedInSortBy = column;
@@ -208,7 +201,7 @@ export class ConceptDetailComponent implements OnInit {
       } else {
         this.definedInDateSortIcon = faSort;
       }
-      this.loadDefinedInDocuments(this.paginateDocuments(this.definedInPage, this.definedInPageSize));
+      this.loadDefinedInDocuments();
     }
   }
 }
