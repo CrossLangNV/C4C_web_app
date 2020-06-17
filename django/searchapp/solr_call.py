@@ -26,7 +26,8 @@ def solr_search_paginated(core="", term="", page_number=1, rows_per_page=10, ids
     options = {'rows': rows_per_page,
                'start': start,
                'hl': 'on', 'hl.fl': '*',
-               'hl.snippets': 3, 'hl.maxAnalyzedChars': 1000000,
+               'hl.requireFieldMatch': 'true',
+               'hl.snippets': 3, 'hl.maxAnalyzedChars': -1,
                'hl.simple.pre': '<span class="highlight">',
                'hl.simple.post': '</span>'}
     if ids_to_filter_on:
