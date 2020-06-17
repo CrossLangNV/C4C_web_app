@@ -32,11 +32,11 @@ export interface SortEvent {
 export class ConceptDetailSortableHeaderDirective {
   @Input() sortable: string;
   @Input() direction: SortDirection = '';
-  @Output() sort = new EventEmitter<SortEvent>();
+  @Output() sortDetail = new EventEmitter<SortEvent>();
 
   rotate() {
     this.direction = rotate[this.direction];
-    this.sort.emit({ column: this.sortable, direction: this.direction });
+    this.sortDetail.emit({ column: this.sortable, direction: this.direction });
   }
 }
 
@@ -84,7 +84,6 @@ export class ConceptDetailComponent implements OnInit {
   }
 
   loadOccursInDocuments() {
-    this.occursIn = [];
     this.apiService
       .searchSolrDocuments(
         this.occursInPage,
@@ -109,7 +108,6 @@ export class ConceptDetailComponent implements OnInit {
   }
 
   loadDefinedInDocuments() {
-    this.definedIn = [];
     this.apiService
       .searchSolrDocuments(
         this.definedInPage,
@@ -148,7 +146,7 @@ export class ConceptDetailComponent implements OnInit {
 
   loadDefinedInPage(page: number) {
     this.definedInPage = page;
-    this.loadOccursInDocuments();
+    this.loadDefinedInDocuments();
   }
 
   onSortOccursIn({ column, direction }: SortEvent) {
