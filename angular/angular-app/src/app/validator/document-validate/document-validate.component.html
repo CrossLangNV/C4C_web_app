@@ -31,10 +31,6 @@
     <hr class="my-4" />
     <samp class="text-justify">{{ document.summary }}</samp>
   </div>
-  <div *ngIf="document.content">
-    <hr class="my-4" />
-    <samp class="text-justify">{{ document.content }}</samp>
-  </div>
   <div *ngIf="document.attachments.length || document.celex">
     <hr class="my-4" />
     <p><b>Attachments:</b></p>
