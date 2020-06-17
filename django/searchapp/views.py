@@ -462,9 +462,8 @@ def celex_get_xhtml(request):
 def document_stats(request):
     if request.method == 'GET':
         q1 = Document.objects.all()
-        # q2 = q1.exclude(Q(acceptance_states__value="Rejected")
-        #                 | Q(acceptance_states__value="Accepted") & Q(
-        #     acceptance_states__probability_model__isnull=True))
+        # q2 = q1.exclude(Q(acceptance_states__value="Rejected") | Q(
+        # acceptance_states__value="Accepted") & Q(acceptance_states__probability_model__isnull=True))
         # q3 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
         #     acceptance_states__probability_model__isnull=True)).distinct()
         # q4 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
@@ -478,7 +477,7 @@ def document_stats(request):
         #     acceptance_states__probability_model__isnull=False))
 
         return Response({
-            'count_total': len(q1),
+            'count_total': q1.count(),
             'count_unvalidated': 0,
             'count_accepted': 0,
             'count_rejected': 0,
