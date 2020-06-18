@@ -120,12 +120,12 @@ def scrape_website_task(website_id):
     settings = {
         'task_id': '1'
     }
-    spiders = [{"id": "bis"}, {"id": "eiopa"}, {"id": "esma"}, {
-        "id": "eurlex", "type": "directives"}, {"id": "eurlex", "type": "decisions"},
-        {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
-        {"id": "eba", "type": "guidelines"}, {
-        "id": "eba", "type": "recommendations"},
-    ]
+    spiders = [{"id": "bis"}, {"id": "eiopa"}, {"id": "esma"},
+               {"id": "eurlex", "type": "directives"}, {"id": "eurlex", "type": "decisions"},
+               {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
+               {"id": "eba", "type": "guidelines"},
+               {"id": "eba", "type": "recommendations"},
+               ]
     for spider in spiders:
         if spider['id'].lower() == website.name.lower():
             scrapyd = ScrapydAPI(os.environ['SCRAPYD_URL'])
@@ -137,8 +137,8 @@ def scrape_website_task(website_id):
                 'default', spider['id'], settings=settings, spider_type=spider['type'])
 
 
-@shared_task(default_retry_delay=1 * 60, max_retries=10)
-def add_content_eurlex():
+@shared_task(bind=True, default_retry_delay=1 * 60, max_retries=10)
+def add_content_eurlex(self):
     cellar_api_endpoint = 'http://publications.europa.eu/resource/celex/'
     pdf_endpoint = 'https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:'
 
@@ -156,22 +156,30 @@ def add_content_eurlex():
         logger.info('Requesting xhtml content for celex id: %s',
                     document.celex)
         headers = {'Accept': 'application/xhtml+xml', 'Accept-Language': 'eng'}
-        response = requests.get(cellar_api_endpoint +
-                                quote(document.celex), headers=headers)
+        try:
+            response = requests.get(cellar_api_endpoint +
+                                    quote(document.celex), headers=headers)
+        except requests.exceptions.RequestException as exc:
+            self.retry(exc=exc)
         content_html = response.text
         if response.status_code != 200:
-            logger.info("RESPONSE: %s",  response.text)
+            logger.info("RESPONSE: %s", response.text)
             logger.info(
                 'FALLBACK: Requesting html content for celex id: %s', document.celex)
             headers = {'Accept': 'text/html', 'Accept-Language': 'eng'}
-            response = requests.get(
-                cellar_api_endpoint + quote(document.celex), headers=headers)
+            try:
+                response = requests.get(cellar_api_endpoint + quote(document.celex), headers=headers)
+            except requests.exceptions.RequestException as exc:
+                self.retry(exc=exc)
             content_html = response.text
             if response.status_code != 200:
                 logger.info("RESPONSE: %s", response.text)
                 logger.info(
                     'FALLBACK: Requesting pdf content for celex id: %s', document.celex)
-                response = requests.get(pdf_endpoint + document.celex)
+                try:
+                    response = requests.get(pdf_endpoint + document.celex)
+                except requests.exceptions.RequestException as exc:
+                    self.retry(exc=exc)
                 if response.status_code == 200:
                     logger.info('PARSE PDF WITH TIKA...')
                     pdf_text = parser.from_buffer(
@@ -182,7 +190,7 @@ def add_content_eurlex():
                     else:
                         content_html = pdf_text['content']
                 else:
-                    logger.info("No content retreived for: %s", document.celex)
+                    logger.info("No content retrieved for: %s", document.celex)
                     logger.info(
                         "--------------------------------------------------------------------")
                     content_html = None
