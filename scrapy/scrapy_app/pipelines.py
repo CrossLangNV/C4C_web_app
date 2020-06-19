@@ -52,15 +52,18 @@ class ScrapyAppPipeline(FilesPipeline):
     # In order to do this, you can override the get_media_requests() method and return a Request for each file URL.
     # Those requests will be processed by the pipeline and, when they have finished downloading, the results will be sent to the item_completed() method,
     def get_media_requests(self, item, info):
-        if 'html_docs' in item:
+        handle = True
+        if 'html_docs' in item and not 'content_html' in item:
+            handle = False
             for url in item['html_docs']:
                 headers = {'Accept': ['application/xhtml+xml',
                                       'text/html'], 'Accept-Language': 'eng'}
                 yield scrapy.Request(self.check_redirect(url), headers=headers)
         if 'pdf_docs' in item:
+            handle = False
             for url in item['pdf_docs']:
                 yield scrapy.Request(url)
-        if 'pdf_docs' not in item and 'html_docs' not in item:
+        if handle:
             self.handle_document(item, info, [])
             return item
 

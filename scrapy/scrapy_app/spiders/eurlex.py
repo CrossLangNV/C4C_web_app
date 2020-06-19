@@ -365,7 +365,7 @@ class EurLexSpider(scrapy.Spider):
         # get html content first, if available
         content = response.xpath('//div[@id="text"]').get()
         if content:
-            result_dict['content'] = content
+            result_dict['content_html'] = content
         else:
             base_url = '{uri.scheme}://{uri.netloc}/'.format(
                 uri=urlparse(response.url))
