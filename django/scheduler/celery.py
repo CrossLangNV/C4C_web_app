@@ -18,11 +18,12 @@ app = Celery('project')
 #   should have a `CELERY_` prefix.
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
-slack_options = {
-    "flower_base_url": os.environ.get('FLOWER_BASE_URL', None),
-    "show_celery_hostname": True
-}
-slack_app = Slackify(app, SLACK_WEBHOOK, **slack_options)
+if SLACK_WEBHOOK:
+    slack_options = {
+        "flower_base_url": os.environ.get('FLOWER_BASE_URL', None),
+        "show_celery_hostname": True
+    }
+    slack_app = Slackify(app, SLACK_WEBHOOK, **slack_options)
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()

@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import logging
 import os
 import shutil
+from urllib.parse import quote
 
 import requests
 from celery import shared_task
@@ -10,9 +11,10 @@ from django.db.models.functions import Length
 from jsonlines import jsonlines
 from minio import Minio, ResponseError
 from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
-from scrapyd_api import ScrapydAPI
+from scrapy.crawler import CrawlerProcess
+from scrapy.utils.project import get_project_settings
 from tika import parser
-from urllib.parse import quote
+
 from searchapp.datahandling import score_documents, sync_documents, sync_attachments
 from searchapp.models import Website, Document, Attachment
 from searchapp.solr_call import solr_search, solr_search_document_id_sorted, solr_search_website_sorted
@@ -116,10 +118,6 @@ def scrape_website_task(website_id):
     logger.info("Scraping with WEBSITE: " + str(website_id))
     # lookup website and start scraping
     website = Website.objects.get(pk=website_id)
-    # custom settings for spider
-    settings = {
-        'task_id': '1'
-    }
     spiders = [{"id": "bis"}, {"id": "eiopa"}, {"id": "esma"},
                {"id": "eurlex", "type": "directives"}, {"id": "eurlex", "type": "decisions"},
                {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
@@ -128,13 +126,24 @@ def scrape_website_task(website_id):
                ]
     for spider in spiders:
         if spider['id'].lower() == website.name.lower():
-            scrapyd = ScrapydAPI(os.environ['SCRAPYD_URL'])
-            scrapyd_project = 'default'
             if 'type' not in spider:
                 spider['type'] = ''
             # schedule scraping task
-            scrapyd_task_id = scrapyd.schedule(
-                'default', spider['id'], settings=settings, spider_type=spider['type'])
+            launch_crawler.delay(spider['id'], spider['type'], -1, None, None)
+
+
+@shared_task()
+def launch_crawler(spider, spider_type, task_id, date_start, date_end):
+    scrapy_settings_path = 'scraper.scrapy_app.settings'
+    os.environ.setdefault('SCRAPY_SETTINGS_MODULE', scrapy_settings_path)
+    settings = get_project_settings()
+    settings['task_id'] = task_id
+    logger.info('SCRAPY PIPELINES: %s', settings.getlist('ITEM_PIPELINES'))
+    process = CrawlerProcess(settings=settings)
+    process.crawl(spider, spider_type=spider_type,
+                  spider_date_start=date_start,
+                  spider_date_end=date_end)
+    process.start()
 
 
 @shared_task(bind=True, default_retry_delay=1 * 60, max_retries=10)

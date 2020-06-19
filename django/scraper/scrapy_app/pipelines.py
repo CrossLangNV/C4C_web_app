@@ -6,7 +6,7 @@ import scrapy
 from minio import Minio
 from scrapy.pipelines.files import FilesPipeline
 
-from scrapy_app.solr_call import solr_add
+from scraper.scrapy_app.solr_call import solr_add
 
 LOG = logging.getLogger("pysolr")
 LOG.setLevel(logging.WARNING)

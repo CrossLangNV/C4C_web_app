@@ -230,3 +230,8 @@ CACHES = {
         }
     }
 }
+
+# Celery
+# This is needed so the twisted reactor, which scrapy uses,
+# doesn't get restarted when launching another celery scraping task
+CELERY_worker_max_tasks_per_child = 1
