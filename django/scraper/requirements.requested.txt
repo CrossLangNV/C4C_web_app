@@ -1,0 +1,7 @@
+scrapy
+scrapyd
+scrapy-user-agents
+beautifulsoup4
+pysolr
+jsonlines
+minio
