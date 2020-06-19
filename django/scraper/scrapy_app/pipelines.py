@@ -1,9 +1,12 @@
+import requests
 import logging
 import os
 import uuid
 
 import scrapy
 from minio import Minio
+from minio.error import ResponseError
+
 from scrapy.pipelines.files import FilesPipeline
 
 from scraper.scrapy_app.solr_call import solr_add
@@ -32,17 +35,39 @@ class ScrapyAppPipeline(FilesPipeline):
             crawler=crawler
         )
 
-    def get_media_requests(self, item, info):
-        if 'pdf_docs' not in item:
-            self.handle_document(item, info, [])
-            return item
-        else:
-            for url in item['pdf_docs']:
-                yield scrapy.Request(url)
-
+    # This method is called once per downloaded item. It returns the download path of the file originating from the specified response.
+    # You can override this method to customize the download path of each file.
     def file_path(self, request, response=None, info=None):
         return os.path.basename(request.url)
 
+    def check_redirect(self, url):
+        headers = {'Accept': 'application/xhtml+xml,text/html',
+                   'Accept-Language': 'eng'}
+        response = requests.head(url, headers=headers)
+        if response.status_code == 303:
+            url = response.headers["Location"]
+        return url
+
+    # The pipeline will get the URLs of the images to download from the item.
+    # In order to do this, you can override the get_media_requests() method and return a Request for each file URL.
+    # Those requests will be processed by the pipeline and, when they have finished downloading, the results will be sent to the item_completed() method,
+    def get_media_requests(self, item, info):
+        handle = True
+        if 'html_docs' in item and not 'content_html' in item:
+            handle = False
+            for url in item['html_docs']:
+                headers = {'Accept': ['application/xhtml+xml',
+                                      'text/html'], 'Accept-Language': 'eng'}
+                yield scrapy.Request(self.check_redirect(url), headers=headers)
+        if 'pdf_docs' in item:
+            handle = False
+            for url in item['pdf_docs']:
+                yield scrapy.Request(url)
+        if handle:
+            self.handle_document(item, info, [])
+            return item
+
+    # The FilesPipeline.item_completed() method called when all file requests for a single item have completed (either finished downloading, or failed for some reason).
     def item_completed(self, results, item, info):
         file_results = [x for ok, x in results if ok]
         self.handle_document(item, info, file_results)
@@ -51,6 +76,7 @@ class ScrapyAppPipeline(FilesPipeline):
     def handle_document(self, item, info, file_results):
         item['task'] = self.task_id
         item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url']))
+        self.logger.debug("HANDLING_DOC: %s", item)
         if item.get('doc_summary'):
             self.handle_document_summary(item)
         else:
@@ -58,15 +84,20 @@ class ScrapyAppPipeline(FilesPipeline):
             # GOAL: handle each file as a separate document: document id = doc url + file url
             # item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url'] + file_result['url']))
             # FOR NOW: handle only first file of document: keep same id
+            self.logger.debug("FILERESULTS: %s", file_results)
             if len(file_results) > 0:
                 file_result = file_results[0]
-                # store in minio
                 file_name = file_result['path']
-                file_path = os.environ['SCRAPY_FILES_FOLDER'] + 'files/' + info.spider.name + "/" + file_name
-                file_minio_path = self.minio_upload(file_path, file_name)
-                item['file_url'] = file_result['url']
-                item['file'] = file_minio_path
-
+                file_path = os.environ['SCRAPY_FILES_FOLDER'] + \
+                    'files/' + info.spider.name + "/" + file_name
+                if file_result['url'].startswith('http://publications.europa.eu/resource/cellar/'):
+                    f = open(file_path, "r")
+                    item['content_html'] = f.read()
+                else:
+                    # store in minio
+                    file_minio_path = self.minio_upload(file_path, file_name)
+                    item['file_url'] = file_result['url']
+                    item['file'] = file_minio_path
                 # add/update and index document to Solr
                 solr_add(core="documents", docs=[item])
 
@@ -77,4 +108,5 @@ class ScrapyAppPipeline(FilesPipeline):
         return os.environ['MINIO_STORAGE_MEDIA_URL'] + '/' + file_name
 
     def handle_document_summary(self, item):
+        del item['doc_summary']
         solr_add(core="summaries", docs=[item])
