@@ -108,17 +108,9 @@ CLOSESPIDER_ERRORCOUNT = 1
 COMPRESSION_ENABLED = True
 
 # Export feeds
-FEEDS = {
-    '/var/lib/scrapyd/feeds/items-%(name)s-%(time)s.jsonl': {
-        'format': 'jsonlines',
-        'encoding': 'utf8',
-        'store_empty': False,
-        'fields': None,
-    }
-}
-
-# Configure delta-fetch
-DELTAFETCH_ENABLED = False
-DELTAFETCH_DIR = '/var/lib/scrapyd/deltafetch'
-
 LOG_LEVEL = 'INFO'
+
+# Follow redirect on http://publications.europa.eu/resource/celex/32018D1720
+# Still got errors downloading, implemented workaround in:
+# https://stackoverflow.com/questions/37368030/error-302-downloading-file-in-scrapy/38783648
+MEDIA_ALLOW_REDIRECTS = True
