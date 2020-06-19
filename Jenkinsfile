@@ -38,15 +38,6 @@ pipeline {
                         }
                     }
                 }
-                dir('scrapy'){
-                    script {
-                        docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
-                            def customImage = docker.build("ctlg-manager/scrapyd:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
-                            customImage.push()
-                            customImage.push("${env.BRANCH_NAME}-latest")
-                        }
-                    }
-                }
                 dir('solr'){
                     script {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
