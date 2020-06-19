@@ -87,7 +87,7 @@ local_settings.py
 
 .env
 db.sqlite3
-scrapy/dbs
+django/scraper/dbs
 .idea
 secrets/django-docker.env
 data/
@@ -96,5 +96,5 @@ twistd.pid
 django/media
 django/static
 django/scheduler/export
-scrapy/files
+django/scraper/files
 .vscode

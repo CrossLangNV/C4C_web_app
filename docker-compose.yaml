@@ -23,7 +23,6 @@ services:
     depends_on:
       - postgres
       - solr
-      - scrapyd
       - minio
 
   celery:
@@ -57,16 +56,6 @@ services:
     image: rabbitmq
     ports: 
       - "5672:5672"
-
-  scrapyd:
-    build: ./scrapy
-    ports: 
-      - "6800:6800"
-    env_file:
-      - ./secrets/django-docker.env
-    volumes: 
-      - ./scrapy:/scrapy
-    command: scrapyd
 
   solr:
     image: solr:8.4-slim

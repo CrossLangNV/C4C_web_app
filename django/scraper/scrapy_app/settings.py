@@ -1,4 +1,7 @@
 import os
+import sys
+
+sys.path.append('/django/scraper')
 
 # Scrapy settings for scrapy_app project
 #
@@ -11,8 +14,8 @@ import os
 
 BOT_NAME = 'scrapy_app'
 
-SPIDER_MODULES = ['scrapy_app.spiders']
-NEWSPIDER_MODULE = 'scrapy_app.spiders'
+SPIDER_MODULES = ['scraper.scrapy_app.spiders']
+NEWSPIDER_MODULE = 'scraper.scrapy_app.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 # USER_AGENT = 'scrapy_app (+http://www.yourdomain.com)'
@@ -50,9 +53,6 @@ CONCURRENT_REQUESTS = 16
 # SPIDER_MIDDLEWARES = {
 #    'scrapy_app.middlewares.ScrapyAppSpiderMiddleware': 543,
 # }
-SPIDER_MIDDLEWARES = {
-    'scrapy_deltafetch.DeltaFetch': 100,
-}
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
@@ -72,7 +72,7 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'scrapy_app.pipelines.ScrapyAppPipeline': 300,
+    'scraper.scrapy_app.pipelines.ScrapyAppPipeline': 300,
 }
 
 FILES_STORE = os.environ['SCRAPY_FILES_FOLDER'] + 'files/'
@@ -96,7 +96,7 @@ AUTOTHROTTLE_DEBUG = False
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
 # HTTPCACHE_ENABLED = True
 # HTTPCACHE_EXPIRATION_SECS = 0
-# HTTPCACHE_DIR = '/var/lib/scrapyd/httpcache'
+# HTTPCACHE_DIR = '/var/lib/scrapy/httpcache'
 # HTTPCACHE_IGNORE_HTTP_CODES = []
 # HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 # HTTPCACHE_POLICY = 'scrapy.extensions.httpcache.RFC2616Policy'
@@ -109,7 +109,7 @@ COMPRESSION_ENABLED = True
 
 # Export feeds
 FEEDS = {
-    '/var/lib/scrapyd/feeds/items-%(name)s-%(time)s.jsonl': {
+    '/var/lib/scrapy/feeds/items-%(name)s-%(time)s.jsonl': {
         'format': 'jsonlines',
         'encoding': 'utf8',
         'store_empty': False,
@@ -117,8 +117,4 @@ FEEDS = {
     }
 }
 
-# Configure delta-fetch
-DELTAFETCH_ENABLED = False
-DELTAFETCH_DIR = '/var/lib/scrapyd/deltafetch'
-
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = 'DEBUG'
