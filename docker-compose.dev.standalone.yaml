@@ -1,0 +1,100 @@
+version: '3'
+services:
+  angular:
+    image: docker.crosslang.com/ctlg-manager/angular:develop-latest
+    ports: 
+      - "8080:80"
+    env_file:
+      - ./secrets/django-docker.env.sample
+    depends_on: 
+      - django
+
+  django:
+    image: docker.crosslang.com/ctlg-manager/django:develop-latest
+    env_file:
+      - ./secrets/django-docker.env.sample
+    command: ./start.sh
+    depends_on:
+      - postgres
+      - solr
+      - minio
+
+  django_nginx:
+    image: docker.crosslang.com/ctlg-manager/django_nginx:develop-latest
+    restart: always
+    depends_on:
+      - django
+    ports:
+      - "0.0.0.0:8000:8000"
+
+  celery:
+    image: docker.crosslang.com/ctlg-manager/django:develop-latest
+    command: celery -A scheduler worker -l info
+    env_file: 
+      - ./secrets/django-docker.env.sample
+    restart: 
+      always
+    depends_on: 
+      - django
+      - rabbitmq
+
+  flower:
+    image: docker.crosslang.com/ctlg-manager/django:develop-latest
+    ports:
+      - "5555:5555"
+    command: flower -A scheduler --port=5555
+    env_file: 
+      - ./secrets/django-docker.env.sample
+    restart: 
+      always
+    depends_on: 
+      - celery
+    
+  rabbitmq:
+    image: rabbitmq
+    ports: 
+      - "5672:5672"
+
+  solr:
+    image: docker.crosslang.com/ctlg-manager/solr:develop-latest
+    ports:
+      - "8983:8983"
+    volumes:
+      - solr:/var/solr
+    environment:
+      - SOLR_HEAP=4g
+    command: solr-precreate summaries
+
+  postgres:
+    image: postgres:alpine
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./secrets/django-docker.env.sample
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+  docclass:
+    image: docker.crosslang.com/ctlg-manager/docclass:latest
+    ports:
+      - "5000:5000"
+
+  minio:
+    image: minio/minio
+    command: server /data
+    ports: 
+      - "19000:9000"
+    env_file:
+      - ./secrets/django-docker.env.sample
+    volumes:
+      - minio:/data
+
+  tika:
+    image: apache/tika
+    ports:
+      - "9998:9998"
+
+volumes:
+  solr:
+  postgres:
+  minio:
