@@ -1,12 +1,11 @@
-import requests
 import logging
 import os
 import uuid
+from datetime import datetime
 
+import requests
 import scrapy
 from minio import Minio
-from minio.error import ResponseError
-
 from scrapy.pipelines.files import FilesPipeline
 
 from scraper.scrapy_app.solr_call import solr_add
@@ -77,6 +76,7 @@ class ScrapyAppPipeline(FilesPipeline):
         item['task'] = self.task_id
         item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url']))
         self.logger.debug("HANDLING_DOC: %s", item)
+        self.handle_dates(item)
         if item.get('doc_summary'):
             self.handle_document_summary(item)
         else:
@@ -100,6 +100,17 @@ class ScrapyAppPipeline(FilesPipeline):
                     item['file'] = file_minio_path
                 # add/update and index document to Solr
                 solr_add(core="documents", docs=[item])
+
+    def handle_dates(self, item):
+        if item.get('date'):
+            if isinstance(item['date'], datetime):
+                item['date'] = item['date'].isoformat()
+        if item.get('dates'):
+            string_dates = []
+            for some_date in item['dates']:
+                if isinstance(some_date, datetime):
+                    string_dates.append(some_date.isoformat())
+            item['dates'] = string_dates
 
     def minio_upload(self, file_path, file_name):
         minio = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
