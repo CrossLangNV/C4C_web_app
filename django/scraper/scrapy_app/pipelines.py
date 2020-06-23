@@ -101,8 +101,9 @@ class ScrapyAppPipeline(FilesPipeline):
                     file_minio_path = self.minio_upload(file_path, file_name)
                     item['file_url'] = file_result['url']
                     item['file'] = file_minio_path
-                # add/update and index document to Solr
-                solr_add(core="documents", docs=[item])
+
+            # add/update and index document to Solr
+            solr_add(core="documents", docs=[item])
 
     def handle_dates(self, item):
         if item.get('date'):
