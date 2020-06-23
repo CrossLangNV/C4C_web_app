@@ -58,7 +58,7 @@ services:
       - "5672:5672"
 
   solr:
-    image: solr:8.4-slim
+    image: solr:8.5-slim
     ports:
       - "8983:8983"
     volumes:
