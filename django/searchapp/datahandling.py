@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 import os
@@ -8,28 +9,44 @@ import requests
 from django.core.files.base import ContentFile
 
 from searchapp.models import Document, Attachment, Website, AcceptanceState, AcceptanceStateValue
+from searchapp.solr_call import solr_search_id
 
 logger = logging.getLogger(__name__)
 
 
 def score_documents(django_documents):
+    # if the classifier returns this value as either accepted or rejected
+    # probability, it means something went wrong decoding the content
+    error_classifier = -9999
     for django_doc in django_documents:
+        validated = False
         url = os.environ['DOCUMENT_CLASSIFIER_URL'] + "/classify_doc"
-        if (len(django_doc.title)):
-            data = {'title': django_doc.title,
-                    'date': django_doc.date.strftime("%Y-%m-%d"),
-                    'status': django_doc.status}
-            response = requests.post(url, json=data)
-            logger.info("Sending content: " + json.dumps(data))
-            js = response.json()
-            logger.info("Got response: " + json.dumps(js))
-            if 'accepted_probability' in js:
-                accepted_probability = js["accepted_probability"]
-                if accepted_probability > django_doc.acceptance_state_max_probability:
-                    django_doc.acceptance_state_max_probability = accepted_probability
-                    django_doc.save()
-            else:
-                accepted_probability = 0
+        # get content from solr
+        solr_result = solr_search_id(core="documents", id=str(django_doc.id))
+        if len(solr_result) == 1:
+            solr_doc = solr_result[0]
+            if solr_doc.get('content_html'):
+                # classifier uses base64 content
+                content_html = solr_doc['content_html'][0]
+                content_html_bytes = bytes(content_html, 'utf-8')
+                # don't classify if content > 50 MB
+                if len(content_html_bytes) <= 50 * 1024 * 1024:
+                    content_html_b64 = base64.b64encode(content_html_bytes).decode('utf-8')
+                    data = {'content': content_html_b64,
+                            'content_type': 'html'}
+                    response = requests.post(url, json=data)
+                    logger.info("Sending content for doc id: " + str(django_doc.id))
+                    js = response.json()
+                    logger.info("Got response: " + json.dumps(js))
+                    if 'accepted_probability' in js:
+                        accepted_probability = js["accepted_probability"]
+                        if accepted_probability != error_classifier:
+                            validated = True
+                            if accepted_probability > django_doc.acceptance_state_max_probability:
+                                django_doc.acceptance_state_max_probability = accepted_probability
+                                django_doc.save()
+
+        if validated:
             AcceptanceState.objects.update_or_create(
                 probability_model="auto classifier",
                 document=django_doc,
