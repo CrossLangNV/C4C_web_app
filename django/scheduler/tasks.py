@@ -137,11 +137,6 @@ def scrape_website_task(website_id):
 def launch_crawler(spider, spider_type, task_id, date_start, date_end):
     scrapy_settings_path = 'scraper.scrapy_app.settings'
     os.environ.setdefault('SCRAPY_SETTINGS_MODULE', scrapy_settings_path)
-    logging.basicConfig(
-        filename='log.txt',
-        format='%(levelname)s: %(message)s',
-        level=logging.INFO
-    )
     settings = get_project_settings()
     settings['task_id'] = task_id
     runner = CrawlerRunner(settings=settings)
