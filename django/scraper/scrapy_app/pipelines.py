@@ -13,6 +13,9 @@ from scraper.scrapy_app.solr_call import solr_add
 LOG = logging.getLogger("pysolr")
 LOG.setLevel(logging.WARNING)
 
+FILE_LOG = logging.getLogger("scrapy.pipelines.files")
+FILE_LOG.setLevel(logging.ERROR)
+
 
 class ScrapyAppPipeline(FilesPipeline):
     def __init__(self, task_id, crawler, *args, **kwargs):
@@ -105,12 +108,14 @@ class ScrapyAppPipeline(FilesPipeline):
         if item.get('date'):
             if isinstance(item['date'], datetime):
                 item['date'] = item['date'].isoformat()
-        if item.get('dates'):
-            string_dates = []
-            for some_date in item['dates']:
-                if isinstance(some_date, datetime):
-                    string_dates.append(some_date.isoformat())
-            item['dates'] = string_dates
+        date_field_lists = ['dates', 'amendments_from', 'amendments_to']
+        for field in date_field_lists:
+            if item.get(field):
+                string_dates = []
+                for some_date in item[field]:
+                    if isinstance(some_date, datetime):
+                        string_dates.append(some_date.isoformat())
+                item[field] = string_dates
 
     def minio_upload(self, file_path, file_name):
         minio = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
