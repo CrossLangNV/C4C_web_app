@@ -86,8 +86,6 @@ def sync_documents(website, solr_documents, django_documents):
                 type=solr_doc.get('type', [''])[0],
                 summary=''.join(x.strip()
                                 for x in solr_doc.get('summary', [''])),
-                content=''.join(x.strip()
-                                for x in solr_doc.get('content', [''])),
                 various=''.join(x.strip()
                                 for x in solr_doc.get('various', [''])),
                 website=website,
@@ -145,8 +143,6 @@ def update_document(django_doc, solr_doc):
         django_doc.type = solr_doc['type'][0]
     if 'summary' in solr_doc:
         django_doc.summary = ''.join(x.strip() for x in solr_doc['summary'])
-    if 'content' in solr_doc:
-        django_doc.content = ''.join(x.strip() for x in solr_doc['content'])
     if 'various' in solr_doc:
         django_doc.various = ''.join(x.strip() for x in solr_doc['various'])
     if 'website' in solr_doc:
