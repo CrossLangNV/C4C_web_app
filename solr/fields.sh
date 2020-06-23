@@ -79,3 +79,4 @@ JSON='{"add-field": [
 }';
 
 curl -k -X POST --user crosslang:isthebest -H 'Content-type:application/json' --data-binary "$JSON" $SOLR_HOST/solr/$COLLECTION/schema
+curl -k $SOLR_HOST/solr/$COLLECTION/config -d '{"set-user-property": {"update.autoCreateFields":"false"}}'
