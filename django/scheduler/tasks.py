@@ -11,9 +11,10 @@ from django.db.models.functions import Length
 from jsonlines import jsonlines
 from minio import Minio, ResponseError
 from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
-from scrapy.crawler import CrawlerProcess
+from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
 from tika import parser
+from twisted.internet import reactor
 
 from searchapp.datahandling import score_documents, sync_documents, sync_attachments
 from searchapp.models import Website, Document, Attachment
@@ -136,14 +137,19 @@ def scrape_website_task(website_id):
 def launch_crawler(spider, spider_type, task_id, date_start, date_end):
     scrapy_settings_path = 'scraper.scrapy_app.settings'
     os.environ.setdefault('SCRAPY_SETTINGS_MODULE', scrapy_settings_path)
+    logging.basicConfig(
+        filename='log.txt',
+        format='%(levelname)s: %(message)s',
+        level=logging.INFO
+    )
     settings = get_project_settings()
     settings['task_id'] = task_id
-    logger.info('SCRAPY PIPELINES: %s', settings.getlist('ITEM_PIPELINES'))
-    process = CrawlerProcess(settings=settings)
-    process.crawl(spider, spider_type=spider_type,
-                  spider_date_start=date_start,
-                  spider_date_end=date_end)
-    process.start()
+    runner = CrawlerRunner(settings=settings)
+    d = runner.crawl(spider, spider_type=spider_type,
+                     spider_date_start=date_start,
+                     spider_date_end=date_end)
+    d.addBoth(lambda _: reactor.stop())
+    reactor.run()  # the script will block here until the crawling is finished
 
 
 @shared_task(bind=True, default_retry_delay=1 * 60, max_retries=10)
