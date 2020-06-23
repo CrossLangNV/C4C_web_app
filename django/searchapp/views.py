@@ -457,31 +457,28 @@ def celex_get_xhtml(request):
         return Response(response.text)
 
 
-@cache_page(60 * 15)
+# @cache_page(60 * 15)
 @api_view(['GET'])
 def document_stats(request):
     if request.method == 'GET':
-        q1 = Document.objects.all()
-        # q2 = q1.exclude(Q(acceptance_states__value="Rejected") | Q(
-        # acceptance_states__value="Accepted") & Q(acceptance_states__probability_model__isnull=True))
-        # q3 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
-        #     acceptance_states__probability_model__isnull=True)).distinct()
-        # q4 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
-        #     acceptance_states__probability_model__isnull=True)).distinct()
-        # # FIXME: will be wrong when multiple auto-classifiers ?
-        # q5 = q1.filter(Q(acceptance_states__value="Unvalidated") & Q(
-        #     acceptance_states__probability_model__isnull=False))
-        # q6 = q1.filter(Q(acceptance_states__value="Accepted") & Q(
-        #     acceptance_states__probability_model__isnull=False))
-        # q7 = q1.filter(Q(acceptance_states__value="Rejected") & Q(
-        #     acceptance_states__probability_model__isnull=False))
+        q1 = AcceptanceState.objects.all().order_by("document").distinct("document_id")
+        q2 = q1.exclude(Q(value="Rejected") | Q(value="Accepted")
+                        & Q(probability_model__isnull=True))
+        q3 = q1.filter(Q(value="Accepted") & Q(probability_model__isnull=True))
+        q4 = q1.filter(Q(value="Rejected") & Q(probability_model__isnull=True))
+        q5 = q1.filter(Q(value="Unvalidated") & Q(
+            probability_model__isnull=False))
+        q6 = q1.filter(Q(value="Accepted") & Q(
+            probability_model__isnull=False))
+        q7 = q1.filter(Q(value="Rejected") & Q(
+            probability_model__isnull=False))
 
         return Response({
             'count_total': q1.count(),
-            'count_unvalidated': 0,
-            'count_accepted': 0,
-            'count_rejected': 0,
-            'count_autounvalidated': 0,
-            'count_autoaccepted': 0,
-            'count_autorejected': 0
+            'count_unvalidated': q2.count(),
+            'count_accepted': q3.count(),
+            'count_rejected': q4.count(),
+            'count_autounvalidated': q5.count(),
+            'count_autoaccepted': q6.count(),
+            'count_autorejected': q7.count()
         })
