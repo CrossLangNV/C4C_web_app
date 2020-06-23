@@ -107,7 +107,6 @@ CLOSESPIDER_ERRORCOUNT = 1
 
 COMPRESSION_ENABLED = True
 
-# Export feeds
 LOG_LEVEL = 'INFO'
 
 # Follow redirect on http://publications.europa.eu/resource/celex/32018D1720
