@@ -125,5 +125,4 @@ class ScrapyAppPipeline(FilesPipeline):
         return os.environ['MINIO_STORAGE_MEDIA_URL'] + '/' + file_name
 
     def handle_document_summary(self, item):
-        del item['doc_summary']
         solr_add(core="summaries", docs=[item])
