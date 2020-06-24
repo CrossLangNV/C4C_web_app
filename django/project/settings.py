@@ -235,3 +235,5 @@ CACHES = {
 # This is needed so the twisted reactor, which scrapy uses,
 # doesn't get restarted when launching another celery scraping task
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 1
+# Retry on worker failure
+CELERY_TASK_ACKS_LATE = True
