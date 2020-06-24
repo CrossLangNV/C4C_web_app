@@ -10,6 +10,7 @@ django-crispy-forms==1.9.1
 django-oauth-toolkit==1.3.2
 django-rest-framework-social-oauth2==1.1.0
 djangorestframework==3.11.0
+django-health-check==3.12.1
 flower==0.9.4
 gunicorn==20.0.4
 minio==5.0.10
@@ -20,3 +21,4 @@ PyYAML==5.3.1
 tika==1.24
 zipp==3.1.0
 psycopg2-binary==2.8.5
+psutil==5.7.0

@@ -53,6 +53,11 @@ INSTALLED_APPS = [
     'admin_rest',
     'django_celery_results',
     'minio_storage',
+    'health_check',
+    'health_check.db',
+    'health_check.storage',
+    'health_check.contrib.celery',
+    'health_check.contrib.psutil',
 ]
 
 MIDDLEWARE = [

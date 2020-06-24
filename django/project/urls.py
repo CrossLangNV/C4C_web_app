@@ -21,6 +21,7 @@ from django.views.generic import RedirectView
 
 from admin_rest.models import site
 from project import settings
+from django.conf.urls import url
 
 urlpatterns = [
     path('', RedirectView.as_view(url='admin/', permanent=True)),
@@ -31,6 +32,7 @@ urlpatterns = [
     path('social-auth/', include('social_django.urls', namespace="social-view")),
     path('auth/', include('rest_framework_social_oauth2.urls')),
     path('glossary/', include(('glossary.urls', 'glossary'), namespace="glossary")),
+    path('ht/', include('health_check.urls')),
 ]
 
 if settings.DEBUG:
