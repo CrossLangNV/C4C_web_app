@@ -1,5 +1,5 @@
 import { AppComponent } from './app.component';
-
+import { Environment } from 'src/environments/environment-variables';
 import { CoreModule } from './core/core.module';
 import { NgModule } from '@angular/core';
 import { SearchModule } from './search/search.module';
