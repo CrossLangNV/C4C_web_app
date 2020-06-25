@@ -7,7 +7,7 @@ from urllib.request import urlopen, Request
 
 import requests
 from django.core.files.base import ContentFile
-
+from django.utils.timezone import make_aware
 from searchapp.models import Document, Attachment, Website, AcceptanceState, AcceptanceStateValue
 from searchapp.solr_call import solr_search_id
 
@@ -31,11 +31,13 @@ def score_documents(django_documents):
                 content_html_bytes = bytes(content_html, 'utf-8')
                 # don't classify if content > 50 MB
                 if len(content_html_bytes) <= 50 * 1024 * 1024:
-                    content_html_b64 = base64.b64encode(content_html_bytes).decode('utf-8')
+                    content_html_b64 = base64.b64encode(
+                        content_html_bytes).decode('utf-8')
                     data = {'content': content_html_b64,
                             'content_type': 'html'}
                     response = requests.post(url, json=data)
-                    logger.info("Sending content for doc id: " + str(django_doc.id))
+                    logger.info("Sending content for doc id: " +
+                                str(django_doc.id))
                     js = response.json()
                     logger.info("Got response: " + json.dumps(js))
                     if 'accepted_probability' in js:
@@ -72,8 +74,6 @@ def sync_documents(website, solr_documents, django_documents):
             break
         elif django_doc_id is None:
             solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
-            date_format = '%Y-%m-%dT%H:%M:%SZ'
-
             new_django_doc = Document.objects.create(
                 id=solr_doc['id'],
                 url=solr_doc['url'][0],
@@ -82,13 +82,15 @@ def sync_documents(website, solr_documents, django_documents):
                 title_prefix=solr_doc.get('title_prefix', [''])[0],
                 title=solr_doc.get('title', [''])[0][:1000],
                 status=solr_doc.get('status', [''])[0][:100],
-                date=solr_doc_date,
+                date=make_aware(solr_doc_date),
                 type=solr_doc.get('type', [''])[0],
                 summary=''.join(x.strip()
                                 for x in solr_doc.get('summary', [''])),
                 various=''.join(x.strip()
                                 for x in solr_doc.get('various', [''])),
                 website=website,
+                consolidated_versions=','.join(x.strip()
+                                               for x in solr_doc.get('consolidated_versions', [''])),
                 pull=True
             )
         elif str(django_doc_id) == solr_doc['id']:
@@ -138,17 +140,22 @@ def update_document(django_doc, solr_doc):
         django_doc.status = solr_doc['status'][0][:100]
     if 'date' in solr_doc:
         solr_doc_date = solr_doc['date'][0].split('T')[0]
-        django_doc.date = datetime.strptime(solr_doc_date, '%Y-%m-%d')
+        django_doc.date = make_aware(
+            datetime.strptime(solr_doc_date, '%Y-%m-%d'))
     if 'type' in solr_doc:
         django_doc.type = solr_doc['type'][0]
     if 'summary' in solr_doc:
         django_doc.summary = ''.join(x.strip() for x in solr_doc['summary'])
     if 'various' in solr_doc:
         django_doc.various = ''.join(x.strip() for x in solr_doc['various'])
+    if 'consolidated_versions' in solr_doc:
+        django_doc.consolidated_versions = ','.join(
+            x.strip() for x in solr_doc['consolidated_versions'])
     if 'website' in solr_doc:
         django_doc.website = Website.objects.get(
             name__iexact=solr_doc['website'][0])
-    django_doc.pull = False
+    # Don't update solr when syncing from solr to django
+    django_doc.pull = True
     django_doc.save()
 
 

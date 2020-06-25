@@ -36,7 +36,8 @@ export class Document {
     public attachments: Attachment[],
     public commentIds: string[],
     public tags: string[],
-    public pull: boolean
+    public pull: boolean,
+    public consolidatedVersions: string
   ) {}
 }
 
@@ -66,7 +67,8 @@ export class DocumentAdapter implements Adapter<Document> {
       item.attachments,
       item.comments,
       item.tags,
-      item.pull
+      item.pull,
+      item.consolidated_versions
     );
   }
   encode(document: Document): any {
@@ -93,6 +95,7 @@ export class DocumentAdapter implements Adapter<Document> {
       comments: document.commentIds,
       tags: document.tags,
       pull: document.pull,
+      consolidatedVersions: document.consolidatedVersions,
     };
   }
 }

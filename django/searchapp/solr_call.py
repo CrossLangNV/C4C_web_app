@@ -56,8 +56,9 @@ def solr_search_id_sorted(core="", id=""):
 
 def solr_search_website_sorted(core="", website=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    SOLR_SYNC_FIELDS = 'id,title,title_prefix,author,status,type,date,url,ELI,celex,website,summary,various,consolidated_versions'
     search = get_results(client.search(
-        'website:' + website, **{'rows': ROW_LIMIT, 'sort': 'id asc'}))
+        'website:' + website, **{'rows': ROW_LIMIT, 'fl': SOLR_SYNC_FIELDS, 'sort': 'id asc'}))
     return search
 
 
