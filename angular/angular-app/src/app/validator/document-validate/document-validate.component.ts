@@ -70,22 +70,23 @@ export class DocumentValidateComponent implements OnInit {
       )
       .subscribe((document) => {
         this.document = document;
-        this.service
-          .getSolrDocument(this.document.id)
-          .subscribe((solrDocument) => {
-            this.consolidatedVersions = new Map();
-            solrDocument[0].consolidated_versions.forEach((consolidated) => {
-              let consolidatedDate = consolidated.split('-')[1];
-              consolidatedDate = new Date(
-                consolidatedDate.substring(0, 4) +
-                  '-' +
-                  consolidatedDate.substring(4, 6) +
-                  '-' +
-                  consolidatedDate.substring(6)
-              );
-              this.consolidatedVersions.set(consolidated, consolidatedDate);
-            });
-          });
+        this.consolidatedVersions = new Map();
+        let consolidatedVersionsArr = this.document.consolidatedVersions.split(
+          ','
+        );
+
+        let consolidated = consolidatedVersionsArr[0];
+        consolidatedVersionsArr.forEach((consolidated) => {
+          let consolidatedDateSplit = consolidated.split('-')[1];
+          let consolidatedDate = new Date(
+            consolidatedDateSplit.substring(0, 4) +
+              '-' +
+              consolidatedDateSplit.substring(4, 6) +
+              '-' +
+              consolidatedDateSplit.substring(6)
+          );
+          this.consolidatedVersions.set(consolidated, consolidatedDate);
+        });
         this.newComment.documentId = document.id;
         this.comments = [];
         if (document.commentIds) {
@@ -157,14 +158,19 @@ export class DocumentValidateComponent implements OnInit {
 
     if (attachmentId.startsWith('CELEX:')) {
       attachmentId = attachmentId.replace(/CELEX:/g, '');
+      let url =
+        'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:' +
+        attachmentId;
       this.service.getEURLEXxhtml(attachmentId).subscribe((xhtml) => {
-        this.attachment = new Attachment(
-          attachmentId,
-          '',
-          this.document.url,
-          '',
-          xhtml
-        );
+        if (
+          xhtml.includes(
+            'None of the requests returned successfully a redirection'
+          )
+        ) {
+          xhtml = 'HTML unavailable, Click "See original" for PDF version';
+        }
+        this.attachment = new Attachment(attachmentId, '', url, '', xhtml);
+        console.log(attachmentId);
         console.log(this.attachment.url);
       });
     } else {

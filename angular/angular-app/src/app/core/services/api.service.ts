@@ -97,9 +97,9 @@ export class ApiService {
       requestUrl += `&id=${id}`;
     });
     if (sortBy) {
-      requestUrl += `&sortBy=${sortBy}`
+      requestUrl += `&sortBy=${sortBy}`;
       if (sortDirection) {
-        requestUrl += `&sortDirection=${sortDirection}`
+        requestUrl += `&sortDirection=${sortDirection}`;
       }
     }
     return this.http.get<any[]>(requestUrl).pipe(
@@ -259,10 +259,6 @@ export class ApiService {
 
   public deleteAttachment(id: string): Observable<any> {
     return this.http.delete(`${this.API_URL}/attachment/${id}`);
-  }
-
-  public getSolrDocument(id: string): Observable<any> {
-    return this.http.get<any>(`${this.API_URL}/solrdocument/${id}`);
   }
 
   public getEURLEXxhtml(celex_id: string): Observable<any> {

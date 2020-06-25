@@ -22,7 +22,11 @@
     <hr class="my-4" />
     <p><b>Consolidated versions:</b></p>
     <div *ngFor="let consolidated of consolidatedVersions | keyvalue">
-      <button type="button" class="btn btn-primary my-1" (click)="openModal(editProfileModal, 'CELEX:' + consolidated.key)">
+      <button
+        type="button"
+        class="btn btn-primary my-1"
+        (click)="openModal(editProfileModal, 'CELEX:' + consolidated.key)"
+      >
         {{ consolidated.value | date }}
       </button>
     </div>
@@ -92,7 +96,10 @@
           <button class="btn btn-secondary" (click)="onDeleteComment(comment)">
             <fa-icon [icon]="deleteIcon"></fa-icon> Delete
           </button>
-          <p-confirmDialog header="Confirmation" icon="pi pi-exclamation-triangle">
+          <p-confirmDialog
+            header="Confirmation"
+            icon="pi pi-exclamation-triangle"
+          >
           </p-confirmDialog>
         </div>
       </div>

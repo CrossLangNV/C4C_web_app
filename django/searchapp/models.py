@@ -40,9 +40,11 @@ class Document(models.Model):
     content = models.TextField(default="", blank=True)
     content_html = models.TextField(default="", blank=True)
     various = models.TextField(default="", blank=True)
+    consolidated_versions = models.TextField(default="", blank=True)
 
     file = models.FileField(null=True, blank=True)
-    file_url = models.URLField(max_length=1000, unique=True, null=True, blank=True)
+    file_url = models.URLField(
+        max_length=1000, unique=True, null=True, blank=True)
     extract_text = models.BooleanField(default=False)
 
     pull = models.BooleanField(default=False, editable=False)
@@ -71,7 +73,8 @@ class Document(models.Model):
         # extract text from file if indicated
         if self.extract_text and self.file.name:
             pdf_extract.delay(
-                binascii.b2a_base64(self.file.read(), newline=False).decode('utf-8'),
+                binascii.b2a_base64(
+                    self.file.read(), newline=False).decode('utf-8'),
                 str(self.id)
             )
 

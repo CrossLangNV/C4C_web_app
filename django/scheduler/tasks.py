@@ -120,8 +120,10 @@ def scrape_website_task(website_id):
     # lookup website and start scraping
     website = Website.objects.get(pk=website_id)
     spiders = [{"id": "bis"}, {"id": "eiopa"}, {"id": "esma"},
-               {"id": "eurlex", "type": "directives"}, {"id": "eurlex", "type": "decisions"},
-               {"id": "eurlex", "type": "regulations"}, {"id": "fsb"}, {"id": "srb"},
+               {"id": "eurlex", "type": "directives"}, {
+                   "id": "eurlex", "type": "decisions"},
+               {"id": "eurlex", "type": "regulations"}, {
+                   "id": "fsb"}, {"id": "srb"},
                {"id": "eba", "type": "guidelines"},
                {"id": "eba", "type": "recommendations"},
                ]
@@ -178,7 +180,8 @@ def add_content_eurlex(self):
                 'FALLBACK: Requesting html content for celex id: %s', document.celex)
             headers = {'Accept': 'text/html', 'Accept-Language': 'eng'}
             try:
-                response = requests.get(cellar_api_endpoint + quote(document.celex), headers=headers)
+                response = requests.get(
+                    cellar_api_endpoint + quote(document.celex), headers=headers)
             except requests.exceptions.RequestException as exc:
                 self.retry(exc=exc)
             content_html = response.text
