@@ -135,7 +135,7 @@ def scrape_website_task(website_id):
             launch_crawler.delay(spider['id'], spider['type'], -1, None, None)
 
 
-@shared_task()
+@shared_task
 def launch_crawler(spider, spider_type, task_id, date_start, date_end):
     scrapy_settings_path = 'scraper.scrapy_app.settings'
     os.environ.setdefault('SCRAPY_SETTINGS_MODULE', scrapy_settings_path)

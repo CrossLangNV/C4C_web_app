@@ -1,6 +1,7 @@
 Django==3.0.7
 celery==4.4.6
 celery-slack==0.4.1
+django-celery-beat==2.0.0
 django-celery-results==1.2.1
 django-cleanup==5.0.0
 django-compat==1.0.15

@@ -44,6 +44,17 @@ services:
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
 
+  celery_beat:
+    image: docker.crosslang.com/ctlg-manager/django:develop-latest
+    ports:
+      - "8000:8000"
+    command: celery -A scheduler beat -l info
+    env_file: 
+      - ./secrets/django-docker.env.sample
+    labels:
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+
   flower:
     image: docker.crosslang.com/ctlg-manager/django:develop-latest
     ports:
