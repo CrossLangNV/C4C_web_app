@@ -78,14 +78,16 @@ export class DocumentValidateComponent implements OnInit {
         let consolidated = consolidatedVersionsArr[0];
         consolidatedVersionsArr.forEach((consolidated) => {
           let consolidatedDateSplit = consolidated.split('-')[1];
-          let consolidatedDate = new Date(
-            consolidatedDateSplit.substring(0, 4) +
-              '-' +
-              consolidatedDateSplit.substring(4, 6) +
-              '-' +
-              consolidatedDateSplit.substring(6)
-          );
-          this.consolidatedVersions.set(consolidated, consolidatedDate);
+          if (consolidatedDateSplit) {
+            let consolidatedDate = new Date(
+              consolidatedDateSplit.substring(0, 4) +
+                '-' +
+                consolidatedDateSplit.substring(4, 6) +
+                '-' +
+                consolidatedDateSplit.substring(6)
+            );
+            this.consolidatedVersions.set(consolidated, consolidatedDate);
+          }
         });
         this.newComment.documentId = document.id;
         this.comments = [];
