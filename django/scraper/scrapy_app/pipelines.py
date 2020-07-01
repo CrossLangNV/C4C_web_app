@@ -42,7 +42,7 @@ class ScrapyAppPipeline(FilesPipeline):
         return pipeline
 
     def spider_opened(self, spider):
-        self.exporter = S3ItemExporter(spider.name)
+        self.exporter = S3ItemExporter(spider.name + '-' + str(self.task_id))
         self.exporter.start_exporting()
 
     def spider_closed(self, spider):
