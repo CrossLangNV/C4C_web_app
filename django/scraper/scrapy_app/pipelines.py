@@ -7,8 +7,9 @@ import requests
 import scrapy
 from minio import Minio
 from scrapy.pipelines.files import FilesPipeline
+from scrapy import signals
 
-from scraper.scrapy_app.solr_call import solr_add
+from scraper.scrapy_app.minio_call import S3ItemExporter
 
 LOG = logging.getLogger("pysolr")
 LOG.setLevel(logging.WARNING)
@@ -31,11 +32,21 @@ class ScrapyAppPipeline(FilesPipeline):
 
     @classmethod
     def from_crawler(cls, crawler):
-        return cls(
+        pipeline = cls(
             # this will be passed from django view
             task_id=crawler.settings.get('task_id'),
             crawler=crawler
         )
+        crawler.signals.connect(pipeline.spider_opened, signals.spider_opened)
+        crawler.signals.connect(pipeline.spider_closed, signals.spider_closed)
+        return pipeline
+
+    def spider_opened(self, spider):
+        self.exporter = S3ItemExporter(spider.name)
+        self.exporter.start_exporting()
+
+    def spider_closed(self, spider):
+        self.exporter.finish_exporting()
 
     # This method is called once per downloaded item. It returns the download path of the file originating from the specified response.
     # You can override this method to customize the download path of each file.
@@ -80,42 +91,39 @@ class ScrapyAppPipeline(FilesPipeline):
         item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url']))
         self.logger.debug("HANDLING_DOC: %s", item)
         self.handle_dates(item)
-        if item.get('doc_summary'):
-            self.handle_document_summary(item)
-        else:
-            item['website'] = info.spider.name
-            # GOAL: handle each file as a separate document: document id = doc url + file url
-            # item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url'] + file_result['url']))
-            # FOR NOW: handle only first file of document: keep same id
-            self.logger.debug("FILERESULTS: %s", file_results)
-            if len(file_results) > 0:
-                file_result = file_results[0]
-                file_name = file_result['path']
-                file_path = os.environ['SCRAPY_FILES_FOLDER'] + \
-                    'files/' + info.spider.name + "/" + file_name
-                if file_result['url'].startswith('http://publications.europa.eu/resource/cellar/'):
-                    f = open(file_path, "r")
-                    item['content_html'] = f.read()
-                else:
-                    # store in minio
-                    file_minio_path = self.minio_upload(file_path, file_name)
-                    item['file_url'] = file_result['url']
-                    item['file'] = file_minio_path
+        item['website'] = info.spider.name
+        # GOAL: handle each file as a separate document: document id = doc url + file url
+        # item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url'] + file_result['url']))
+        # FOR NOW: handle only first file of document: keep same id
+        self.logger.debug("FILERESULTS: %s", file_results)
+        if len(file_results) > 0:
+            file_result = file_results[0]
+            file_name = file_result['path']
+            file_path = os.environ['SCRAPY_FILES_FOLDER'] + \
+                'files/' + info.spider.name + "/" + file_name
+            if file_result['url'].startswith('http://publications.europa.eu/resource/cellar/'):
+                f = open(file_path, "r")
+                item['content_html'] = f.read()
+            else:
+                # store in minio
+                file_minio_path = self.minio_upload(file_path, file_name)
+                item['file_url'] = file_result['url']
+                item['file'] = file_minio_path
 
-            # add/update and index document to Solr
-            solr_add(core="documents", docs=[item])
+        # Export item to minio jsonl file
+        self.exporter.export_item(item)
 
     def handle_dates(self, item):
         if item.get('date'):
             if isinstance(item['date'], datetime):
-                item['date'] = item['date'].isoformat()
+                item['date'] = item['date'].isoformat() + "Z"
         date_field_lists = ['dates', 'amendments_from', 'amendments_to']
         for field in date_field_lists:
             if item.get(field):
                 string_dates = []
                 for some_date in item[field]:
                     if isinstance(some_date, datetime):
-                        string_dates.append(some_date.isoformat())
+                        string_dates.append(some_date.isoformat() + "Z")
                 item[field] = string_dates
 
     def minio_upload(self, file_path, file_name):
@@ -123,6 +131,3 @@ class ScrapyAppPipeline(FilesPipeline):
                       secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
         minio.fput_object('local-media', file_name, file_path)
         return os.environ['MINIO_STORAGE_MEDIA_URL'] + '/' + file_name
-
-    def handle_document_summary(self, item):
-        solr_add(core="summaries", docs=[item])

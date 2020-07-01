@@ -113,3 +113,23 @@ LOG_LEVEL = 'INFO'
 # Still got errors downloading, implemented workaround in:
 # https://stackoverflow.com/questions/37368030/error-302-downloading-file-in-scrapy/38783648
 MEDIA_ALLOW_REDIRECTS = True
+
+
+# # Export feeds
+# FEEDS = {
+#     '/var/lib/scrapy/feeds/items-%(name)s-%(time)s.jsonl': {
+#         'format': 'jsonlines',
+#         'encoding': 'utf8',
+#         'store_empty': False,
+#         'fields': None,
+#     }
+# }
+
+
+AWS_ACCESS_KEY_ID = os.environ['MINIO_ACCESS_KEY']
+AWS_SECRET_ACCESS_KEY = os.environ['MINIO_SECRET_KEY']
+
+AWS_ENDPOINT_URL = "http://" + os.environ['MINIO_STORAGE_ENDPOINT']
+
+AWS_USE_SSL = False
+AWS_VERIFY = False
