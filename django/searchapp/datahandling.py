@@ -44,9 +44,9 @@ def score_documents(django_documents):
                         accepted_probability = js["accepted_probability"]
                         if accepted_probability != error_classifier:
                             validated = True
-                            if accepted_probability > django_doc.acceptance_state_max_probability:
-                                django_doc.acceptance_state_max_probability = accepted_probability
-                                django_doc.save()
+                            # for now acceptance_state_max_probability is the latest one
+                            django_doc.acceptance_state_max_probability = accepted_probability
+                            django_doc.save()
 
         if validated:
             AcceptanceState.objects.update_or_create(
