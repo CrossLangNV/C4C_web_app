@@ -15,7 +15,7 @@ class EurLexType(Enum):
 
 
 class EurLexSpider(scrapy.Spider):
-    download_delay = 0.1
+    download_delay = 0.0
     name = 'eurlex'
     date_format = '%d/%m/%Y'
 
@@ -218,7 +218,8 @@ class EurLexSpider(scrapy.Spider):
             misc_types = misc.xpath('.//dt')
             misc_data = misc.xpath('.//dd')
             for (t, d) in zip(misc_types, misc_data):
-                misc_type = t.xpath('.//text()').get().split(':')[0].lower()
+                misc_type = t.xpath(
+                    './/text()').get().split(':')[0].lower().replace(" ", "_")
                 misc_value = ''.join(
                     d.xpath('.//text()').getall()).replace('\n', ' ').strip()
                 # save 'form' value also as general document type value
