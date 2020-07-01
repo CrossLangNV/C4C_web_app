@@ -98,3 +98,5 @@ django/static
 django/scheduler/export
 django/scraper/files
 .vscode
+
+celerybeat.pid

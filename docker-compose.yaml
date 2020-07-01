@@ -37,6 +37,19 @@ services:
     depends_on: 
       - django
       - rabbitmq
+  
+  celery_beat:
+    build: ./django
+    command: celery -A scheduler beat -l info
+    volumes: 
+      - ./django:/django
+    env_file: 
+      - ./secrets/django-docker.env
+    restart: 
+      always
+    depends_on: 
+      - django
+      - rabbitmq
 
   flower:
     build: ./django

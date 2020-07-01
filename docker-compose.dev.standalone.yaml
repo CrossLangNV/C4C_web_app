@@ -38,6 +38,17 @@ services:
       - django
       - rabbitmq
 
+  celery_beat:
+    image: docker.crosslang.com/ctlg-manager/django:develop-latest
+    command: celery -A scheduler beat -l info
+    env_file: 
+      - ./secrets/django-docker.env.sample
+    restart: 
+      always
+    depends_on: 
+      - django
+      - rabbitmq
+
   flower:
     image: docker.crosslang.com/ctlg-manager/django:develop-latest
     ports:

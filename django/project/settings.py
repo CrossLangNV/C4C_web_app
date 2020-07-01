@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'scraping',
     'glossary',
     'admin_rest',
+    'django_celery_beat',
     'django_celery_results',
     'minio_storage',
     'health_check',
@@ -242,3 +243,5 @@ CACHES = {
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 1
 # Retry on worker failure
 CELERY_TASK_ACKS_LATE = True
+# beat scheduler
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
