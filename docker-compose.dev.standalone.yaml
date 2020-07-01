@@ -29,7 +29,7 @@ services:
 
   celery:
     image: docker.crosslang.com/ctlg-manager/django:develop-latest
-    command: celery -A scheduler worker -l info
+    command: celery -A scheduler worker -l info --uid=nobody --gid=nogroup
     env_file: 
       - ./secrets/django-docker.env.sample
     restart: 

@@ -37,7 +37,7 @@ services:
     image: docker.crosslang.com/ctlg-manager/django:develop-latest
     ports:
       - "8000:8000"
-    command: celery -A scheduler worker -l info
+    command: celery -A scheduler worker -l info --uid=nobody --gid=nogroup 
     env_file: 
       - ./secrets/django-docker.env.sample
     labels:
