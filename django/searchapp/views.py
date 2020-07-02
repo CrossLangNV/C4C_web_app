@@ -6,6 +6,7 @@ import requests
 from celery.result import AsyncResult
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Q
+from django.db.models.functions import Length
 from django.http import FileResponse
 from django.shortcuts import render
 from django.urls import reverse_lazy
@@ -223,7 +224,7 @@ class DocumentListAPIView(ListCreateAPIView):
     ordering_fields = ['title', 'date', 'acceptance_state_max_probability']
 
     def get_queryset(self):
-        q = Document.objects.all()
+        q = Document.objects.annotate(text_len=Length('title')).filter(text_len__gt=1)
         keyword = self.request.GET.get('keyword', "")
         if keyword:
             q = q.filter(title__icontains=keyword)

@@ -46,7 +46,10 @@ def score_documents(django_documents):
                             validated = True
                             # for now acceptance_state_max_probability is the latest one
                             django_doc.acceptance_state_max_probability = accepted_probability
-                            django_doc.save()
+                        else:
+                            # for now acceptance_state_max_probability is the latest one
+                            django_doc.acceptance_state_max_probability = -1
+                        django_doc.save()
 
         if validated:
             AcceptanceState.objects.update_or_create(
@@ -63,7 +66,7 @@ def score_documents(django_documents):
                 document=django_doc,
                 defaults={
                     'value': AcceptanceStateValue.UNVALIDATED,
-                    'accepted_probability': 0
+                    'accepted_probability': -1
                 }
             )
 

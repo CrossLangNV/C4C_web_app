@@ -27,7 +27,7 @@ services:
 
   celery:
     build: ./django
-    command: celery -A scheduler worker -l info
+    command: celery -A scheduler worker -l info --uid=nobody --gid=nogroup
     volumes: 
       - ./django:/django
     env_file: 
