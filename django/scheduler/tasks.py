@@ -154,13 +154,16 @@ def launch_crawler(spider, spider_type, task_id, date_start, date_end):
 @shared_task(bind=True, default_retry_delay=1 * 60, max_retries=10)
 def parse_html_to_plaintext_task(self):
     logger.info('Adding content to each eurlex document.')
-    page_number = 1
-    rows_per_page = 250000
-    # select all records where content is empty and content_html is not
-    results = solr_search_website_paginated(core="documents", q="-content: [\"\" TO *] AND content_html: [* TO *] website:eurlex", page_number=page_number,
-                                            rows_per_page=rows_per_page)
+    page_number = 0
+    rows_per_page = 250
+    cursor_mark = "*"
     core = 'documents'
+    # select all records where content is empty and content_html is not
+    q = "-content: [\"\" TO *] AND content_html: [* TO *] website:eurlex"
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    options = {'rows': rows_per_page, 'start': page_number,
+               'cursorMark': cursor_mark, 'sort': 'id asc'}
+    results = client.search(q, **options)
     for result in results:
         if 'content_html' in result:
             output = parser.from_buffer(result['content_html'][0])
@@ -177,6 +180,6 @@ def parse_html_to_plaintext_task(self):
                 #result['content_html'] = ''
                 # client.add([result])
 
-    # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
-    requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + '/update?commit=true')
+        # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
+        requests.get(os.environ['SOLR_URL'] +
+                     '/' + core + '/update?commit=true')
