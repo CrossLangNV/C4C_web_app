@@ -5,6 +5,8 @@ import os
 import shutil
 from urllib.parse import quote
 
+import pysolr
+
 import requests
 from celery import shared_task
 from django.db.models.functions import Length
@@ -18,7 +20,7 @@ from twisted.internet import reactor
 
 from searchapp.datahandling import score_documents, sync_documents, sync_attachments
 from searchapp.models import Website, Document, Attachment
-from searchapp.solr_call import solr_search, solr_search_document_id_sorted, solr_search_website_sorted
+from searchapp.solr_call import solr_search, solr_search_document_id_sorted, solr_search_website_sorted, solr_search_website_paginated
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -48,7 +50,7 @@ def export_documents(website_ids=None):
     shutil.make_archive(zip_destination, 'zip', workpath + '/export/jsonl')
 
     # upload zip to minio
-    minio_client = Minio('minio:9000', access_key=os.environ['MINIO_ACCESS_KEY'],
+    minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
                          secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
     try:
         minio_client.make_bucket('export')
@@ -150,74 +152,31 @@ def launch_crawler(spider, spider_type, task_id, date_start, date_end):
 
 
 @shared_task(bind=True, default_retry_delay=1 * 60, max_retries=10)
-def add_content_eurlex(self):
-    cellar_api_endpoint = 'http://publications.europa.eu/resource/celex/'
-    pdf_endpoint = 'https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:'
-
+def parse_html_to_plaintext_task(self):
     logger.info('Adding content to each eurlex document.')
-    website_eurlex = Website.objects.get(name__iexact='eurlex')
-    # filter on content_html length < 1
-    documents = Document.objects.annotate(text_len=Length('content_html')) \
-        .filter(website=website_eurlex, text_len__lt=1)
+    page_number = 1
+    rows_per_page = 250000
+    # select all records where content is empty and content_html is not
+    results = solr_search_website_paginated(core="documents", q="-content: [\"\" TO *] AND content_html: [* TO *] website:eurlex", page_number=page_number,
+                                            rows_per_page=rows_per_page)
+    core = 'documents'
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    for result in results:
+        if 'content_html' in result:
+            output = parser.from_buffer(result['content_html'][0])
+            if output['content']:
+                # add to document model and save
+                logger.info('Got content for: %s (%s)',
+                            result['id'], len(output['content']))
+                result['content'] = output['content']
+                client.add([result])
+            else:
+                # could not parse content
+                logger.info('No output, removing content_html')
+                # FIXME: remove html content known to be bad ?
+                #result['content_html'] = ''
+                # client.add([result])
 
-    global headers
-    global response
-    global content_html
-
-    for document in documents:
-        logger.info('Requesting xhtml content for celex id: %s',
-                    document.celex)
-        headers = {'Accept': 'application/xhtml+xml', 'Accept-Language': 'eng'}
-        try:
-            response = requests.get(cellar_api_endpoint +
-                                    quote(document.celex), headers=headers)
-        except requests.exceptions.RequestException as exc:
-            self.retry(exc=exc)
-        content_html = response.text
-        if response.status_code != 200:
-            logger.info("RESPONSE: %s", response.text)
-            logger.info(
-                'FALLBACK: Requesting html content for celex id: %s', document.celex)
-            headers = {'Accept': 'text/html', 'Accept-Language': 'eng'}
-            try:
-                response = requests.get(
-                    cellar_api_endpoint + quote(document.celex), headers=headers)
-            except requests.exceptions.RequestException as exc:
-                self.retry(exc=exc)
-            content_html = response.text
-            if response.status_code != 200:
-                logger.info("RESPONSE: %s", response.text)
-                logger.info(
-                    'FALLBACK: Requesting pdf content for celex id: %s', document.celex)
-                try:
-                    response = requests.get(pdf_endpoint + document.celex)
-                except requests.exceptions.RequestException as exc:
-                    self.retry(exc=exc)
-                if response.status_code == 200:
-                    logger.info('PARSE PDF WITH TIKA...')
-                    pdf_text = parser.from_buffer(
-                        response.content, xmlContent=True)
-                    if pdf_text['content'] is None:
-                        logger.error('Unable to parse pdf.')
-                        content_html = None
-                    else:
-                        content_html = pdf_text['content']
-                else:
-                    logger.info("No content retrieved for: %s", document.celex)
-                    logger.info(
-                        "--------------------------------------------------------------------")
-                    content_html = None
-
-        if content_html:
-            content = parser.from_buffer(content_html)['content']
-            # add to document model and save
-            logger.info('Got content_html for: %s (%d)',
-                        document.celex, len(content_html))
-            document.content_html = content_html
-            if content:
-                logger.info(
-                    'Parsed content from content_html for: %s (%d)', document.celex, len(content))
-                document.content = content
-            document.pull = False
-            document.save()
-            logger.info('Saved content for: %s', document.celex)
+    # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
+    requests.get(os.environ['SOLR_URL'] +
+                 '/' + core + '/update?commit=true')

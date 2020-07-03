@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 
 from admin_rest.models import site as rest_site
 from scheduler import tasks
-from scheduler.tasks import sync_documents_task, score_documents_task, sync_attachments_task, scrape_website_task
+from scheduler.tasks import sync_documents_task, score_documents_task, sync_attachments_task, scrape_website_task, parse_html_to_plaintext_task
 from .models import Website, Attachment, Document, AcceptanceState, Comment, Tag
 
 logger = logging.getLogger(__name__)
@@ -55,11 +55,15 @@ def scrape_website(modeladmin, request, queryset):
         scrape_website_task.delay(website.id)
 
 
+def parse_html_to_plaintext(modeladmin, request, queryset):
+    parse_html_to_plaintext_task.delay()
+
+
 class WebsiteAdmin(admin.ModelAdmin):
     list_display = ['name', 'count_documents']
     ordering = ['name']
     actions = [sync_documents, score_documents, export_documents,
-               sync_attachments, scrape_website]
+               sync_attachments, scrape_website, parse_html_to_plaintext]
 
     def count_documents(self, doc):
         return doc.documents.count()
