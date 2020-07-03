@@ -25,7 +25,6 @@ class ScrapingTaskListView(CreateAPIView):
                 date_end = scraping_task.spider_date_end.strftime('%d%m%Y')
                 celery_task = launch_crawler.delay(scraping_task.spider,
                                                    scraping_task.spider_type,
-                                                   scraping_task.id,
                                                    date_start,
                                                    date_end)
                 ScrapingTaskItem.objects.create(scheduler_id=celery_task.id, task=scraping_task)
@@ -46,7 +45,6 @@ class ScrapingTaskListView(CreateAPIView):
             else:
                 celery_task = launch_crawler.delay(scraping_task.spider,
                                                    scraping_task.spider_type,
-                                                   scraping_task.id,
                                                    None,
                                                    None)
                 ScrapingTaskItem.objects.create(scheduler_id=celery_task.id, task=scraping_task)

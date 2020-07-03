@@ -33,8 +33,8 @@ class ScrapyAppPipeline(FilesPipeline):
     @classmethod
     def from_crawler(cls, crawler):
         pipeline = cls(
-            # this will be passed from django view
-            task_id=crawler.settings.get('task_id'),
+            # this will be passed from celery task
+            task_id=crawler.settings.get('celery_id'),
             crawler=crawler
         )
         crawler.signals.connect(pipeline.spider_opened, signals.spider_opened)
