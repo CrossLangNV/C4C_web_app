@@ -27,6 +27,8 @@ import {
   ConceptTag,
   ConceptTagAdapter,
 } from 'src/app/shared/models/ConceptTag';
+import { RoResults, ReportingObligation, RoAdapter } from 'src/app/shared/models/ro';
+import * as rosData from './ros.json';
 
 @Injectable({
   providedIn: 'root',
@@ -34,6 +36,7 @@ import {
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
   API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
+  ROS_MOCKED = rosData.ros.map((ro, index) => new ReportingObligation(index.toString(), ro.name, ro.obligation, [], [], []))
 
   messageSource: Subject<string>;
 
@@ -47,7 +50,8 @@ export class ApiService {
     private commentAdapter: CommentAdapter,
     private tagAdapter: TagAdapter,
     private conceptTagAdapter: ConceptTagAdapter,
-    private conceptAdapter: ConceptAdapter
+    private conceptAdapter: ConceptAdapter,
+    private roAdapter: RoAdapter
   ) {
     this.messageSource = new Subject<string>();
   }
@@ -386,5 +390,49 @@ export class ApiService {
 
   public deleteConceptTag(id: string): Observable<any> {
     return this.http.delete(`${this.API_GLOSSARY_URL}/tag/${id}`);
+  }
+
+  //
+  // REPORING OBLIGATIONS //
+  //
+
+  public getRos(
+    page: number,
+    searchTerm: string,
+    filterTag: string,
+    filterType: string,
+    sortBy: string
+  ): Observable<RoResults> {
+    var pageQuery = page ? '?page=' + page : '';
+    if (searchTerm) {
+      pageQuery = pageQuery + '&keyword=' + searchTerm;
+    }
+    if (filterType) {
+      pageQuery = pageQuery + '&filterType=' + filterType;
+    }
+    if (filterTag) {
+      pageQuery = pageQuery + '&tag=' + filterTag;
+    }
+    if (sortBy) {
+      pageQuery = pageQuery + '&ordering=' + sortBy;
+    }
+    return of(
+      new RoResults(
+        this.ROS_MOCKED.length,
+        this.ROS_MOCKED.length,
+        this.ROS_MOCKED.length,
+        0,
+        0,
+        0,
+        0,
+        '1',
+        '-1',
+        this.ROS_MOCKED
+      )
+    );
+  }
+
+  public getRo(id: string): Observable<ReportingObligation> {
+    return of(this.ROS_MOCKED[Number(id)]);
   }
 }

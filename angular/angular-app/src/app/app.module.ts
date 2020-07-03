@@ -9,6 +9,7 @@ import { SharedModule } from './shared/shared.module';
 import { BrowseModule } from './browse/browse.module';
 import { AppRoutingModule } from './app-routing.module';
 import { GlossaryModule } from './glossary/glossary.module';
+import { ReportingObligationsModule } from './reporting-obligations/reporting-obligations.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -19,6 +20,7 @@ import { GlossaryModule } from './glossary/glossary.module';
     BrowserAnimationsModule,
     CoreModule,
     GlossaryModule,
+    ReportingObligationsModule,
     SearchModule,
     BrowseModule,
   ],
