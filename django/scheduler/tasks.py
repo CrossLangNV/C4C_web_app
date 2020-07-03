@@ -134,15 +134,15 @@ def scrape_website_task(website_id):
             if 'type' not in spider:
                 spider['type'] = ''
             # schedule scraping task
-            launch_crawler.delay(spider['id'], spider['type'], -1, None, None)
+            launch_crawler.delay(spider['id'], spider['type'], None, None)
 
 
 @shared_task
-def launch_crawler(spider, spider_type, task_id, date_start, date_end):
+def launch_crawler(spider, spider_type, date_start, date_end):
     scrapy_settings_path = 'scraper.scrapy_app.settings'
     os.environ.setdefault('SCRAPY_SETTINGS_MODULE', scrapy_settings_path)
     settings = get_project_settings()
-    settings['task_id'] = task_id
+    settings['celery_id'] = launch_crawler.request.id
     runner = CrawlerRunner(settings=settings)
     d = runner.crawl(spider, spider_type=spider_type,
                      spider_date_start=date_start,
