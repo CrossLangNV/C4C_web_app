@@ -15,6 +15,15 @@ def solr_search(core="", term=""):
     return search
 
 
+def solr_search_website_paginated(core="", q="", page_number=1, rows_per_page=10):
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    # solr page starts at 0
+    page_number = int(page_number) - 1
+    start = page_number * int(rows_per_page)
+    options = {'rows': rows_per_page, 'start': start}
+    return client.search(q, **options)
+
+
 def solr_search_paginated(core="", term="", page_number=1, rows_per_page=10, ids_to_filter_on=None,
                           sort_by=None, sort_direction='asc'):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
