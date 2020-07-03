@@ -1,0 +1,7 @@
+{ "ros":
+  [
+    {"name": "Institutions", "obligation": "Institutions shall provide the resolution authority with the latest approved annual financial statements available before the 31st of December of the year preceding the contribution period, together with the opinion submitted by the statutory auditor or audit firm, in accordance with Article 32 of Directive 2013/34/EU of the European Parliament and of the Council."},
+    {"name": "Resolution authorities", "obligation": "For the purpose of calculating the denominator provided for in the risk pillar referred to in Article 7(1)(c), by 15 February each year, resolution authorities shall provide the European Banking Authority (EBA) with the information received from all institutions established in their territory related to interbank liabilities and deposits referred to in Annex I at aggregate level."},
+    {"name": "Deposit guarantee schemes", "obligation": "By 31 January each year, deposit guarantee schemes shall provide resolution authorities with the calculation of the average amount of covered deposits in the previous year, calculated quarterly, of all their member credit institutions."}
+  ]
+}
