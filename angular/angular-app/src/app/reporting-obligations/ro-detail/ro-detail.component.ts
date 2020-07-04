@@ -113,7 +113,7 @@ export class RoDetailComponent implements OnInit {
       .searchSolrDocuments(
         this.definedInPage,
         this.definedInPageSize,
-        this.ro.name + ' means',
+        this.ro.name + ' shall',
         [],
         this.definedInSortBy,
         this.definedInSortDirection
@@ -126,7 +126,7 @@ export class RoDetailComponent implements OnInit {
         this.getDocuments(solrDocumentIds).subscribe((doc) => {
           doc.forEach((document, index) => {
             let solrContent = solrDocuments[index].content;
-            solrContent = solrContent.map(text => text.replace('<span class=\"highlight\">means</span>', 'means'));
+            solrContent = solrContent.map(text => text.replace('<span class=\"highlight\">shall</span>', 'shall'));
             document.content = solrContent;
             this.definedIn.push(document);
           });
