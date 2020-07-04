@@ -100,7 +100,7 @@ export class ConceptDetailComponent implements OnInit {
         const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
         this.getDocuments(solrDocumentIds).subscribe((doc) => {
           doc.forEach((document, index) => {
-            document.content = solrDocuments[index].content;
+            document.content = solrDocuments[index].content_html;
             this.occursIn.push(document);
           });
         });
@@ -124,7 +124,7 @@ export class ConceptDetailComponent implements OnInit {
         const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
         this.getDocuments(solrDocumentIds).subscribe((doc) => {
           doc.forEach((document, index) => {
-            let solrContent = solrDocuments[index].content;
+            let solrContent = solrDocuments[index].content_html;
             solrContent = solrContent.map(text => text.replace('<span class=\"highlight\">means</span>', 'means'));
             document.content = solrContent;
             this.definedIn.push(document);
