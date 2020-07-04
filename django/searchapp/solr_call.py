@@ -31,7 +31,7 @@ def solr_search_paginated(core="", term="", page_number=1, rows_per_page=10, ids
     page_number = int(page_number) - 1
     start = page_number * int(rows_per_page)
     if core == 'documents':
-        term = 'content_html:"' + term + '"'
+        term = 'content:"' + term + '"'
     options = {'rows': rows_per_page,
                'start': start,
                'hl': 'on', 'hl.fl': '*',
