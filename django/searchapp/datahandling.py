@@ -18,6 +18,9 @@ def score_documents(django_documents):
     # if the classifier returns this value as either accepted or rejected
     # probability, it means something went wrong decoding the content
     error_classifier = -9999
+    django_error_score = -1
+    accepted_threshold = 0.5
+    max_content_size_bytes = 50 * 1024 * 1024
     for django_doc in django_documents:
         validated = False
         url = os.environ['DOCUMENT_CLASSIFIER_URL'] + "/classify_doc"
@@ -29,8 +32,8 @@ def score_documents(django_documents):
                 # classifier uses base64 content
                 content_html = solr_doc['content_html'][0]
                 content_html_bytes = bytes(content_html, 'utf-8')
-                # don't classify if content > 50 MB
-                if len(content_html_bytes) <= 50 * 1024 * 1024:
+                # don't classify if content > max_content_size_bytes
+                if len(content_html_bytes) <= max_content_size_bytes:
                     content_html_b64 = base64.b64encode(
                         content_html_bytes).decode('utf-8')
                     data = {'content': content_html_b64,
@@ -44,29 +47,29 @@ def score_documents(django_documents):
                         accepted_probability = js["accepted_probability"]
                         if accepted_probability != error_classifier:
                             validated = True
-                            # for now acceptance_state_max_probability is the latest one
-                            django_doc.acceptance_state_max_probability = accepted_probability
-                        else:
-                            # for now acceptance_state_max_probability is the latest one
-                            django_doc.acceptance_state_max_probability = -1
-                        django_doc.save()
 
         if validated:
+            # for now acceptance_state_max_probability is the latest one
+            django_doc.acceptance_state_max_probability = accepted_probability
+            django_doc.save()
             AcceptanceState.objects.update_or_create(
                 probability_model="auto classifier",
                 document=django_doc,
                 defaults={
-                    'value': AcceptanceStateValue.ACCEPTED if accepted_probability > 0.5 else AcceptanceStateValue.REJECTED,
+                    'value': AcceptanceStateValue.ACCEPTED if accepted_probability > accepted_threshold else AcceptanceStateValue.REJECTED,
                     'accepted_probability': accepted_probability
                 }
             )
         else:
+            # couldn't classify
+            django_doc.acceptance_state_max_probability = django_error_score
+            django_doc.save()
             AcceptanceState.objects.update_or_create(
                 probability_model="auto classifier",
                 document=django_doc,
                 defaults={
                     'value': AcceptanceStateValue.UNVALIDATED,
-                    'accepted_probability': -1
+                    'accepted_probability': django_error_score
                 }
             )
 
