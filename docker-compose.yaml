@@ -27,7 +27,7 @@ services:
 
   celery:
     build: ./django
-    command: celery -A scheduler worker -l info --uid=nobody --gid=nogroup
+    command: celery -A scheduler worker -l info
     volumes: 
       - ./django:/django
     env_file: 
@@ -71,7 +71,7 @@ services:
       - "5672:5672"
 
   solr:
-    image: solr:8.5-slim
+    image: docker.crosslang.com/ctlg-manager/solr:develop-latest
     ports:
       - "8983:8983"
     environment:
