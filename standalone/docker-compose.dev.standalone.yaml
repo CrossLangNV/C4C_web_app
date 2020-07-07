@@ -88,6 +88,8 @@ services:
 
   rabbitmq:
     image: rabbitmq
+    env_file: 
+      - ./secrets/django-docker.env.sample
     networks:
       - default
 
