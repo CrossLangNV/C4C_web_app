@@ -1,7 +1,9 @@
 #!/bin/bash
 
 COLLECTION="documents"
-SOLR_HOST="https://solr.dev.dgfisma.crosslang.com"
+#SOLR_HOST="https://solr.dev.dgfisma.crosslang.com"
+SOLR_HOST="http://localhost:8983"
+
 
 JSON='{"add-field": [
 {"name":"title",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
@@ -79,4 +81,4 @@ JSON='{"add-field": [
 }';
 
 curl -k -X POST --user crosslang:***REMOVED*** -H 'Content-type:application/json' --data-binary "$JSON" $SOLR_HOST/solr/$COLLECTION/schema
-curl -k $SOLR_HOST/solr/$COLLECTION/config -d '{"set-user-property": {"update.autoCreateFields":"false"}}'
+curl -k --user crosslang:***REMOVED*** $SOLR_HOST/solr/$COLLECTION/config -d '{"set-user-property": {"update.autoCreateFields":"false"}}'

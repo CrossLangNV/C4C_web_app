@@ -37,8 +37,8 @@ services:
     image: docker.crosslang.com/ctlg-manager/django:develop-latest
     ports:
       - "8000:8000"
-    command: celery -A scheduler worker -l info --uid=nobody --gid=nogroup 
-    env_file: 
+    command: celery -A scheduler worker -l info --uid=nobody --gid=nogroup
+    env_file:
       - ./secrets/django-docker.env.sample
     labels:
       kompose.image-pull-secret: "crosslang"
@@ -49,7 +49,7 @@ services:
     ports:
       - "8000:8000"
     command: celery -A scheduler beat -l info
-    env_file: 
+    env_file:
       - ./secrets/django-docker.env.sample
     labels:
       kompose.image-pull-secret: "crosslang"
@@ -60,32 +60,32 @@ services:
     ports:
       - "5555:5555"
     command: flower -A scheduler --port=5555
-    env_file: 
+    env_file:
       - ./secrets/django-docker.env.sample
     labels:
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
       kompose.service.expose: "flower.dev.dgfisma.crosslang.com"
       kompose.service.expose.tls-secret: "flower-certificate"
-    
+
   rabbitmq:
     image: rabbitmq
-    env_file: 
+    env_file:
       - ./secrets/django-docker.env.sample
-    ports: 
+    ports:
       - "5672:5672"
 
   solr:
-    image: docker.crosslang.com/ctlg-manager/solr:develop-latest
+    image: solr:8.5-slim
     ports:
       - "8983:8983"
     volumes:
       - solr:/var/solr
     environment:
       - SOLR_HEAP=4g
-    command: solr-precreate summaries
+    command: solr-precreate documents
     labels:
-      kompose.volume.size: 10Gi
+      kompose.volume.size: 100Gi
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
       kompose.service.expose: "solr.dev.dgfisma.crosslang.com"
@@ -112,9 +112,9 @@ services:
 
   minio:
     image: minio/minio
-    ports: 
+    ports:
       - "9000:9000"
-    volumes: 
+    volumes:
       - minio:/data
     command: server /data
     env_file:
