@@ -36,6 +36,21 @@ An additional core should be created
 Open browser at `http://localhost:8000`
 
 
+### Scrapy app
+
+During development you can run the scrapy spiders by opening a django shell
+
+`docker exec -it ctlg-manager_django_1 /bin/bash`
+
+Then:
+
+`scrapy crawl -s CLOSESPIDER_ITEMCOUNT=5 -a year=1953 -L DEBUG eurlex`
+
+Or:
+
+`scrapy crawl -a spider_date_start=01011953 -a spider_date_end=01011960 eurlex`
+
+
 ### Rancher
 
 Some helpfull commands

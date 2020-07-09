@@ -31,6 +31,8 @@ class S3ItemExporter(BaseItemExporter):
         create_bucket(self.client, self.bucket)
 
     def finish_exporting(self):
+        if len(self.items) == 0:
+            return
         data = ""
         for item in self.items:
             itemdict = dict(self._get_serialized_fields(item))
@@ -38,15 +40,21 @@ class S3ItemExporter(BaseItemExporter):
         object_bytes = data.encode('utf-8')
         object_stream = BytesIO(object_bytes)
         size = len(object_bytes)
-        name = str(uuid.uuid4()) + ".jsonl"
+
+        task_id = self.items[0]['task']
+        if task_id is None:
+            name = str(uuid.uuid4()) + ".jsonl"
+        else:
+            name = str(uuid.uuid4()) + "-" + task_id + ".jsonl"
+
         put_object(self.client, self.bucket, name, object_stream, size)
+        self.logger.info("Wrote %d items to jsonlines feed: %s",
+                         len(self.items), self.bucket + "/" + name)
         self.items = []
-        self.logger.info("Wrote jsonlines feed to S3: %s",
-                         self.bucket + "/" + name)
 
     def export_item(self, item):
         self.items.append(item)
-        if len(self.items) > FLUSH_DOCS:
+        if len(self.items) >= FLUSH_DOCS:
             self.logger.info(
                 "S3 item exporter got %d item, writing to minio", FLUSH_DOCS)
             self.finish_exporting()

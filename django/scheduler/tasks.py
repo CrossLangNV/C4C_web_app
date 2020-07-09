@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 from urllib.parse import quote
+from io import BytesIO
 
 import pysolr
 
@@ -157,7 +158,10 @@ def parse_html_to_plaintext_task(self):
     page_number = 0
     rows_per_page = 250
     cursor_mark = "*"
+    # Make sure solr index is updated
     core = 'documents'
+    requests.get(os.environ['SOLR_URL'] +
+                 '/' + core + '/update?commit=true')
     # select all records where content is empty and content_html is not
     q = "-content: [\"\" TO *] AND content_html: [* TO *] website:eurlex"
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -183,3 +187,55 @@ def parse_html_to_plaintext_task(self):
         # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
         requests.get(os.environ['SOLR_URL'] +
                      '/' + core + '/update?commit=true')
+
+
+@shared_task
+def sync_scrapy_to_solr_task(website_id):
+    website = Website.objects.get(pk=website_id)
+    logger.info("Scrapy to Solr WEBSITE: %s", str(website))
+    # process files from minio
+    minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                         secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+    bucket_name = website.name.lower()
+    bucket_archive_name = bucket_name + "-archive"
+    bucket_failed_name = bucket_name + "-failed"
+    create_bucket(minio_client, bucket_name)
+    create_bucket(minio_client, bucket_archive_name)
+    create_bucket(minio_client, bucket_failed_name)
+    try:
+        objects = minio_client.list_objects(bucket_name)
+        for obj in objects:
+            logger.info("Working on %s", obj.object_name)
+            file_data = minio_client.get_object(bucket_name, obj.object_name)
+            core = "documents"
+            url = os.environ['SOLR_URL'] + '/' + core + "/update/json/docs"
+            output = BytesIO()
+            for d in file_data.stream(32*1024):
+                output.write(d)
+            r = requests.post(url, output.getvalue())
+            json_r = r.json()
+            logger.info("SOLR RESPONSE: %s", json_r)
+            if json_r['responseHeader']['status'] == 0:
+                logger.info("ALL good, COPY to '%s'", bucket_archive_name)
+                copy_result = minio_client.copy_object(
+                    bucket_archive_name, obj.object_name, bucket_name + "/" + obj.object_name)
+            else:
+                logger.info("NOT so good, COPY to '%s'", bucket_failed_name)
+                copy_result = minio_client.copy_object(
+                    bucket_failed_name, obj.object_name, bucket_name + "/" + obj.object_name)
+
+            minio_client.remove_object(bucket_name, obj.object_name)
+        # Update solr index
+        requests.get(os.environ['SOLR_URL'] + '/' +
+                     core + '/update?commit=true')
+    except ResponseError as err:
+        raise
+
+
+def create_bucket(client, name):
+    try:
+        client.make_bucket(name)
+    except BucketAlreadyOwnedByYou as err:
+        pass
+    except BucketAlreadyExists as err:
+        pass
