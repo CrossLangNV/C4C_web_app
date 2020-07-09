@@ -84,8 +84,7 @@ class ScrapyAppPipeline(FilesPipeline):
     def handle_document(self, item, info, file_results):
         item['task'] = self.task_id
         item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url']))
-        self.logger.debug("HANDLING_DOC: %s, %s, %s",
-                          item['celex'], item['id'], item['url'])
+        self.logger.debug("HANDLING_DOC: %s, %s", item['id'], item['url'])
 
         self.handle_dates(item)
         item['website'] = info.spider.name
