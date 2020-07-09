@@ -15,14 +15,16 @@ class EurLexType(Enum):
 
 
 class EurLexSpider(scrapy.Spider):
-    download_delay = 0.0
+    download_delay = 0.1
     name = 'eurlex'
     date_format = '%d/%m/%Y'
+    year = None
 
-    def __init__(self, spider_type=None, spider_date_start=None, spider_date_end=None, *args, **kwargs):
+    def __init__(self, spider_type=None, spider_date_start=None, spider_date_end=None, year=None, *args, **kwargs):
         super(EurLexSpider, self).__init__(*args, **kwargs)
         logging.log(logging.INFO, 'spider_date_start: %s', spider_date_start)
         logging.log(logging.INFO, 'spider_date_end: %s', spider_date_end)
+        logging.log(logging.INFO, 'year: %s', year)
         if not spider_type:
             logging.log(logging.WARNING,
                         'EurLex spider_type not given, default to DECISIONS')
@@ -34,10 +36,15 @@ class EurLexSpider(scrapy.Spider):
             logging.log(logging.INFO, 'EurLex spider_type: ' +
                         spider_type.name)
 
-        if not spider_date_start or not spider_date_end:
+        if (not spider_date_start or not spider_date_end) and not year:
             logging.log(logging.WARNING, 'No date range given, fetching all')
             start_url = spider_type.value
+        elif year:
+            logging.log(logging.INFO, 'Fetching year: %s', year)
+            self.year = year
+            start_url = spider_type.value + "&DD_YEAR=" + year
         else:
+            # Date format: DDMMYYYY
             logging.log(logging.INFO, 'Fetching from: %s, to: %s',
                         spider_date_start, spider_date_end)
             start_url = spider_type.value + "&date0=DD:" + \

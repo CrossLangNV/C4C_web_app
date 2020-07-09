@@ -42,7 +42,7 @@ class ScrapyAppPipeline(FilesPipeline):
         return pipeline
 
     def spider_opened(self, spider):
-        self.exporter = S3ItemExporter(spider.name + '-' + str(self.task_id))
+        self.exporter = S3ItemExporter(spider.name)
         self.exporter.start_exporting()
 
     def spider_closed(self, spider):
@@ -65,20 +65,15 @@ class ScrapyAppPipeline(FilesPipeline):
     # In order to do this, you can override the get_media_requests() method and return a Request for each file URL.
     # Those requests will be processed by the pipeline and, when they have finished downloading, the results will be sent to the item_completed() method,
     def get_media_requests(self, item, info):
-        handle = True
         if 'html_docs' in item and not 'content_html' in item:
-            handle = False
             for url in item['html_docs']:
                 headers = {'Accept': ['application/xhtml+xml',
                                       'text/html'], 'Accept-Language': 'eng'}
                 yield scrapy.Request(self.check_redirect(url), headers=headers)
+
         if 'pdf_docs' in item:
-            handle = False
             for url in item['pdf_docs']:
                 yield scrapy.Request(url)
-        if handle:
-            self.handle_document(item, info, [])
-            return item
 
     # The FilesPipeline.item_completed() method called when all file requests for a single item have completed (either finished downloading, or failed for some reason).
     def item_completed(self, results, item, info):
@@ -89,7 +84,9 @@ class ScrapyAppPipeline(FilesPipeline):
     def handle_document(self, item, info, file_results):
         item['task'] = self.task_id
         item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url']))
-        self.logger.debug("HANDLING_DOC: %s", item)
+        self.logger.debug("HANDLING_DOC: %s, %s, %s",
+                          item['celex'], item['id'], item['url'])
+
         self.handle_dates(item)
         item['website'] = info.spider.name
         # GOAL: handle each file as a separate document: document id = doc url + file url
@@ -104,6 +101,8 @@ class ScrapyAppPipeline(FilesPipeline):
             if file_result['url'].startswith('http://publications.europa.eu/resource/cellar/'):
                 f = open(file_path, "r")
                 item['content_html'] = f.read()
+                self.logger.info(
+                    "GOT HTML FROM CELLAR for ITEM: %s", item['url'])
             else:
                 # store in minio
                 file_minio_path = self.minio_upload(file_path, file_name)
@@ -111,7 +110,8 @@ class ScrapyAppPipeline(FilesPipeline):
                 item['file'] = file_minio_path
 
         # Export item to minio jsonl file
-        self.exporter.export_item(item)
+        if 'doc_summary' not in item:
+            self.exporter.export_item(item)
 
     def handle_dates(self, item):
         if item.get('date'):
