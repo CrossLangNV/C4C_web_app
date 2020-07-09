@@ -42,7 +42,9 @@ pipeline {
         }
         stage('Deploy Helm Chart') {
             steps {
-                sh './kompose.sh'
+                dir('deploy/helm'){
+                    sh './kompose.sh'
+                }
             }
         }
     }

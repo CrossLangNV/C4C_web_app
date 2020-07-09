@@ -100,3 +100,4 @@ django/scraper/files
 .vscode
 
 celerybeat.pid
+deploy/helm/helm
