@@ -38,15 +38,6 @@ pipeline {
                         }
                     }
                 }
-                dir('solr'){
-                    script {
-                        docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
-                            def customImage = docker.build("ctlg-manager/solr:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
-                            customImage.push()
-                            customImage.push("${env.BRANCH_NAME}-latest")
-                        }
-                    }
-                }
             }
         }
         stage('Deploy Helm Chart') {
