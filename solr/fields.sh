@@ -76,7 +76,7 @@ JSON='{"add-field": [
 {"name":"consolidated_versions",           "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 
 {"name":"spider",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
-{"name":"task",            "type":"plongs","stored":true,"indexed":true,"multiValued":true},
+{"name":"task",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 ]
 }';
 
