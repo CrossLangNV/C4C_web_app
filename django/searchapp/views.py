@@ -5,7 +5,7 @@ from urllib.parse import quote
 import requests
 from celery.result import AsyncResult
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.db.models.functions import Length
 from django.http import FileResponse
 from django.shortcuts import render
@@ -170,19 +170,26 @@ class WebsiteListAPIView(ListCreateAPIView):
     serializer_class = WebsiteSerializer
 
     def get_queryset(self):
-        queryset = Website.objects.all()
+        queryset = Website.objects.annotate(
+            total_documents=Count('documents')
+        )
         return queryset
 
 
 class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
-    queryset = Website.objects.all()
     serializer_class = WebsiteSerializer
     logger = logging.getLogger(__name__)
 
+    def get_queryset(self):
+        queryset = Website.objects.annotate(
+            total_documents=Count('documents')
+        )
+        return queryset
+
     def get_object(self):
         self.logger.info("In website detail view")
-        website = Website.objects.get(pk=self.kwargs['pk'])
+        website = self.get_queryset().get(pk=self.kwargs['pk'])
         sync = self.request.GET.get('sync', False)
         if sync:
             sync_documents_task(website.id)
