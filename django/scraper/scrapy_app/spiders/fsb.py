@@ -5,6 +5,8 @@ import scrapy
 from urllib.parse import urlparse
 from scrapy.http.response.text import TextResponse
 
+from datetime import datetime
+
 
 class FSBScraperSpider(scrapy.Spider):
     download_delay = 10.0
@@ -35,6 +37,8 @@ class FSBScraperSpider(scrapy.Spider):
                     newdict.update({"url": url})
                 if 'name' in meta.attrs and meta.attrs['name'] == 'DC.date':
                     datum = meta.attrs['content']
+                    datum = datum.split("+")[0]
+                    datum = datetime.strptime(datum, "%Y-%m-%dT%H:%M")
                     newdict.update({"date": datum})
                 if 'content' in meta.attrs and meta.attrs['content'].endswith('pdf'):
                     link_to_pdf = meta.attrs['content']
