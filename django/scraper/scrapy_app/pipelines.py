@@ -110,6 +110,7 @@ class ScrapyAppPipeline(FilesPipeline):
 
         # Export item to minio jsonl file
         if 'doc_summary' not in item:
+            del item['html_docs']
             self.exporter.export_item(item)
 
     def handle_dates(self, item):
