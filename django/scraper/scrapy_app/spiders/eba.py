@@ -21,13 +21,15 @@ class EbaSpider(scrapy.Spider):
     def __init__(self, spider_type=None, *args, **kwargs):
         super(EbaSpider, self).__init__(*args, **kwargs)
         if not spider_type:
-            logging.log(logging.WARNING, 'Eba spider_type not given, default to GUIDELINES')
+            logging.log(logging.WARNING,
+                        'Eba spider_type not given, default to GUIDELINES')
             self.spider_type = EbaType.GUIDELINES
         else:
             spider_type_arg = spider_type.upper()
             # this can throw a KeyError if spider_type_arg is not known in the enum
             self.spider_type = EbaType[spider_type_arg]
-            logging.log(logging.INFO, 'Eba spider_type: ' + self.spider_type.name)
+            logging.log(logging.INFO, 'Eba spider_type: ' +
+                        self.spider_type.name)
         self.start_urls = [self.spider_type.value]
 
     def parse(self, response):
@@ -38,7 +40,7 @@ class EbaSpider(scrapy.Spider):
             data = {
                 'title': td.css("p.ResultTitle a::text").extract_first(),
                 'date': datetime.strptime(dates[0], self.date_format),
-                'date_last_update': datetime.strptime(dates[1], self.date_format),
+                # 'date_last_update': datetime.strptime(dates[1], self.date_format),
                 'type': self.spider_type.name.title(),
                 'url': td.css("p.ResultTitle a::attr(href)").extract_first(),
                 'pdf_docs': td.css("p.ResultTitle a::attr(href)").extract()

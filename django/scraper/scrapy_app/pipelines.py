@@ -110,20 +110,25 @@ class ScrapyAppPipeline(FilesPipeline):
 
         # Export item to minio jsonl file
         if 'doc_summary' not in item:
+            if 'html_docs' in item:
+                del item['html_docs']
             self.exporter.export_item(item)
 
     def handle_dates(self, item):
         if item.get('date'):
             if isinstance(item['date'], datetime):
-                item['date'] = item['date'].isoformat() + "Z"
+                item['date'] = self.solr_date_format(item['date'])
         date_field_lists = ['dates', 'amendments_from', 'amendments_to']
         for field in date_field_lists:
             if item.get(field):
                 string_dates = []
                 for some_date in item[field]:
                     if isinstance(some_date, datetime):
-                        string_dates.append(some_date.isoformat() + "Z")
+                        string_dates.append(self.solr_date_format(some_date))
                 item[field] = string_dates
+
+    def solr_date_format(self, date):
+        return date.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def minio_upload(self, file_path, file_name):
         minio = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],

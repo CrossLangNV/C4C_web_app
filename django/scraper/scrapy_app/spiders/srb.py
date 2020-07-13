@@ -4,6 +4,9 @@ from urllib.parse import urlparse
 import bs4
 import re
 import scrapy
+import logging
+
+from datetime import datetime
 
 
 class SRBScraperSpider(scrapy.Spider):
@@ -28,6 +31,8 @@ class SRBScraperSpider(scrapy.Spider):
                 newdict.update({"url": url_link})
             if 'name' in meta.attrs and meta.attrs['name'] == 'dcterms.date':
                 datum = meta.attrs['content']
+                datum = datum.split("+")[0]
+                datum = datetime.strptime(datum, "%Y-%m-%dT%H:%M")
                 newdict.update({"date": datum})
             if 'content' in meta.attrs and meta.attrs['content'].endswith('pdf'):
                 link_to_pdf = meta.attrs['content']
