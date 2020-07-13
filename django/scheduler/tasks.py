@@ -42,7 +42,7 @@ def export_documents(website_ids=None):
                      '/' + core + '/update?commit=true')
         if not os.path.exists(workpath + '/export/jsonl/' + website.name):
             os.makedirs(workpath + '/export/jsonl/' + website.name)
-        # select all records where content is empty and content_html is not
+        # select all records for website and where content_html is not empty
         q = 'website:' + website.name + ' AND content_html:*'
         client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
         options = {'rows': rows_per_page, 'start': page_number,
