@@ -261,7 +261,7 @@ class EurLexSpider(scrapy.Spider):
                     proc_misc_value = ''.join(
                         d.xpath('.//text()').getall()).replace('\n', ' ').strip()
                     result_dict.update(
-                        {'procedure_' + procedure_type: proc_misc_value})
+                        {'procedure_' + procedure_type.replace(" ", "_"): proc_misc_value})
 
             result_dict.update({"procedures_number": all_procedures_number})
             result_dict.update(
