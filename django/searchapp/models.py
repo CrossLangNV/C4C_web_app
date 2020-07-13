@@ -66,7 +66,7 @@ class Document(models.Model):
                     solr_doc['website'] = self.website.name
                 elif field == 'date' or field == 'created_at' or field == 'updated_at':
                     solr_doc[field] = value.isoformat()
-                elif not field.startswith('_') and field != 'extract_text':
+                elif not field.startswith('_') and field != 'extract_text' and not field.startswith('content'):
                     solr_doc[field] = value
             solr_update("documents", solr_doc)
 

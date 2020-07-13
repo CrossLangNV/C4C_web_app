@@ -51,6 +51,7 @@ def score_documents(django_documents):
         if validated:
             # for now acceptance_state_max_probability is the latest one
             django_doc.acceptance_state_max_probability = accepted_probability
+            django_doc.pull = False
             django_doc.save()
             AcceptanceState.objects.update_or_create(
                 probability_model="auto classifier",
@@ -63,6 +64,7 @@ def score_documents(django_documents):
         else:
             # couldn't classify
             django_doc.acceptance_state_max_probability = django_error_score
+            django_doc.pull = False
             django_doc.save()
             AcceptanceState.objects.update_or_create(
                 probability_model="auto classifier",
