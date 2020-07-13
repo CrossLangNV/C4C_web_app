@@ -45,7 +45,7 @@ class S3ItemExporter(BaseItemExporter):
         if task_id is None:
             name = str(uuid.uuid4()) + ".jsonl"
         else:
-            name = str(uuid.uuid4()) + "-" + task_id + ".jsonl"
+            name = str(uuid.uuid4()) + "--" + task_id + ".jsonl"
 
         put_object(self.client, self.bucket, name, object_stream, size)
         self.logger.info("Wrote %d items to jsonlines feed: %s",
