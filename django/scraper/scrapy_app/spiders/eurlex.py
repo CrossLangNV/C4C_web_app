@@ -243,9 +243,9 @@ class EurLexSpider(scrapy.Spider):
             procedure_types = procedures.xpath('.//dt')
             procedure_data = procedures.xpath('.//dd')
             for (t, d) in zip(procedure_types, procedure_data):
-                procedure_type = ''.join(t.xpath('.//text()').getall()).replace('\n', ' ').replace(" ", "_").strip().split(
+                procedure_type = ''.join(t.xpath('.//text()').getall()).replace('\n', ' ').strip().split(
                     ':')[0].lower()
-                if procedure_type == 'procedure_number':
+                if procedure_type == 'procedure number':
                     for number in d.xpath('.//a/text()').getall():
                         all_procedures_number.append(number)
 
@@ -261,7 +261,7 @@ class EurLexSpider(scrapy.Spider):
                     proc_misc_value = ''.join(
                         d.xpath('.//text()').getall()).replace('\n', ' ').strip()
                     result_dict.update(
-                        {'procedure_' + procedure_type: proc_misc_value})
+                        {'procedure_' + procedure_type.replace(" ", "_"): proc_misc_value})
 
             result_dict.update({"procedures_number": all_procedures_number})
             result_dict.update(
