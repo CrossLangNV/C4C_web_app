@@ -202,12 +202,12 @@ def sync_scrapy_to_solr_task(website_id):
     create_bucket(minio_client, bucket_name)
     create_bucket(minio_client, bucket_archive_name)
     create_bucket(minio_client, bucket_failed_name)
+    core = "documents"
     try:
         objects = minio_client.list_objects(bucket_name)
         for obj in objects:
             logger.info("Working on %s", obj.object_name)
             file_data = minio_client.get_object(bucket_name, obj.object_name)
-            core = "documents"
             url = os.environ['SOLR_URL'] + '/' + core + "/update/json/docs"
             output = BytesIO()
             for d in file_data.stream(32*1024):
