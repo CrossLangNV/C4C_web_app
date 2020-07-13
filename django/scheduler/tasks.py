@@ -33,18 +33,25 @@ def export_documents(website_ids=None):
     if website_ids:
         websites = Website.objects.filter(pk__in=website_ids)
     for website in websites:
+        page_number = 0
+        rows_per_page = 250
+        cursor_mark = "*"
+        # Make sure solr index is updated
+        core = 'documents'
+        requests.get(os.environ['SOLR_URL'] +
+                     '/' + core + '/update?commit=true')
         if not os.path.exists(workpath + '/export/jsonl/' + website.name):
             os.makedirs(workpath + '/export/jsonl/' + website.name)
-        documents = solr_search(
-            core='documents', term='website:' + website.name)
+        # select all records where content is empty and content_html is not
+        q = 'website:' + website.name + ' AND content_html:*'
+        client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+        options = {'rows': rows_per_page, 'start': page_number,
+                   'cursorMark': cursor_mark, 'sort': 'id asc'}
+        documents = client.search(q, **options)
         for document in documents:
-            files = solr_search_document_id_sorted(
-                core='files', document_id=document['id'])
             with jsonlines.open(workpath + '/export/jsonl/' + website.name + '/doc_' + document['id'] + '.jsonl',
                                 mode='w') as f:
                 f.write(document)
-                for file in files:
-                    f.write(file)
 
     # create zip file for all .jsonl files
     zip_destination = workpath + '/export/' + export_documents.request.id
