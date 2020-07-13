@@ -1,7 +1,8 @@
 #!/bin/bash
 
 COLLECTION="documents"
-SOLR_HOST="http://localhost:8393"
+#SOLR_HOST="https://solr.dev.dgfisma.crosslang.com"
+SOLR_HOST="http://localhost:8983"
 
 
 JSON='{"add-field": [
@@ -59,7 +60,6 @@ JSON='{"add-field": [
 {"name":"misc_department_responsible",     "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"misc_form",                       "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"misc_internal_reference",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
-{"name":"misc_parliamentary_term",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 
 {"name":"procedure",                       "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"procedure_co_author",             "type":"text_general","stored":true,"indexed":true,"multiValued":true},
