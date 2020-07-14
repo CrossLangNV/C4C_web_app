@@ -20,7 +20,7 @@ from tika import parser
 from twisted.internet import reactor
 
 from searchapp.datahandling import score_documents, sync_documents, sync_attachments
-from searchapp.models import Website, Document, Attachment
+from searchapp.models import Website, Document, Attachment, AcceptanceState
 from searchapp.solr_call import solr_search, solr_search_document_id_sorted, solr_search_website_sorted, solr_search_website_paginated
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,16 @@ def export_documents(website_ids=None):
             with jsonlines.open(workpath + '/export/jsonl/' + website.name + '/doc_' + document['id'] + '.jsonl',
                                 mode='w') as f:
                 f.write(document)
+                # get acceptance state from django model
+                acceptance_state_qs = AcceptanceState.objects.filter(document__id=document['id'])
+                if acceptance_state_qs:
+                    acceptance_state = acceptance_state_qs[0]
+                    # only auto classifier is of interest
+                    if acceptance_state.probability_model == 'auto classifier':
+                        classifier_score = acceptance_state.accepted_probability
+                        classifier_status = acceptance_state.value
+                        classifier = {'classifier_status': classifier_status, 'classifier_score': classifier_score}
+                        f.write(classifier)
 
     # create zip file for all .jsonl files
     zip_destination = workpath + '/export/' + export_documents.request.id
