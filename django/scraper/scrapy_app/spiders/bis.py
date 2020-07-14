@@ -1,13 +1,16 @@
 # -*- coding: UTF-8 -*-
 from urllib.parse import urlparse
 
+import logging
 import bs4
 import scrapy
 from bs4 import BeautifulSoup
 
+from datetime import datetime
+
 
 class BISSpider(scrapy.Spider):
-    download_delay = 10.0
+    download_delay = 0.1
     name = 'bis'
     start_urls = [
         'https://www.bis.org/bcbs/publications.htm',
@@ -33,7 +36,9 @@ class BISSpider(scrapy.Spider):
                 url = meta.attrs['content']
                 newdict.update({"url": url})
             if 'name' in meta.attrs and meta.attrs['name'] == 'DC.date':
+                # "1995-04-29"
                 datum = meta.attrs['content']
+                datum = datetime.strptime(datum, "%Y-%m-%d")
                 newdict.update({"date": datum})
             if 'content' in meta.attrs and meta.attrs['content'].endswith('pdf'):
                 link_to_pdf = meta.attrs['content']
@@ -46,11 +51,9 @@ class BISSpider(scrapy.Spider):
         if 'pdf_docs' not in newdict:
             for link in soup.find_all('a'):
                 link_to_pdf = link.get('href')
-                if link_to_pdf is not None and link_to_pdf.endswith('pdf') and link_to_pdf.startswith(base_url):
-                    newdict.update({"pdf_docs": [link_to_pdf]})
-                    break
-                else:
-                    link_to_pdf = str(base_url) + str(link_to_pdf)
+                if link_to_pdf is not None and link_to_pdf.endswith('pdf'):
+                    if not link_to_pdf.startswith(base_url):
+                        link_to_pdf = str(base_url) + str(link_to_pdf)
                     newdict.update({"pdf_docs": [link_to_pdf]})
                     break
 
