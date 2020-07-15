@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'admin_rest',
     'django_celery_beat',
     'django_celery_results',
+    'django_extensions',
     'minio_storage',
     'health_check',
     'health_check.db',
