@@ -3,11 +3,13 @@ from __future__ import absolute_import, unicode_literals
 import logging
 import os
 import shutil
+import time
 from urllib.parse import quote
 from io import BytesIO
 
 import pysolr
 
+from datetime import datetime
 import requests
 from celery import shared_task
 from django.db.models.functions import Length
@@ -53,14 +55,16 @@ def export_documents(website_ids=None):
                                 mode='w') as f:
                 f.write(document)
                 # get acceptance state from django model
-                acceptance_state_qs = AcceptanceState.objects.filter(document__id=document['id'])
+                acceptance_state_qs = AcceptanceState.objects.filter(
+                    document__id=document['id'])
                 if acceptance_state_qs:
                     acceptance_state = acceptance_state_qs[0]
                     # only auto classifier is of interest
                     if acceptance_state.probability_model == 'auto classifier':
                         classifier_score = acceptance_state.accepted_probability
                         classifier_status = acceptance_state.value
-                        classifier = {'classifier_status': classifier_status, 'classifier_score': classifier_score}
+                        classifier = {
+                            'classifier_status': classifier_status, 'classifier_score': classifier_score}
                         f.write(classifier)
 
     # create zip file for all .jsonl files
@@ -121,29 +125,15 @@ def sync_documents_task(website_id):
 
 
 @shared_task
-def sync_attachments_task(website_id):
-    logger.info("Synching attachments with WEBSITE: " + str(website_id))
-    # lookup documents for website and sync them
-    website = Website.objects.get(pk=website_id)
-    for document in Document.objects.filter(website=website).order_by('id'):
-        # query Solr for attachments
-        solr_files = solr_search_document_id_sorted(
-            core='files', document_id=str(document.id))
-        attachments = Attachment.objects.filter(
-            document=document).order_by('id')
-        sync_attachments(document, solr_files, attachments)
-
-
-@shared_task
 def scrape_website_task(website_id):
     logger.info("Scraping with WEBSITE: " + str(website_id))
     # lookup website and start scraping
     website = Website.objects.get(pk=website_id)
     spiders = [{"id": "bis"}, {"id": "eiopa"}, {"id": "esma"},
-               {"id": "eurlex", "type": "directives"}, {
-                   "id": "eurlex", "type": "decisions"},
-               {"id": "eurlex", "type": "regulations"}, {
-                   "id": "fsb"}, {"id": "srb"},
+               {"id": "eurlex", "type": "directives"},
+               {"id": "eurlex", "type": "decisions"},
+               {"id": "eurlex", "type": "regulations"},
+               {"id": "fsb"}, {"id": "srb"},
                {"id": "eba", "type": "guidelines"},
                {"id": "eba", "type": "recommendations"},
                ]
@@ -151,8 +141,18 @@ def scrape_website_task(website_id):
         if spider['id'].lower() == website.name.lower():
             if 'type' not in spider:
                 spider['type'] = ''
+            date_start = None
+            date_end = None
             # schedule scraping task
-            launch_crawler.delay(spider['id'], spider['type'], None, None)
+            if spider['id'] == "eurlex":
+                for year in range(1951, datetime.now().year):
+                    date_start = "0101" + year
+                    date_end = "3112" + year
+                    launch_crawler.delay(
+                        spider['id'], spider['type'], date_start, date_end)
+            else:
+                launch_crawler.delay(
+                    spider['id'], spider['type'], date_start, date_end)
 
 
 @shared_task

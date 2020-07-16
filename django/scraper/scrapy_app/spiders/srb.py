@@ -10,7 +10,7 @@ from datetime import datetime
 
 
 class SRBScraperSpider(scrapy.Spider):
-    download_delay = 10.0
+    download_delay = 0.1
     name = 'srb'
     start_urls = [
         'https://srb.europa.eu/en/news/policies',

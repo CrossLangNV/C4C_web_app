@@ -12,7 +12,7 @@ class EbaType(Enum):
 
 
 class EbaSpider(scrapy.Spider):
-    download_delay = 10.0
+    download_delay = 0.1
     name = 'eba'
     date_format = '%d/%m/%Y'
     date_regex = re.compile(r'\d{2}/\d{2}/\d{4}')
