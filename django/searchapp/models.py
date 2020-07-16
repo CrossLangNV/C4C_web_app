@@ -103,6 +103,7 @@ class AcceptanceState(models.Model):
     probability_model = models.CharField(
         max_length=50, blank=True, null=True, db_index=True)
     accepted_probability = models.FloatField(default=0.0, blank=True)
+    accepted_probability_index = models.IntegerField(default=0, blank=True)
 
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
