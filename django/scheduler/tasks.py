@@ -42,8 +42,11 @@ def export_documents(website_ids=None):
                      '/' + core + '/update?commit=true')
         if not os.path.exists(workpath + '/export/jsonl/' + website.name):
             os.makedirs(workpath + '/export/jsonl/' + website.name)
-        # select all records for website and where content_html is not empty
-        q = 'website:' + website.name + ' AND content_html:*'
+        # select all records for website
+        q = 'website:' + website.name
+        if website.name.lower() == 'eurlex':
+            # only documents with content_html for eurlex
+            q += ' AND content_html:*'
         client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
         options = {'rows': rows_per_page, 'start': page_number,
                    'cursorMark': cursor_mark, 'sort': 'id asc'}
@@ -60,7 +63,9 @@ def export_documents(website_ids=None):
                     if acceptance_state.probability_model == 'auto classifier':
                         classifier_score = acceptance_state.accepted_probability
                         classifier_status = acceptance_state.value
-                        classifier = {'classifier_status': classifier_status, 'classifier_score': classifier_score}
+                        classifier_index = acceptance_state.accepted_probability_index
+                        classifier = {'classifier_status': classifier_status, 'classifier_score': classifier_score,
+                                      'classifier_index': classifier_index}
                         f.write(classifier)
 
     # create zip file for all .jsonl files
@@ -105,7 +110,10 @@ def score_documents_task(website_id):
     # lookup documents for website and score them
     website = Website.objects.get(pk=website_id)
     django_documents = Document.objects.filter(website=website).order_by('id')
-    score_documents(django_documents)
+    use_pdf_files = True
+    if website.name.lower() == 'eurlex':
+        use_pdf_files = False
+    score_documents(django_documents, use_pdf_files)
 
 
 @shared_task
