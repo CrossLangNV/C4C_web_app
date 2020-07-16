@@ -56,17 +56,16 @@ def export_documents(website_ids=None):
                                 mode='w') as f:
                 f.write(document)
                 # get acceptance state from django model
-                acceptance_state_qs = AcceptanceState.objects.filter(document__id=document['id'])
+                acceptance_state_qs = AcceptanceState.objects.filter(document__id=document['id'],
+                                                                     probability_model='auto classifier')
                 if acceptance_state_qs:
                     acceptance_state = acceptance_state_qs[0]
-                    # only auto classifier is of interest
-                    if acceptance_state.probability_model == 'auto classifier':
-                        classifier_score = acceptance_state.accepted_probability
-                        classifier_status = acceptance_state.value
-                        classifier_index = acceptance_state.accepted_probability_index
-                        classifier = {'classifier_status': classifier_status, 'classifier_score': classifier_score,
-                                      'classifier_index': classifier_index}
-                        f.write(classifier)
+                    classifier_score = acceptance_state.accepted_probability
+                    classifier_status = acceptance_state.value
+                    classifier_index = acceptance_state.accepted_probability_index
+                    classifier = {'classifier_status': classifier_status, 'classifier_score': classifier_score,
+                                  'classifier_index': classifier_index}
+                    f.write(classifier)
 
     # create zip file for all .jsonl files
     zip_destination = workpath + '/export/' + export_documents.request.id
