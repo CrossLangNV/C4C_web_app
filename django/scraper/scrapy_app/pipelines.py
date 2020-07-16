@@ -59,6 +59,7 @@ class ScrapyAppPipeline(FilesPipeline):
         response = requests.head(url, headers=headers)
         if response.status_code == 303:
             url = response.headers["Location"]
+        self.logger.debug("check_redirect: %s => %s", url, response)
         return url
 
     # The pipeline will get the URLs of the images to download from the item.
@@ -69,7 +70,11 @@ class ScrapyAppPipeline(FilesPipeline):
             for url in item['html_docs']:
                 headers = {'Accept': ['application/xhtml+xml',
                                       'text/html'], 'Accept-Language': 'eng'}
-                yield scrapy.Request(self.check_redirect(url), headers=headers)
+                url_redir = self.check_redirect(url)
+                if url_redir != url:
+                    self.logger.info(
+                        "GOT REDIR URL FROM CELLAR for ITEM: '%s' => '%s'", url, url_redir)
+                    yield scrapy.Request(url_redir, headers=headers)
 
         if 'pdf_docs' in item:
             for url in item['pdf_docs']:
@@ -91,7 +96,6 @@ class ScrapyAppPipeline(FilesPipeline):
         # GOAL: handle each file as a separate document: document id = doc url + file url
         # item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url'] + file_result['url']))
         # FOR NOW: handle only first file of document: keep same id
-        self.logger.debug("FILERESULTS: %s", file_results)
         if len(file_results) > 0:
             file_result = file_results[0]
             file_name = file_result['path']
@@ -110,9 +114,21 @@ class ScrapyAppPipeline(FilesPipeline):
 
         # Export item to minio jsonl file
         if 'doc_summary' not in item:
+            skip = False
+            # when no (english) pdf and no content_html => DropItem
+            if 'pdf_docs' in item:
+                if len(item['pdf_docs']) == 0 and 'content_html' not in item:
+                    skip = True
+            else:
+                if 'content_html' not in item:
+                    skip = True
             if 'html_docs' in item:
                 del item['html_docs']
-            self.exporter.export_item(item)
+            item['date_last_update'] = self.solr_date_format(datetime.now())
+            if not skip:
+                self.exporter.export_item(item)
+            else:
+                self.logger.info("SKIPPING: %s", item['url'])
 
     def handle_dates(self, item):
         if item.get('date'):
