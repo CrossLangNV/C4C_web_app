@@ -153,8 +153,8 @@ def scrape_website_task(website_id):
             # schedule scraping task
             if spider['id'] == "eurlex":
                 for year in range(1951, datetime.now().year):
-                    date_start = "0101" + year
-                    date_end = "3112" + year
+                    date_start = "0101" + str(year)
+                    date_end = "3112" + str(year)
                     launch_crawler.delay(
                         spider['id'], spider['type'], date_start, date_end)
             else:
