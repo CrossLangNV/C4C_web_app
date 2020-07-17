@@ -98,7 +98,7 @@ class EurLexSpider(scrapy.Spider):
                 links = various.xpath('.//a/@href').getall()
                 for link in links:
                     if 'eli' in link:
-                        result_dict['ELI'] = link
+                        result_dict['eli'] = link
                         break
 
                 various_text = ''.join(various.xpath(
@@ -375,6 +375,7 @@ class EurLexSpider(scrapy.Spider):
         if content:
             result_dict['content_html'] = content
         else:
+            # Check for pdfs
             base_url = '{uri.scheme}://{uri.netloc}/'.format(
                 uri=urlparse(response.url))
             oj = response.xpath('//div[@id="PP2Contents"]')
@@ -383,8 +384,9 @@ class EurLexSpider(scrapy.Spider):
                 pdf_docs = []
                 pdfs = oj.xpath('.//li')
                 for pdf in pdfs:
-                    pdf = pdf.xpath(
-                        './/a/@href').get().replace('./../../../', base_url)
-                    if 'EN/TXT/PDF/' in pdf:
-                        pdf_docs.append(pdf)
-                result_dict.update({"pdf_docs": pdf_docs})
+                    if len(pdf.xpath('a[@class!="disabled"]')):
+                        pdf = pdf.xpath(
+                            './/a/@href').get().replace('./../../../', base_url)
+                        if 'EN/TXT/PDF/' in pdf:
+                            pdf_docs.append(pdf)
+                        result_dict.update({"pdf_docs": pdf_docs})

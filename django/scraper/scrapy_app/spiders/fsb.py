@@ -9,7 +9,7 @@ from datetime import datetime
 
 
 class FSBScraperSpider(scrapy.Spider):
-    download_delay = 10.0
+    download_delay = 0.1
     name = 'fsb'
     start_urls = [
         'https://www.fsb.org/publications/policy-documents/',
@@ -38,7 +38,7 @@ class FSBScraperSpider(scrapy.Spider):
                 if 'name' in meta.attrs and meta.attrs['name'] == 'DC.date':
                     datum = meta.attrs['content']
                     datum = datum.split("+")[0]
-                    datum = datetime.strptime(datum, "%Y-%m-%dT%H:%M")
+                    datum = datetime.strptime(datum, "%Y-%m-%d")
                     newdict.update({"date": datum})
                 if 'content' in meta.attrs and meta.attrs['content'].endswith('pdf'):
                     link_to_pdf = meta.attrs['content']

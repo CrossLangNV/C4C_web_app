@@ -20,7 +20,7 @@ class BISSpider(scrapy.Spider):
         soup = BeautifulSoup(response.text, features="html.parser")
         metas = soup.find_all('meta')
         parsed_uri = urlparse(response.url)
-        base_url = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
+        base_url = '{uri.scheme}://{uri.netloc}'.format(uri=parsed_uri)
 
         newdict = {}
         newdict.update(({"url": response.url}))
