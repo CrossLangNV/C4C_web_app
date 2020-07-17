@@ -83,7 +83,7 @@ FILES_EXPIRES = 1
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
 AUTOTHROTTLE_ENABLED = True
 # The initial download delay
-AUTOTHROTTLE_START_DELAY = 5
+AUTOTHROTTLE_START_DELAY = 0
 # The maximum download delay to be set in case of high latencies
 AUTOTHROTTLE_MAX_DELAY = 60
 # The average number of requests Scrapy should be sending in parallel to
@@ -113,6 +113,8 @@ LOG_LEVEL = 'INFO'
 # Still got errors downloading, implemented workaround in:
 # https://stackoverflow.com/questions/37368030/error-302-downloading-file-in-scrapy/38783648
 MEDIA_ALLOW_REDIRECTS = True
+HTTPERROR_ALLOWED_CODES = [302]
+CONCURRENT_REQUESTS_PER_DOMAIN = 16
 
 
 # # Export feeds
