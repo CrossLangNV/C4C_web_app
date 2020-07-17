@@ -63,6 +63,9 @@ JSON='{"add-field": [
 {"name":"misc_internal_reference",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"misc_internal_comment",           "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"misc_parliamentary_term",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"misc_session",                    "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"misc_rapporteur",                 "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"misc_depositary",                 "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 
 {"name":"procedure",                       "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"procedure_co_author",             "type":"text_general","stored":true,"indexed":true,"multiValued":true},
