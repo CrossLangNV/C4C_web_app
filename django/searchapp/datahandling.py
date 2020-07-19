@@ -29,6 +29,7 @@ def score_documents(website_name, django_documents, use_pdf_files):
     django_error_score = -1
     accepted_threshold = 0.5
     scores = []
+    solr_documents = []
     for django_doc in django_documents:
         content = ''
         validated = False
@@ -38,6 +39,7 @@ def score_documents(website_name, django_documents, use_pdf_files):
         solr_result = solr_search_id(core="documents", id=str(django_doc.id))
         if len(solr_result) == 1:
             solr_doc = solr_result[0]
+            solr_documents.append(solr_doc)
             if use_pdf_files and solr_doc.get('pdf_docs'):
                 # download each pdf file, parse with tika, use highest score
                 pdf_urls = solr_doc['pdf_docs']
@@ -57,6 +59,8 @@ def score_documents(website_name, django_documents, use_pdf_files):
                 accepted_probability = classifier_response["accepted_probability"]
                 if accepted_probability != error_classifier:
                     validated = True
+        else:
+            solr_documents.append({})
 
         if validated:
             # for now acceptance_state_max_probability is the latest one
@@ -91,15 +95,16 @@ def score_documents(website_name, django_documents, use_pdf_files):
                     'accepted_probability_index': accepted_probability_index
                 }
             )
-    score_export(website_name, django_documents, scores)
+    score_export(website_name, solr_documents, scores)
 
 
 def score_export(website_name, documents, scores):
     for document, score in zip(documents, scores):
-        with jsonlines.open(workpath + '/score/jsonl/' + website_name + '/doc_' + document['id'] + '.jsonl',
-                            mode='w') as f:
-            f.write(document)
-            f.write(score)
+        if document:
+            with jsonlines.open(workpath + '/score/jsonl/' + website_name + '/doc_' + document['id'] + '.jsonl',
+                                mode='w') as f:
+                f.write(document)
+                f.write(score)
 
     # create zip file for all .jsonl files
     zip_destination = workpath + '/score'
