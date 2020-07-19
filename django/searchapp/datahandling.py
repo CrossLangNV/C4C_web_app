@@ -99,6 +99,8 @@ def score_documents(website_name, django_documents, use_pdf_files):
 
 
 def score_export(website_name, documents, scores):
+    if not os.path.exists(workpath + '/score/jsonl/' + website_name):
+        os.makedirs(workpath + '/score/jsonl/' + website_name)
     for document, score in zip(documents, scores):
         if document:
             with jsonlines.open(workpath + '/score/jsonl/' + website_name + '/doc_' + document['id'] + '.jsonl',
@@ -108,13 +110,13 @@ def score_export(website_name, documents, scores):
 
     # create zip file for all .jsonl files
     zip_destination = workpath + '/score'
-    shutil.make_archive(zip_destination, 'zip', workpath + '/export/jsonl')
+    shutil.make_archive(zip_destination, 'zip', workpath + '/score/jsonl')
 
     # upload zip to minio
     minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
                          secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
     try:
-        minio_client.make_bucket('export')
+        minio_client.make_bucket('score')
     except BucketAlreadyOwnedByYou as err:
         pass
     except BucketAlreadyExists as err:
@@ -122,7 +124,7 @@ def score_export(website_name, documents, scores):
     except ResponseError as err:
         raise
     minio_client.fput_object(
-        'export', '.zip', zip_destination + '.zip')
+        'score', '.zip', zip_destination + '.zip')
 
 
 def parse_pdf_from_url(url):
