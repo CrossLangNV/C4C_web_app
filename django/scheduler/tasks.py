@@ -150,7 +150,7 @@ def scrape_website_task(website_id):
             date_end = None
             # schedule scraping task
             if spider['id'] == "eurlex":
-                for year in range(1951, datetime.now().year):
+                for year in range(1951, datetime.now().year + 1):
                     date_start = "0101" + str(year)
                     date_end = "3112" + str(year)
                     launch_crawler.delay(
@@ -238,11 +238,11 @@ def sync_scrapy_to_solr_task(website_id):
             json_r = r.json()
             logger.info("SOLR RESPONSE: %s", json_r)
             if json_r['responseHeader']['status'] == 0:
-                logger.info("ALL good, COPY to '%s'", bucket_archive_name)
+                logger.info("ALL good, MOVE to '%s'", bucket_archive_name)
                 copy_result = minio_client.copy_object(
                     bucket_archive_name, obj.object_name, bucket_name + "/" + obj.object_name)
             else:
-                logger.info("NOT so good, COPY to '%s'", bucket_failed_name)
+                logger.info("NOT so good, MOVE to '%s'", bucket_failed_name)
                 copy_result = minio_client.copy_object(
                     bucket_failed_name, obj.object_name, bucket_name + "/" + obj.object_name)
 
