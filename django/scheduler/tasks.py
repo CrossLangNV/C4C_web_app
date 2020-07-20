@@ -177,7 +177,7 @@ def launch_crawler(spider, spider_type, date_start, date_end):
 @shared_task()
 def parse_html_to_plaintext_task(website_id):
     website = Website.objects.get(pk=website_id)
-    website_name = lower(website.name)
+    website_name = website.name.lower()
     logger.info('Adding content to each %s document.', website_name)
     page_number = 0
     rows_per_page = 250
