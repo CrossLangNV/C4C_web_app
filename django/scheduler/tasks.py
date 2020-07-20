@@ -131,9 +131,9 @@ def sync_documents_task(website_id):
 
 @shared_task
 def scrape_website_task(website_id):
-    logger.info("Scraping with WEBSITE: " + str(website_id))
     # lookup website and start scraping
     website = Website.objects.get(pk=website_id)
+    logger.info("Scraping with WEBSITE: " + website.name)
     spiders = [{"id": "bis"}, {"id": "eiopa"}, {"id": "esma"},
                {"id": "eurlex", "type": "directives"},
                {"id": "eurlex", "type": "decisions"},
@@ -174,9 +174,11 @@ def launch_crawler(spider, spider_type, date_start, date_end):
     reactor.run()  # the script will block here until the crawling is finished
 
 
-@shared_task(bind=True, default_retry_delay=1 * 60, max_retries=10)
-def parse_html_to_plaintext_task(self):
-    logger.info('Adding content to each eurlex document.')
+@shared_task()
+def parse_html_to_plaintext_task(website_id):
+    website = Website.objects.get(pk=website_id)
+    website_name = lower(website.name)
+    logger.info('Adding content to each %s document.', website_name)
     page_number = 0
     rows_per_page = 250
     cursor_mark = "*"
@@ -185,30 +187,42 @@ def parse_html_to_plaintext_task(self):
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + '/update?commit=true')
     # select all records where content is empty and content_html is not
-    q = "-content: [\"\" TO *] AND content_html: [* TO *] website:eurlex"
+    q = "-content: [\"\" TO *] AND content_html: [* TO *] website:" + website_name
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
                'cursorMark': cursor_mark, 'sort': 'id asc'}
     results = client.search(q, **options)
+    items = []
+    i = 0
     for result in results:
         if 'content_html' in result:
             output = parser.from_buffer(result['content_html'][0])
             if output['content']:
                 # add to document model and save
-                logger.info('Got content for: %s (%s)',
-                            result['id'], len(output['content']))
-                result['content'] = output['content']
-                client.add([result])
+                logger.debug('Got content for: %s (%s)',
+                             result['id'], len(output['content']))
+                document = {"id": result['id'],
+                            "content": {"set": output['content']}}
+                items.append(document)
             else:
                 # could not parse content
-                logger.info('No output, removing content_html')
-                # FIXME: remove html content known to be bad ?
-                #result['content_html'] = ''
-                # client.add([result])
+                logger.info(
+                    'No output for: %s, removing content_html', result['id'])
+                # remove html content known to be bad
+                document = {"id": result['id'],
+                            "content_html": {"set": None}}
+                items.append(document)
+        if len(items) == 1000:
+            logger.info("Got 1000 items, posting to solr")
+            client.add(items)
+            requests.get(os.environ['SOLR_URL'] +
+                         '/' + core + '/update?commit=true')
+            items = []
 
-        # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
-        requests.get(os.environ['SOLR_URL'] +
-                     '/' + core + '/update?commit=true')
+    # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
+    client.add(items)
+    requests.get(os.environ['SOLR_URL'] +
+                 '/' + core + '/update?commit=true')
 
 
 @shared_task

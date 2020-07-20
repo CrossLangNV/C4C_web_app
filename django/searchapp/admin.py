@@ -32,7 +32,8 @@ def scrape_website(modeladmin, request, queryset):
 
 
 def parse_html_to_plaintext(modeladmin, request, queryset):
-    parse_html_to_plaintext_task.delay()
+    for website in queryset:
+        parse_html_to_plaintext_task.delay(website.id)
 
 
 def parse_pdf_to_plaintext(modeladmin, request, queryset):
