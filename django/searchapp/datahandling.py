@@ -3,27 +3,35 @@ import json
 import logging
 import os
 import random
+import shutil
 from datetime import datetime
 from urllib.request import urlopen, Request
 
 import requests
 from django.core.files.base import ContentFile
 from django.utils.timezone import make_aware
+from jsonlines import jsonlines
+from minio import Minio, ResponseError
+from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
 from tika import parser
 
 from searchapp.models import Document, Attachment, Website, AcceptanceState, AcceptanceStateValue
 from searchapp.solr_call import solr_search_id
 
 logger = logging.getLogger(__name__)
+workpath = os.path.dirname(os.path.abspath(__file__))
 
 
-def score_documents(django_documents, use_pdf_files):
+def score_documents(website_name, django_documents, use_pdf_files):
     # if the classifier returns this value as either accepted or rejected
     # probability, it means something went wrong decoding the content
     error_classifier = -9999
     django_error_score = -1
     accepted_threshold = 0.5
+    scores = []
+    solr_documents = []
     for django_doc in django_documents:
+        content = ''
         validated = False
         accepted_probability = error_classifier
         accepted_probability_index = 0
@@ -31,6 +39,7 @@ def score_documents(django_documents, use_pdf_files):
         solr_result = solr_search_id(core="documents", id=str(django_doc.id))
         if len(solr_result) == 1:
             solr_doc = solr_result[0]
+            solr_documents.append(solr_doc)
             if use_pdf_files and solr_doc.get('pdf_docs'):
                 # download each pdf file, parse with tika, use highest score
                 pdf_urls = solr_doc['pdf_docs']
@@ -42,24 +51,30 @@ def score_documents(django_documents, use_pdf_files):
                     [(r['accepted_probability'], i) for i, r in enumerate(classifier_responses)])
                 if accepted_probability != error_classifier:
                     validated = True
+                content = classifier_responses[accepted_probability_index]['content']
             elif solr_doc.get('content_html'):
                 # classifier uses base64 content
-                content_html = solr_doc['content_html'][0]
-                classifier_response = classify(str(django_doc.id), content_html, 'html')
+                content = solr_doc['content_html'][0]
+                classifier_response = classify(str(django_doc.id), content, 'html')
                 accepted_probability = classifier_response["accepted_probability"]
                 if accepted_probability != error_classifier:
                     validated = True
+        else:
+            solr_documents.append({})
 
         if validated:
             # for now acceptance_state_max_probability is the latest one
             django_doc.acceptance_state_max_probability = accepted_probability
             django_doc.pull = False
             django_doc.save()
+            classifier_status = AcceptanceStateValue.ACCEPTED if accepted_probability > accepted_threshold else AcceptanceStateValue.REJECTED
+            scores.append({'classifier_status': classifier_status, 'classifier_score': accepted_probability,
+                           'content': content})
             AcceptanceState.objects.update_or_create(
                 probability_model="auto classifier",
                 document=django_doc,
                 defaults={
-                    'value': AcceptanceStateValue.ACCEPTED if accepted_probability > accepted_threshold else AcceptanceStateValue.REJECTED,
+                    'value': classifier_status,
                     'accepted_probability': accepted_probability,
                     'accepted_probability_index': accepted_probability_index
                 }
@@ -69,6 +84,8 @@ def score_documents(django_documents, use_pdf_files):
             django_doc.acceptance_state_max_probability = django_error_score
             django_doc.pull = False
             django_doc.save()
+            scores.append({'classifier_status': AcceptanceStateValue.UNVALIDATED, 'classifier_score': django_error_score,
+                           'content': content})
             AcceptanceState.objects.update_or_create(
                 probability_model="auto classifier",
                 document=django_doc,
@@ -78,6 +95,36 @@ def score_documents(django_documents, use_pdf_files):
                     'accepted_probability_index': accepted_probability_index
                 }
             )
+    score_export(website_name, solr_documents, scores)
+
+
+def score_export(website_name, documents, scores):
+    if not os.path.exists(workpath + '/score/jsonl/' + website_name):
+        os.makedirs(workpath + '/score/jsonl/' + website_name)
+    for document, score in zip(documents, scores):
+        if document:
+            with jsonlines.open(workpath + '/score/jsonl/' + website_name + '/doc_' + document['id'] + '.jsonl',
+                                mode='w') as f:
+                f.write(document)
+                f.write(score)
+
+    # create zip file for all .jsonl files
+    zip_destination = workpath + '/score'
+    shutil.make_archive(zip_destination, 'zip', workpath + '/score/jsonl')
+
+    # upload zip to minio
+    minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                         secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+    try:
+        minio_client.make_bucket('score')
+    except BucketAlreadyOwnedByYou as err:
+        pass
+    except BucketAlreadyExists as err:
+        pass
+    except ResponseError as err:
+        raise
+    minio_client.fput_object(
+        'score', '.zip', zip_destination + '.zip')
 
 
 def parse_pdf_from_url(url):
@@ -114,13 +161,14 @@ def classify(django_doc_id, content, content_type):
         logger.info("Sending content for doc id: " + django_doc_id)
         response = requests.post(classifier_url, json=data)
         js = response.json()
+        js['content'] = content
         logger.info("Got classifier response: " + json.dumps(js))
         if 'accepted_probability' not in js:
             logger.error('Something went wrong, return ERROR classifier score')
-            js = {'accepted_probability': error_classifier}
+            js = {'accepted_probability': error_classifier, 'content': content}
         return js
     logger.error('Something went wrong, return ERROR classifier score')
-    return {'accepted_probability': error_classifier}
+    return {'accepted_probability': error_classifier, 'content': content}
 
 
 def sync_documents(website, solr_documents, django_documents):

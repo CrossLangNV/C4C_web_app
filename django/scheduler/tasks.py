@@ -114,7 +114,7 @@ def score_documents_task(website_id):
     use_pdf_files = True
     if website.name.lower() == 'eurlex':
         use_pdf_files = False
-    score_documents(django_documents, use_pdf_files)
+    score_documents(website.name, django_documents, use_pdf_files)
 
 
 @shared_task
