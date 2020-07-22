@@ -149,5 +149,6 @@ class ScrapyAppPipeline(FilesPipeline):
     def minio_upload(self, file_path, file_name):
         minio = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
                       secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
-        minio.fput_object('local-media', file_name, file_path)
-        return os.environ['MINIO_STORAGE_MEDIA_URL'] + '/' + file_name
+        minio.fput_object(
+            os.environ['MINIO_STORAGE_MEDIA_BUCKET_NAME'], file_name, file_path)
+        return file_name
