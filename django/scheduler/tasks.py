@@ -30,6 +30,17 @@ workpath = os.path.dirname(os.path.abspath(__file__))
 
 
 @shared_task
+def full_service_task(website_id):
+    website = Website.objects.get(pk=website_id)
+    logger.info("Scoring documents with WEBSITE: %s",  website.name)
+    scrape_website_task(website_id, delay=False)
+    sync_scrapy_to_solr_task(website_id)
+    parse_content_to_plaintext_task(website_id)
+    sync_documents_task(website_id)
+    logger.info("Scoring documents with WEBSITE (DONE): %s", website.name)
+
+
+@ shared_task
 def export_documents(website_ids=None):
     websites = Website.objects.all()
     if website_ids:
@@ -130,7 +141,7 @@ def sync_documents_task(website_id):
 
 
 @shared_task
-def scrape_website_task(website_id):
+def scrape_website_task(website_id, delay=True):
     # lookup website and start scraping
     website = Website.objects.get(pk=website_id)
     logger.info("Scraping with WEBSITE: " + website.name)
@@ -153,11 +164,19 @@ def scrape_website_task(website_id):
                 for year in range(1951, datetime.now().year + 1):
                     date_start = "0101" + str(year)
                     date_end = "3112" + str(year)
+                    if delay:
+                        launch_crawler.delay(
+                            spider['id'], spider['type'], date_start, date_end)
+                    else:
+                        launch_crawler(
+                            spider['id'], spider['type'], date_start, date_end)
+            else:
+                if delay:
                     launch_crawler.delay(
                         spider['id'], spider['type'], date_start, date_end)
-            else:
-                launch_crawler.delay(
-                    spider['id'], spider['type'], date_start, date_end)
+                else:
+                    launch_crawler(
+                        spider['id'], spider['type'], date_start, date_end)
 
 
 @shared_task
@@ -175,7 +194,7 @@ def launch_crawler(spider, spider_type, date_start, date_end):
 
 
 @shared_task()
-def parse_html_to_plaintext_task(website_id):
+def parse_content_to_plaintext_task(website_id):
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
     logger.info('Adding content to each %s document.', website_name)
@@ -187,31 +206,47 @@ def parse_html_to_plaintext_task(website_id):
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + '/update?commit=true')
     # select all records where content is empty and content_html is not
-    q = "-content: [\"\" TO *] AND content_html: [* TO *] website:" + website_name
+    q = "-content: [\"\" TO *] AND ( content_html: [* TO *] OR file: [* TO *] ) AND website:" + website_name
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
                'cursorMark': cursor_mark, 'sort': 'id asc'}
     results = client.search(q, **options)
     items = []
-    i = 0
+    minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                         secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
     for result in results:
+        # Parse content
+        content_text = None
         if 'content_html' in result:
             output = parser.from_buffer(result['content_html'][0])
-            if output['content']:
-                # add to document model and save
-                logger.debug('Got content for: %s (%s)',
-                             result['id'], len(output['content']))
-                document = {"id": result['id'],
-                            "content": {"set": output['content']}}
-                items.append(document)
-            else:
-                # could not parse content
-                logger.info(
-                    'No output for: %s, removing content_html', result['id'])
-                # remove html content known to be bad
-                document = {"id": result['id'],
-                            "content_html": {"set": None}}
-                items.append(document)
+            content_text = output['content']
+        elif 'file' in result:
+            try:
+                file_data = minio_client.get_object(
+                    os.environ['MINIO_STORAGE_MEDIA_BUCKET_NAME'], result['file'][0])
+                output = BytesIO()
+                for d in file_data.stream(32*1024):
+                    output.write(d)
+                content_text = parser.from_buffer(output.getvalue())
+                if 'content' in content_text:
+                    content_text = content_text['content']
+            except ResponseError as err:
+                print(err)
+
+        # Store plaintext
+        if content_text is None:
+            # could not parse content
+            logger.info(
+                'No output for: %s, removing content_html', result['id'])
+        else:
+            logger.debug('Got content for: %s (%s)',
+                         result['id'], len(content_text))
+
+        # add to document model and save
+        document = {"id": result['id'],
+                    "content": {"set": content_text}}
+        items.append(document)
+
         if len(items) == 1000:
             logger.info("Got 1000 items, posting to solr")
             client.add(items)
