@@ -21,7 +21,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from scheduler.tasks import export_documents, export_delete, sync_documents_task, score_documents_task
-from .datahandling import sync_documents, sync_attachments
+from .datahandling import sync_documents
 from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
 from .permissions import IsOwner, IsOwnerOrSuperUser
@@ -92,15 +92,15 @@ class DocumentDetailView(PermissionRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         document = Document.objects.get(id=self.kwargs['pk'])
         # sync current document
-        solr_document = solr_search_id(core='documents', id=str(document.id))
-        sync_documents(document.website, solr_document, [document])
+        # solr_document = solr_search_id(core='documents', id=str(document.id))
+        # sync_documents(document.website, solr_document, [document])
         # query Solr for attachments
-        solr_files = solr_search_document_id_sorted(
-            core='files', document_id=str(document.id))
-        django_attachments = Attachment.objects.filter(
-            document=document).order_by('id')
-        sync_attachments(document, solr_files, django_attachments)
-        context['attachments'] = django_attachments
+        # solr_files = solr_search_document_id_sorted(
+        #     core='files', document_id=str(document.id))
+        # django_attachments = Attachment.objects.filter(
+        #     document=document).order_by('id')
+        # sync_attachments(document, solr_files, django_attachments)
+        # context['attachments'] = django_attachments
         return context
 
 
@@ -231,7 +231,8 @@ class DocumentListAPIView(ListCreateAPIView):
     ordering_fields = ['title', 'date', 'acceptance_state_max_probability']
 
     def get_queryset(self):
-        q = Document.objects.annotate(text_len=Length('title')).filter(text_len__gt=1)
+        q = Document.objects.annotate(
+            text_len=Length('title')).filter(text_len__gt=1)
         keyword = self.request.GET.get('keyword', "")
         if keyword:
             q = q.filter(title__icontains=keyword)
@@ -264,20 +265,11 @@ class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         document = Document.objects.get(pk=self.kwargs['pk'])
-        with_attachments = self.request.GET.get('with_attachments', False)
-        sync = self.request.GET.get('sync', False)
-        if sync:
-            solr_document = solr_search_id(
-                core='documents', id=str(document.id))
-            sync_documents(document.website, solr_document, [document])
-        if with_attachments:
-            # query Solr for attachments
-            solr_files = solr_search_document_id_sorted(
-                core='files', document_id=str(document.id))
-            django_attachments = Attachment.objects.filter(
-                document=document).order_by('id')
-            if sync:
-                sync_attachments(document, solr_files, django_attachments)
+        with_content = self.request.GET.get('with_content', False)
+        if with_content:
+            solr_doc = solr_search_id(
+                core='documents', id=str(self.kwargs['pk']))[0]
+            document.content = solr_doc['content'][0]
         return document
 
 
@@ -293,13 +285,12 @@ class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
     serializer_class = AttachmentSerializer
 
     def get_object(self):
+        # Read content from document
         queryset = self.get_queryset()
-        attachment_qs = queryset.filter(pk=self.kwargs['pk'])
-        attachment = attachment_qs[0]
-        solr_attachment = solr_search_id(
-            core='files', id=str(attachment.id))[0]
-        if not attachment.content and "content" in solr_attachment:
-            attachment.content = solr_attachment['content']
+        attachment = Attachment
+        solr_doc = solr_search_id(
+            core='document', id=str(self.kwargs['pk']))[0]
+        attachment.content = solr_doc['content']
         return attachment
 
 

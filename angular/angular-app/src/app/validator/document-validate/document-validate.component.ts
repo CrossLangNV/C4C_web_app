@@ -176,10 +176,12 @@ export class DocumentValidateComponent implements OnInit {
         console.log(this.attachment.url);
       });
     } else {
-      this.service.getAttachment(attachmentId).subscribe((attachment) => {
-        attachment.content = '<pre>' + attachment.content + '</pre>';
-        this.attachment = attachment;
-      });
+      this.service
+        .getDocumentWithContent(attachmentId)
+        .subscribe((attachment) => {
+          attachment.content = '<pre>' + attachment.content + '</pre>';
+          this.document = attachment;
+        });
     }
   }
 

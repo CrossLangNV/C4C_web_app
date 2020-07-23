@@ -58,7 +58,7 @@ class FSBScraperSpider(scrapy.Spider):
             description = soup.find("span", {"class": "post-content"})
             if description is not None:
                 description = description.getText().replace('\n', ' ')
-                newdict.update({"summary": description})
+                newdict.update({"summary": description.strip()})
 
             return newdict
 

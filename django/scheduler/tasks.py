@@ -21,7 +21,7 @@ from scrapy.utils.project import get_project_settings
 from tika import parser
 from twisted.internet import reactor
 
-from searchapp.datahandling import score_documents, sync_documents, sync_attachments
+from searchapp.datahandling import score_documents, sync_documents
 from searchapp.models import Website, Document, Attachment, AcceptanceState
 from searchapp.solr_call import solr_search, solr_search_document_id_sorted, solr_search_website_sorted, solr_search_website_paginated
 
@@ -32,12 +32,13 @@ workpath = os.path.dirname(os.path.abspath(__file__))
 @shared_task
 def full_service_task(website_id):
     website = Website.objects.get(pk=website_id)
-    logger.info("Scoring documents with WEBSITE: %s",  website.name)
+    logger.info("Full service for WEBSITE: %s",  website.name)
     scrape_website_task(website_id, delay=False)
     sync_scrapy_to_solr_task(website_id)
     parse_content_to_plaintext_task(website_id)
     sync_documents_task(website_id)
-    logger.info("Scoring documents with WEBSITE (DONE): %s", website.name)
+    score_documents_task(website_id)
+    logger.info("Full service for WEBSITE (DONE): %s", website.name)
 
 
 @ shared_task
@@ -118,9 +119,9 @@ def export_delete(task_id):
 
 @shared_task
 def score_documents_task(website_id):
-    logger.info("Scoring documents with WEBSITE: " + str(website_id))
     # lookup documents for website and score them
     website = Website.objects.get(pk=website_id)
+    logger.info("Scoring documents with WEBSITE: " + website.name)
     django_documents = Document.objects.filter(website=website).order_by('id')
     use_pdf_files = True
     if website.name.lower() == 'eurlex':
@@ -206,7 +207,7 @@ def parse_content_to_plaintext_task(website_id):
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + '/update?commit=true')
     # select all records where content is empty and content_html is not
-    q = "-content: [\"\" TO *] AND ( content_html: [* TO *] OR file: [* TO *] ) AND website:" + website_name
+    q = "-content: [\"\" TO *] AND ( content_html: [* TO *] OR file_name: [* TO *] ) AND website:" + website_name
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
                'cursorMark': cursor_mark, 'sort': 'id asc'}
@@ -220,24 +221,27 @@ def parse_content_to_plaintext_task(website_id):
         if 'content_html' in result:
             output = parser.from_buffer(result['content_html'][0])
             content_text = output['content']
-        elif 'file' in result:
-            try:
-                file_data = minio_client.get_object(
-                    os.environ['MINIO_STORAGE_MEDIA_BUCKET_NAME'], result['file'][0])
-                output = BytesIO()
-                for d in file_data.stream(32*1024):
-                    output.write(d)
-                content_text = parser.from_buffer(output.getvalue())
-                if 'content' in content_text:
-                    content_text = content_text['content']
-            except ResponseError as err:
-                print(err)
+        elif 'file_name' in result:
+            # If there is more than 1 pdf, we rely on score_documents to extract
+            # the content of the pdf with the highest score
+            if len(result['file_name']) == 1:
+                try:
+                    file_data = minio_client.get_object(
+                        os.environ['MINIO_STORAGE_MEDIA_BUCKET_NAME'], result['file_name'][0])
+                    output = BytesIO()
+                    for d in file_data.stream(32*1024):
+                        output.write(d)
+                    content_text = parser.from_buffer(output.getvalue())
+                    if 'content' in content_text:
+                        content_text = content_text['content']
+                except ResponseError as err:
+                    print(err)
 
         # Store plaintext
         if content_text is None:
             # could not parse content
             logger.info(
-                'No output for: %s, removing content_html', result['id'])
+                'No output for: %s, removing content', result['id'])
         else:
             logger.debug('Got content for: %s (%s)',
                          result['id'], len(content_text))
