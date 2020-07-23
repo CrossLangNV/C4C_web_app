@@ -44,18 +44,29 @@ def score_documents(website_name, django_documents, use_pdf_files):
                 # download each pdf file, parse with tika, use highest score
                 pdf_urls = solr_doc['pdf_docs']
                 classifier_responses = []
-                for pdf_url in pdf_urls:
-                    content = parse_pdf_from_url(pdf_url)
-                    classifier_responses.append(classify(str(django_doc.id), content, 'pdf'))
-                accepted_probability, accepted_probability_index = max(
-                    [(r['accepted_probability'], i) for i, r in enumerate(classifier_responses)])
-                if accepted_probability != error_classifier:
-                    validated = True
-                content = classifier_responses[accepted_probability_index]['content']
+                if solr_doc.get('content') and len(solr_doc.get('content')) > 0:
+                    content = solr_doc['content'][0]
+                    classifier_response = classify(
+                        str(django_doc.id), content, 'pdf')
+                    accepted_probability = classifier_response["accepted_probability"]
+                    if accepted_probability != error_classifier:
+                        validated = True
+                else:
+                    for pdf_url in pdf_urls:
+                        logger.info("Going to parse PDF with url: %s", pdf_url)
+                        content = parse_pdf_from_url(pdf_url)
+                        classifier_responses.append(
+                            classify(str(django_doc.id), content, 'pdf'))
+                    accepted_probability, accepted_probability_index = max(
+                        [(r['accepted_probability'], i) for i, r in enumerate(classifier_responses)])
+                    if accepted_probability != error_classifier:
+                        validated = True
+                    content = classifier_responses[accepted_probability_index]['content']
             elif solr_doc.get('content_html'):
                 # classifier uses base64 content
                 content = solr_doc['content_html'][0]
-                classifier_response = classify(str(django_doc.id), content, 'html')
+                classifier_response = classify(
+                    str(django_doc.id), content, 'html')
                 accepted_probability = classifier_response["accepted_probability"]
                 if accepted_probability != error_classifier:
                     validated = True
@@ -65,9 +76,9 @@ def score_documents(website_name, django_documents, use_pdf_files):
         if validated:
             # for now acceptance_state_max_probability is the latest one
             django_doc.acceptance_state_max_probability = accepted_probability
-            django_doc.pull = False
             django_doc.save()
             classifier_status = AcceptanceStateValue.ACCEPTED if accepted_probability > accepted_threshold else AcceptanceStateValue.REJECTED
+            django_doc.update_score(accepted_probability, classifier_status)
             scores.append({'classifier_status': classifier_status, 'classifier_score': accepted_probability,
                            'content': content})
             AcceptanceState.objects.update_or_create(
@@ -79,11 +90,12 @@ def score_documents(website_name, django_documents, use_pdf_files):
                     'accepted_probability_index': accepted_probability_index
                 }
             )
-        else:
+        elif len(solr_result) == 1:
             # couldn't classify
             django_doc.acceptance_state_max_probability = django_error_score
-            django_doc.pull = False
             django_doc.save()
+            django_doc.update_score(
+                django_error_score, AcceptanceStateValue.UNVALIDATED)
             scores.append({'classifier_status': AcceptanceStateValue.UNVALIDATED, 'classifier_score': django_error_score,
                            'content': content})
             AcceptanceState.objects.update_or_create(
@@ -95,7 +107,11 @@ def score_documents(website_name, django_documents, use_pdf_files):
                     'accepted_probability_index': accepted_probability_index
                 }
             )
-    score_export(website_name, solr_documents, scores)
+    # Update solr index
+    core = 'documents'
+    requests.get(os.environ['SOLR_URL'] +
+                 '/' + core + '/update?commit=true')
+    # score_export(website_name, solr_documents, scores)
 
 
 def score_export(website_name, documents, scores):
@@ -158,11 +174,11 @@ def classify(django_doc_id, content, content_type):
             content_bytes).decode('utf-8')
         data = {'content': content_html_b64,
                 'content_type': content_type}
-        logger.info("Sending content for doc id: " + django_doc_id)
+        logger.debug("Sending content for doc id: " + django_doc_id)
         response = requests.post(classifier_url, json=data)
         js = response.json()
         js['content'] = content
-        logger.info("Got classifier response: " + json.dumps(js))
+        logger.debug("Got classifier response: " + json.dumps(js))
         if 'accepted_probability' not in js:
             logger.error('Something went wrong, return ERROR classifier score')
             js = {'accepted_probability': error_classifier, 'content': content}
@@ -177,6 +193,8 @@ def sync_documents(website, solr_documents, django_documents):
             break
         elif django_doc_id is None:
             solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
+            solr_doc_date_last_update = solr_doc.get(
+                'date_last_update', [datetime.now()])[0]
             new_django_doc = Document.objects.create(
                 id=solr_doc['id'],
                 url=solr_doc['url'][0],
@@ -186,6 +204,8 @@ def sync_documents(website, solr_documents, django_documents):
                 title=solr_doc.get('title', [''])[0][:1000],
                 status=solr_doc.get('status', [''])[0][:100],
                 date=solr_doc_date,
+                date_last_update=solr_doc_date_last_update,
+                file_url=solr_doc.get('file_url', [''])[0],
                 type=solr_doc.get('type', [''])[0],
                 summary=''.join(x.strip()
                                 for x in solr_doc.get('summary', [''])),
@@ -194,7 +214,6 @@ def sync_documents(website, solr_documents, django_documents):
                 website=website,
                 consolidated_versions=','.join(x.strip()
                                                for x in solr_doc.get('consolidated_versions', [''])),
-                pull=True
             )
         elif str(django_doc_id) == solr_doc['id']:
             # Document might have changed in solr. Update django_document
@@ -203,28 +222,6 @@ def sync_documents(website, solr_documents, django_documents):
             logger.info('comparison failed')
             logger.info('django document id: ' + str(django_doc_id))
             logger.info('solr document id: ' + str(solr_doc['id']))
-
-
-def sync_attachments(document, solr_files, django_attachments):
-    for solr_file, django_attachment_id in align_lists(solr_files, django_attachments):
-        logger.info("SYNCATT: working on " + str(django_attachment_id))
-        if solr_file is None:
-            break
-        elif django_attachment_id is None:
-            new_django_attachment = Attachment.objects.create(
-                id=solr_file['id'],
-                url=solr_file['attr_url'][0],
-                document=document,
-                extracted=True
-            )
-        # save_file_from_url(new_django_attachment, solr_file)
-        elif str(django_attachment_id) == solr_file['id']:
-            update_attachment(Attachment.objects.get(
-                pk=django_attachment_id), solr_file)
-        else:
-            logger.info('comparison failed')
-            logger.info('django attachment id: ' + str(django_attachment_id))
-            logger.info('solr file id: ' + str(solr_file['id']))
 
 
 def update_document(django_doc, solr_doc):
@@ -245,6 +242,12 @@ def update_document(django_doc, solr_doc):
         solr_doc_date = solr_doc['date'][0].split('T')[0]
         django_doc.date = make_aware(
             datetime.strptime(solr_doc_date, '%Y-%m-%d'))
+    if 'date_last_update' in solr_doc:
+        solr_doc_date = solr_doc['date_last_update']
+        django_doc.date_last_update = make_aware(datetime.strptime(
+            solr_doc_date, '%Y-%m-%dT%H:%M:%SZ'))
+    if 'file_url' in solr_doc:
+        django_doc.file_url = solr_doc['file_url'][0]
     if 'type' in solr_doc:
         django_doc.type = solr_doc['type'][0]
     if 'summary' in solr_doc:
@@ -257,8 +260,6 @@ def update_document(django_doc, solr_doc):
     if 'website' in solr_doc:
         django_doc.website = Website.objects.get(
             name__iexact=solr_doc['website'][0])
-    # Don't update solr when syncing from solr to django
-    django_doc.pull = True
     django_doc.save()
 
 

@@ -113,7 +113,7 @@ LOG_LEVEL = 'INFO'
 # Still got errors downloading, implemented workaround in:
 # https://stackoverflow.com/questions/37368030/error-302-downloading-file-in-scrapy/38783648
 MEDIA_ALLOW_REDIRECTS = True
-HTTPERROR_ALLOWED_CODES = [302]
+HTTPERROR_ALLOWED_CODES = [301, 302]
 CONCURRENT_REQUESTS_PER_DOMAIN = 16
 
 
