@@ -183,7 +183,7 @@ def classify(django_doc_id, content, content_type):
             logger.error('Something went wrong, return ERROR classifier score')
             js = {'accepted_probability': error_classifier, 'content': content}
         return js
-    logger.error('Something went wrong, return ERROR classifier score')
+    logger.error('Something went wrong, return RROR classifier score')
     return {'accepted_probability': error_classifier, 'content': content}
 
 
@@ -194,7 +194,7 @@ def sync_documents(website, solr_documents, django_documents):
         elif django_doc_id is None:
             solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
             solr_doc_date_last_update = solr_doc.get(
-                'date_last_update', [datetime.now()])[0]
+                'date_last_update', datetime.now())
             new_django_doc = Document.objects.create(
                 id=solr_doc['id'],
                 url=solr_doc['url'][0],
