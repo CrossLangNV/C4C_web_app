@@ -44,7 +44,7 @@ services:
 
   celery_beat:
     build: ./django
-    command: celery -A scheduler beat -l info
+    command: celery -A scheduler beat -l info --pidfile=
     volumes:
       - ./django:/django
     env_file:
