@@ -1,113 +1,135 @@
+from searchapp.solr_call import solr_search_id
+from searchapp.models import Document, Attachment, Website, AcceptanceState, AcceptanceStateValue
+from tika import parser
+from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
+from minio import Minio, ResponseError
+from jsonlines import jsonlines
 import base64
 import json
 import logging
 import os
 import random
 import shutil
+import pysolr
 from datetime import datetime
 from urllib.request import urlopen, Request
 
 import requests
 from django.core.files.base import ContentFile
 from django.utils.timezone import make_aware
-from jsonlines import jsonlines
-from minio import Minio, ResponseError
-from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
-from tika import parser
+from django.db.models import Q, Count
 
-from searchapp.models import Document, Attachment, Website, AcceptanceState, AcceptanceStateValue
-from searchapp.solr_call import solr_search_id
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
 
 
-def score_documents(website_name, django_documents, use_pdf_files):
+def score_documents(website_name, solr_documents, use_pdf_files):
     # if the classifier returns this value as either accepted or rejected
     # probability, it means something went wrong decoding the content
-    error_classifier = -9999
-    django_error_score = -1
-    accepted_threshold = 0.5
+    CLASSIFIER_ERROR_SCORE = -9999
+    DJANGO_ERROR_SCORE = -1
+    ACCEPTED_THRESHOLD = 0.5
     scores = []
-    solr_documents = []
-    for django_doc in django_documents:
+    django_docs = []
+    score_updates = []
+    content_updates = []
+    # Tweak pysolr logger output
+    LOG = logging.getLogger("pysolr")
+    LOG.setLevel(logging.WARNING)
+    # loop documents
+    for solr_doc in solr_documents:
         content = ''
-        validated = False
-        accepted_probability = error_classifier
+        accepted_probability = CLASSIFIER_ERROR_SCORE
         accepted_probability_index = 0
-        # get content from solr
-        solr_result = solr_search_id(core="documents", id=str(django_doc.id))
-        if len(solr_result) == 1:
-            solr_doc = solr_result[0]
-            solr_documents.append(solr_doc)
-            if use_pdf_files and solr_doc.get('pdf_docs'):
-                # download each pdf file, parse with tika, use highest score
-                pdf_urls = solr_doc['pdf_docs']
-                classifier_responses = []
-                if solr_doc.get('content') and len(solr_doc.get('content')) > 0:
-                    content = solr_doc['content'][0]
-                    classifier_response = classify(
-                        str(django_doc.id), content, 'pdf')
-                    accepted_probability = classifier_response["accepted_probability"]
-                    if accepted_probability != error_classifier:
-                        validated = True
-                else:
-                    for pdf_url in pdf_urls:
-                        logger.info("Going to parse PDF with url: %s", pdf_url)
-                        content = parse_pdf_from_url(pdf_url)
-                        classifier_responses.append(
-                            classify(str(django_doc.id), content, 'pdf'))
-                    accepted_probability, accepted_probability_index = max(
-                        [(r['accepted_probability'], i) for i, r in enumerate(classifier_responses)])
-                    if accepted_probability != error_classifier:
-                        validated = True
-                    content = classifier_responses[accepted_probability_index]['content']
-            elif solr_doc.get('content_html'):
-                # classifier uses base64 content
-                content = solr_doc['content_html'][0]
+        if use_pdf_files and solr_doc.get('pdf_docs'):
+            # download each pdf file, parse with tika, use highest score
+            pdf_urls = solr_doc['pdf_docs']
+            classifier_responses = []
+            if solr_doc.get('content') and len(solr_doc.get('content')) > 0:
+                content = solr_doc['content'][0]
                 classifier_response = classify(
-                    str(django_doc.id), content, 'html')
+                    str(solr_doc["id"]), content, 'pdf')
                 accepted_probability = classifier_response["accepted_probability"]
-                if accepted_probability != error_classifier:
-                    validated = True
-        else:
-            solr_documents.append({})
+            else:
+                for pdf_url in pdf_urls:
+                    logger.info("Going to parse PDF with url: %s", pdf_url)
+                    content = parse_pdf_from_url(pdf_url)
+                    classifier_responses.append(
+                        classify(str(solr_doc["id"]), content, 'pdf'))
+                    # Take highest scoring
+                content = classifier_responses[accepted_probability_index]['content']
+                content_updates.append({"id": solr_doc["id"],
+                                        "content": {"set": content}})
+                accepted_probability, accepted_probability_index = max(
+                    [(r['accepted_probability'], i) for i, r in enumerate(classifier_responses)])
+        elif solr_doc.get('content_html'):
+            # classifier uses base64 content
+            content = solr_doc['content_html'][0]
+            classifier_response = classify(
+                str(solr_doc["id"]), content, 'html')
+            accepted_probability = classifier_response["accepted_probability"]
 
-        if validated:
-            # for now acceptance_state_max_probability is the latest one
-            django_doc.acceptance_state_max_probability = accepted_probability
-            django_doc.save()
-            classifier_status = AcceptanceStateValue.ACCEPTED if accepted_probability > accepted_threshold else AcceptanceStateValue.REJECTED
-            django_doc.update_score(accepted_probability, classifier_status)
-            scores.append({'classifier_status': classifier_status, 'classifier_score': accepted_probability,
-                           'content': content})
-            AcceptanceState.objects.update_or_create(
-                probability_model="auto classifier",
-                document=django_doc,
-                defaults={
-                    'value': classifier_status,
-                    'accepted_probability': accepted_probability,
-                    'accepted_probability_index': accepted_probability_index
-                }
-            )
-        elif len(solr_result) == 1:
+        # Check acceptance
+        if accepted_probability != CLASSIFIER_ERROR_SCORE:
+            # Validated
+            classifier_status = AcceptanceStateValue.ACCEPTED if accepted_probability > ACCEPTED_THRESHOLD else AcceptanceStateValue.REJECTED
+        else:
             # couldn't classify
-            django_doc.acceptance_state_max_probability = django_error_score
-            django_doc.save()
-            django_doc.update_score(
-                django_error_score, AcceptanceStateValue.UNVALIDATED)
-            scores.append({'classifier_status': AcceptanceStateValue.UNVALIDATED, 'classifier_score': django_error_score,
-                           'content': content})
-            AcceptanceState.objects.update_or_create(
-                probability_model="auto classifier",
-                document=django_doc,
-                defaults={
-                    'value': AcceptanceStateValue.UNVALIDATED,
-                    'accepted_probability': django_error_score,
-                    'accepted_probability_index': accepted_probability_index
-                }
-            )
+            accepted_probability = DJANGO_ERROR_SCORE
+            classifier_status = AcceptanceStateValue.UNVALIDATED
+
+        # Storage
+        django_doc = Document.objects.get(pk=solr_doc["id"])
+        django_doc.acceptance_state_max_probability = accepted_probability
+        django_doc.save()
+        score_updates.append({"id": solr_doc["id"],
+                              "accepted_probability": {"set": accepted_probability},
+                              "acceptance_state": {"set": classifier_status}})
+        # Storage for export (disabled ATM)
+        django_docs.append(django_doc)
+        scores.append({'classifier_status': classifier_status, 'classifier_score': accepted_probability,
+                       'content': content})
+        # Store AcceptanceState
+        AcceptanceState.objects.update_or_create(
+            probability_model="auto classifier",
+            document=django_doc,
+            defaults={
+                'value': classifier_status,
+                'accepted_probability': accepted_probability,
+                'accepted_probability_index': accepted_probability_index
+            }
+        )
+
+    # Store scores (and content) in solr
+    logger.info("Posting %d scores to SOLR", len(score_updates))
+    core = 'documents'
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    client.add(score_updates)
+    client.add(content_updates)
+
+    # Add unvalidated state for documents without AcceptanceState
+    # This can happen when documents didn't have content of couldn't calculate a score
+    logger.info("Handling documents without AcceptanceState...")
+    website = Website.objects.get(name=website_name)
+    docs = Document.objects.filter(Q(website=website) & Q(
+        acceptance_state_max_probability__isnull=True))
+    for doc in docs:
+        logger.info("CREATE: %s", doc.id)
+        AcceptanceState.objects.update_or_create(
+            probability_model="auto classifier",
+            document=doc,
+            defaults={
+                'value': AcceptanceStateValue.UNVALIDATED,
+                'accepted_probability': DJANGO_ERROR_SCORE,
+                'accepted_probability_index': 0
+            }
+        )
+        doc.acceptance_state_max_probability = DJANGO_ERROR_SCORE
+        doc.save()
+
     # Update solr index
+    logger.info("Committing SOLR index...")
     core = 'documents'
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + '/update?commit=true')
@@ -165,7 +187,7 @@ def parse_pdf_from_url(url):
 
 def classify(django_doc_id, content, content_type):
     classifier_url = os.environ['DOCUMENT_CLASSIFIER_URL'] + "/classify_doc"
-    error_classifier = -9999
+    CLASSIFIER_ERROR_SCORE = -9999
     max_content_size_bytes = 50 * 1024 * 1024
     content_bytes = bytes(content, 'utf-8')
     # don't classify if content > max_content_size_bytes
@@ -181,10 +203,10 @@ def classify(django_doc_id, content, content_type):
         logger.debug("Got classifier response: " + json.dumps(js))
         if 'accepted_probability' not in js:
             logger.error('Something went wrong, return ERROR classifier score')
-            js = {'accepted_probability': error_classifier, 'content': content}
+            js = {'accepted_probability': CLASSIFIER_ERROR_SCORE, 'content': content}
         return js
     logger.error('Something went wrong, return RROR classifier score')
-    return {'accepted_probability': error_classifier, 'content': content}
+    return {'accepted_probability': CLASSIFIER_ERROR_SCORE, 'content': content}
 
 
 def sync_documents(website, solr_documents, django_documents):

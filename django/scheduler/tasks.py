@@ -23,7 +23,7 @@ from twisted.internet import reactor
 
 from searchapp.datahandling import score_documents, sync_documents
 from searchapp.models import Website, Document, Attachment, AcceptanceState
-from searchapp.solr_call import solr_search, solr_search_document_id_sorted, solr_search_website_sorted, solr_search_website_paginated
+from searchapp.solr_call import solr_search, solr_search_document_id_sorted, solr_search_website_sorted, solr_search_website_paginated, solr_search_website_with_content
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -41,7 +41,7 @@ def full_service_task(website_id):
     logger.info("Full service for WEBSITE (DONE): %s", website.name)
 
 
-@ shared_task
+@shared_task
 def export_documents(website_ids=None):
     websites = Website.objects.all()
     if website_ids:
@@ -122,11 +122,12 @@ def score_documents_task(website_id):
     # lookup documents for website and score them
     website = Website.objects.get(pk=website_id)
     logger.info("Scoring documents with WEBSITE: " + website.name)
-    django_documents = Document.objects.filter(website=website).order_by('id')
+    solr_documents = solr_search_website_with_content(
+        'documents', website.name)
     use_pdf_files = True
     if website.name.lower() == 'eurlex':
         use_pdf_files = False
-    score_documents(website.name, django_documents, use_pdf_files)
+    score_documents(website.name, solr_documents, use_pdf_files)
 
 
 @shared_task
