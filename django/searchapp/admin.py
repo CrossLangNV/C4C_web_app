@@ -67,7 +67,7 @@ def export_documents(modeladmin, request, queryset):
     tasks.export_documents.delay(website_ids)
 
 
-def delete_from_solr(modeladmin, requerst, queryset):
+def delete_from_solr(modeladmin, request, queryset):
     for website in queryset:
         r = requests.post(os.environ['SOLR_URL'] + '/' +
                           'documents' + '/update?commit=true', headers={'Content-Type': 'application/json'}, data='{"delete": {"query": "website:'+website.name.lower()+'"}}')

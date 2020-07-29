@@ -13,7 +13,7 @@ import os
 
 class Website(models.Model):
     name = models.CharField(max_length=200, unique=True)
-    content = models.TextField()
+    content = models.TextField(blank=True)
     url = models.URLField(unique=True)
 
     def __str__(self):
@@ -51,7 +51,7 @@ class Document(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
-    acceptance_state_max_probability = models.FloatField(default=0.0)
+    acceptance_state_max_probability = models.FloatField(null=True)
 
     def __str__(self):
         return self.title
