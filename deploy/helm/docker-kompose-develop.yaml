@@ -85,7 +85,7 @@ services:
       - SOLR_HEAP=4g
     command: solr-precreate documents
     labels:
-      kompose.volume.size: 100Gi
+      kompose.volume.size: 50Gi
       kompose.image-pull-secret: "crosslang"
       kompose.image-pull-policy: "Always"
       kompose.service.expose: "solr.dev.dgfisma.crosslang.com"
@@ -122,7 +122,7 @@ services:
     labels:
       kompose.service.expose: "minio.dev.dgfisma.crosslang.com"
       kompose.service.expose.tls-secret: "minio-certificate"
-      kompose.volume.size: 40Gi
+      kompose.volume.size: 100Gi
 
   tika:
     image: apache/tika
