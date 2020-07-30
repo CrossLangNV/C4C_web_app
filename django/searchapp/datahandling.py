@@ -227,7 +227,7 @@ def sync_documents(website, solr_documents, django_documents):
                 status=solr_doc.get('status', [''])[0][:100],
                 date=solr_doc_date,
                 date_last_update=solr_doc_date_last_update,
-                file_url=solr_doc.get('file_url', [''])[0],
+                file_url=solr_doc.get('file_url', [None])[0],
                 type=solr_doc.get('type', [''])[0],
                 summary=''.join(x.strip()
                                 for x in solr_doc.get('summary', [''])),

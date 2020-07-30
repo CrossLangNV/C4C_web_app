@@ -132,9 +132,9 @@ def score_documents_task(website_id):
 
 @shared_task
 def sync_documents_task(website_id):
-    logger.info("Syncing documents with WEBSITE: " + str(website_id))
     # lookup documents for website and sync them
     website = Website.objects.get(pk=website_id)
+    logger.info("Syncing documents with WEBSITE: " + website.name)
     django_documents = Document.objects.filter(website=website).order_by('id')
     # query Solr for available documents and sync with Django
     solr_documents = solr_search_website_sorted(
