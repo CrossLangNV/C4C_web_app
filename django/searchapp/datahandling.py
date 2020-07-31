@@ -30,13 +30,13 @@ def score_documents(website_name, solr_documents, use_pdf_files):
     CLASSIFIER_ERROR_SCORE = -9999
     DJANGO_ERROR_SCORE = -1
     ACCEPTED_THRESHOLD = 0.5
-    scores = []
-    django_docs = []
     score_updates = []
     content_updates = []
     # Tweak pysolr logger output
     LOG = logging.getLogger("pysolr")
     LOG.setLevel(logging.WARNING)
+    core = 'documents'
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     # loop documents
     for solr_doc in solr_documents:
         content = ''
@@ -86,10 +86,6 @@ def score_documents(website_name, solr_documents, use_pdf_files):
         score_updates.append({"id": solr_doc["id"],
                               "accepted_probability": {"set": accepted_probability},
                               "acceptance_state": {"set": classifier_status}})
-        # Storage for export (disabled ATM)
-        django_docs.append(django_doc)
-        scores.append({'classifier_status': classifier_status, 'classifier_score': accepted_probability,
-                       'content': content})
         # Store AcceptanceState
         AcceptanceState.objects.update_or_create(
             probability_model="auto classifier",
@@ -101,12 +97,18 @@ def score_documents(website_name, solr_documents, use_pdf_files):
             }
         )
 
-    # Store scores (and content) in solr
-    logger.info("Posting %d scores to SOLR", len(score_updates))
-    core = 'documents'
-    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    client.add(score_updates)
-    client.add(content_updates)
+        # Store scores (and content) in solr
+        if len(score_updates) == 1000:
+            logger.info("Posting %d scores to SOLR", len(score_updates))
+            client.add(score_updates)
+            score_updates = []
+        else:
+            logger.info("UPDATES: %d", len(score_updates))
+
+        if len(content_updates) == 10:
+            logger.info("Posting %d content to SOLR", len(content_updates))
+            client.add(content_updates)
+            content_updates = []
 
     # Add unvalidated state for documents without AcceptanceState
     # This can happen when documents didn't have content of couldn't calculate a score
@@ -128,41 +130,43 @@ def score_documents(website_name, solr_documents, use_pdf_files):
         doc.acceptance_state_max_probability = DJANGO_ERROR_SCORE
         doc.save()
 
+    # Flush last updates
+    client.add(score_updates)
+    client.add(content_updates)
     # Update solr index
     logger.info("Committing SOLR index...")
     core = 'documents'
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + '/update?commit=true')
-    # score_export(website_name, solr_documents, scores)
 
 
-def score_export(website_name, documents, scores):
-    if not os.path.exists(workpath + '/score/jsonl/' + website_name):
-        os.makedirs(workpath + '/score/jsonl/' + website_name)
-    for document, score in zip(documents, scores):
-        if document:
-            with jsonlines.open(workpath + '/score/jsonl/' + website_name + '/doc_' + document['id'] + '.jsonl',
-                                mode='w') as f:
-                f.write(document)
-                f.write(score)
+# def score_export(website_name, documents, scores):
+#     if not os.path.exists(workpath + '/score/jsonl/' + website_name):
+#         os.makedirs(workpath + '/score/jsonl/' + website_name)
+#     for document, score in zip(documents, scores):
+#         if document:
+#             with jsonlines.open(workpath + '/score/jsonl/' + website_name + '/doc_' + document['id'] + '.jsonl',
+#                                 mode='w') as f:
+#                 f.write(document)
+#                 f.write(score)
 
-    # create zip file for all .jsonl files
-    zip_destination = workpath + '/score'
-    shutil.make_archive(zip_destination, 'zip', workpath + '/score/jsonl')
+#     # create zip file for all .jsonl files
+#     zip_destination = workpath + '/score'
+#     shutil.make_archive(zip_destination, 'zip', workpath + '/score/jsonl')
 
-    # upload zip to minio
-    minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
-                         secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
-    try:
-        minio_client.make_bucket('score')
-    except BucketAlreadyOwnedByYou as err:
-        pass
-    except BucketAlreadyExists as err:
-        pass
-    except ResponseError as err:
-        raise
-    minio_client.fput_object(
-        'score', '.zip', zip_destination + '.zip')
+#     # upload zip to minio
+#     minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+#                          secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+#     try:
+#         minio_client.make_bucket('score')
+#     except BucketAlreadyOwnedByYou as err:
+#         pass
+#     except BucketAlreadyExists as err:
+#         pass
+#     except ResponseError as err:
+#         raise
+#     minio_client.fput_object(
+#         'score', '.zip', zip_destination + '.zip')
 
 
 def parse_pdf_from_url(url):
