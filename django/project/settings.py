@@ -48,7 +48,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'crispy_forms',
     'searchapp',
-    'scraping',
     'glossary',
     'admin_rest',
     'django_celery_beat',
@@ -246,3 +245,5 @@ CELERY_WORKER_MAX_TASKS_PER_CHILD = 1
 CELERY_TASK_ACKS_LATE = True
 # beat scheduler
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+# expire celery tasks results
+CELERY_RESULT_EXPIRES=30

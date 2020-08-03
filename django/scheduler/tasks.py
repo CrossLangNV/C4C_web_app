@@ -21,7 +21,7 @@ from scrapy.utils.project import get_project_settings
 from tika import parser
 from twisted.internet import reactor
 
-from searchapp.datahandling import score_documents, sync_documents
+from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, Attachment, AcceptanceState
 from searchapp.solr_call import solr_search, solr_search_document_id_sorted, solr_search_website_sorted, solr_search_website_paginated, solr_search_website_with_content
 
@@ -135,12 +135,31 @@ def sync_documents_task(website_id):
     # lookup documents for website and sync them
     website = Website.objects.get(pk=website_id)
     logger.info("Syncing documents with WEBSITE: " + website.name)
-    django_documents = Document.objects.filter(website=website).order_by('id')
     # query Solr for available documents and sync with Django
     solr_documents = solr_search_website_sorted(
         core='documents', website=website.name.lower())
-    sync_documents(website, solr_documents, django_documents)
-
+    for solr_doc in solr_documents:
+        solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
+        solr_doc_date_last_update = solr_doc.get( 'date_last_update', datetime.now())
+        data = {"url":solr_doc['url'][0],
+                "celex":solr_doc.get('celex', [''])[0][:20],
+                "eli":solr_doc.get('eli', [''])[0],
+                "title_prefix":solr_doc.get('title_prefix', [''])[0],
+                "title":solr_doc.get('title', [''])[0][:1000],
+                "status":solr_doc.get('status', [''])[0][:100],
+                "date":solr_doc_date,
+                "date_last_update":solr_doc_date_last_update,
+                "file_url":solr_doc.get('file_url', [None])[0],
+                "type":solr_doc.get('type', [''])[0],
+                "summary":''.join(x.strip()
+                                for x in solr_doc.get('summary', [''])),
+                "various":''.join(x.strip()
+                                for x in solr_doc.get('various', [''])),
+                "website":website,
+                "consolidated_versions":','.join(x.strip()
+                                               for x in solr_doc.get('consolidated_versions', [''])),
+        }
+        Document.objects.update_or_create( id=solr_doc["id"], defaults=data)
 
 @shared_task
 def scrape_website_task(website_id, delay=True):
