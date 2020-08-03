@@ -4,7 +4,6 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
-from scheduler.pdf_handling import pdf_extract
 from searchapp.solr_call import solr_delete, solr_update
 
 import pysolr
@@ -71,14 +70,6 @@ class Document(models.Model):
         solr_doc['id'] = str(solr_doc['id'])
         # Update solr
         solr_update("documents", solr_doc)
-
-        # extract text from file if indicated
-        if self.extract_text and self.file.name:
-            pdf_extract.delay(
-                binascii.b2a_base64(
-                    self.file.read(), newline=False).decode('utf-8'),
-                str(self.id)
-            )
 
     def update_score(self, score, status):
         core = 'documents'
