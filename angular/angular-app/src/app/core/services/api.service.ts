@@ -285,12 +285,6 @@ export class ApiService {
     return this.http.delete(`${this.API_URL}/attachment/${id}`);
   }
 
-  public getEURLEXxhtml(celex_id: string): Observable<any> {
-    return this.http.get<string[]>(
-      `${this.API_URL}/celex?celex_id=${celex_id}`
-    );
-  }
-
   public getDocumentStats(): Observable<any> {
     return this.http.get<string[]>(`${this.API_URL}/stats`);
   }

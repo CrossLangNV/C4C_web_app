@@ -1,13 +1,12 @@
 import binascii
 import uuid
+import pysolr
+import os
 
 from django.db import models
 from django.utils import timezone
-
-from searchapp.solr_call import solr_delete, solr_update
-
-import pysolr
-import os
+from searchapp.solr_call import solr_update
+from safedelete.models import SafeDeleteModel
 
 
 class Website(models.Model):
@@ -19,7 +18,8 @@ class Website(models.Model):
         return self.name
 
 
-class Document(models.Model):
+class Document(SafeDeleteModel):
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     celex = models.CharField(max_length=20, default="", blank=True)
 
@@ -78,11 +78,6 @@ class Document(models.Model):
                     "accepted_probability": {"set": score},
                     "acceptance_state": {"set": status}}
         client.add(document)
-
-    def delete(self, *args, **kwargs):
-        # delete from Solr
-        solr_delete(core='documents', id=str(self.id))
-        super().delete(*args, **kwargs)
 
 
 class AcceptanceStateValue(models.TextChoices):

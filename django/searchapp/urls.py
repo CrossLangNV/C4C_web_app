@@ -34,7 +34,8 @@ schema_view = get_schema_view(
         license=openapi.License(name="BSD License"),
     ),
     url=os.environ['DJANGO_BASE_URL'],
-    patterns=[path('searchapp/', include(('searchapp.urls', 'searchapp'), namespace="searchapp"))],
+    patterns=[path('searchapp/', include(('searchapp.urls',
+                                          'searchapp'), namespace="searchapp"))],
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
@@ -90,10 +91,6 @@ urlpatterns = [
     path('api/tag/<int:pk>', views.TagDetailAPIView.as_view(),
          name='tag_detail_api'),
 
-    # Celex
-    path('api/celex', views.celex_get_xhtml,
-         name='celex_get_api'),
-
     # Document stats
     path('api/stats', views.document_stats,
          name='document_stats'),
@@ -107,10 +104,14 @@ urlpatterns = [
          views.SolrFile.as_view(), name='solr_file_search_api'),
     path('api/solrdocument/<id>', views.SolrDocument.as_view(),
          name='solr_document_api'),
-    path('api/solrdocument/search/<search_term>', views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
+    path('api/solrdocument/search/<search_term>',
+         views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
 
     # Export
-    path('api/export/launch', views.ExportDocumentsLaunch.as_view(), name='export_launch_api'),
-    path('api/export/status/<task_id>', views.ExportDocumentsStatus.as_view(), name='export_status_api'),
-    path('api/export/download/<task_id>', views.ExportDocumentsDownload.as_view(), name='export_download_api'),
+    path('api/export/launch', views.ExportDocumentsLaunch.as_view(),
+         name='export_launch_api'),
+    path('api/export/status/<task_id>',
+         views.ExportDocumentsStatus.as_view(), name='export_status_api'),
+    path('api/export/download/<task_id>',
+         views.ExportDocumentsDownload.as_view(), name='export_download_api'),
 ]
