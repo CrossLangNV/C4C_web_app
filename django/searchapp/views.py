@@ -138,7 +138,11 @@ class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
         if with_content:
             solr_doc = solr_search_id(
                 core='documents', id=str(self.kwargs['pk']))[0]
-            document.content = solr_doc['content'][0]
+            # Content is a virtual field (see serializer)
+            if 'content' in solr_doc and len(solr_doc['content']) > 0:
+                document.content = solr_doc['content'][0]
+            if 'content_html' in solr_doc and len(solr_doc['content_html']) > 0:
+                document.content = solr_doc['content_html'][0]
         return document
 
 
@@ -310,22 +314,6 @@ class ExportDocumentsDownload(APIView):
         return response
 
 
-@api_view(['GET'])
-def celex_get_xhtml(request):
-    if request.method == 'GET':
-        celex_id = quote(request.GET["celex_id"])
-        logger.info(celex_id)
-        headers = {"Accept": "application/xhtml+xml", "Accept-Language": "eng"}
-        response = requests.get(
-            "http://publications.europa.eu/resource/celex/" + celex_id, headers=headers)
-        if response.status_code != 200:
-            headers = {"Accept": "text/html", "Accept-Language": "eng"}
-            response = requests.get(
-                "http://publications.europa.eu/resource/celex/" + celex_id, headers=headers)
-        return Response(response.text)
-
-
-# @cache_page(60 * 15)
 @api_view(['GET'])
 def document_stats(request):
     if request.method == 'GET':

@@ -9,7 +9,7 @@ from io import BytesIO
 
 import pysolr
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 from celery import shared_task
 from django.db.models.functions import Length
@@ -140,26 +140,33 @@ def sync_documents_task(website_id):
         core='documents', website=website.name.lower())
     for solr_doc in solr_documents:
         solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
-        solr_doc_date_last_update = solr_doc.get( 'date_last_update', datetime.now())
-        data = {"url":solr_doc['url'][0],
-                "celex":solr_doc.get('celex', [''])[0][:20],
-                "eli":solr_doc.get('eli', [''])[0],
-                "title_prefix":solr_doc.get('title_prefix', [''])[0],
-                "title":solr_doc.get('title', [''])[0][:1000],
-                "status":solr_doc.get('status', [''])[0][:100],
-                "date":solr_doc_date,
-                "date_last_update":solr_doc_date_last_update,
-                "file_url":solr_doc.get('file_url', [None])[0],
-                "type":solr_doc.get('type', [''])[0],
-                "summary":''.join(x.strip()
-                                for x in solr_doc.get('summary', [''])),
-                "various":''.join(x.strip()
-                                for x in solr_doc.get('various', [''])),
-                "website":website,
-                "consolidated_versions":','.join(x.strip()
-                                               for x in solr_doc.get('consolidated_versions', [''])),
+        solr_doc_date_last_update = solr_doc.get(
+            'date_last_update', datetime.now())
+        data = {
+            "author": solr_doc.get('author', [''])[0][:20],
+            "celex": solr_doc.get('celex', [''])[0][:20],
+            "consolidated_versions": ','.join(x.strip() for x in solr_doc.get('consolidated_versions', [''])),
+            "date": solr_doc_date,
+            "date_last_update": solr_doc_date_last_update,
+            "eli": solr_doc.get('eli', [''])[0],
+            "file_url": solr_doc.get('file_url', [None])[0],
+            "status": solr_doc.get('status', [''])[0][:100],
+            "summary": ''.join(x.strip() for x in solr_doc.get('summary', [''])),
+            "title": solr_doc.get('title', [''])[0][:1000],
+            "title_prefix": solr_doc.get('title_prefix', [''])[0],
+            "type": solr_doc.get('type', [''])[0],
+            "url": solr_doc['url'][0],
+            "various": ''.join(x.strip() for x in solr_doc.get('various', [''])),
+            "website": website,
         }
-        Document.objects.update_or_create( id=solr_doc["id"], defaults=data)
+        Document.objects.update_or_create(id=solr_doc["id"], defaults=data)
+    # safe delete documents that have not been updated in a while
+    how_many_days = 30
+    docs = Document.objects.filter(
+        date_last_update__lte=datetime.now()-timedelta(days=how_many_days))
+    for doc in docs:
+        doc.delete()
+
 
 @shared_task
 def scrape_website_task(website_id, delay=True):
