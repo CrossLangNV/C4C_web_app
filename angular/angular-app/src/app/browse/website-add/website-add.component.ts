@@ -10,7 +10,7 @@ import { Website } from '../../shared/models/website';
   styleUrls: ['./website-add.component.css']
 })
 export class WebsiteAddComponent {
-  model = new Website('', '', '', '', []);
+  model = new Website('', '', '', '', 0);
 
   submitted = false;
 

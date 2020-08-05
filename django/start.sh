@@ -3,7 +3,7 @@
 function manage_app () {
     python manage.py makemigrations --merge --noinput &
     python manage.py migrate --noinput &
-    python manage.py process_tasks
+    python manage.py collectstatic --no-input --clear
 }
 
 function start_development() {
@@ -15,7 +15,6 @@ function start_development() {
 function start_production() {
     # use gunicorn for production server here
     manage_app &
-    python manage.py collectstatic --no-input --clear &
     gunicorn project.wsgi -w 4 -b 0.0.0.0:8000
 }
 

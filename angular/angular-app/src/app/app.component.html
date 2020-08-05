@@ -5,8 +5,10 @@
   </div>
   <div class="navbar-nav">
     <a class="nav-item nav-link" routerLink="validator">Dashboard</a>
-    <!-- <a class="nav-item nav-link" routerLink="browse">Browse</a>
-    <a class="nav-item nav-link" routerLink="search">Search</a> -->
+    <a class="nav-item nav-link" routerLink="browse">Sources</a>
+    <a class="nav-item nav-link" routerLink="glossary">Glossary</a>
+    <a class="nav-item nav-link" routerLink="ro">Reporting Obligations</a>
+    <!-- <a class="nav-item nav-link" routerLink="search">Search</a> -->
     <a class="nav-item nav-link">{{ currentDjangoUser.username }}</a>
     <a class="nav-item nav-link" (click)="logout()">Logout</a>
   </div>
@@ -23,8 +25,5 @@
   </div>
   <div class="row">
     <router-outlet></router-outlet>
-  </div>
-  <div class="row">
-    <router-outlet name="secondary"></router-outlet>
   </div>
 </div>

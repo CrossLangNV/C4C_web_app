@@ -1,0 +1,35 @@
+<div class="jumbotron m-2" *ngIf="document; else elseBlock">
+  <h3 class="mb-4">{{ concept.name }}</h3>
+  <p>Definition: {{ concept.definition }}</p>
+  <hr class="my-4" />
+  <h4>
+    {{ document.websiteName }} :
+    <span *ngIf="document.titlePrefix">{{ document.titlePrefix }} : </span>
+    <a (click)="goToLink(document.url)" class="text-primary"
+      >{{ document.title || "(no title)" }}
+    </a>
+  </h4>
+
+  <p>
+    <span class="font-italic">{{ document.date | date }}</span>
+  </p>
+  <p *ngIf="document.type" class=""><u>Type:</u> {{ document.type }}</p>
+  <p *ngIf="document.author" class=""><u>Author:</u> {{ document.author }}</p>
+  <p *ngIf="document.celex" class=""><u>Celex:</u> {{ document.celex }}</p>
+  <p *ngIf="document.eli" class=""><u>Eli:</u> {{ document.eli }}</p>
+  <p *ngIf="document.status" class=""><u>Status:</u> {{ document.status }}</p>
+  <p *ngIf="document.various" class="">
+    <u>Various:</u> {{ document.various }}
+  </p>
+  <div *ngIf="document.summary">
+    <hr class="my-4" />
+    <samp class="text-justify">{{ document.summary }}</samp>
+  </div>
+</div>
+
+<div *ngIf="content_html">
+  <hr class="my-4" />
+  <div class="container-fluid w-50">
+    <div [innerHTML]="content_html"></div>
+  </div>
+</div>

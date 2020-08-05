@@ -21,16 +21,17 @@ from django.views.generic import RedirectView
 
 from admin_rest.models import site
 from project import settings
+from django.conf.urls import url
 
 urlpatterns = [
     path('', RedirectView.as_view(url='admin/', permanent=True)),
     path('admin/api/', site.urls),
     path('admin/', admin.site.urls),
     path('searchapp/', include(('searchapp.urls', 'searchapp'), namespace="searchapp")),
-    path('scraping/', include(('scraping.urls', 'scraping'), namespace="scraping")),
     path('social-auth/', include('social_django.urls', namespace="social-view")),
     path('auth/', include('rest_framework_social_oauth2.urls')),
     path('glossary/', include(('glossary.urls', 'glossary'), namespace="glossary")),
+    path('ht/', include('health_check.urls')),
 ]
 
 if settings.DEBUG:

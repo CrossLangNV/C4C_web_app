@@ -12,7 +12,7 @@ class WebsiteForm(forms.ModelForm):
 class DocumentForm(forms.ModelForm):
     class Meta:
         model = Document
-        fields = ['title', 'date', 'url', 'content']
+        fields = ['title', 'date', 'url']
         widgets = {
             'date': forms.DateInput(attrs={
                 'type': 'date'

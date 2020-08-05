@@ -1,7 +1,9 @@
 #!/bin/bash
 
 COLLECTION="documents"
-SOLR_HOST="https://solr.dev.dgfisma.crosslang.com"
+#SOLR_HOST="https://solr.dev.dgfisma.crosslang.com"
+SOLR_HOST="http://localhost:8983"
+
 
 JSON='{"add-field": [
 {"name":"title",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
@@ -10,20 +12,23 @@ JSON='{"add-field": [
 {"name":"status",           "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"type",             "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"date",             "type":"pdates","stored":true,"indexed":true,"multiValued":true},
+{"name":"date_last_update", "type":"pdate","stored":true,"indexed":true,"multiValued":false},
 {"name":"url"               "type":"text_general","stored":true,"indexed":true,"multiValued":true},
-{"name":"ELI",              "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"eli",              "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"celex",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"website",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"summary",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"various",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"content",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
-{"name":"pull",             "type":"boolean","stored":true,"indexed":true,"multiValued":true},
+{"name":"content_html",     "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"pdf_docs",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
-{"name":"pages",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"reference",        "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"section",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"tags",             "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"keywords",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+
+{"name":"file_name",        "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"file_url",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 
 {"name":"acceptance_state",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"accepted_probability",     "type":"pdoubles","stored":true,"indexed":true,"multiValued":true},
@@ -54,6 +59,11 @@ JSON='{"add-field": [
 {"name":"misc_department_responsible",     "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"misc_form",                       "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"misc_internal_reference",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"misc_internal_comment",           "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"misc_parliamentary_term",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"misc_session",                    "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"misc_rapporteur",                 "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"misc_depositary",                 "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 
 {"name":"procedure",                       "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"procedure_co_author",             "type":"text_general","stored":true,"indexed":true,"multiValued":true},
@@ -67,9 +77,12 @@ JSON='{"add-field": [
 {"name":"relationships_proposal",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"relationships_treaty",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 
+{"name":"consolidated_versions",           "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+
 {"name":"spider",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
-{"name":"task",            "type":"plongs","stored":true,"indexed":true,"multiValued":true},
+{"name":"task",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 ]
 }';
 
 curl -k -X POST --user crosslang:***REMOVED*** -H 'Content-type:application/json' --data-binary "$JSON" $SOLR_HOST/solr/$COLLECTION/schema
+curl -k --user crosslang:***REMOVED*** $SOLR_HOST/solr/$COLLECTION/config -d '{"set-user-property": {"update.autoCreateFields":"false"}}'

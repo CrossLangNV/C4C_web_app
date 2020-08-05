@@ -14,6 +14,12 @@ const routes: Routes = [
     canActivate: [AuthGuard],
   },
   {
+    path: 'glossary',
+    loadChildren: () =>
+      import('./glossary/glossary.module').then((m) => m.GlossaryModule),
+    canActivate: [AuthGuard],
+  },
+  {
     path: 'search',
     component: SolrFileListComponent,
     canActivate: [AuthGuard],

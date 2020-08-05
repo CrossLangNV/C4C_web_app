@@ -1,11 +1,13 @@
 import logging
+import requests
+import os
 
 from django.contrib import admin
 from django.contrib.auth.models import User
 
 from admin_rest.models import site as rest_site
 from scheduler import tasks
-from scheduler.tasks import sync_documents_task, score_documents_task, sync_attachments_task, scrape_website_task
+from scheduler.tasks import full_service_task, sync_documents_task, score_documents_task, scrape_website_task, parse_content_to_plaintext_task, sync_scrapy_to_solr_task
 from .models import Website, Attachment, Document, AcceptanceState, Comment, Tag
 
 logger = logging.getLogger(__name__)
@@ -24,6 +26,26 @@ rest_site.register(Comment)
 rest_site.register(Tag)
 
 rest_site.register(User)
+
+
+def full_service(modeladmin, request, queryset):
+    for website in queryset:
+        full_service_task.delay(website.id)
+
+
+def scrape_website(modeladmin, request, queryset):
+    for website in queryset:
+        scrape_website_task.delay(website.id)
+
+
+def parse_content_to_plaintext(modeladmin, request, queryset):
+    for website in queryset:
+        parse_content_to_plaintext_task.delay(website.id)
+
+
+def sync_scrapy_to_solr(modeladmin, request, queryset):
+    for website in queryset:
+        sync_scrapy_to_solr_task.delay(website.id)
 
 
 def sync_documents(modeladmin, request, queryset):
@@ -45,21 +67,19 @@ def export_documents(modeladmin, request, queryset):
     tasks.export_documents.delay(website_ids)
 
 
-def sync_attachments(modeladmin, request, queryset):
+def delete_from_solr(modeladmin, request, queryset):
     for website in queryset:
-        sync_attachments_task.delay(website.id)
-
-
-def scrape_website(modeladmin, request, queryset):
-    for website in queryset:
-        scrape_website_task.delay(website.id)
+        r = requests.post(os.environ['SOLR_URL'] + '/' +
+                          'documents' + '/update?commit=true', headers={'Content-Type': 'application/json'}, data='{"delete": {"query": "website:'+website.name.lower()+'"}}')
+        logger.info("Deleted solr content for website: %s => %s",
+                    website.name.lower(), r.json())
 
 
 class WebsiteAdmin(admin.ModelAdmin):
     list_display = ['name', 'count_documents']
     ordering = ['name']
-    actions = [sync_documents, score_documents, export_documents,
-               sync_attachments, scrape_website]
+    actions = [full_service, scrape_website, sync_scrapy_to_solr, parse_content_to_plaintext,
+               sync_documents, score_documents, export_documents, delete_from_solr]
 
     def count_documents(self, doc):
         return doc.documents.count()

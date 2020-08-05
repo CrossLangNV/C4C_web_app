@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
-from django.urls import path, re_path
+from django.urls import path, re_path, include
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
@@ -34,35 +34,13 @@ schema_view = get_schema_view(
         license=openapi.License(name="BSD License"),
     ),
     url=os.environ['DJANGO_BASE_URL'],
+    patterns=[path('searchapp/', include(('searchapp.urls',
+                                          'searchapp'), namespace="searchapp"))],
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
 
 urlpatterns = [
-    path('', login_required(views.WebsiteListView.as_view(),
-                            login_url='searchapp:login'), name='websites'),
-    path('website/', login_required(views.WebsiteListView.as_view(),
-                                    login_url='searchapp:login'), name='websites'),
-    path('website/create/', login_required(views.WebsiteCreateView.as_view(), login_url='searchapp:login'),
-         name='create_website'),
-    path('website/<int:pk>/update/', login_required(views.WebsiteUpdateView.as_view(), login_url='searchapp:login'),
-         name='update_website'),
-    path('website/<int:pk>/delete/', login_required(views.WebsiteDeleteView.as_view(), login_url='searchapp:login'),
-         name='delete_website'),
-    path('website/<int:pk>/', login_required(views.WebsiteDetailView.as_view(), login_url='searchapp:login'),
-         name='website'),
-    path('website/<int:pk>/create/', login_required(views.DocumentCreateView.as_view(), login_url='searchapp:login'),
-         name='create_document'),
-
-    path('document/', login_required(views.DocumentSearchView.as_view(), login_url='searchapp:login'),
-         name='document_search'),
-    path('document/<uuid:pk>/', login_required(views.DocumentDetailView.as_view(), login_url='searchapp:login'),
-         name='document'),
-    path('document/<uuid:pk>/update/', login_required(views.DocumentUpdateView.as_view(), login_url='searchapp:login'),
-         name='update_document'),
-    path('document/<uuid:pk>/delete/', login_required(views.DocumentDeleteView.as_view(), login_url='searchapp:login'),
-         name='delete_document'),
-
     path('login/', auth_views.LoginView.as_view(template_name='searchapp/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
@@ -113,10 +91,6 @@ urlpatterns = [
     path('api/tag/<int:pk>', views.TagDetailAPIView.as_view(),
          name='tag_detail_api'),
 
-    # Celex
-    path('api/celex', views.celex_get_xhtml,
-         name='celex_get_api'),
-
     # Document stats
     path('api/stats', views.document_stats,
          name='document_stats'),
@@ -124,15 +98,20 @@ urlpatterns = [
     # Super
     path('api/super', views.IsSuperUserAPIView.as_view(), name='super_api'),
 
-    # Solrfiles
+    # Solr
     path('api/solrfiles/', views.SolrFileList.as_view(), name='solr_file_list_api'),
     path('api/solrfiles/<search_term>',
          views.SolrFile.as_view(), name='solr_file_search_api'),
     path('api/solrdocument/<id>', views.SolrDocument.as_view(),
          name='solr_document_api'),
+    path('api/solrdocument/search/<search_term>',
+         views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
 
     # Export
-    path('api/export/launch', views.ExportDocumentsLaunch.as_view(), name='export_launch_api'),
-    path('api/export/status/<task_id>', views.ExportDocumentsStatus.as_view(), name='export_status_api'),
-    path('api/export/download/<task_id>', views.ExportDocumentsDownload.as_view(), name='export_download_api'),
+    path('api/export/launch', views.ExportDocumentsLaunch.as_view(),
+         name='export_launch_api'),
+    path('api/export/status/<task_id>',
+         views.ExportDocumentsStatus.as_view(), name='export_status_api'),
+    path('api/export/download/<task_id>',
+         views.ExportDocumentsDownload.as_view(), name='export_download_api'),
 ]
