@@ -48,7 +48,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'crispy_forms',
     'searchapp',
-    'scraping',
     'glossary',
     'admin_rest',
     'django_celery_beat',
@@ -60,6 +59,7 @@ INSTALLED_APPS = [
     'health_check.storage',
     'health_check.contrib.celery',
     'health_check.contrib.psutil',
+    'safedelete',
 ]
 
 MIDDLEWARE = [
@@ -246,3 +246,9 @@ CELERY_WORKER_MAX_TASKS_PER_CHILD = 1
 CELERY_TASK_ACKS_LATE = True
 # beat scheduler
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+# expire celery tasks results
+CELERY_RESULT_EXPIRES = 30
+
+
+# Safe delete -- revives delete docs in update_or_create()
+SAFE_DELETE_INTERPRET_UNDELETED_OBJECTS_AS_CREATED = True

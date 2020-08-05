@@ -158,29 +158,20 @@ export class DocumentValidateComponent implements OnInit {
       scrollable: true,
     });
 
+    var isHtml = false;
     if (attachmentId.startsWith('CELEX:')) {
       attachmentId = attachmentId.replace(/CELEX:/g, '');
-      let url =
-        'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:' +
-        attachmentId;
-      this.service.getEURLEXxhtml(attachmentId).subscribe((xhtml) => {
-        if (
-          xhtml.includes(
-            'None of the requests returned successfully a redirection'
-          )
-        ) {
-          xhtml = 'HTML unavailable, Click "See original" for PDF version';
-        }
-        this.attachment = new Attachment(attachmentId, '', url, '', xhtml);
-        console.log(attachmentId);
-        console.log(this.attachment.url);
-      });
-    } else {
-      this.service.getAttachment(attachmentId).subscribe((attachment) => {
-        attachment.content = '<pre>' + attachment.content + '</pre>';
-        this.attachment = attachment;
-      });
+      isHtml = true;
     }
+    this.service
+      .getDocumentWithContent(attachmentId)
+      .subscribe((attachment) => {
+        if (!isHtml) {
+          attachment.content = '<pre>' + attachment.content + '</pre>';
+        }
+        this.document = attachment;
+      });
+    // }
   }
 
   onSubmit() {

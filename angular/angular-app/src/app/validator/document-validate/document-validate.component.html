@@ -35,18 +35,18 @@
     <hr class="my-4" />
     <samp class="text-justify">{{ document.summary }}</samp>
   </div>
-  <div *ngIf="document.attachments.length || document.celex">
+  <div *ngIf="document.file_url || document.celex">
     <hr class="my-4" />
     <p><b>Attachments:</b></p>
     <table>
-      <tr *ngFor="let attachment of document.attachments">
+      <tr *ngIf="document.file_url">
         <td>
           <button
             type="button"
             class="btn btn-primary"
-            (click)="openModal(editProfileModal, attachment.id)"
+            (click)="openModal(editProfileModal, document.id)"
           >
-            {{ attachment.url }}
+            {{ document.file_url }}
           </button>
         </td>
       </tr>
@@ -55,7 +55,7 @@
           <button
             type="button"
             class="btn btn-primary"
-            (click)="openModal(editProfileModal, 'CELEX:' + document.celex)"
+            (click)="openModal(editProfileModal, 'CELEX:' + document.id)"
           >
             HTML
           </button>
@@ -129,7 +129,7 @@
 <ng-template #editProfileModal let-modal>
   <div class="modal-header">
     <h5 class="modal-title" id="editProfileLabel">
-      Attachment: {{ attachment.url }}
+      Attachment: {{ document.file_url }}
     </h5>
     <button
       type="button"
@@ -141,9 +141,9 @@
     </button>
   </div>
 
-  <div [innerHTML]="attachment.content" class="modal-body"></div>
+  <div [innerHTML]="document.content" class="modal-body"></div>
   <div class="modal-footer">
-    <a (click)="goToLink(attachment.url)" class="text-primary">
+    <a (click)="goToLink(document.file_url)" class="text-primary">
       <button type="button" class="btn btn-primary">
         See original
       </button>
