@@ -27,7 +27,11 @@ import {
   ConceptTag,
   ConceptTagAdapter,
 } from 'src/app/shared/models/ConceptTag';
-import { RoResults, ReportingObligation, RoAdapter } from 'src/app/shared/models/ro';
+import {
+  RoResults,
+  ReportingObligation,
+  RoAdapter,
+} from 'src/app/shared/models/ro';
 import * as rosData from './ros.json';
 
 @Injectable({
@@ -36,7 +40,17 @@ import * as rosData from './ros.json';
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
   API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
-  ROS_MOCKED = rosData.ros.map((ro, index) => new ReportingObligation(index.toString(), ro.name, ro.obligation, [], [], []))
+  ROS_MOCKED = rosData.ros.map(
+    (ro, index) =>
+      new ReportingObligation(
+        index.toString(),
+        ro.name,
+        ro.obligation,
+        [],
+        [],
+        []
+      )
+  );
 
   messageSource: Subject<string>;
 
@@ -251,6 +265,12 @@ export class ApiService {
     );
   }
 
+  public getDocumentWithContent(id: string): Observable<Document> {
+    return this.http
+      .get<Document>(`${this.API_URL}/document/${id}?with_content=true`)
+      .pipe(map((item) => this.documentAdapter.adapt(item)));
+  }
+
   public getAttachment(id: string): Observable<Attachment> {
     return this.http
       .get<Attachment>(`${this.API_URL}/attachment/${id}`)
@@ -263,12 +283,6 @@ export class ApiService {
 
   public deleteAttachment(id: string): Observable<any> {
     return this.http.delete(`${this.API_URL}/attachment/${id}`);
-  }
-
-  public getEURLEXxhtml(celex_id: string): Observable<any> {
-    return this.http.get<string[]>(
-      `${this.API_URL}/celex?celex_id=${celex_id}`
-    );
   }
 
   public getDocumentStats(): Observable<any> {
@@ -427,7 +441,7 @@ export class ApiService {
         0,
         '1',
         '-1',
-        this.ROS_MOCKED.slice((page - 1 ) * 5, page * 5)
+        this.ROS_MOCKED.slice((page - 1) * 5, page * 5)
       )
     );
   }

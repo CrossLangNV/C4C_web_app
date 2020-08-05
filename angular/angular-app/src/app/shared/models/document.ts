@@ -36,8 +36,8 @@ export class Document {
     public attachments: Attachment[],
     public commentIds: string[],
     public tags: string[],
-    public pull: boolean,
-    public consolidatedVersions: string
+    public consolidatedVersions: string,
+    public file_url: string
   ) {}
 }
 
@@ -67,8 +67,8 @@ export class DocumentAdapter implements Adapter<Document> {
       item.attachments,
       item.comments,
       item.tags,
-      item.pull,
-      item.consolidated_versions
+      item.consolidated_versions,
+      item.file_url
     );
   }
   encode(document: Document): any {
@@ -94,8 +94,8 @@ export class DocumentAdapter implements Adapter<Document> {
       attachments: document.attachments,
       comments: document.commentIds,
       tags: document.tags,
-      pull: document.pull,
       consolidatedVersions: document.consolidatedVersions,
+      file_url: document.file_url,
     };
   }
 }

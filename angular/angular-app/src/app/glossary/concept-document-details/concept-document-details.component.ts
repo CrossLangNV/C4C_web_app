@@ -38,14 +38,16 @@ export class ConceptDocumentDetailsComponent implements OnInit {
           )
           .subscribe((document) => {
             this.document = document;
-            this.service.getEURLEXxhtml(document.celex).subscribe((xhtml) => {
-              this.content_html = this.highlight(xhtml, concept);
-              // this.service
-              //   .getSolrDocument(this.document.id)
-              //   .subscribe((solrDocument) => {
-              //     this.consolidatedVersions = new Map();
-              //   });
-            });
+            this.service
+              .getDocumentWithContent(document.id)
+              .subscribe((doc) => {
+                this.content_html = this.highlight(doc.content, concept);
+                // this.service
+                //   .getSolrDocument(this.document.id)
+                //   .subscribe((solrDocument) => {
+                //     this.consolidatedVersions = new Map();
+                //   });
+              });
           });
       });
   }

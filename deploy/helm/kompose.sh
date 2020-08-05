@@ -11,6 +11,10 @@ fi
 if [ ! -z "$BRANCH_NAME" ]; then
   BRANCH=$BRANCH_NAME
 fi
+if [ ! -f $PWD/../docker-kompose-$BRANCH.yaml ]; then
+  echo "docker-kompose.yaml not found for this branch, skipping help chart..."
+  exit 0
+fi
 if [ -d "helm" ]; then
   rm -R helm
 fi

@@ -57,11 +57,6 @@ class BISSpider(scrapy.Spider):
                     newdict.update({"pdf_docs": [link_to_pdf]})
                     break
 
-        pages = soup.find('span', attrs={'class': 'pdftitle_pages'})
-        if pages is not None:
-            pages = pages.getText()
-            newdict.update({"pages": pages})
-
         description = soup.find("div", {"id": "cmsContent"})
         if description is not None:
             description = description.getText().replace('\xa0\n', '').replace('\n', '')

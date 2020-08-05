@@ -57,7 +57,7 @@ class ScrapyAppPipeline(FilesPipeline):
         headers = {'Accept': 'application/xhtml+xml,text/html',
                    'Accept-Language': 'eng'}
         response = requests.head(url, headers=headers)
-        if response.status_code == 303:
+        if response.status_code in [301, 302, 303]:
             url = response.headers["Location"]
         self.logger.debug("check_redirect: %s => %s", url, response)
         return url
@@ -78,7 +78,8 @@ class ScrapyAppPipeline(FilesPipeline):
 
         if 'pdf_docs' in item:
             for url in item['pdf_docs']:
-                yield scrapy.Request(url)
+                url_redir = self.check_redirect(url)
+                yield scrapy.Request(url_redir)
 
     # The FilesPipeline.item_completed() method called when all file requests for a single item have completed (either finished downloading, or failed for some reason).
     def item_completed(self, results, item, info):
@@ -93,14 +94,11 @@ class ScrapyAppPipeline(FilesPipeline):
 
         self.handle_dates(item)
         item['website'] = info.spider.name
-        # GOAL: handle each file as a separate document: document id = doc url + file url
-        # item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url'] + file_result['url']))
-        # FOR NOW: handle only first file of document: keep same id
-        if len(file_results) > 0:
-            file_result = file_results[0]
+        for file_result in file_results:
             file_name = file_result['path']
             file_path = os.environ['SCRAPY_FILES_FOLDER'] + \
                 'files/' + info.spider.name + "/" + file_name
+            # There will be only 1 file_result from cellar, so we store that as the content_html
             if file_result['url'].startswith('http://publications.europa.eu/resource/cellar/'):
                 f = open(file_path, "r")
                 item['content_html'] = f.read()
@@ -108,14 +106,18 @@ class ScrapyAppPipeline(FilesPipeline):
                     "GOT HTML FROM CELLAR for ITEM: %s", item['url'])
             else:
                 # store in minio
+                if not 'file_url' in item:
+                    item['file_url'] = []
+                if not 'file_name' in item:
+                    item['file_name'] = []
                 file_minio_path = self.minio_upload(file_path, file_name)
-                item['file_url'] = file_result['url']
-                item['file'] = file_minio_path
+                item['file_url'].append(file_result['url'])
+                item['file_name'].append(file_minio_path)
 
         # Export item to minio jsonl file
         if 'doc_summary' not in item:
             skip = False
-            # when no (english) pdf and no content_html => DropItem
+            # when no (english) pdf and no content_html => skip
             if 'pdf_docs' in item:
                 if len(item['pdf_docs']) == 0 and 'content_html' not in item:
                     skip = True
@@ -128,7 +130,8 @@ class ScrapyAppPipeline(FilesPipeline):
             if not skip:
                 self.exporter.export_item(item)
             else:
-                self.logger.info("SKIPPING: %s", item['url'])
+                self.logger.info(
+                    "SKIPPING (no english pdf or html content): %s", item['url'])
 
     def handle_dates(self, item):
         if item.get('date'):
