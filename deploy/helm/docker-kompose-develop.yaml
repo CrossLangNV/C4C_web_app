@@ -1,0 +1,135 @@
+version: '3'
+services:
+  angular:
+    image: docker.crosslang.com/ctlg-manager/angular:develop-latest
+    ports:
+     - "8080:80"
+    env_file:
+      - ./secrets/django-docker.env.sample
+    labels:
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+      kompose.service.expose: "angular.dev.dgfisma.crosslang.com"
+      kompose.service.expose.tls-secret: "angular-certificate"
+
+  django:
+    image: docker.crosslang.com/ctlg-manager/django:develop-latest
+    command: "./start.sh"
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./secrets/django-docker.env.sample
+    labels:
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+
+  django_nginx:
+    image: docker.crosslang.com/ctlg-manager/django_nginx:develop-latest
+    ports:
+      - "8000:8000"
+    labels:
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+      kompose.service.expose: "django.dev.dgfisma.crosslang.com"
+      kompose.service.expose.tls-secret: "django-certificate"
+
+  celery:
+    image: docker.crosslang.com/ctlg-manager/django:develop-latest
+    ports:
+      - "8000:8000"
+    command: celery -A scheduler worker -l info --uid=nobody --gid=nogroup
+    env_file:
+      - ./secrets/django-docker.env.sample
+    labels:
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+
+  celery_beat:
+    image: docker.crosslang.com/ctlg-manager/django:develop-latest
+    ports:
+      - "8000:8000"
+    command: celery -A scheduler beat -l info
+    env_file:
+      - ./secrets/django-docker.env.sample
+    labels:
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+
+  flower:
+    image: docker.crosslang.com/ctlg-manager/django:develop-latest
+    ports:
+      - "5555:5555"
+    command: flower -A scheduler --port=5555
+    env_file:
+      - ./secrets/django-docker.env.sample
+    labels:
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+      kompose.service.expose: "flower.dev.dgfisma.crosslang.com"
+      kompose.service.expose.tls-secret: "flower-certificate"
+
+  rabbitmq:
+    image: rabbitmq
+    env_file:
+      - ./secrets/django-docker.env.sample
+    ports:
+      - "5672:5672"
+
+  solr:
+    image: solr:8.5-slim
+    ports:
+      - "8983:8983"
+    volumes:
+      - solr:/var/solr
+    environment:
+      - SOLR_HEAP=4g
+    command: solr-precreate documents
+    labels:
+      kompose.volume.size: 50Gi
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+      kompose.service.expose: "solr.dev.dgfisma.crosslang.com"
+      kompose.service.expose.tls-secret: "solr-certificate"
+
+  postgres:
+    image: postgres:alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    env_file:
+      - secrets/django-docker.env.sample
+    labels:
+      kompose.volume.size: 10Gi
+
+  docclass:
+    image: docker.crosslang.com/ctlg-manager/docclass:latest
+    ports:
+      - "5000:5000"
+    labels:
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+    volumes:
+      - minio:/data
+    command: server /data
+    env_file:
+      - secrets/django-docker.env.sample
+    labels:
+      kompose.service.expose: "minio.dev.dgfisma.crosslang.com"
+      kompose.service.expose.tls-secret: "minio-certificate"
+      kompose.volume.size: 100Gi
+
+  tika:
+    image: apache/tika
+    ports:
+      - "9998:9998"
+
+volumes:
+  solr:
+  postgres:
+  minio:

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, ParamMap } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { Website } from '../../shared/models/website';
-import { Document } from '../../shared/models/document';
+import { Document, DocumentResults } from '../../shared/models/document';
 import { Router } from '@angular/router';
 import { switchMap } from 'rxjs/operators';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
@@ -10,6 +10,7 @@ import { faTrashAlt, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { ConfirmationService } from 'primeng/api';
 import { ApiAdminService } from 'src/app/core/services/api.admin.service';
 import { AcceptanceState } from 'src/app/shared/models/acceptanceState';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-website-details',
@@ -55,8 +56,11 @@ export class WebsiteDetailsComponent implements OnInit {
         )
         .subscribe((website) => {
           this.website = website;
-          this.totalDocuments = website.documentIds.length;
-          this.loadDocuments(this.paginateDocuments(this.page, this.pageSize), isAdmin);
+          this.totalDocuments = website.totalDocuments;
+          this.loadDocuments(
+            this.paginateDocuments(this.page, this.pageSize),
+            isAdmin
+          );
         });
     });
     this.deleteIcon = faTrashAlt;
@@ -64,25 +68,23 @@ export class WebsiteDetailsComponent implements OnInit {
   }
 
   paginateDocuments(page: number, pageSize: number) {
-    return this.website.documentIds.slice((page - 1) * pageSize, page * pageSize);
+    return this.apiService.getDocumentResults(page, '', '', '', this.website.name, false, '', '-date')
   }
 
-  loadDocuments(documentIds: string[], isAdmin: boolean) {
+  loadDocuments(documentResults: Observable<DocumentResults>, isAdmin: boolean) {
     this.documents = [];
-    documentIds.forEach((id) => {
-      this.apiService.getDocument(id).subscribe((document) => {
+    documentResults.subscribe(result =>
+      result.results.forEach((document) => {
         if (isAdmin) {
           const docAcceptanceStates = this.acceptanceStates.filter(
-            (state) => state.documentId === id
+            (state) => state.documentId === document.id
           );
           docAcceptanceStates.map((state) => {
-            this.apiAdminService
-              .getUser(state.userId)
-              .subscribe((user) => {
-                state.username = user.username;
-              });
+            this.apiAdminService.getUser(state.userId).subscribe((user) => {
+              state.username = user.username;
+            });
           });
-          this.acceptanceStatesByDocument.set(id, docAcceptanceStates);
+          this.acceptanceStatesByDocument.set(document.id, docAcceptanceStates);
           this.documents.push(document);
         } else {
           this.apiService
@@ -92,12 +94,15 @@ export class WebsiteDetailsComponent implements OnInit {
               this.documents.push(document);
             });
         }
-      });
-    });
+      })
+    );
   }
 
   loadPage(page: number) {
-    this.loadDocuments(this.paginateDocuments(page, this.pageSize), this.adminMode);
+    this.loadDocuments(
+      this.paginateDocuments(page, this.pageSize),
+      this.adminMode
+    );
   }
 
   onDelete() {

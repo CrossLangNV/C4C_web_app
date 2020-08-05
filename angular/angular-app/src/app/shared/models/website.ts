@@ -7,7 +7,7 @@ export class Website {
     public name: string,
     public url: string,
     public content: string,
-    public documentIds: string[]
+    public totalDocuments: number
   ) {}
 }
 
@@ -21,7 +21,7 @@ export class WebsiteAdapter implements Adapter<Website> {
       item.name,
       item.url,
       item.content,
-      item.documents
+      item.total_documents
     );
   }
   encode(website: Website): any {
@@ -30,7 +30,7 @@ export class WebsiteAdapter implements Adapter<Website> {
       name: website.name,
       url: website.url,
       content: website.content,
-      documents: website.documentIds
+      total_documents: website.totalDocuments
     };
   }
 }

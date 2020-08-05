@@ -48,10 +48,18 @@ INSTALLED_APPS = [
     'corsheaders',
     'crispy_forms',
     'searchapp',
-    'scraping',
     'glossary',
     'admin_rest',
+    'django_celery_beat',
     'django_celery_results',
+    'django_extensions',
+    'minio_storage',
+    'health_check',
+    'health_check.db',
+    'health_check.storage',
+    'health_check.contrib.celery',
+    'health_check.contrib.psutil',
+    'safedelete',
 ]
 
 MIDDLEWARE = [
@@ -187,6 +195,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
+DEFAULT_FILE_STORAGE = "minio_storage.storage.MinioMediaStorage"
+STATICFILES_STORAGE = "minio_storage.storage.MinioStaticStorage"
+MINIO_STORAGE_ENDPOINT = 'minio:9000'
+MINIO_STORAGE_ACCESS_KEY = os.environ['MINIO_ACCESS_KEY']
+MINIO_STORAGE_SECRET_KEY = os.environ['MINIO_SECRET_KEY']
+MINIO_STORAGE_USE_HTTPS = os.environ.get('MINIO_HTTPS', False) == 'True'
+MINIO_STORAGE_MEDIA_BUCKET_NAME = 'local-media'
+MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
+MINIO_STORAGE_STATIC_BUCKET_NAME = 'local-static'
+MINIO_STORAGE_AUTO_CREATE_STATIC_BUCKET = True
+
+MINIO_STORAGE_MEDIA_URL = os.environ['MINIO_STORAGE_MEDIA_URL']
+MINIO_STORAGE_STATIC_URL = os.environ['MINIO_STORAGE_STATIC_URL']
+
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
 
@@ -215,3 +237,18 @@ CACHES = {
         }
     }
 }
+
+# Celery
+# This is needed so the twisted reactor, which scrapy uses,
+# doesn't get restarted when launching another celery scraping task
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1
+# Retry on worker failure
+CELERY_TASK_ACKS_LATE = True
+# beat scheduler
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+# expire celery tasks results
+CELERY_RESULT_EXPIRES = 30
+
+
+# Safe delete -- revives delete docs in update_or_create()
+SAFE_DELETE_INTERPRET_UNDELETED_OBJECTS_AS_CREATED = True

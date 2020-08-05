@@ -18,12 +18,39 @@ import {
 } from 'src/app/shared/models/acceptanceState';
 import { Comment, CommentAdapter } from 'src/app/shared/models/comment';
 import { Tag, TagAdapter } from 'src/app/shared/models/tag';
+import {
+  Concept,
+  ConceptAdapter,
+  ConceptResults,
+} from 'src/app/shared/models/concept';
+import {
+  ConceptTag,
+  ConceptTagAdapter,
+} from 'src/app/shared/models/ConceptTag';
+import {
+  RoResults,
+  ReportingObligation,
+  RoAdapter,
+} from 'src/app/shared/models/ro';
+import * as rosData from './ros.json';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
+  API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
+  ROS_MOCKED = rosData.ros.map(
+    (ro, index) =>
+      new ReportingObligation(
+        index.toString(),
+        ro.name,
+        ro.obligation,
+        [],
+        [],
+        []
+      )
+  );
 
   messageSource: Subject<string>;
 
@@ -35,7 +62,10 @@ export class ApiService {
     private attachmentAdapter: AttachmentAdapter,
     private stateAdapter: AcceptanceStateAdapter,
     private commentAdapter: CommentAdapter,
-    private tagAdapter: TagAdapter
+    private tagAdapter: TagAdapter,
+    private conceptTagAdapter: ConceptTagAdapter,
+    private conceptAdapter: ConceptAdapter,
+    private roAdapter: RoAdapter
   ) {
     this.messageSource = new Subject<string>();
   }
@@ -70,6 +100,33 @@ export class ApiService {
           return result;
         })
       );
+  }
+
+  public searchSolrDocuments(
+    pageNumber: number,
+    pageSize: number,
+    term: string,
+    idsFilter: string[],
+    sortBy: string,
+    sortDirection: string
+  ): Observable<any[]> {
+    let requestUrl = `${this.API_URL}/solrdocument/search/${term}?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+    idsFilter.forEach((id) => {
+      requestUrl += `&id=${id}`;
+    });
+    if (sortBy) {
+      requestUrl += `&sortBy=${sortBy}`;
+      if (sortDirection) {
+        requestUrl += `&sortDirection=${sortDirection}`;
+      }
+    }
+    return this.http.get<any[]>(requestUrl).pipe(
+      map((data: any[]) => {
+        const result = [data[0]];
+        result.push(data[1]);
+        return result;
+      })
+    );
   }
 
   public getWebsites(): Observable<Website[]> {
@@ -123,7 +180,7 @@ export class ApiService {
     page: number,
     searchTerm: string,
     filterType: string,
-    userName: string,
+    email: string,
     website: string,
     showOnlyOwn: boolean,
     filterTag: string,
@@ -136,8 +193,8 @@ export class ApiService {
     if (filterType) {
       pageQuery = pageQuery + '&filterType=' + filterType;
     }
-    if (userName) {
-      pageQuery = pageQuery + '&userName=' + userName;
+    if (email) {
+      pageQuery = pageQuery + '&email=' + email;
     }
     if (website && website != 'none') {
       pageQuery = pageQuery + '&website=' + website;
@@ -149,7 +206,7 @@ export class ApiService {
       pageQuery = pageQuery + '&tag=' + filterTag;
     }
     if (sortBy) {
-      pageQuery = pageQuery += '&ordering=' + sortBy;
+      pageQuery = pageQuery + '&ordering=' + sortBy;
     }
     return this.http.get<DocumentResults>(
       `${this.API_URL}/documents${pageQuery}`
@@ -208,6 +265,12 @@ export class ApiService {
     );
   }
 
+  public getDocumentWithContent(id: string): Observable<Document> {
+    return this.http
+      .get<Document>(`${this.API_URL}/document/${id}?with_content=true`)
+      .pipe(map((item) => this.documentAdapter.adapt(item)));
+  }
+
   public getAttachment(id: string): Observable<Attachment> {
     return this.http
       .get<Attachment>(`${this.API_URL}/attachment/${id}`)
@@ -220,12 +283,6 @@ export class ApiService {
 
   public deleteAttachment(id: string): Observable<any> {
     return this.http.delete(`${this.API_URL}/attachment/${id}`);
-  }
-
-  public getEURLEXxhtml(celex_id: string): Observable<any> {
-    return this.http.get<string[]>(
-      `${this.API_URL}/celex?celex_id=${celex_id}`
-    );
   }
 
   public getDocumentStats(): Observable<any> {
@@ -280,5 +337,116 @@ export class ApiService {
 
   public isAdmin(): Observable<boolean> {
     return this.http.get<boolean>(`${this.API_URL}/super`);
+  }
+
+  //
+  // GLOSSARY //
+  //
+
+  public getConcepts(
+    page: number,
+    searchTerm: string,
+    filterTag: string,
+    filterType: string,
+    sortBy: string
+  ): Observable<ConceptResults> {
+    var pageQuery = page ? '?page=' + page : '';
+    if (searchTerm) {
+      pageQuery = pageQuery + '&keyword=' + searchTerm;
+    }
+    if (filterType) {
+      pageQuery = pageQuery + '&filterType=' + filterType;
+    }
+    if (filterTag) {
+      pageQuery = pageQuery + '&tag=' + filterTag;
+    }
+    if (sortBy) {
+      pageQuery = pageQuery + '&ordering=' + sortBy;
+    }
+    return this.http.get<ConceptResults>(
+      `${this.API_GLOSSARY_URL}/concepts${pageQuery}`
+    );
+  }
+
+  public getConcept(id: string): Observable<Concept> {
+    return this.http
+      .get<Concept>(`${this.API_GLOSSARY_URL}/concept/${id}`)
+      .pipe(map((item) => this.conceptAdapter.adapt(item)));
+  }
+
+  public getConceptComment(id: string): Observable<Comment> {
+    return this.http
+      .get<Comment>(`${this.API_GLOSSARY_URL}/comment/${id}`)
+      .pipe(map((item) => this.commentAdapter.adapt(item)));
+  }
+
+  public addConceptComment(comment: Comment): Observable<Comment> {
+    return this.http
+      .post<Comment>(
+        `${this.API_GLOSSARY_URL}/comments`,
+        this.commentAdapter.encode(comment)
+      )
+      .pipe(map((item) => this.commentAdapter.adapt(item)));
+  }
+
+  public deleteConceptComment(id: string): Observable<any> {
+    return this.http.delete(`${this.API_GLOSSARY_URL}/comment/${id}`);
+  }
+
+  public addConceptTag(tag: ConceptTag): Observable<ConceptTag> {
+    return this.http
+      .post<ConceptTag>(
+        `${this.API_GLOSSARY_URL}/tags`,
+        this.conceptTagAdapter.encode(tag)
+      )
+      .pipe(map((item) => this.conceptTagAdapter.adapt(item)));
+  }
+
+  public deleteConceptTag(id: string): Observable<any> {
+    return this.http.delete(`${this.API_GLOSSARY_URL}/tag/${id}`);
+  }
+
+  //
+  // REPORING OBLIGATIONS //
+  //
+
+  public getRos(
+    page: number,
+    searchTerm: string,
+    filterTag: string,
+    filterType: string,
+    sortBy: string
+  ): Observable<RoResults> {
+    var pageQuery = page ? '?page=' + page : '';
+    if (searchTerm) {
+      pageQuery = pageQuery + '&keyword=' + searchTerm;
+    }
+    if (filterType) {
+      pageQuery = pageQuery + '&filterType=' + filterType;
+    }
+    if (filterTag) {
+      pageQuery = pageQuery + '&tag=' + filterTag;
+    }
+    if (sortBy) {
+      pageQuery = pageQuery + '&ordering=' + sortBy;
+    }
+    return of(
+      new RoResults(
+        this.ROS_MOCKED.length,
+        this.ROS_MOCKED.length,
+        this.ROS_MOCKED.length,
+        0,
+        0,
+        0,
+        0,
+        '1',
+        '-1',
+        this.ROS_MOCKED.slice((page - 1) * 5, page * 5)
+      )
+    );
+  }
+
+  public getRo(id: string): Observable<ReportingObligation> {
+    return of(this.ROS_MOCKED[Number(id)]);
   }
 }

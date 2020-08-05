@@ -12,13 +12,14 @@ const routes: Routes = [
       {
         path: '',
         component: DocumentListComponent,
+        children: [
+          {
+            path: ':documentId',
+            component: DocumentValidateComponent,
+          },
+        ],
       },
     ],
-  },
-  {
-    path: 'document/:documentId',
-    component: DocumentValidateComponent,
-    outlet: 'secondary',
   },
 ];
 

@@ -1,5 +1,5 @@
 import { AppComponent } from './app.component';
-
+import { Environment } from 'src/environments/environment-variables';
 import { CoreModule } from './core/core.module';
 import { NgModule } from '@angular/core';
 import { SearchModule } from './search/search.module';
@@ -8,6 +8,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SharedModule } from './shared/shared.module';
 import { BrowseModule } from './browse/browse.module';
 import { AppRoutingModule } from './app-routing.module';
+import { GlossaryModule } from './glossary/glossary.module';
+import { ReportingObligationsModule } from './reporting-obligations/reporting-obligations.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -17,6 +19,8 @@ import { AppRoutingModule } from './app-routing.module';
     BrowserModule,
     BrowserAnimationsModule,
     CoreModule,
+    GlossaryModule,
+    ReportingObligationsModule,
     SearchModule,
     BrowseModule,
   ],

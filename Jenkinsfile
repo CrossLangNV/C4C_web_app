@@ -19,9 +19,6 @@ pipeline {
                             customImage.push("${env.BRANCH_NAME}-latest")
                         }
                     }
-                    sh 'printenv'
-                    sh "docker run -i --rm --env-file  ../secrets/django-docker.env.sample -v $WORKSPACE/django:/django ctlg-manager/django:${BRANCH_NAME}-${BUILD_ID} python manage.py collectstatic --noinput -c"
-                    sh "rm -Rf nginx/static ; cp -R static nginx"
                 }
                 dir('django/nginx'){
                     script {
@@ -41,34 +38,17 @@ pipeline {
                         }
                     }
                 }
-                dir('scrapy'){
-                    script {
-                        docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
-                            def customImage = docker.build("ctlg-manager/scrapyd:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
-                            customImage.push()
-                            customImage.push("${env.BRANCH_NAME}-latest")
-                        }
-                    }
-                }
-                dir('solr'){
-                    script {
-                        docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
-                            def customImage = docker.build("ctlg-manager/solr:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
-                            customImage.push()
-                            customImage.push("${env.BRANCH_NAME}-latest")
-                        }
-                    }
-                }
             }
         }
         stage('Deploy Helm Chart') {
             steps {
-                sh './kompose.sh'
+                dir('deploy/helm'){
+                    sh './kompose.sh'
+                }
             }
         }
     }
 
-/*
     post {
         success {
             slackSend (color: '#36A64F', message: "SUCCESSFUL: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
@@ -77,6 +57,6 @@ pipeline {
             slackSend (color: '#FF0000', message: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
         }
     }
-    */
+
 }
 

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class WebsiteSerializer(serializers.ModelSerializer):
-    documents = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    total_documents = serializers.IntegerField()
 
     class Meta:
         model = Website
@@ -54,6 +54,13 @@ class DocumentSerializer(serializers.ModelSerializer):
     acceptance_states = AcceptanceStateSerializer(many=True, read_only=True)
     acceptance_state = serializers.SerializerMethodField()
     acceptance_state_value = serializers.SerializerMethodField()
+    content = serializers.SerializerMethodField()
+
+    def get_content(self, document):
+        try:
+            return document.content.strip()
+        except AttributeError:
+            return ""
 
     def get_acceptance_state(self, document):
         user = self.context['request'].user

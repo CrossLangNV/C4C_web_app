@@ -23,6 +23,7 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 })
 export class DocumentValidateComponent implements OnInit {
   document: Document;
+  consolidatedVersions;
   stateValues: SelectItem[] = [];
   cities: SelectItem[];
   selectedCities: string[] = [];
@@ -69,6 +70,25 @@ export class DocumentValidateComponent implements OnInit {
       )
       .subscribe((document) => {
         this.document = document;
+        this.consolidatedVersions = new Map();
+        let consolidatedVersionsArr = this.document.consolidatedVersions.split(
+          ','
+        );
+
+        let consolidated = consolidatedVersionsArr[0];
+        consolidatedVersionsArr.forEach((consolidated) => {
+          let consolidatedDateSplit = consolidated.split('-')[1];
+          if (consolidatedDateSplit) {
+            let consolidatedDate = new Date(
+              consolidatedDateSplit.substring(0, 4) +
+                '-' +
+                consolidatedDateSplit.substring(4, 6) +
+                '-' +
+                consolidatedDateSplit.substring(6)
+            );
+            this.consolidatedVersions.set(consolidated, consolidatedDate);
+          }
+        });
         this.newComment.documentId = document.id;
         this.comments = [];
         if (document.commentIds) {
@@ -138,24 +158,20 @@ export class DocumentValidateComponent implements OnInit {
       scrollable: true,
     });
 
+    var isHtml = false;
     if (attachmentId.startsWith('CELEX:')) {
       attachmentId = attachmentId.replace(/CELEX:/g, '');
-      this.service.getEURLEXxhtml(attachmentId).subscribe((xhtml) => {
-        this.attachment = new Attachment(
-          attachmentId,
-          '',
-          this.document.url,
-          '',
-          xhtml
-        );
-        console.log(this.attachment.url);
-      });
-    } else {
-      this.service.getAttachment(attachmentId).subscribe((attachment) => {
-        attachment.content = '<pre>' + attachment.content + '</pre>';
-        this.attachment = attachment;
-      });
+      isHtml = true;
     }
+    this.service
+      .getDocumentWithContent(attachmentId)
+      .subscribe((attachment) => {
+        if (!isHtml) {
+          attachment.content = '<pre>' + attachment.content + '</pre>';
+        }
+        this.document = attachment;
+      });
+    // }
   }
 
   onSubmit() {

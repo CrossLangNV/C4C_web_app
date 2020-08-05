@@ -6,7 +6,7 @@ import { first } from 'rxjs/operators';
 import { AlertService } from '../../core/services/alert.service';
 import { AuthenticationService } from '../../core/auth/authentication.service';
 
-import { GoogleLoginProvider, AuthService } from 'angularx-social-login';
+import { GoogleLoginProvider, SocialAuthService } from 'angularx-social-login';
 
 import { faGoogle, IconDefinition } from '@fortawesome/free-brands-svg-icons';
 
@@ -23,7 +23,7 @@ export class LoginComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private authenticationService: AuthenticationService,
-    private socialAuthService: AuthService,
+    private socialAuthService: SocialAuthService,
     private alertService: AlertService
   ) {
     // redirect to home if already logged in
@@ -35,7 +35,7 @@ export class LoginComponent implements OnInit {
   ngOnInit() {
     this.loginForm = this.formBuilder.group({
       username: ['', Validators.required],
-      password: ['', Validators.required]
+      password: ['', Validators.required],
     });
 
     this.faGoogle = faGoogle;
@@ -52,15 +52,15 @@ export class LoginComponent implements OnInit {
   signInWithGoogle() {
     let socialPlatformProvider = GoogleLoginProvider.PROVIDER_ID;
 
-    this.socialAuthService.signIn(socialPlatformProvider).then(userData => {
+    this.socialAuthService.signIn(socialPlatformProvider).then((userData) => {
       this.authenticationService
         .signInWithGoogle(userData)
         .pipe(first())
         .subscribe(
-          data => {
+          (data) => {
             this.router.navigate([this.returnUrl]);
           },
-          error => {
+          (error) => {
             this.alertService.error(error);
             this.loading = false;
           }
@@ -84,10 +84,10 @@ export class LoginComponent implements OnInit {
       .login(this.f.username.value, this.f.password.value)
       .pipe(first())
       .subscribe(
-        data => {
+        (data) => {
           this.router.navigate([this.returnUrl]);
         },
-        error => {
+        (error) => {
           this.alertService.error(error);
           this.loading = false;
         }

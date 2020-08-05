@@ -11,7 +11,7 @@ Data for both PostgreSQL and Solr is persisted through named volumes.
 
 First enter django docker:
 
-`docker exec -it ctlg-manager_django_1 /bin/bash`
+`docker-compose exec django /bin/bash`
 
 You can create a admin user with these commands:
 
@@ -25,15 +25,25 @@ The angular app requires an application (uses django-oath-toolkit):
 
 The Solr service is started by docker-compose and will create a core named `documents` if it doesn't exist yet.
 
-An additional core should be created
-
-`docker exec ctlg-manager_solr_1 solr create -c files -d /opt/solr/server/solr/configsets/files -n files`
-`rancher kubectl exec solr-6b86d97c8-qdb7p    --namespace=fisma-ctlg-manager -- solr create -c files -d /opt/solr/server/solr/configsets/files -n files`
-
 
 ### Django app
 
 Open browser at `http://localhost:8000`
+
+
+### Scrapy app
+
+During development you can run the scrapy spiders by opening a django shell
+
+`docker-compose exec django /bin/bash`
+
+Then:
+
+`scrapy crawl -s CLOSESPIDER_ITEMCOUNT=5 -a year=1953 -L DEBUG eurlex`
+
+Or:
+
+`scrapy crawl -a spider_date_start=01011953 -a spider_date_end=01011960 eurlex`
 
 
 ### Rancher
