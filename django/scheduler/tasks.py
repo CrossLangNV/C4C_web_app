@@ -33,7 +33,6 @@ workpath = os.path.dirname(os.path.abspath(__file__))
 def full_service_task(website_id):
     website = Website.objects.get(pk=website_id)
     logger.info("Full service for WEBSITE: %s",  website.name)
-    scrape_website_task(website_id, delay=False)
     sync_scrapy_to_solr_task(website_id)
     parse_content_to_plaintext_task(website_id)
     sync_documents_task(website_id)
@@ -44,6 +43,7 @@ def full_service_task(website_id):
 @shared_task
 def export_documents(website_ids=None):
     websites = Website.objects.all()
+    logger.info("Export for websites: %s", website_ids)
     if website_ids:
         websites = Website.objects.filter(pk__in=website_ids)
     for website in websites:
@@ -54,8 +54,9 @@ def export_documents(website_ids=None):
         core = 'documents'
         requests.get(os.environ['SOLR_URL'] +
                      '/' + core + '/update?commit=true')
-        if not os.path.exists(workpath + '/export/jsonl/' + website.name):
-            os.makedirs(workpath + '/export/jsonl/' + website.name)
+        workdir = workpath + '/export/' + \
+            export_documents.request.id + '/' + website.name.lower()
+        os.makedirs(workdir)
         # select all records for website
         q = 'website:' + website.name
         if website.name.lower() == 'eurlex':
@@ -66,7 +67,7 @@ def export_documents(website_ids=None):
                    'cursorMark': cursor_mark, 'sort': 'id asc'}
         documents = client.search(q, **options)
         for document in documents:
-            with jsonlines.open(workpath + '/export/jsonl/' + website.name + '/doc_' + document['id'] + '.jsonl',
+            with jsonlines.open(workdir + '/doc_' + document['id'] + '.jsonl',
                                 mode='w') as f:
                 f.write(document)
                 # get acceptance state from django model
@@ -83,7 +84,8 @@ def export_documents(website_ids=None):
 
     # create zip file for all .jsonl files
     zip_destination = workpath + '/export/' + export_documents.request.id
-    shutil.make_archive(zip_destination, 'zip', workpath + '/export/jsonl')
+    shutil.make_archive(zip_destination, 'zip', workpath +
+                        '/export/' + export_documents.request.id)
 
     # upload zip to minio
     minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
@@ -97,24 +99,11 @@ def export_documents(website_ids=None):
     except ResponseError as err:
         raise
     minio_client.fput_object(
-        'export', export_documents.request.id + '.zip', zip_destination + '.zip')
+        'export',  export_documents.request.id + '.zip', zip_destination + '.zip')
 
-
-@shared_task
-def export_delete(task_id):
-    # delete export jsonl contents
-    for filename in os.listdir(workpath + '/export/jsonl'):
-        file_path = os.path.join(workpath + '/export/jsonl', filename)
-        try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
-        except Exception as e:
-            logger.error('Failed to delete %s. Reason: %s' %
-                         (file_path, e))
-    # delete zip with given task id
-    os.remove(workpath + '/export/' + task_id + '.zip')
+    shutil.rmtree(workpath + '/export/' + export_documents.request.id)
+    os.remove(zip_destination + '.zip')
+    logging.info("Removed: %s", zip_destination + '.zip')
 
 
 @shared_task
