@@ -20,7 +20,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from scheduler.tasks import export_documents, export_delete, sync_documents_task, score_documents_task
+from scheduler.tasks import export_documents, sync_documents_task, score_documents_task
 from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
 from .permissions import IsOwner, IsOwnerOrSuperUser
@@ -309,8 +309,6 @@ class ExportDocumentsDownload(APIView):
         file = minio_client.get_object('export', task_id + '.zip')
         response = FileResponse(file, as_attachment=True)
         response['Content-Disposition'] = 'attachment; filename="%s"' % 'exported_docs.zip'
-        # delete export contents
-        export_delete.delay(task_id)
         return response
 
 

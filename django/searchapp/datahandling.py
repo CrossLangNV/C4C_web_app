@@ -136,35 +136,6 @@ def score_documents(website_name, solr_documents, use_pdf_files):
     requests.get(os.environ['SOLR_URL'] + '/' + core + '/update?commit=true')
 
 
-# def score_export(website_name, documents, scores):
-#     if not os.path.exists(workpath + '/score/jsonl/' + website_name):
-#         os.makedirs(workpath + '/score/jsonl/' + website_name)
-#     for document, score in zip(documents, scores):
-#         if document:
-#             with jsonlines.open(workpath + '/score/jsonl/' + website_name + '/doc_' + document['id'] + '.jsonl',
-#                                 mode='w') as f:
-#                 f.write(document)
-#                 f.write(score)
-
-#     # create zip file for all .jsonl files
-#     zip_destination = workpath + '/score'
-#     shutil.make_archive(zip_destination, 'zip', workpath + '/score/jsonl')
-
-#     # upload zip to minio
-#     minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
-#                          secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
-#     try:
-#         minio_client.make_bucket('score')
-#     except BucketAlreadyOwnedByYou as err:
-#         pass
-#     except BucketAlreadyExists as err:
-#         pass
-#     except ResponseError as err:
-#         raise
-#     minio_client.fput_object(
-#         'score', '.zip', zip_destination + '.zip')
-
-
 def parse_pdf_from_url(url):
     user_agent_list = [
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15',
