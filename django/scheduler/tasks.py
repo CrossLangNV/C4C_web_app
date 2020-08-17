@@ -132,7 +132,8 @@ def extract_terms(website_id):
                 # Get the content_html from Solr and convert to JSON format
                 # TODO: Change to: content_html_text = document['content_html']
                 content_html_text = {
-                    "text": "<html><h1>Hello World</h1></html>"
+                    # "text": "<html><h1>Hello World</h1></html>"
+                    "text": document['content_html']
                 }
                 content_output_json = json.dumps(content_html_text)
                 logger.info("Input from 'content_html': %s", content_output_json)
@@ -157,26 +158,30 @@ def extract_terms(website_id):
                     logger.info("Final XMI: %s", final_xmi.decode("utf-8"))
 
                     # STEP 4: Read the Terms (TfIdfs) from the XMI with DKPro Cassis
-
                     # Write tempfile for typesystem.xml
                     typesystem_req = requests.get("http://053c16a79155.ngrok.io/html2text/typesystem")
                     typesystem_file = open("typesystem_tmp.xml", "w")
                     typesystem_file.write(typesystem_req.content.decode("utf-8"))
-
-                    with open(typesystem_file.name, 'rb') as f:
-                        typesystem = load_typesystem(f)
-
                     # Write tempfile for cas.xml
                     cas_file = open("cas_tmp.xml", "w")
-                    logger.info("WRITE: %s", final_xmi.content.decode("utf-8"))
-                    cas_file.write(final_xmi.content.decode("utf-8"))
+
+                    # TODO Bug here
+                    cas_file.write(final_xmi.decode("utf-8"))
+                    with open(typesystem_file.name, 'rb') as f:
+                        ts = load_typesystem(f)
+                        logger.info("ts: %s", ts.__str__())
 
                     with open(cas_file.name, 'rb') as f:
-                        cas = load_cas_from_xmi(f, typesystem=typesystem)
+                        cas = load_cas_from_xmi(f, typesystem=ts)
 
-                    for token in cas.select('cassis.Token'):
-                        print(token)
+                    logger.info("CAS: %s", cas)
+                    for attr in cas.select('com.crosslang.sdk.types.html.HtmlTag'):
+                        logger.info("attr: %s", attr)
 
+                    for all in cas.select_all():
+                        logger.info("all attr: %s", attr)
+
+                    logger.info("Works?")
 
                     # STEP 5: Send to Solr
 
@@ -232,8 +237,6 @@ def extract_terms(website_id):
                     # TODO: Done? Remove the breaks.
                     break
                 break
-            break
-
         except AttributeError:
             logger.error("Error: An attribute has not been found in a document")
         except ConnectionError:
