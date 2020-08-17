@@ -1,8 +1,10 @@
 from __future__ import absolute_import, unicode_literals
 
+import json
 import logging
 import os
 import shutil
+import tempfile
 import time
 from urllib.parse import quote
 from io import BytesIO
@@ -10,6 +12,7 @@ from io import BytesIO
 import pysolr
 
 from datetime import datetime
+import base64
 import requests
 from celery import shared_task
 from django.db.models.functions import Length
@@ -25,8 +28,11 @@ from searchapp.datahandling import score_documents, sync_documents, sync_attachm
 from searchapp.models import Website, Document, Attachment, AcceptanceState
 from searchapp.solr_call import solr_search, solr_search_document_id_sorted, solr_search_website_sorted, solr_search_website_paginated
 
+from cassis import *
+
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
+local_mock_server = "http://localhost:8008"
 
 
 @shared_task
@@ -97,6 +103,141 @@ def export_documents(website_ids=None):
         raise
     minio_client.fput_object(
         'export', export_documents.request.id + '.zip', zip_destination + '.zip')
+
+
+@shared_task
+def extract_terms(website_id):
+    website = Website.objects.get(pk=website_id)
+    website_name = website.name.lower()
+    core = 'documents'
+    page_number = 0
+    rows_per_page = 250
+    cursor_mark = "*"
+
+    # Query for Solr to find per website that has the content_html field (some do not)
+    q = "website:"+website_name+" AND content_html:*"
+
+    # Load all documents from Solr
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    options = {'rows': rows_per_page, 'start': page_number,
+               'cursorMark': cursor_mark, 'sort': 'id asc', 'fl': 'content_html,id'}
+    documents = client.search(q, **options)
+
+    # Loop over all documents
+    for document in documents:
+        try:
+            if document['content_html'] is not None:
+                doc_id = document['id']
+
+                # Get the content_html from Solr and convert to JSON format
+                # TODO: Change to: content_html_text = document['content_html']
+                content_html_text = {
+                    "text": "<html><h1>Hello World</h1></html>"
+                }
+                content_output_json = json.dumps(content_html_text)
+                logger.info("Input from 'content_html': %s", content_output_json)
+
+                # Step ONE: Html2Text. Output: XMI
+                r = requests.post("http://053c16a79155.ngrok.io/html2text", json=content_output_json)
+                if r.status_code == 200:
+                    logger.info('Sent request to /html2text. Status code: ' + str(r.status_code))
+                    text_cas = r.content;
+
+                    # STEP 2: NLP TextExtract. Input XMI/Output XMI
+                    # TODO: Change URL and json= to text_cas
+                    request_nlp = requests.post("http://053c16a79155.ngrok.io/html2text", json=content_output_json)
+
+                    # STEP 3: Text2Html (XMI OUTPUT)
+                    cas_plus_text_json = {
+                        "text": request_nlp.content.decode("utf-8")
+                    }
+                    request_text_to_html = requests.post("http://053c16a79155.ngrok.io/text2html",
+                                                         json=cas_plus_text_json)
+                    final_xmi = request_text_to_html.content
+                    logger.info("Final XMI: %s", final_xmi.decode("utf-8"))
+
+                    # STEP 4: Read the Terms (TfIdfs) from the XMI with DKPro Cassis
+
+                    # Write tempfile for typesystem.xml
+                    typesystem_req = requests.get("http://053c16a79155.ngrok.io/html2text/typesystem")
+                    typesystem_file = open("typesystem_tmp.xml", "w")
+                    typesystem_file.write(typesystem_req.content.decode("utf-8"))
+
+                    with open(typesystem_file.name, 'rb') as f:
+                        typesystem = load_typesystem(f)
+
+                    # Write tempfile for cas.xml
+                    cas_file = open("cas_tmp.xml", "w")
+                    logger.info("WRITE: %s", final_xmi.content.decode("utf-8"))
+                    cas_file.write(final_xmi.content.decode("utf-8"))
+
+                    with open(cas_file.name, 'rb') as f:
+                        cas = load_cas_from_xmi(f, typesystem=typesystem)
+
+                    for token in cas.select('cassis.Token'):
+                        print(token)
+
+
+                    # STEP 5: Send to Solr
+
+                    # Convert the output to a readable format for Solr
+                    # Todo Change content_html to the one we got from text2html
+                    json_arr_output = {
+                        "id": doc_id,
+                        "concept_occurs": {
+                            "v": "1",
+                            "str": document['content_html'],
+                            "tokens": {
+
+                            }
+                        }
+                    }
+                    concept_occurs = json_arr_output["concept_occurs"]["tokens"]
+
+                    # Store the data
+                    concepts = r.json()['concepts']
+                    for concept in concepts:
+                        token = concept['token']
+                        start = concept['start']
+                        end = concept['end']
+                        score = concept['score']
+                        logger.info("Token: " + token)
+
+                        # Encode score base64
+                        encoded_bytes = base64.b64encode(score.encode("utf-8"))
+                        encoded_score = str(encoded_bytes, "utf-8")
+
+                        token_to_add = {
+                            "t": token,
+                            "s": start,
+                            "e": end,
+                            "y": "word",
+                            "p": encoded_score
+                        }
+                        concept_occurs.insert(token_to_add)
+
+                        #logger.info(concept_occurs)
+
+                        output = json.dumps(json_arr_output)
+                        #logger.info("Output: "+str(output))
+
+                    # This post is a in-place update, only works for single valued non-indexed and non stored vals
+                    # r = requests.post("http://localhost:8983/solr/documents/update?&versions=true&commit=true&omitHeader=true", data=json_arr_output)
+
+                    # TODO: Send POST request to http://localhost:8983/solr/documents/update with data:
+
+                    # Update the fields in Solr with the new data (AtomicUpdates)
+
+
+                    # TODO: Done? Remove the breaks.
+                    break
+                break
+            break
+
+        except AttributeError:
+            logger.error("Error: An attribute has not been found in a document")
+        except ConnectionError:
+            logger.error("Error: Failed to connect to an API endpoint")
 
 
 @shared_task
