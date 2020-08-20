@@ -1,34 +1,27 @@
 from __future__ import absolute_import, unicode_literals
 
+import base64
 import json
 import logging
 import os
 import shutil
-import tempfile
-import time
-from urllib.parse import quote
+from datetime import datetime
 from io import BytesIO
 
 import pysolr
-
-from datetime import datetime
-import base64
 import requests
+import cassis
 from celery import shared_task
-from django.db.models.functions import Length
 from jsonlines import jsonlines
 from minio import Minio, ResponseError
 from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
+from searchapp.datahandling import score_documents, sync_documents
+from searchapp.models import Website, Document, AcceptanceState
+from searchapp.solr_call import solr_search_website_sorted
 from tika import parser
 from twisted.internet import reactor
-
-from searchapp.datahandling import score_documents, sync_documents, sync_attachments
-from searchapp.models import Website, Document, Attachment, AcceptanceState
-from searchapp.solr_call import solr_search, solr_search_document_id_sorted, solr_search_website_sorted, solr_search_website_paginated
-
-from cassis import *
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -105,8 +98,16 @@ def export_documents(website_ids=None):
         'export', export_documents.request.id + '.zip', zip_destination + '.zip')
 
 
+def post_pre_analyzed_to_solr(data):
+    r = requests.post("http://ctlg-manager_solr_1:8983/solr/documents/update?commit=true", data)
+    logger.info("Sent PreAnalyzed fields to Solr. Got status code %s", r.status_code)
+    logger.info("Response: %s", r.content)
+
+
 @shared_task
 def extract_terms(website_id):
+    PARAM_MAX_SOLR_UPDATES_PER_TIME=50
+
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
     core = 'documents'
@@ -123,124 +124,112 @@ def extract_terms(website_id):
                'cursorMark': cursor_mark, 'sort': 'id asc', 'fl': 'content_html,id'}
     documents = client.search(q, **options)
 
-    # Loop over all documents
     for document in documents:
-        try:
-            if document['content_html'] is not None:
-                doc_id = document['id']
+        if document['content_html'] is not None:
+            doc_id = document['id']
 
-                # Get the content_html from Solr and convert to JSON format
-                # TODO: Change to: content_html_text = document['content_html']
-                content_html_text = {
-                    # "text": "<html><h1>Hello World</h1></html>"
-                    "text": document['content_html']
+            content_html_text = {
+                "text": document['content_html']
+            }
+            content_output_json = json.dumps(content_html_text)
+
+            # Step ONE: Html2Text. Output: XMI
+            # Todo: Change URL to Docker URL
+            r = requests.post("http://053c16a79155.ngrok.io/html2text", json=content_output_json)
+            if r.status_code == 200:
+                logger.info('Sent request to /html2text. Status code: %s', r.status_code)
+                text_cas = r.content
+
+                # STEP 2: NLP TextExtract. Input XMI/Output XMI
+                # Todo: Change URL to Docker URL and json= to r.content
+                request_nlp = requests.post("http://demo9722763.mockable.io", json=content_output_json)
+                logger.info("Sent request to TextExtract. Status code: %s", request_nlp.status_code)
+
+                # STEP 3: Text2Html (XMI OUTPUT)
+                cas_plus_text_json = {
+                    "text": request_nlp.content.decode("utf-8")
                 }
-                content_output_json = json.dumps(content_html_text)
-                logger.info("Input from 'content_html': %s", content_output_json)
+                # Todo: Change URL to Docker URL
+                request_text_to_html = requests.post("http://053c16a79155.ngrok.io/text2html",
+                                                     json=cas_plus_text_json)
+                logger.info("Sent request to /text2html. Status code: %s", request_text_to_html.status_code)
+                final_xmi = request_text_to_html.content.decode("utf-8")
 
-                # Step ONE: Html2Text. Output: XMI
-                r = requests.post("http://053c16a79155.ngrok.io/html2text", json=content_output_json)
-                if r.status_code == 200:
-                    logger.info('Sent request to /html2text. Status code: ' + str(r.status_code))
-                    text_cas = r.content;
+                # STEP 4: Read the Terms (TfIdfs) from the XMI with DKPro Cassis
+                # Write tempfile for typesystem.xml
+                # Todo: Change URL to Docker URL
+                typesystem_req = requests.get("http://053c16a79155.ngrok.io/html2text/typesystem")
+                typesystem_file = open("typesystem_tmp.xml", "w")
+                typesystem_file.write(typesystem_req.content.decode("utf-8"))
+                # Write tempfile for cas.xml
+                cas_file = open("cas_tmp.xml", "w")
 
-                    # STEP 2: NLP TextExtract. Input XMI/Output XMI
-                    # TODO: Change URL and json= to text_cas
-                    request_nlp = requests.post("http://053c16a79155.ngrok.io/html2text", json=content_output_json)
+                cas_file.write(final_xmi)
+                with open(typesystem_file.name, 'rb') as f:
+                    ts = cassis.load_typesystem(f)
 
-                    # STEP 3: Text2Html (XMI OUTPUT)
-                    cas_plus_text_json = {
-                        "text": request_nlp.content.decode("utf-8")
-                    }
-                    request_text_to_html = requests.post("http://053c16a79155.ngrok.io/text2html",
-                                                         json=cas_plus_text_json)
-                    final_xmi = request_text_to_html.content
-                    logger.info("Final XMI: %s", final_xmi.decode("utf-8"))
+                with open(cas_file.name, 'rb') as f:
+                    cas = cassis.load_cas_from_xmi(f, typesystem=ts)
 
-                    # STEP 4: Read the Terms (TfIdfs) from the XMI with DKPro Cassis
-                    # Write tempfile for typesystem.xml
-                    typesystem_req = requests.get("http://053c16a79155.ngrok.io/html2text/typesystem")
-                    typesystem_file = open("typesystem_tmp.xml", "w")
-                    typesystem_file.write(typesystem_req.content.decode("utf-8"))
-                    # Write tempfile for cas.xml
-                    cas_file = open("cas_tmp.xml", "w")
+                # STEP 5: Send to Solr
 
-                    # TODO Bug here
-                    cas_file.write(final_xmi.decode("utf-8"))
-                    with open(typesystem_file.name, 'rb') as f:
-                        ts = load_typesystem(f)
-                        logger.info("ts: %s", ts.__str__())
-
-                    with open(cas_file.name, 'rb') as f:
-                        cas = load_cas_from_xmi(f, typesystem=ts)
-
-                    logger.info("CAS: %s", cas)
-                    for attr in cas.select('com.crosslang.sdk.types.html.HtmlTag'):
-                        logger.info("attr: %s", attr)
-
-                    for all in cas.select_all():
-                        logger.info("all attr: %s", attr)
-
-                    logger.info("Works?")
-
-                    # STEP 5: Send to Solr
-
-                    # Convert the output to a readable format for Solr
-                    # Todo Change content_html to the one we got from text2html
-                    json_arr_output = {
+                # Convert the output to a readable format for Solr
+                atomic_update = [
+                    {
                         "id": doc_id,
-                        "concept_occurs": {
+                        "concept_occurs": {"set": [{
                             "v": "1",
-                            "str": document['content_html'],
-                            "tokens": {
+                            "str": cas.sofa_string,
+                            "tokens": [{
 
-                            }
-                        }
+                            }]
+                        }]}
                     }
-                    concept_occurs = json_arr_output["concept_occurs"]["tokens"]
+                ]
 
-                    # Store the data
-                    concepts = r.json()['concepts']
-                    for concept in concepts:
-                        token = concept['token']
-                        start = concept['start']
-                        end = concept['end']
-                        score = concept['score']
-                        logger.info("Token: " + token)
+                concept_occurs_tokens = atomic_update[0]['concept_occurs']['set'][0]['tokens']
+                # TODO Later: concept_defined and reporting_obligrations
 
-                        # Encode score base64
-                        encoded_bytes = base64.b64encode(score.encode("utf-8"))
-                        encoded_score = str(encoded_bytes, "utf-8")
+                sofa_id = "html2textView"
+                list_select = list(
+                    cas.get_view(sofa_id).select("de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"))
 
-                        token_to_add = {
-                            "t": token,
-                            "s": start,
-                            "e": end,
-                            "y": "word",
-                            "p": encoded_score
-                        }
-                        concept_occurs.insert(token_to_add)
+                i = 0
+                term_count = len(list_select)
+                for term in list_select:
+                    logger.info("TfIdf Term: %s with score %s", term.get_covered_text(), term.tfidfValue)
 
-                        #logger.info(concept_occurs)
+                    # Save the token information
+                    token = term.get_covered_text()
+                    score = term.tfidfValue
+                    start = term.begin
+                    end = term.end
 
-                        output = json.dumps(json_arr_output)
-                        #logger.info("Output: "+str(output))
+                    # Encode score base64
+                    encoded_bytes = base64.b64encode(score.encode("utf-8"))
+                    encoded_score = str(encoded_bytes, "utf-8")
 
-                    # This post is a in-place update, only works for single valued non-indexed and non stored vals
-                    # r = requests.post("http://localhost:8983/solr/documents/update?&versions=true&commit=true&omitHeader=true", data=json_arr_output)
+                    token_to_add = {
+                        "t": token,
+                        "s": start,
+                        "e": end,
+                        "y": "word",
+                        "p": encoded_score
+                    }
+                    concept_occurs_tokens.insert(i, token_to_add)
 
-                    # TODO: Send POST request to http://localhost:8983/solr/documents/update with data:
+                    # Per X (50) tokens, send update to Solr. Since updates work with commit, resource consuming
+                    i = i + 1
+                    if term_count-i >= PARAM_MAX_SOLR_UPDATES_PER_TIME and i % 50 == 0:
+                        post_pre_analyzed_to_solr(atomic_update)
+                        concept_occurs_tokens.clear()
+                    elif term_count - i < PARAM_MAX_SOLR_UPDATES_PER_TIME and i == term_count:
+                        post_pre_analyzed_to_solr(atomic_update)
+                        concept_occurs_tokens.clear()
 
-                    # Update the fields in Solr with the new data (AtomicUpdates)
+                    logger.info("Added term '%s' to the PreAnalyzed payload (i=%d)", token, i)
 
-
-                    # TODO: Done? Remove the breaks.
-                    break
-                break
-        except AttributeError:
-            logger.error("Error: An attribute has not been found in a document")
-        except ConnectionError:
-            logger.error("Error: Failed to connect to an API endpoint")
+                # TODO: Store definitions (niet occurs) in Django
 
 
 @shared_task
