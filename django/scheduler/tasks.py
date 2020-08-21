@@ -26,6 +26,12 @@ from twisted.internet import reactor
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
 local_mock_server = "http://localhost:8008"
+UIMA_URL = {"BASE": "http://ctlg-manager_uima:8008",
+            "HTML2TEXT": "/html2text",
+            "TEXT2HTML": "/text2html",
+            "TYPESYSTEM": "/html2text/typesystem"
+            }
+SOLR_URL = "http://ctlg-manager_solr_1:8983"
 
 
 @shared_task
@@ -99,7 +105,7 @@ def export_documents(website_ids=None):
 
 
 def post_pre_analyzed_to_solr(data):
-    r = requests.post("http://ctlg-manager_solr_1:8983/solr/documents/update?commit=true", data)
+    r = requests.post(SOLR_URL + "/solr/documents/update?commit=true", data)
     logger.info("Sent PreAnalyzed fields to Solr. Got status code %s", r.status_code)
     logger.info("Response: %s", r.content)
 
@@ -134,8 +140,7 @@ def extract_terms(website_id):
             content_output_json = json.dumps(content_html_text)
 
             # Step ONE: Html2Text. Output: XMI
-            # Todo: Change URL to Docker URL
-            r = requests.post("http://053c16a79155.ngrok.io/html2text", json=content_output_json)
+            r = requests.post(UIMA_URL["BASE"]+UIMA_URL["HTML2TEXT"], json=content_output_json)
             if r.status_code == 200:
                 logger.info('Sent request to /html2text. Status code: %s', r.status_code)
                 text_cas = r.content
@@ -150,7 +155,7 @@ def extract_terms(website_id):
                     "text": request_nlp.content.decode("utf-8")
                 }
                 # Todo: Change URL to Docker URL
-                request_text_to_html = requests.post("http://053c16a79155.ngrok.io/text2html",
+                request_text_to_html = requests.post(UIMA_URL["BASE"]+UIMA_URL["TEXT2HTML"],
                                                      json=cas_plus_text_json)
                 logger.info("Sent request to /text2html. Status code: %s", request_text_to_html.status_code)
                 final_xmi = request_text_to_html.content.decode("utf-8")
@@ -158,7 +163,7 @@ def extract_terms(website_id):
                 # STEP 4: Read the Terms (TfIdfs) from the XMI with DKPro Cassis
                 # Write tempfile for typesystem.xml
                 # Todo: Change URL to Docker URL
-                typesystem_req = requests.get("http://053c16a79155.ngrok.io/html2text/typesystem")
+                typesystem_req = requests.get(UIMA_URL["BASE"]+UIMA_URL["TYPESYSTEM"])
                 typesystem_file = open("typesystem_tmp.xml", "w")
                 typesystem_file.write(typesystem_req.content.decode("utf-8"))
                 # Write tempfile for cas.xml
