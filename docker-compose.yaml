@@ -1,5 +1,10 @@
 version: '3'
 services:
+  uima:
+    build: ./uima-html-to-text
+    ports:
+    - "8008"
+
   angular:
     build: ./angular
     ports:
