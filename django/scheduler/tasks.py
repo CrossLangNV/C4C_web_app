@@ -26,13 +26,12 @@ from twisted.internet import reactor
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
 local_mock_server = "http://localhost:8008"
-UIMA_URL = {"BASE": "http://ctlg-manager_uima:8008",
+UIMA_URL = {"BASE": "http://ctlg-manager-uima:8008",
             "HTML2TEXT": "/html2text",
             "TEXT2HTML": "/text2html",
             "TYPESYSTEM": "/html2text/typesystem"
             }
 SOLR_URL = "http://ctlg-manager_solr_1:8983"
-
 
 @shared_task
 def full_service_task(website_id):
