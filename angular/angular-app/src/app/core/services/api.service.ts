@@ -29,6 +29,7 @@ import {
 } from 'src/app/shared/models/ConceptTag';
 import { RoResults, ReportingObligation, RoAdapter } from 'src/app/shared/models/ro';
 import * as rosData from './ros.json';
+import {logger} from "codelyzer/util/logger";
 
 @Injectable({
   providedIn: 'root',
@@ -124,7 +125,8 @@ export class ApiService {
     sortBy: string,
     sortDirection: string
   ): Observable<any[]> {
-    let requestUrl = `${this.API_URL}/solrdocument/search/{!term f=${field}}${term}?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+    let requestUrl = `${this.API_URL}/solrdocument/search/query/{!term f=${field}}${term}?pageNumber=${pageNumber}&pageSize=${pageSize}&hl=on&hl.fl=content`;
+    // let requestUrl = `http://localhost:8983/solr/documents/select?hl.fl=${field}&hl=on&q={!term f=${field}}${term}`;
     idsFilter.forEach((id) => {
       requestUrl += `&id=${id}`;
     });
@@ -136,6 +138,7 @@ export class ApiService {
     }
     return this.http.get<any[]>(requestUrl).pipe(
       map((data: any[]) => {
+        logger.info(data.toString())
         const result = [data[0]];
         result.push(data[1]);
         return result;

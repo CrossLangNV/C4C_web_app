@@ -132,6 +132,7 @@ urlpatterns = [
     path('api/solrdocument/<id>', views.SolrDocument.as_view(),
          name='solr_document_api'),
     path('api/solrdocument/search/<search_term>', views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
+    path('api/solrdocument/search/query/<search_term>', views.SolrDocumentSearchQuery.as_view(), name='solr_document_search_query_api'),
 
     # Export
     path('api/export/launch', views.ExportDocumentsLaunch.as_view(), name='export_launch_api'),

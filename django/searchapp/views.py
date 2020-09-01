@@ -28,7 +28,7 @@ from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_document_id_sorted, \
-    solr_search_paginated
+    solr_search_paginated, solr_search_query_paginated
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -409,6 +409,20 @@ class SolrDocumentSearch(APIView):
 
     def get(self, request, search_term, format=None):
         result = solr_search_paginated(core="documents", term=search_term, page_number=request.GET.get('pageNumber', 1),
+                                       rows_per_page=request.GET.get(
+                                           'pageSize', 1),
+                                       ids_to_filter_on=request.GET.getlist(
+                                           'id'),
+                                       sort_by=request.GET.get('sortBy'),
+                                       sort_direction=request.GET.get('sortDirection'))
+        return Response(result)
+    
+
+class SolrDocumentSearchQuery(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, search_term, format=None):
+        result = solr_search_query_paginated(core="documents", term=search_term, page_number=request.GET.get('pageNumber', 1),
                                        rows_per_page=request.GET.get(
                                            'pageSize', 1),
                                        ids_to_filter_on=request.GET.getlist(
