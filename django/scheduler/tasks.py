@@ -23,6 +23,8 @@ from searchapp.solr_call import solr_search_website_sorted
 from tika import parser
 from twisted.internet import reactor
 
+from glossary.models import Concept
+
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
 local_mock_server = "http://localhost:8008"
@@ -104,9 +106,54 @@ def export_documents(website_ids=None):
 
 
 def post_pre_analyzed_to_solr(data):
-    r = requests.post(SOLR_URL + "/solr/documents/update?commit=true", data)
+    logger.info("solr post data: %s", json.dumps(data))
+    r = requests.post(SOLR_URL + "/solr/documents/update?commit=true", json=data)
     logger.info("Sent PreAnalyzed fields to Solr. Got status code %s", r.status_code)
     logger.info("Response: %s", r.content)
+
+@shared_task
+def test_solr_preanalyzed_update():
+    atomic_update = [
+        {
+            "id": "000f22d9-0351-5a6f-85de-7ee3fa44e943",
+            "concept_occurs": {"set": {
+                "v": "1",
+                "str": json.dumps("new token"),
+                "tokens": [
+
+                ]
+            }}
+        }
+    ]
+
+    concept_occurs_tokens = atomic_update[0]['concept_occurs']['set']['tokens']
+
+    # Save the token information
+    token = "new token"
+    score = "0.90"
+    start = 0
+    end = 3
+
+    # Encode score base64
+    encoded_bytes = base64.b64encode(score.encode("utf-8"))
+    encoded_score = str(encoded_bytes, "utf-8")
+
+    token_to_add = {
+        "t": token,
+        "s": start,
+        "e": end,
+        "y": "word",
+        "p": encoded_score
+    }
+    concept_occurs_tokens.insert(0, token_to_add)
+
+    escaped_json = json.dumps(atomic_update[0]['concept_occurs']['set'])
+    logger.info("type: %s", type(escaped_json))
+    logger.info("escapedJson: %s", escaped_json)
+
+    atomic_update[0]['concept_occurs']['set'] = escaped_json
+    post_pre_analyzed_to_solr(atomic_update)
+
 
 
 @shared_task
@@ -132,6 +179,7 @@ def extract_terms(website_id):
     for document in documents:
         if document['content_html'] is not None:
             doc_id = document['id']
+            logger.info("Extracting terms from document: %s", doc_id)
 
             content_html_text = {
                 "text": document['content_html']
@@ -181,18 +229,20 @@ def extract_terms(website_id):
                 atomic_update = [
                     {
                         "id": doc_id,
-                        "concept_occurs": {"set": [{
+                        "concept_occurs": {"set": {
                             "v": "1",
-                            "str": cas.sofa_string,
-                            "tokens": [{
+                            "str": json.dumps(cas.sofa_string),
+                            "tokens": [
 
-                            }]
-                        }]}
+                            ]
+                        }}
                     }
                 ]
 
-                concept_occurs_tokens = atomic_update[0]['concept_occurs']['set'][0]['tokens']
-                # TODO Later: concept_defined and reporting_obligrations
+                logger.info("escaped atomic: "+json.dumps(atomic_update))
+
+                concept_occurs_tokens = atomic_update[0]['concept_occurs']['set']['tokens']
+                # TODO Later: concept_defined and reporting_obligations
 
                 sofa_id = "html2textView"
                 list_select = list(
@@ -221,20 +271,25 @@ def extract_terms(website_id):
                         "p": encoded_score
                     }
                     concept_occurs_tokens.insert(i, token_to_add)
-
-                    # Per X (50) tokens, send update to Solr. Since updates work with commit, resource consuming
                     i = i + 1
-                    if term_count-i >= PARAM_MAX_SOLR_UPDATES_PER_TIME and i % 50 == 0:
-                        post_pre_analyzed_to_solr(atomic_update)
-                        concept_occurs_tokens.clear()
-                    elif term_count - i < PARAM_MAX_SOLR_UPDATES_PER_TIME and i == term_count:
-                        post_pre_analyzed_to_solr(atomic_update)
-                        concept_occurs_tokens.clear()
 
-                    logger.info("Added term '%s' to the PreAnalyzed payload (i=%d)", token, i)
+                    # Add to Djangoo
+                    # Todo: Change definition to the one from NLP pipeline
+                    Concept.objects.get_or_create(name=token, definition=token)
 
-                # TODO: Store definitions (niet occurs) in Django
+                    logger.info("Added term '%s' to the PreAnalyzed payload (i=%d) (token pos: %s-%s)", token, i, start,
+                                end)
 
+                # Sort tokens because this is required for Solr
+                logger.info("concept_occurs_tokens: %s", concept_occurs_tokens)
+                concept_occurs_tokens = concept_occurs_tokens.sort(key=lambda x: x['s'])
+
+                escaped_json = json.dumps(atomic_update[0]['concept_occurs']['set'])
+                logger.info("type: %s", type(escaped_json))
+                logger.info("escapedJson: %s", escaped_json)
+
+                atomic_update[0]['concept_occurs']['set'] = escaped_json
+                post_pre_analyzed_to_solr(atomic_update)
 
 @shared_task
 def export_delete(task_id):
