@@ -49,6 +49,7 @@ class AcceptanceState(models.Model):
         ]
         ordering = ['user']
 
+
 class Comment(models.Model):
     value = models.TextField()
     Concept = models.ForeignKey(
