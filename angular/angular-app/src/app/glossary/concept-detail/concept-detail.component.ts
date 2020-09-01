@@ -85,10 +85,11 @@ export class ConceptDetailComponent implements OnInit {
 
   loadOccursInDocuments() {
     this.apiService
-      .searchSolrDocuments(
+      .searchSolrPreAnalyzedDocuments(
         this.occursInPage,
         this.occursInPageSize,
         this.concept.name,
+        "concept_occurs",
         [],
         this.occursInSortBy,
         this.occursInSortDirection

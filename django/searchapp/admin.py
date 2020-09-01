@@ -69,8 +69,12 @@ def export_documents(modeladmin, request, queryset):
 
 def extract_terms(modeladmin, request, queryset):
     for website in queryset:
-        tasks.extract_terms(website.id)
+        tasks.extract_terms.delay(website.id)
         logger.info("Done extracting terms!!!!")
+
+
+def test_solr_preanalyzed_update(modeladmin, request, queryset):
+    tasks.test_solr_preanalyzed_update()
 
 
 def delete_from_solr(modeladmin, requerst, queryset):
@@ -85,7 +89,7 @@ class WebsiteAdmin(admin.ModelAdmin):
     list_display = ['name', 'count_documents']
     ordering = ['name']
     actions = [full_service, scrape_website, sync_scrapy_to_solr, parse_content_to_plaintext,
-               sync_documents, score_documents, extract_terms, export_documents, delete_from_solr]
+               sync_documents, score_documents, extract_terms, test_solr_preanalyzed_update, export_documents, delete_from_solr]
 
     def count_documents(self, doc):
         return doc.documents.count()
