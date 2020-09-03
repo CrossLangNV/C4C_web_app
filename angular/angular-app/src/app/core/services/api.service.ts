@@ -30,6 +30,8 @@ import {
 import { RoResults, ReportingObligation, RoAdapter } from 'src/app/shared/models/ro';
 import * as rosData from './ros.json';
 import {logger} from "codelyzer/util/logger";
+import {ConceptAcceptanceState, ConceptAcceptanceStateAdapter} from "../../shared/models/conceptAcceptanceState";
+import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/conceptComment";
 
 @Injectable({
   providedIn: 'root',
@@ -52,6 +54,8 @@ export class ApiService {
     private tagAdapter: TagAdapter,
     private conceptTagAdapter: ConceptTagAdapter,
     private conceptAdapter: ConceptAdapter,
+    private conceptAcceptanceStateAdapter: ConceptAcceptanceStateAdapter,
+    private conceptCommentAdapter: ConceptCommentAdapter,
     private roAdapter: RoAdapter
   ) {
     this.messageSource = new Subject<string>();
@@ -391,19 +395,19 @@ export class ApiService {
       .pipe(map((item) => this.conceptAdapter.adapt(item)));
   }
 
-  public getConceptComment(id: string): Observable<Comment> {
+  public getConceptComment(id: string): Observable<ConceptComment> {
     return this.http
-      .get<Comment>(`${this.API_GLOSSARY_URL}/comment/${id}`)
-      .pipe(map((item) => this.commentAdapter.adapt(item)));
+      .get<ConceptComment>(`${this.API_GLOSSARY_URL}/comment/${id}`)
+      .pipe(map((item) => this.conceptCommentAdapter.adapt(item)));
   }
 
-  public addConceptComment(comment: Comment): Observable<Comment> {
+  public addConceptComment(comment: ConceptComment): Observable<ConceptComment> {
     return this.http
-      .post<Comment>(
+      .post<ConceptComment>(
         `${this.API_GLOSSARY_URL}/comments`,
-        this.commentAdapter.encode(comment)
+        this.conceptCommentAdapter.encode(comment)
       )
-      .pipe(map((item) => this.commentAdapter.adapt(item)));
+      .pipe(map((item) => this.conceptCommentAdapter.adapt(item)));
   }
 
   public deleteConceptComment(id: string): Observable<any> {
@@ -422,6 +426,24 @@ export class ApiService {
   public deleteConceptTag(id: string): Observable<any> {
     return this.http.delete(`${this.API_GLOSSARY_URL}/tag/${id}`);
   }
+
+  public getConceptStateValues(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.API_GLOSSARY_URL}/state/value`);
+  }
+
+  public getConceptState(id: string): Observable<ConceptAcceptanceState> {
+    return this.http
+      .get<ConceptAcceptanceState>(`${this.API_GLOSSARY_URL}/state/${id}`)
+      .pipe(map((item) => this.conceptAcceptanceStateAdapter.adapt(item)));
+  }
+
+  public updateConceptState(state: ConceptAcceptanceState): Observable<ConceptAcceptanceState> {
+    return this.http.put<ConceptAcceptanceState>(
+      `${this.API_GLOSSARY_URL}/state/${state.id}`,
+      this.conceptAcceptanceStateAdapter.encode(state)
+    );
+  }
+
 
   //
   // REPORING OBLIGATIONS //
