@@ -32,7 +32,6 @@ export class ConceptCommentAdapter implements Adapter<ConceptComment> {
       id: conceptComment.id,
       value: conceptComment.value,
       Concept: conceptComment.conceptId,
-      concept: conceptComment.conceptId,
       user: conceptComment.userId,
       createdAt: stringDate,
     };
