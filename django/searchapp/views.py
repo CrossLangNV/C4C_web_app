@@ -281,8 +281,8 @@ class SimilarDocumentsAPIView(APIView):
                                                    number_candidates=request.GET.get('numberCandidates', 5),
                                                    threshold=request.GET.get('threshold', 0.0))
         formatted_response = []
-        for id, coeff in similar_document_ids_with_coeff:
-            formatted_response.append({'id': id, 'coefficient': coeff})
+        for id, title, website, coeff in similar_document_ids_with_coeff:
+            formatted_response.append({'id': id, 'title': title, 'website': website, 'coefficient': coeff})
         return Response(formatted_response)
 
 
