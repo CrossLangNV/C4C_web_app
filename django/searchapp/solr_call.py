@@ -158,11 +158,11 @@ def solr_mlt(core, id, mlt_field='content', number_candidates=5, threshold=0.0):
     base_doc = search_result.docs[0]
     base_tokens = base_doc['content'][0].split()
 
-    # list of similar document ids with Dice coefficient
+    # list of similar document ids with Jaccard coefficient
     similar_document_ids_with_coeff = []
     for doc in search_result.raw_response['moreLikeThis'][id]['docs']:
         candidate_tokens = doc['content'][0].split()
-        similarity = textdistance.sorensen_dice(base_tokens, candidate_tokens)
+        similarity = textdistance.jaccard(base_tokens, candidate_tokens)
         if similarity > threshold:
             similar_document_ids_with_coeff.append((doc['id'], similarity))
 
