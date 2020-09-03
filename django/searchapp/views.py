@@ -277,7 +277,9 @@ class SimilarDocumentsAPIView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, id):
-        similar_document_ids_with_coeff = solr_mlt('documents', str(id))
+        similar_document_ids_with_coeff = solr_mlt('documents', str(id),
+                                                   number_candidates=request.GET.get('numberCandidates', 5),
+                                                   threshold=request.GET.get('threshold', 0.0))
         formatted_response = []
         for id, coeff in similar_document_ids_with_coeff:
             formatted_response.append({'id': id, 'coefficient': coeff})
