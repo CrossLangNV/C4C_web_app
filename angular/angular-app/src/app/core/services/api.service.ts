@@ -289,6 +289,10 @@ export class ApiService {
     return this.http.get<string[]>(`${this.API_URL}/stats`);
   }
 
+  public getSimilarDocuments(id: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.API_URL}/solrdocuments/like/${id}?threshold=0.8`);
+  }
+
   public getStateValues(): Observable<string[]> {
     return this.http.get<string[]>(`${this.API_URL}/state/value`);
   }

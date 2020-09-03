@@ -23,6 +23,7 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 })
 export class DocumentValidateComponent implements OnInit {
   document: Document;
+  similarDocuments = [];
   consolidatedVersions;
   stateValues: SelectItem[] = [];
   cities: SelectItem[];
@@ -70,6 +71,12 @@ export class DocumentValidateComponent implements OnInit {
       )
       .subscribe((document) => {
         this.document = document;
+        this.similarDocuments = [];
+        this.service.getSimilarDocuments(document.id).subscribe(docs => {
+          docs.forEach(docWithCoeff => {
+            this.similarDocuments.push({ id: docWithCoeff.id, coeff: docWithCoeff.coefficient})
+          });
+        });
         this.consolidatedVersions = new Map();
         let consolidatedVersionsArr = this.document.consolidatedVersions.split(
           ','
