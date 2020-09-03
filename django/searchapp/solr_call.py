@@ -166,4 +166,7 @@ def solr_mlt(core, id, mlt_field='content', number_candidates=5, threshold=0.0):
         if similarity > float(threshold):
             similar_document_ids_with_coeff.append((doc['id'], similarity))
 
+    # sort descending on coefficient
+    similar_document_ids_with_coeff.sort(key=lambda x: x[1], reverse=True)
+
     return similar_document_ids_with_coeff
