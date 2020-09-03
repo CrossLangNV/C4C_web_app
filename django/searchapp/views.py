@@ -15,7 +15,7 @@ from django.views.generic import ListView, DetailView, CreateView, TemplateView,
 from minio import Minio
 from rest_framework import permissions, filters, status
 from rest_framework.decorators import api_view
-from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveUpdateAPIView, ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -27,7 +27,7 @@ from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
 from .solr_call import solr_search, solr_search_id, solr_search_document_id_sorted, \
-    solr_search_paginated
+    solr_search_paginated, solr_mlt
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -125,6 +125,15 @@ class DocumentListAPIView(ListCreateAPIView):
         if tag:
             q = q.filter(tags__value=tag)
         return q.order_by("-created_at")
+
+
+class SimilarDocumentListAPIView(ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = DocumentSerializer
+
+    def get_queryset(self):
+        candidate_ids = solr_mlt('documents', str(self.kwargs['pk']))
+        return Document.objects.filter(id__in=candidate_ids)
 
 
 class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):

@@ -64,6 +64,8 @@ urlpatterns = [
          name='document_list_api'),
     path('api/document/<uuid:pk>', views.DocumentDetailAPIView.as_view(),
          name='document_detail_api'),
+    path('api/documents/like/<uuid:pk>', views.SimilarDocumentListAPIView.as_view(),
+         name='similar_document_list_api'),
 
     # Attachment
     path('api/attachments', views.AttachmentListAPIView.as_view(),
