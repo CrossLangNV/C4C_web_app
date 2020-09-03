@@ -1,6 +1,7 @@
 import os
 
 import pysolr
+import textdistance
 
 ROW_LIMIT = 250000
 
@@ -142,14 +143,27 @@ def solr_delete(core, id):
 
 '''
 Use Solr MoreLikeThis https://lucene.apache.org/solr/guide/8_5/morelikethis.html 
-to find similar documents given a document id.
+to find similar documents given a document id. Solr MLT returns candidates, apply coefficient to candidates 
+upon which a threshold can be applied: see https://www.dexstr.io/finding-duplicates-large-set-files/.
 '''
-def solr_mlt(core, id, mlt_field='content', number_candidates=5):
+
+
+def solr_mlt(core, id, mlt_field='content', number_candidates=5, threshold=0.0):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search_result = client.search('id:' + id, **{'mlt': 'true',
                                                  'mlt.fl': mlt_field,
-                                                 'fl': 'id'})
-    candidate_ids = []
+                                                 'mlt.count': number_candidates,
+                                                 'fl': 'id,' + mlt_field})
+    # document to compare against
+    base_doc = search_result.docs[0]
+    base_tokens = base_doc['content'][0].split()
+
+    # list of similar document ids with Dice coefficient
+    similar_document_ids_with_coeff = []
     for doc in search_result.raw_response['moreLikeThis'][id]['docs']:
-        candidate_ids.append(doc['id'])
-    return candidate_ids
+        candidate_tokens = doc['content'][0].split()
+        similarity = textdistance.sorensen_dice(base_tokens, candidate_tokens)
+        if similarity > threshold:
+            similar_document_ids_with_coeff.append((doc['id'], similarity))
+
+    return similar_document_ids_with_coeff

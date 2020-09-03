@@ -64,8 +64,6 @@ urlpatterns = [
          name='document_list_api'),
     path('api/document/<uuid:pk>', views.DocumentDetailAPIView.as_view(),
          name='document_detail_api'),
-    path('api/documents/like/<uuid:pk>', views.SimilarDocumentListAPIView.as_view(),
-         name='similar_document_list_api'),
 
     # Attachment
     path('api/attachments', views.AttachmentListAPIView.as_view(),
@@ -108,6 +106,8 @@ urlpatterns = [
          name='solr_document_api'),
     path('api/solrdocument/search/<search_term>',
          views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
+    path('api/solrdocuments/like/<id>', views.SimilarDocumentsAPIView.as_view(),
+         name='similar_documents_api'),
 
     # Export
     path('api/export/launch', views.ExportDocumentsLaunch.as_view(),
