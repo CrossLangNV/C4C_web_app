@@ -31,7 +31,8 @@ export class ConceptCommentAdapter implements Adapter<ConceptComment> {
     return {
       id: conceptComment.id,
       value: conceptComment.value,
-      document: conceptComment.conceptId,
+      Concept: conceptComment.conceptId,
+      concept: conceptComment.conceptId,
       user: conceptComment.userId,
       createdAt: stringDate,
     };
