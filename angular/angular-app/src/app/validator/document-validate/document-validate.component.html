@@ -37,6 +37,22 @@
   </div>
   <div *ngIf="document.file_url || document.celex">
     <hr class="my-4" />
+    <p><b>Similar documents:</b></p>
+    <table class="table table-striped table-bordered table-hover">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">Document</th>
+          <th scope="col">Similarity</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let doc of similarDocuments">
+          <td>{{ doc.id }}</td>
+          <td>{{ doc.coeff }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <hr class="my-4" />
     <p><b>Attachments:</b></p>
     <table>
       <tr *ngIf="document.file_url">
