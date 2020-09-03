@@ -13,6 +13,8 @@ import {ConceptAcceptanceState} from "../../shared/models/conceptAcceptanceState
 import {ConceptComment} from "../../shared/models/conceptComment";
 import {ApiAdminService} from "../../core/services/api.admin.service";
 import { MessageService, ConfirmationService } from 'primeng/api';
+import {DjangoUser} from "../../shared/models/django_user";
+import {AuthenticationService} from "../../core/auth/authentication.service";
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -63,6 +65,7 @@ export class ConceptDetailComponent implements OnInit {
   comments: ConceptComment[] = [];
   newComment: ConceptComment;
   deleteIcon: IconDefinition;
+  currentDjangoUser: DjangoUser;
 
   occursIn: Document[] = [];
   occursInPage = 1;
@@ -84,10 +87,15 @@ export class ConceptDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private service: ApiService,
     private adminService: ApiAdminService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private authenticationService: AuthenticationService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit() {
+    this.authenticationService.currentDjangoUser.subscribe(
+      (x) => (this.currentDjangoUser = x)
+    );
     this.acceptanceState = new ConceptAcceptanceState('', '', '', '')
     this.newComment = new ConceptComment('', '', '', '', new Date());
 
@@ -144,6 +152,29 @@ export class ConceptDetailComponent implements OnInit {
         summary: 'Acceptance State',
         detail: 'Set to "' + event.value + '"',
       });
+    });
+  }
+
+  onAddComment() {
+    this.service.addConceptComment(this.newComment).subscribe((comment) => {
+      comment.username = this.currentDjangoUser.username;
+      this.comments.push(comment);
+      this.newComment.value = '';
+      this.service.messageSource.next('refresh');
+    });
+  }
+
+  onDeleteComment(comment: ConceptComment) {
+    this.confirmationService.confirm({
+      message: 'Do you want to delete this comment?',
+      accept: () => {
+        this.service.deleteConceptComment(comment.id).subscribe((response) => {
+          this.comments = this.comments.filter(
+            (item) => item.id !== comment.id
+          );
+          this.service.messageSource.next('refresh');
+        });
+      },
     });
   }
 

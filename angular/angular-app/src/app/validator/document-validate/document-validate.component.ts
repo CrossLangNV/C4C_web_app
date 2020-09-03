@@ -50,10 +50,6 @@ export class DocumentValidateComponent implements OnInit {
       (x) => (this.currentDjangoUser = x)
     );
     this.attachment = new Attachment('', '', '', '', '');
-    this.cities = [];
-    this.cities.push({ label: 'Level 1', value: 'level1' });
-    this.cities.push({ label: 'Level 2', value: 'level2' });
-    this.cities.push({ label: 'Level 3', value: 'level3' });
 
     this.acceptanceState = new AcceptanceState('', '', '', '');
     this.newComment = new Comment('', '', '', '', new Date());
