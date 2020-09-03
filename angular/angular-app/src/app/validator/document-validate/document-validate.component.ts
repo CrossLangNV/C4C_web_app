@@ -14,6 +14,7 @@ import { DjangoUser } from 'src/app/shared/models/django_user';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { Attachment } from 'src/app/shared/models/attachment';
 import { MessageService, ConfirmationService } from 'primeng/api';
+import { SliderModule } from 'primeng/slider';
 
 @Component({
   selector: 'app-document-validate',
@@ -24,6 +25,7 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 export class DocumentValidateComponent implements OnInit {
   document: Document;
   similarDocuments = [];
+  similarityThreshold = 80;
   consolidatedVersions;
   stateValues: SelectItem[] = [];
   cities: SelectItem[];
@@ -71,17 +73,7 @@ export class DocumentValidateComponent implements OnInit {
       )
       .subscribe((document) => {
         this.document = document;
-        this.similarDocuments = [];
-        this.service.getSimilarDocuments(document.id).subscribe(docs => {
-          docs.forEach(docWithCoeff => {
-            this.similarDocuments.push({
-              id: docWithCoeff.id,
-              title: docWithCoeff.title,
-              website: docWithCoeff.website,
-              coeff: docWithCoeff.coefficient
-            });
-          });
-        });
+        this.getSimilarDocuments(this.similarityThreshold / 100);
         this.consolidatedVersions = new Map();
         let consolidatedVersionsArr = this.document.consolidatedVersions.split(
           ','
@@ -192,5 +184,24 @@ export class DocumentValidateComponent implements OnInit {
 
   goToLink(url: string) {
     window.open(url, '_blank');
+  }
+
+  getSimilarDocuments(threshold: number) {
+    this.similarDocuments = [];
+    this.service.getSimilarDocuments(this.document.id, threshold).subscribe((docs) => {
+      docs.forEach((docWithCoeff) => {
+        this.similarDocuments.push({
+          id: docWithCoeff.id,
+          title: docWithCoeff.title,
+          website: docWithCoeff.website,
+          coeff: docWithCoeff.coefficient,
+        });
+      });
+    });
+  }
+
+  onSimilarityChange(e) {
+    const newThreshold = e.value;
+    this.getSimilarDocuments(newThreshold / 100);
   }
 }
