@@ -3,6 +3,16 @@
     <h3 class="mb-4">{{ concept.name }}</h3>
     <p>Definition: {{ concept.definition }}</p>
     <div>
+      <p><b>Choose Acceptance State:</b></p>
+      <p-selectButton
+        styleClass="mb-4"
+        [options]="stateValues"
+        [(ngModel)]="concept.acceptanceStateValue"
+        (onChange)="onStateChange($event)"
+      >
+      </p-selectButton>
+    </div>
+    <div>
       <h4 class="my-2">Occurs in</h4>
       <table class="table table-striped table-bordered table-hover">
         <thead class="thead-dark">

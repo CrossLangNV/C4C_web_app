@@ -20,6 +20,7 @@ import {
   NgbDateAdapter,
   NgbDateNativeAdapter,
 } from '@ng-bootstrap/ng-bootstrap';
+import {SelectButtonModule} from "primeng";
 @NgModule({
   declarations: [
     ConceptListComponent,
@@ -28,16 +29,17 @@ import {
     ConceptDetailSortableHeaderDirective,
     ConceptDocumentDetailsComponent,
   ],
-  imports: [
-    SharedModule,
-    ChipsModule,
-    ToastModule,
-    TooltipModule,
-    OverlayPanelModule,
-    ConfirmDialogModule,
-    SharedModule,
-    GlossaryRoutingModule,
-  ],
+    imports: [
+        SharedModule,
+        ChipsModule,
+        ToastModule,
+        TooltipModule,
+        OverlayPanelModule,
+        ConfirmDialogModule,
+        SharedModule,
+        GlossaryRoutingModule,
+        SelectButtonModule,
+    ],
   providers: [
     ConfirmationService,
     { provide: NgbDateAdapter, useClass: NgbDateNativeAdapter },
