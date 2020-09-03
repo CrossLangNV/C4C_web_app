@@ -138,3 +138,18 @@ def solr_delete(core, id):
         client.commit()
     except pysolr.SolrError:
         pass
+
+
+'''
+Use Solr MoreLikeThis https://lucene.apache.org/solr/guide/8_5/morelikethis.html 
+to find similar documents given a document id.
+'''
+def solr_mlt(core, id, mlt_field='content', number_candidates=5):
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    search_result = client.search('id:' + id, **{'mlt': 'true',
+                                                 'mlt.fl': mlt_field,
+                                                 'fl': 'id'})
+    candidate_ids = []
+    for doc in search_result.raw_response['moreLikeThis'][id]['docs']:
+        candidate_ids.append(doc['id'])
+    return candidate_ids
