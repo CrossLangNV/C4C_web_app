@@ -74,7 +74,12 @@ export class DocumentValidateComponent implements OnInit {
         this.similarDocuments = [];
         this.service.getSimilarDocuments(document.id).subscribe(docs => {
           docs.forEach(docWithCoeff => {
-            this.similarDocuments.push({ id: docWithCoeff.id, coeff: docWithCoeff.coefficient})
+            this.similarDocuments.push({
+              id: docWithCoeff.id,
+              title: docWithCoeff.title,
+              website: docWithCoeff.website,
+              coeff: docWithCoeff.coefficient
+            });
           });
         });
         this.consolidatedVersions = new Map();
