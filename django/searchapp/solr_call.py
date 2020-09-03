@@ -148,25 +148,25 @@ upon which a threshold can be applied: see https://www.dexstr.io/finding-duplica
 '''
 
 
-def solr_mlt(core, id, mlt_field='content', number_candidates=5, threshold=0.0):
+def solr_mlt(core, id, mlt_field='title,content', number_candidates=5, threshold=0.0):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search_result = client.search('id:' + id, **{'mlt': 'true',
                                                  'mlt.fl': mlt_field,
                                                  'mlt.count': number_candidates,
-                                                 'fl': 'id,' + mlt_field})
+                                                 'fl': 'id,website,' + mlt_field})
     # document to compare against
     base_doc = search_result.docs[0]
     base_tokens = base_doc['content'][0].split()
 
-    # list of similar document ids with Jaccard coefficient
-    similar_document_ids_with_coeff = []
+    # list of similar documents with Jaccard coefficient
+    similar_documents_with_coeff = []
     for doc in search_result.raw_response['moreLikeThis'][id]['docs']:
         candidate_tokens = doc['content'][0].split()
         similarity = textdistance.jaccard(base_tokens, candidate_tokens)
         if similarity > float(threshold):
-            similar_document_ids_with_coeff.append((doc['id'], similarity))
+            similar_documents_with_coeff.append((doc['id'], doc['title'][0], doc['website'][0], similarity))
 
     # sort descending on coefficient
-    similar_document_ids_with_coeff.sort(key=lambda x: x[1], reverse=True)
+    similar_documents_with_coeff.sort(key=lambda x: x[-1], reverse=True)
 
-    return similar_document_ids_with_coeff
+    return similar_documents_with_coeff
