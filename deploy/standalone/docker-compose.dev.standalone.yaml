@@ -1,5 +1,19 @@
 version: '3'
 services:
+  uima:
+    build: ./uima-html-to-text
+    ports:
+      - "8008:8008"
+    container_name: "ctlg-manager-uima"
+    hostname: "ctlg-manager-uima"
+  networks:
+    - default
+  labels:
+    - traefik.http.routers.angular.rule=Host(`uima.staging.dgfisma.crosslang.com`)
+    - traefik.http.routers.angular.tls=true
+    - traefik.http.routers.angular.tls.certresolver=le
+    - traefik.http.routers.angular.entrypoints=websecure
+
   angular:
     image: docker.crosslang.com/ctlg-manager/angular:develop-latest
     restart: always

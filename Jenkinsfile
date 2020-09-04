@@ -38,6 +38,14 @@ pipeline {
                         }
                     }
                 }
+                dir('uima-html-to-text'){
+                script {
+                        docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
+                        def customImage = docker.build("ctlg-manager/uima-html-to-text:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
+                        customImage.push()
+                        customImage.push("${env.BRANCH_NAME}-latest")
+                    }
+                }
             }
         }
         stage('Deploy Helm Chart') {
