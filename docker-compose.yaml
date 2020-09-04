@@ -1,7 +1,7 @@
 version: '3'
 services:
   uima:
-    build: ./uima-html-to-text
+    image: docker.crosslang.com/ctlg-manager/uima-html-to-text:develop-latest
     ports:
     - "8008:8008"
     container_name: "ctlg-manager-uima"
