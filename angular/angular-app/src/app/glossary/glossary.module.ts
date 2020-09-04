@@ -16,11 +16,11 @@ import { TooltipModule } from 'primeng/tooltip';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
+import {SelectButtonModule} from 'primeng/selectbutton';
 import {
   NgbDateAdapter,
   NgbDateNativeAdapter,
 } from '@ng-bootstrap/ng-bootstrap';
-import {SelectButtonModule} from "primeng";
 @NgModule({
   declarations: [
     ConceptListComponent,
