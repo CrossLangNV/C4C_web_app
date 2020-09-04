@@ -5,7 +5,25 @@ COLLECTION="documents"
 SOLR_HOST="http://localhost:8983"
 
 
-JSON='{"add-field": [
+JSON='{
+"add-field-type" : {
+  "name":"preanalyzed",
+  "class":"solr.PreAnalyzedField",
+  "parserImpl":"org.apache.solr.schema.JsonPreAnalyzedParser",
+  "analyzer": {
+    "tokenizer":{
+       "class":"solr.WhitespaceTokenizerFactory"
+    },
+    "filters":[{
+       "class":"solr.LowerCaseFilterFactory",
+       "class":"solr.HTMLStripCharFilterFactory",
+       "class":"solr.DelimitedPayloadTokenFilterFactory",
+       "encoder":"float"
+    }]
+  }
+},
+
+"add-field": [
 {"name":"title",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"title_prefix",     "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"author",           "type":"text_general","stored":true,"indexed":true,"multiValued":true},
@@ -13,7 +31,7 @@ JSON='{"add-field": [
 {"name":"type",             "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"date",             "type":"pdates","stored":true,"indexed":true,"multiValued":true},
 {"name":"date_last_update", "type":"pdate","stored":true,"indexed":true,"multiValued":false},
-{"name":"url"               "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"url",               "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"eli",              "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"celex",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"website",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
@@ -81,6 +99,9 @@ JSON='{"add-field": [
 
 {"name":"spider",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"task",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"concept_occurs",                 "type":"preanalyzed","indexed":true,"termOffsets":true,"stored":true,"termPositions":true,"termVectors":true,"multiValued":false,"storeOffsetsWithPositions":true},
+{"name":"concept_defined",                "type":"preanalyzed","indexed":true,"termOffsets":true,"stored":true,"termPositions":true,"termVectors":true,"multiValued":false,"storeOffsetsWithPositions":true}
+
 ]
 }';
 

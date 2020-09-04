@@ -19,7 +19,9 @@ export class Concept {
     public definition: string,
     public documentIds: string[],
     public tags: string[],
-    public commentIds: string[]
+    public commentIds: string[],
+    public acceptanceState: string,
+    public acceptanceStateValue: string
   ) {}
 }
 
@@ -34,7 +36,9 @@ export class ConceptAdapter implements Adapter<Concept> {
       item.definition,
       item.documents,
       item.tags,
-      item.comments
+      item.comments,
+      item.acceptance_state,
+      item.acceptance_state_value
     );
   }
   encode(concept: Concept): any {
@@ -45,6 +49,8 @@ export class ConceptAdapter implements Adapter<Concept> {
       documents: concept.documentIds,
       tags: concept.tags,
       comments: concept.commentIds,
+      acceptance_state: concept.acceptanceState,
+      acceptance_state_value: concept.acceptanceStateValue
     };
   }
 }

@@ -1,10 +1,17 @@
 import logging
 import os
+from urllib.parse import quote
 
+import requests
 from celery.result import AsyncResult
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Q, Count
 from django.db.models.functions import Length
 from django.http import FileResponse
+from django.shortcuts import render
+from django.urls import reverse_lazy
+from django.views.decorators.cache import cache_page
+from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
 from minio import Minio
 from rest_framework import permissions, filters, status
 from rest_framework.decorators import api_view
@@ -13,16 +20,149 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from scheduler.tasks import export_documents, sync_documents_task, score_documents_task
+from scheduler.tasks import export_documents, export_delete, sync_documents_task, score_documents_task
+from .datahandling import sync_documents, sync_attachments
+from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
 from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
-from .solr_call import solr_search_id, solr_search_paginated, solr_mlt
+from .solr_call import solr_search, solr_search_id, solr_search_document_id_sorted, \
+    solr_search_paginated, solr_search_query_paginated
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
 export_path = '/django/scheduler/export/'
+
+
+class DocumentSearchView(TemplateView):
+    template_name = "searchapp/document_search.html"
+    search_term = "*"
+    results = []
+
+    def get(self, request, *args, **kwargs):
+        if request.GET.get('term'):
+            self.search_term = request.GET['term']
+
+        self.results = solr_search(core="documents", term=self.search_term)
+        context = {'results': self.results, 'count': len(self.results), 'search_term': self.search_term,
+                   'nav': 'documents'}
+        return render(request, self.template_name, context)
+
+
+class WebsiteListView(ListView):
+    model = Website
+    template_name = 'website_list.html'
+    context_object_name = 'websites'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['nav'] = 'websites'
+        return context
+
+
+class WebsiteDetailView(DetailView):
+    model = Website
+    template_name = 'searchapp/website_detail.html'
+    context_object_name = 'website'
+
+    def get_context_data(self, **kwargs):
+        # call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        website = Website.objects.get(pk=self.kwargs['pk'])
+        sync = self.request.GET.get('sync', False)
+        if sync:
+            # query Solr for available documents and sync with Django
+            sync_documents_task.delay(website.id)
+        score = self.request.GET.get('score', False)
+        if score:
+            # get confidence score
+            score_documents_task.delay(website.id)
+        return context
+
+
+class DocumentDetailView(PermissionRequiredMixin, DetailView):
+    model = Document
+    template_name = 'searchapp/document_detail.html'
+    context_object_name = 'document'
+    permission_required = 'searchapp.view_document'
+
+    def get_context_data(self, **kwargs):
+        # call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        document = Document.objects.get(id=self.kwargs['pk'])
+        # sync current document
+        solr_document = solr_search_id(core='documents', id=str(document.id))
+        sync_documents(document.website, solr_document, [document])
+        # query Solr for attachments
+        solr_files = solr_search_document_id_sorted(
+            core='files', document_id=str(document.id))
+        django_attachments = Attachment.objects.filter(
+            document=document).order_by('id')
+        sync_attachments(document, solr_files, django_attachments)
+        context['attachments'] = django_attachments
+        return context
+
+
+class DocumentUpdateView(UpdateView):
+    model = Document
+    form_class = DocumentForm
+    template_name = 'searchapp/document_update.html'
+    context_object_name = 'document'
+
+    def get_success_url(self):
+        return reverse_lazy('searchapp:document', kwargs={'pk': self.kwargs['pk']})
+
+
+class DocumentCreateView(CreateView):
+    model = Document
+    form_class = DocumentForm
+    template_name = "searchapp/document_create.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.website = Website.objects.get(pk=kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse_lazy('searchapp:website', kwargs={'pk': self.website.id})
+
+    def form_valid(self, form):
+        form.instance.website = self.website
+        return super().form_valid(form)
+
+
+class DocumentDeleteView(DeleteView):
+    model = Document
+    template_name = "searchapp/document_delete.html"
+    context_object_name = 'document'
+
+    def get_success_url(self):
+        document = Document.objects.get(pk=self.kwargs['pk'])
+        return reverse_lazy('searchapp:website', kwargs={'pk': document.website.id})
+
+
+class WebsiteUpdateView(UpdateView):
+    model = Website
+    form_class = WebsiteForm
+    template_name = "searchapp/website_update.html"
+    context_object_name = 'website'
+
+    def get_success_url(self):
+        return reverse_lazy('searchapp:website', kwargs={'pk': self.kwargs['pk']})
+
+
+class WebsiteCreateView(CreateView):
+    model = Website
+    form_class = WebsiteForm
+    success_url = reverse_lazy('searchapp:websites')
+    template_name = "searchapp/website_create.html"
+
+
+class WebsiteDeleteView(DeleteView):
+    model = Website
+    success_url = reverse_lazy('searchapp:websites')
+    template_name = 'searchapp/website_delete.html'
+    context_object_name = 'website'
 
 
 class WebsiteListAPIView(ListCreateAPIView):
@@ -91,8 +231,7 @@ class DocumentListAPIView(ListCreateAPIView):
     ordering_fields = ['title', 'date', 'acceptance_state_max_probability']
 
     def get_queryset(self):
-        q = Document.objects.annotate(
-            text_len=Length('title')).filter(text_len__gt=1)
+        q = Document.objects.annotate(text_len=Length('title')).filter(text_len__gt=1)
         keyword = self.request.GET.get('keyword', "")
         if keyword:
             q = q.filter(title__icontains=keyword)
@@ -125,15 +264,20 @@ class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         document = Document.objects.get(pk=self.kwargs['pk'])
-        with_content = self.request.GET.get('with_content', False)
-        if with_content:
-            solr_doc = solr_search_id(
-                core='documents', id=str(self.kwargs['pk']))[0]
-            # Content is a virtual field (see serializer)
-            if 'content' in solr_doc and len(solr_doc['content']) > 0:
-                document.content = solr_doc['content'][0]
-            if 'content_html' in solr_doc and len(solr_doc['content_html']) > 0:
-                document.content = solr_doc['content_html'][0]
+        with_attachments = self.request.GET.get('with_attachments', False)
+        sync = self.request.GET.get('sync', False)
+        if sync:
+            solr_document = solr_search_id(
+                core='documents', id=str(document.id))
+            sync_documents(document.website, solr_document, [document])
+        if with_attachments:
+            # query Solr for attachments
+            solr_files = solr_search_document_id_sorted(
+                core='files', document_id=str(document.id))
+            django_attachments = Attachment.objects.filter(
+                document=document).order_by('id')
+            if sync:
+                sync_attachments(document, solr_files, django_attachments)
         return document
 
 
@@ -149,12 +293,13 @@ class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
     serializer_class = AttachmentSerializer
 
     def get_object(self):
-        # Read content from document
         queryset = self.get_queryset()
-        attachment = Attachment
-        solr_doc = solr_search_id(
-            core='document', id=str(self.kwargs['pk']))[0]
-        attachment.content = solr_doc['content']
+        attachment_qs = queryset.filter(pk=self.kwargs['pk'])
+        attachment = attachment_qs[0]
+        solr_attachment = solr_search_id(
+            core='files', id=str(attachment.id))[0]
+        if not attachment.content and "content" in solr_attachment:
+            attachment.content = solr_attachment['content']
         return attachment
 
 
@@ -271,19 +416,20 @@ class SolrDocumentSearch(APIView):
                                        sort_by=request.GET.get('sortBy'),
                                        sort_direction=request.GET.get('sortDirection'))
         return Response(result)
+    
 
-
-class SimilarDocumentsAPIView(APIView):
+class SolrDocumentSearchQuery(APIView):
     # permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, id):
-        similar_document_ids_with_coeff = solr_mlt('documents', str(id),
-                                                   number_candidates=request.GET.get('numberCandidates', 5),
-                                                   threshold=request.GET.get('threshold', 0.0))
-        formatted_response = []
-        for id, title, website, coeff in similar_document_ids_with_coeff:
-            formatted_response.append({'id': id, 'title': title, 'website': website, 'coefficient': coeff})
-        return Response(formatted_response)
+    def get(self, request, search_term, format=None):
+        result = solr_search_query_paginated(core="documents", term=search_term, page_number=request.GET.get('pageNumber', 1),
+                                       rows_per_page=request.GET.get(
+                                           'pageSize', 1),
+                                       ids_to_filter_on=request.GET.getlist(
+                                           'id'),
+                                       sort_by=request.GET.get('sortBy'),
+                                       sort_direction=request.GET.get('sortDirection'))
+        return Response(result)
 
 
 class ExportDocumentsLaunch(APIView):
@@ -313,9 +459,27 @@ class ExportDocumentsDownload(APIView):
         file = minio_client.get_object('export', task_id + '.zip')
         response = FileResponse(file, as_attachment=True)
         response['Content-Disposition'] = 'attachment; filename="%s"' % 'exported_docs.zip'
+        # delete export contents
+        export_delete.delay(task_id)
         return response
 
 
+@api_view(['GET'])
+def celex_get_xhtml(request):
+    if request.method == 'GET':
+        celex_id = quote(request.GET["celex_id"])
+        logger.info(celex_id)
+        headers = {"Accept": "application/xhtml+xml", "Accept-Language": "eng"}
+        response = requests.get(
+            "http://publications.europa.eu/resource/celex/" + celex_id, headers=headers)
+        if response.status_code != 200:
+            headers = {"Accept": "text/html", "Accept-Language": "eng"}
+            response = requests.get(
+                "http://publications.europa.eu/resource/celex/" + celex_id, headers=headers)
+        return Response(response.text)
+
+
+# @cache_page(60 * 15)
 @api_view(['GET'])
 def document_stats(request):
     if request.method == 'GET':
