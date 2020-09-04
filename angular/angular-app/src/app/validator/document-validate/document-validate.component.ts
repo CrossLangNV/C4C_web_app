@@ -14,7 +14,6 @@ import { DjangoUser } from 'src/app/shared/models/django_user';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { Attachment } from 'src/app/shared/models/attachment';
 import { MessageService, ConfirmationService } from 'primeng/api';
-import { SliderModule } from 'primeng/slider';
 
 @Component({
   selector: 'app-document-validate',
@@ -26,6 +25,8 @@ export class DocumentValidateComponent implements OnInit {
   document: Document;
   similarDocuments = [];
   similarityThreshold = 80;
+  maxSimilarDocuments = 5;
+  similarDocsPage = 1;
   consolidatedVersions;
   stateValues: SelectItem[] = [];
   cities: SelectItem[];
@@ -69,7 +70,7 @@ export class DocumentValidateComponent implements OnInit {
       )
       .subscribe((document) => {
         this.document = document;
-        this.getSimilarDocuments(this.similarityThreshold / 100);
+        this.getSimilarDocuments(this.similarityThreshold / 100, this.maxSimilarDocuments);
         this.consolidatedVersions = new Map();
         let consolidatedVersionsArr = this.document.consolidatedVersions.split(
           ','
@@ -182,9 +183,9 @@ export class DocumentValidateComponent implements OnInit {
     window.open(url, '_blank');
   }
 
-  getSimilarDocuments(threshold: number) {
+  getSimilarDocuments(threshold: number, numberCandidates: number) {
     this.similarDocuments = [];
-    this.service.getSimilarDocuments(this.document.id, threshold).subscribe((docs) => {
+    this.service.getSimilarDocuments(this.document.id, threshold, numberCandidates).subscribe((docs) => {
       docs.forEach((docWithCoeff) => {
         this.similarDocuments.push({
           id: docWithCoeff.id,
@@ -198,6 +199,10 @@ export class DocumentValidateComponent implements OnInit {
 
   onSimilarityChange(e) {
     const newThreshold = e.value;
-    this.getSimilarDocuments(newThreshold / 100);
+    this.getSimilarDocuments(newThreshold / 100, this.maxSimilarDocuments);
+  }
+
+  onNumberCandidatesBlur(e) {
+    this.getSimilarDocuments(this.similarityThreshold / 100, this.maxSimilarDocuments);
   }
 }
