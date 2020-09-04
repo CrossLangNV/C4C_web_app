@@ -47,7 +47,8 @@ pipeline {
         stage('Build and Test Java Code') {
             steps {
                 dir('uima-html-to-text'){
-                    sh "mvn -U clean install"
+                    sh "ls"
+                    sh "mvn clean install"
                 }
             }
         }
