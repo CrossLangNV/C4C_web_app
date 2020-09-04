@@ -51,7 +51,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let doc of similarDocuments">
+        <tr *ngFor="let doc of similarDocuments | slice: (similarDocsPage-1) * 5 : (similarDocsPage-1) * 5 + 5">
           <td><a [routerLink]="['/validator', doc.id]">
               {{ doc.title || "(no title)" |  truncate: [120, "..."] }}
             </a>
@@ -61,6 +61,7 @@
         </tr>
       </tbody>
     </table>
+    <ngb-pagination [(page)]="similarDocsPage" [pageSize]="5" [collectionSize]="similarDocuments.length"></ngb-pagination>
   </div>
   <div *ngIf="document.file_url || document.celex">
     <hr class="my-4" />
