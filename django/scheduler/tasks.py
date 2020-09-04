@@ -5,7 +5,7 @@ import json
 import logging
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 
 import pysolr
@@ -17,7 +17,7 @@ from minio import Minio, ResponseError
 from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
-from searchapp.datahandling import score_documents, sync_documents
+from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState
 from searchapp.solr_call import solr_search_website_sorted
 from tika import parser
@@ -35,20 +35,22 @@ UIMA_URL = {"BASE": "http://ctlg-manager-uima:8008",
             }
 SOLR_URL = "http://ctlg-manager_solr_1:8983"
 
+
 @shared_task
 def full_service_task(website_id):
     website = Website.objects.get(pk=website_id)
-    logger.info("Scoring documents with WEBSITE: %s",  website.name)
-    scrape_website_task(website_id, delay=False)
+    logger.info("Full service for WEBSITE: %s", website.name)
     sync_scrapy_to_solr_task(website_id)
     parse_content_to_plaintext_task(website_id)
     sync_documents_task(website_id)
-    logger.info("Scoring documents with WEBSITE (DONE): %s", website.name)
+    score_documents_task(website_id)
+    logger.info("Full service for WEBSITE (DONE): %s", website.name)
 
 
-@ shared_task
+@shared_task
 def export_documents(website_ids=None):
     websites = Website.objects.all()
+    logger.info("Export for websites: %s", website_ids)
     if website_ids:
         websites = Website.objects.filter(pk__in=website_ids)
     for website in websites:
@@ -59,8 +61,9 @@ def export_documents(website_ids=None):
         core = 'documents'
         requests.get(os.environ['SOLR_URL'] +
                      '/' + core + '/update?commit=true')
-        if not os.path.exists(workpath + '/export/jsonl/' + website.name):
-            os.makedirs(workpath + '/export/jsonl/' + website.name)
+        workdir = workpath + '/export/' + \
+                  export_documents.request.id + '/' + website.name.lower()
+        os.makedirs(workdir)
         # select all records for website
         q = 'website:' + website.name
         if website.name.lower() == 'eurlex':
@@ -71,7 +74,7 @@ def export_documents(website_ids=None):
                    'cursorMark': cursor_mark, 'sort': 'id asc'}
         documents = client.search(q, **options)
         for document in documents:
-            with jsonlines.open(workpath + '/export/jsonl/' + website.name + '/doc_' + document['id'] + '.jsonl',
+            with jsonlines.open(workdir + '/doc_' + document['id'] + '.jsonl',
                                 mode='w') as f:
                 f.write(document)
                 # get acceptance state from django model
@@ -88,7 +91,8 @@ def export_documents(website_ids=None):
 
     # create zip file for all .jsonl files
     zip_destination = workpath + '/export/' + export_documents.request.id
-    shutil.make_archive(zip_destination, 'zip', workpath + '/export/jsonl')
+    shutil.make_archive(zip_destination, 'zip', workpath +
+                        '/export/' + export_documents.request.id)
 
     # upload zip to minio
     minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
@@ -104,12 +108,17 @@ def export_documents(website_ids=None):
     minio_client.fput_object(
         'export', export_documents.request.id + '.zip', zip_destination + '.zip')
 
+    shutil.rmtree(workpath + '/export/' + export_documents.request.id)
+    os.remove(zip_destination + '.zip')
+    logging.info("Removed: %s", zip_destination + '.zip')
+
 
 def post_pre_analyzed_to_solr(data):
     logger.info("solr post data: %s", json.dumps(data))
     r = requests.post(SOLR_URL + "/solr/documents/update?commit=true", json=data)
     logger.info("Sent PreAnalyzed fields to Solr. Got status code %s", r.status_code)
     logger.info("Response: %s", r.content)
+
 
 @shared_task
 def test_solr_preanalyzed_update():
@@ -155,10 +164,9 @@ def test_solr_preanalyzed_update():
     post_pre_analyzed_to_solr(atomic_update)
 
 
-
 @shared_task
 def extract_terms(website_id):
-    PARAM_MAX_SOLR_UPDATES_PER_TIME=50
+    PARAM_MAX_SOLR_UPDATES_PER_TIME = 50
 
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
@@ -168,7 +176,7 @@ def extract_terms(website_id):
     cursor_mark = "*"
 
     # Query for Solr to find per website that has the content_html field (some do not)
-    q = "website:"+website_name+" AND content_html:*"
+    q = "website:" + website_name + " AND content_html:*"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -187,7 +195,7 @@ def extract_terms(website_id):
             content_output_json = json.dumps(content_html_text)
 
             # Step ONE: Html2Text. Output: XMI
-            r = requests.post(UIMA_URL["BASE"]+UIMA_URL["HTML2TEXT"], json=content_output_json)
+            r = requests.post(UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"], json=content_output_json)
             if r.status_code == 200:
                 logger.info('Sent request to /html2text. Status code: %s', r.status_code)
                 text_cas = r.content
@@ -202,7 +210,7 @@ def extract_terms(website_id):
                     "text": request_nlp.content.decode("utf-8")
                 }
                 # Todo: Change URL to Docker URL
-                request_text_to_html = requests.post(UIMA_URL["BASE"]+UIMA_URL["TEXT2HTML"],
+                request_text_to_html = requests.post(UIMA_URL["BASE"] + UIMA_URL["TEXT2HTML"],
                                                      json=cas_plus_text_json)
                 logger.info("Sent request to /text2html. Status code: %s", request_text_to_html.status_code)
                 final_xmi = request_text_to_html.content.decode("utf-8")
@@ -210,7 +218,7 @@ def extract_terms(website_id):
                 # STEP 4: Read the Terms (TfIdfs) from the XMI with DKPro Cassis
                 # Write tempfile for typesystem.xml
                 # Todo: Change URL to Docker URL
-                typesystem_req = requests.get(UIMA_URL["BASE"]+UIMA_URL["TYPESYSTEM"])
+                typesystem_req = requests.get(UIMA_URL["BASE"] + UIMA_URL["TYPESYSTEM"])
                 typesystem_file = open("typesystem_tmp.xml", "w")
                 typesystem_file.write(typesystem_req.content.decode("utf-8"))
                 # Write tempfile for cas.xml
@@ -239,7 +247,7 @@ def extract_terms(website_id):
                     }
                 ]
 
-                logger.info("escaped atomic: "+json.dumps(atomic_update))
+                logger.info("escaped atomic: " + json.dumps(atomic_update))
 
                 concept_occurs_tokens = atomic_update[0]['concept_occurs']['set']['tokens']
                 # TODO Later: concept_defined and reporting_obligations
@@ -291,45 +299,56 @@ def extract_terms(website_id):
                 atomic_update[0]['concept_occurs']['set'] = escaped_json
                 post_pre_analyzed_to_solr(atomic_update)
 
-@shared_task
-def export_delete(task_id):
-    # delete export jsonl contents
-    for filename in os.listdir(workpath + '/export/jsonl'):
-        file_path = os.path.join(workpath + '/export/jsonl', filename)
-        try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
-        except Exception as e:
-            logger.error('Failed to delete %s. Reason: %s' %
-                         (file_path, e))
-    # delete zip with given task id
-    os.remove(workpath + '/export/' + task_id + '.zip')
-
 
 @shared_task
 def score_documents_task(website_id):
-    logger.info("Scoring documents with WEBSITE: " + str(website_id))
     # lookup documents for website and score them
     website = Website.objects.get(pk=website_id)
-    django_documents = Document.objects.filter(website=website).order_by('id')
+    logger.info("Scoring documents with WEBSITE: " + website.name)
+    solr_documents = solr_search_website_with_content(
+        'documents', website.name)
     use_pdf_files = True
     if website.name.lower() == 'eurlex':
         use_pdf_files = False
-    score_documents(website.name, django_documents, use_pdf_files)
+    score_documents(website.name, solr_documents, use_pdf_files)
 
 
 @shared_task
 def sync_documents_task(website_id):
-    logger.info("Syncing documents with WEBSITE: " + str(website_id))
     # lookup documents for website and sync them
     website = Website.objects.get(pk=website_id)
-    django_documents = Document.objects.filter(website=website).order_by('id')
+    logger.info("Syncing documents with WEBSITE: " + website.name)
     # query Solr for available documents and sync with Django
     solr_documents = solr_search_website_sorted(
         core='documents', website=website.name.lower())
-    sync_documents(website, solr_documents, django_documents)
+    for solr_doc in solr_documents:
+        solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
+        solr_doc_date_last_update = solr_doc.get(
+            'date_last_update', datetime.now())
+        data = {
+            "author": solr_doc.get('author', [''])[0][:20],
+            "celex": solr_doc.get('celex', [''])[0][:20],
+            "consolidated_versions": ','.join(x.strip() for x in solr_doc.get('consolidated_versions', [''])),
+            "date": solr_doc_date,
+            "date_last_update": solr_doc_date_last_update,
+            "eli": solr_doc.get('eli', [''])[0],
+            "file_url": solr_doc.get('file_url', [None])[0],
+            "status": solr_doc.get('status', [''])[0][:100],
+            "summary": ''.join(x.strip() for x in solr_doc.get('summary', [''])),
+            "title": solr_doc.get('title', [''])[0][:1000],
+            "title_prefix": solr_doc.get('title_prefix', [''])[0],
+            "type": solr_doc.get('type', [''])[0],
+            "url": solr_doc['url'][0],
+            "various": ''.join(x.strip() for x in solr_doc.get('various', [''])),
+            "website": website,
+        }
+        Document.objects.update_or_create(id=solr_doc["id"], defaults=data)
+    # safe delete documents that have not been updated in a while
+    how_many_days = 30
+    docs = Document.objects.filter(
+        date_last_update__lte=datetime.now() - timedelta(days=how_many_days))
+    for doc in docs:
+        doc.delete()
 
 
 @shared_task
@@ -398,7 +417,7 @@ def parse_content_to_plaintext_task(website_id):
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + '/update?commit=true')
     # select all records where content is empty and content_html is not
-    q = "-content: [\"\" TO *] AND ( content_html: [* TO *] OR file: [* TO *] ) AND website:" + website_name
+    q = "-content: [\"\" TO *] AND ( content_html: [* TO *] OR file_name: [* TO *] ) AND website:" + website_name
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
                'cursorMark': cursor_mark, 'sort': 'id asc'}
@@ -412,24 +431,27 @@ def parse_content_to_plaintext_task(website_id):
         if 'content_html' in result:
             output = parser.from_buffer(result['content_html'][0])
             content_text = output['content']
-        elif 'file' in result:
-            try:
-                file_data = minio_client.get_object(
-                    os.environ['MINIO_STORAGE_MEDIA_BUCKET_NAME'], result['file'][0])
-                output = BytesIO()
-                for d in file_data.stream(32*1024):
-                    output.write(d)
-                content_text = parser.from_buffer(output.getvalue())
-                if 'content' in content_text:
-                    content_text = content_text['content']
-            except ResponseError as err:
-                print(err)
+        elif 'file_name' in result:
+            # If there is more than 1 pdf, we rely on score_documents to extract
+            # the content of the pdf with the highest score
+            if len(result['file_name']) == 1:
+                try:
+                    file_data = minio_client.get_object(
+                        os.environ['MINIO_STORAGE_MEDIA_BUCKET_NAME'], result['file_name'][0])
+                    output = BytesIO()
+                    for d in file_data.stream(32 * 1024):
+                        output.write(d)
+                    content_text = parser.from_buffer(output.getvalue())
+                    if 'content' in content_text:
+                        content_text = content_text['content']
+                except ResponseError as err:
+                    print(err)
 
         # Store plaintext
         if content_text is None:
             # could not parse content
             logger.info(
-                'No output for: %s, removing content_html', result['id'])
+                'No output for: %s, removing content', result['id'])
         else:
             logger.debug('Got content for: %s (%s)',
                          result['id'], len(content_text))
@@ -473,7 +495,7 @@ def sync_scrapy_to_solr_task(website_id):
             file_data = minio_client.get_object(bucket_name, obj.object_name)
             url = os.environ['SOLR_URL'] + '/' + core + "/update/json/docs"
             output = BytesIO()
-            for d in file_data.stream(32*1024):
+            for d in file_data.stream(32 * 1024):
                 output.write(d)
             r = requests.post(url, output.getvalue())
             json_r = r.json()
