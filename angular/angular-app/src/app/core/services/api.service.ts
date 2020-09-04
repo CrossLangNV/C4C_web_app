@@ -324,8 +324,10 @@ export class ApiService {
     return this.http.get<string[]>(`${this.API_URL}/stats`);
   }
 
-  public getSimilarDocuments(id: string, threshold: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.API_URL}/solrdocuments/like/${id}?threshold=${threshold}`);
+  public getSimilarDocuments(id: string, threshold: number, numberCandidates: number): Observable<any[]> {
+    return this.http.get<any[]>(
+      `${this.API_URL}/solrdocuments/like/${id}?threshold=${threshold}&numberCandidates=${numberCandidates}`
+    );
   }
 
   public getStateValues(): Observable<string[]> {

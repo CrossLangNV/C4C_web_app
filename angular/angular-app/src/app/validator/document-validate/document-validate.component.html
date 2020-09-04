@@ -39,6 +39,11 @@
     <hr class="my-4" />
     <p><b>Similar documents:</b></p>
     <div>
+      <p>
+        Number of candidates: <p-inputNumber [(ngModel)]="maxSimilarDocuments" [min]="0" [max]="100" [showButtons]="true"
+          (onBlur)="onNumberCandidatesBlur($event)">
+        </p-inputNumber>
+      </p>
       <p>Similarity greater than {{ similarityThreshold }} %</p>
       <p-slider [(ngModel)]="similarityThreshold" (onSlideEnd)="onSimilarityChange($event)"></p-slider>
     </div>
@@ -51,7 +56,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let doc of similarDocuments">
+        <tr *ngFor="let doc of similarDocuments | slice: (similarDocsPage-1) * 5 : (similarDocsPage-1) * 5 + 5">
           <td><a [routerLink]="['/validator', doc.id]">
               {{ doc.title || "(no title)" |  truncate: [120, "..."] }}
             </a>
@@ -61,6 +66,7 @@
         </tr>
       </tbody>
     </table>
+    <ngb-pagination [(page)]="similarDocsPage" [pageSize]="5" [collectionSize]="similarDocuments.length"></ngb-pagination>
   </div>
   <div *ngIf="document.file_url || document.celex">
     <hr class="my-4" />
