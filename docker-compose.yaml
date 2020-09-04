@@ -1,7 +1,7 @@
 version: '3'
 services:
   uima:
-    image: ./uima-html-to-text
+    build: ./uima-html-to-text
     ports:
     - "8008:8008"
     container_name: "ctlg-manager-uima"
