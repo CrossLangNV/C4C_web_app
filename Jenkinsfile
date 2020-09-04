@@ -47,11 +47,6 @@ pipeline {
         stage('Build and Test Java Code') {
             steps {
                 dir('uima-html-to-text'){
-                    script {
-                        def pom = readMavenPom file: 'ctlg-manager/uima-html-to-text/pom.xml'
-                        VERSION = pom.version
-                    }
-                    echo "Building version ${VERSION}"
                     sh "mvn -U clean install"
                 }
             }
