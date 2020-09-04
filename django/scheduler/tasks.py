@@ -19,7 +19,7 @@ from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
 from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState
-from searchapp.solr_call import solr_search_website_sorted
+from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
 from tika import parser
 from twisted.internet import reactor
 
