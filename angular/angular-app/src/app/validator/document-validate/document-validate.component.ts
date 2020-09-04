@@ -26,6 +26,7 @@ export class DocumentValidateComponent implements OnInit {
   document: Document;
   similarDocuments = [];
   similarityThreshold = 80;
+  similarDocsPage = 1;
   consolidatedVersions;
   stateValues: SelectItem[] = [];
   cities: SelectItem[];
@@ -188,7 +189,7 @@ export class DocumentValidateComponent implements OnInit {
 
   getSimilarDocuments(threshold: number) {
     this.similarDocuments = [];
-    this.service.getSimilarDocuments(this.document.id, threshold).subscribe((docs) => {
+    this.service.getSimilarDocuments(this.document.id, threshold, 6).subscribe((docs) => {
       docs.forEach((docWithCoeff) => {
         this.similarDocuments.push({
           id: docWithCoeff.id,
