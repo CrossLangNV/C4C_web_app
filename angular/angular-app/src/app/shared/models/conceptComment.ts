@@ -26,6 +26,8 @@ export class ConceptCommentAdapter implements Adapter<ConceptComment> {
       new Date(item.created_at)
     );
   }
+
+  // TODO: Refactor this capital letter for concept in front and backend
   encode(conceptComment: ConceptComment): any {
     const stringDate = new Date(conceptComment.createdAt).toISOString();
     return {
