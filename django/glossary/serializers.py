@@ -62,3 +62,13 @@ class ConceptSerializer(serializers.ModelSerializer):
     class Meta:
         model = Concept
         fields = '__all__'
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    Concept = serializers.PrimaryKeyRelatedField(
+        queryset=Concept.objects.all())
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+
+    class Meta:
+        model = Comment
+        fields = '__all__'
