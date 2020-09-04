@@ -1,5 +1,9 @@
 #!groovy
 pipeline {
+    tools {
+        maven 'maven 3.3.9'
+        jdk 'Java 1.8'
+    }
     environment {
         VERSION = ''
         HELM_USERNAME='crosslang'
@@ -38,14 +42,17 @@ pipeline {
                         }
                     }
                 }
+            }
+        }
+        stage('Build and Test Java Code') {
+            steps {
                 dir('uima-html-to-text'){
                     script {
-                            docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
-                            def customImage = docker.build("ctlg-manager/uima-html-to-text:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
-                            customImage.push()
-                            customImage.push("${env.BRANCH_NAME}-latest")
-                        }
+                        def pom = readMavenPom file: 'pom.xml'
+                        VERSION = pom.version
                     }
+                    echo "Building version ${VERSION}"
+                    sh "mvn -U clean install"
                 }
             }
         }
