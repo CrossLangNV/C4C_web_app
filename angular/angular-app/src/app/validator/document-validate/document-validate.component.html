@@ -39,6 +39,11 @@
     <hr class="my-4" />
     <p><b>Similar documents:</b></p>
     <div>
+      <p>
+        Number of candidates: <p-inputNumber [(ngModel)]="maxSimilarDocuments" [min]="0" [max]="100" [showButtons]="true"
+          (onBlur)="onNumberCandidatesBlur($event)">
+        </p-inputNumber>
+      </p>
       <p>Similarity greater than {{ similarityThreshold }} %</p>
       <p-slider [(ngModel)]="similarityThreshold" (onSlideEnd)="onSimilarityChange($event)"></p-slider>
     </div>
