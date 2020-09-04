@@ -44,10 +44,17 @@ pipeline {
                 }
             }
         }
+        stage('Download git submodules: uima') {
+                    steps {
+                        dir('uima-html-to-text'){
+                            sh "git checkout develop"
+                            sh "git submodule update --init --recursive"
+                        }
+                    }
+                }
         stage('Build and Test Java Code') {
             steps {
                 dir('uima-html-to-text'){
-                    sh "ls"
                     sh "mvn clean install"
                 }
             }
