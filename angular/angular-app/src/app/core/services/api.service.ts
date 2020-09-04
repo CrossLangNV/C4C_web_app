@@ -33,7 +33,6 @@ import {
   RoAdapter,
 } from 'src/app/shared/models/ro';
 import * as rosData from './ros.json';
-import {logger} from "codelyzer/util/logger";
 import {ConceptAcceptanceState, ConceptAcceptanceStateAdapter} from "../../shared/models/conceptAcceptanceState";
 import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/conceptComment";
 
@@ -156,7 +155,6 @@ export class ApiService {
     }
     return this.http.get<any[]>(requestUrl).pipe(
       map((data: any[]) => {
-        logger.info(data.toString())
         const result = [data[0]];
         result.push(data[1]);
         return result;
