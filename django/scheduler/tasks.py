@@ -257,8 +257,7 @@ def extract_terms(website_id):
                     cas.get_view(sofa_id).select("de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"))
 
                 i = 0
-                term_count = len(list_select)
-                for term in list_select:
+                for term in len(list_select):
                     logger.info("TfIdf Term: %s with score %s", term.get_covered_text(), term.tfidfValue)
 
                     # Save the token information
