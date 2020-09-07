@@ -52,7 +52,7 @@ pipeline {
         stage('Build and Test Java Code') {
             steps {
                 dir('uima-html-to-text'){
-                    sh "mvn clean install -Denv.BRANCH_NAME=${env.BRANCH_NAME}"
+                    sh "mvn compile jib:build -Denv.BRANCH_NAME=${env.BRANCH_NAME}"
                 }
             }
         }
