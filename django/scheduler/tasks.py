@@ -258,7 +258,6 @@ def extract_terms(website_id):
 
                 i = 0
                 for term in len(list_select):
-                    logger.info("TfIdf Term: %s with score %s", term.get_covered_text(), term.tfidfValue)
 
                     # Save the token information
                     token = term.get_covered_text()
