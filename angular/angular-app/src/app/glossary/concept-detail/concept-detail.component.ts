@@ -6,8 +6,15 @@ import { Concept } from 'src/app/shared/models/concept';
 import { Document } from 'src/app/shared/models/document';
 
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { faSort, faSortUp, faSortDown } from '@fortawesome/free-solid-svg-icons';
+import {faSort, faSortUp, faSortDown, faTrashAlt} from '@fortawesome/free-solid-svg-icons';
 import { Observable, forkJoin } from 'rxjs';
+import { SelectItem } from 'primeng/api/selectitem';
+import {ConceptAcceptanceState} from "../../shared/models/conceptAcceptanceState";
+import {ConceptComment} from "../../shared/models/conceptComment";
+import {ApiAdminService} from "../../core/services/api.admin.service";
+import { MessageService, ConfirmationService } from 'primeng/api';
+import {DjangoUser} from "../../shared/models/django_user";
+import {AuthenticationService} from "../../core/auth/authentication.service";
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -44,12 +51,21 @@ export class ConceptDetailSortableHeaderDirective {
   selector: 'app-concept-detail',
   templateUrl: './concept-detail.component.html',
   styleUrls: ['./concept-detail.component.css'],
+  providers: [MessageService],
 })
 export class ConceptDetailComponent implements OnInit {
   @ViewChildren(ConceptDetailSortableHeaderDirective) headers: QueryList<
     ConceptDetailSortableHeaderDirective
   >;
   concept: Concept;
+
+  // AcceptanceState and comments
+  stateValues: SelectItem[] = [];
+  acceptanceState: ConceptAcceptanceState;
+  comments: ConceptComment[] = [];
+  newComment: ConceptComment;
+  deleteIcon: IconDefinition;
+  currentDjangoUser: DjangoUser;
 
   occursIn: Document[] = [];
   occursInPage = 1;
@@ -67,28 +83,108 @@ export class ConceptDetailComponent implements OnInit {
   definedInSortDirection = 'desc';
   definedInDateSortIcon: IconDefinition = faSortDown;
 
-  constructor(private route: ActivatedRoute, private apiService: ApiService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private service: ApiService,
+    private adminService: ApiAdminService,
+    private messageService: MessageService,
+    private authenticationService: AuthenticationService,
+    private confirmationService: ConfirmationService
+  ) {}
 
   ngOnInit() {
+    this.authenticationService.currentDjangoUser.subscribe(
+      (x) => (this.currentDjangoUser = x)
+    );
+    this.acceptanceState = new ConceptAcceptanceState('', '', '', '')
+    this.newComment = new ConceptComment('', '', '', '', new Date());
+
+    this.service.getConceptStateValues().subscribe((states) => {
+      states.forEach((state) => {
+        this.stateValues.push({ label: state, value: state });
+      });
+    });
+
     this.route.paramMap
       .pipe(
         switchMap((params: ParamMap) =>
-          this.apiService.getConcept(params.get('conceptId'))
+          this.service.getConcept(params.get('conceptId'))
         )
       )
       .subscribe((concept) => {
         this.concept = concept;
+
+        this.newComment.conceptId = concept.id;
+        this.comments = [];
+
+        if (concept.commentIds) {
+          concept.commentIds.forEach((commentId) => {
+            this.service.getConceptComment(commentId).subscribe((comment) => {
+              this.adminService.getUser(comment.userId).subscribe((user) => {
+                comment.username = user.username;
+              });
+              this.comments.push(comment);
+            });
+          });
+        }
+
         this.loadOccursInDocuments();
         this.loadDefinedInDocuments();
       });
+    this.deleteIcon = faTrashAlt;
+  }
+
+  onStateChange(event) {
+    // FIXME: can we abract the the acceptanceState.id  via the API (should not be know externally ?)
+    this.acceptanceState.id = this.concept.acceptanceState;
+    this.acceptanceState.value = event.value;
+    this.acceptanceState.conceptId = this.concept.id;
+    this.service.updateConceptState(this.acceptanceState).subscribe((result) => {
+      // Update document list
+      this.service.messageSource.next('refresh');
+      let severity = {
+        Accepted: 'success',
+        Rejected: 'error',
+        Unvalidated: 'info',
+      };
+      this.messageService.add({
+        severity: severity[event.value],
+        summary: 'Acceptance State',
+        detail: 'Set to "' + event.value + '"',
+      });
+    });
+  }
+
+  onAddComment() {
+    this.service.addConceptComment(this.newComment).subscribe((comment) => {
+      comment.username = this.currentDjangoUser.username;
+      this.comments.push(comment);
+      this.newComment.value = '';
+      this.service.messageSource.next('refresh');
+    });
+  }
+
+  onDeleteComment(comment: ConceptComment) {
+    this.confirmationService.confirm({
+      message: 'Do you want to delete this comment?',
+      accept: () => {
+        this.service.deleteConceptComment(comment.id).subscribe((response) => {
+          this.comments = this.comments.filter(
+            (item) => item.id !== comment.id
+          );
+          this.service.messageSource.next('refresh');
+        });
+      },
+    });
   }
 
   loadOccursInDocuments() {
-    this.apiService
-      .searchSolrDocuments(
+    this.service
+      .searchSolrPreAnalyzedDocuments(
         this.occursInPage,
         this.occursInPageSize,
         this.concept.name,
+        "concept_occurs",
         [],
         this.occursInSortBy,
         this.occursInSortDirection
@@ -108,7 +204,7 @@ export class ConceptDetailComponent implements OnInit {
   }
 
   loadDefinedInDocuments() {
-    this.apiService
+    this.service
       .searchSolrDocuments(
         this.definedInPage,
         this.definedInPageSize,
@@ -136,7 +232,7 @@ export class ConceptDetailComponent implements OnInit {
   getDocuments(ids: string[]): Observable<any[]> {
     let docObservables = [];
     ids.forEach((id) => {
-      docObservables.push(this.apiService.getDocument(id));
+      docObservables.push(this.service.getDocument(id));
     });
     return forkJoin(docObservables);
   }

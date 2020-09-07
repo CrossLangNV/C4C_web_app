@@ -23,6 +23,10 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 })
 export class DocumentValidateComponent implements OnInit {
   document: Document;
+  similarDocuments = [];
+  similarityThreshold = 80;
+  maxSimilarDocuments = 5;
+  similarDocsPage = 1;
   consolidatedVersions;
   stateValues: SelectItem[] = [];
   cities: SelectItem[];
@@ -50,10 +54,6 @@ export class DocumentValidateComponent implements OnInit {
       (x) => (this.currentDjangoUser = x)
     );
     this.attachment = new Attachment('', '', '', '', '');
-    this.cities = [];
-    this.cities.push({ label: 'Level 1', value: 'level1' });
-    this.cities.push({ label: 'Level 2', value: 'level2' });
-    this.cities.push({ label: 'Level 3', value: 'level3' });
 
     this.acceptanceState = new AcceptanceState('', '', '', '');
     this.newComment = new Comment('', '', '', '', new Date());
@@ -70,6 +70,7 @@ export class DocumentValidateComponent implements OnInit {
       )
       .subscribe((document) => {
         this.document = document;
+        this.getSimilarDocuments(this.similarityThreshold / 100, this.maxSimilarDocuments);
         this.consolidatedVersions = new Map();
         let consolidatedVersionsArr = this.document.consolidatedVersions.split(
           ','
@@ -180,5 +181,28 @@ export class DocumentValidateComponent implements OnInit {
 
   goToLink(url: string) {
     window.open(url, '_blank');
+  }
+
+  getSimilarDocuments(threshold: number, numberCandidates: number) {
+    this.similarDocuments = [];
+    this.service.getSimilarDocuments(this.document.id, threshold, numberCandidates).subscribe((docs) => {
+      docs.forEach((docWithCoeff) => {
+        this.similarDocuments.push({
+          id: docWithCoeff.id,
+          title: docWithCoeff.title,
+          website: docWithCoeff.website,
+          coeff: docWithCoeff.coefficient,
+        });
+      });
+    });
+  }
+
+  onSimilarityChange(e) {
+    const newThreshold = e.value;
+    this.getSimilarDocuments(newThreshold / 100, this.maxSimilarDocuments);
+  }
+
+  onNumberCandidatesBlur(e) {
+    this.getSimilarDocuments(this.similarityThreshold / 100, this.maxSimilarDocuments);
   }
 }

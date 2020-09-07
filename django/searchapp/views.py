@@ -1,17 +1,10 @@
 import logging
 import os
-from urllib.parse import quote
 
-import requests
 from celery.result import AsyncResult
-from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Q, Count
 from django.db.models.functions import Length
 from django.http import FileResponse
-from django.shortcuts import render
-from django.urls import reverse_lazy
-from django.views.decorators.cache import cache_page
-from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
 from minio import Minio
 from rest_framework import permissions, filters, status
 from rest_framework.decorators import api_view
@@ -21,13 +14,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from scheduler.tasks import export_documents, sync_documents_task, score_documents_task
-from .forms import DocumentForm, WebsiteForm
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
 from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
-from .solr_call import solr_search, solr_search_id, solr_search_document_id_sorted, \
-    solr_search_paginated
+from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -281,6 +272,32 @@ class SolrDocumentSearch(APIView):
                                        sort_direction=request.GET.get('sortDirection'))
         return Response(result)
 
+
+class SolrDocumentSearchQuery(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, search_term, format=None):
+        result = solr_search_query_paginated(core="documents", term=search_term, page_number=request.GET.get('pageNumber', 1),
+                                       rows_per_page=request.GET.get(
+                                           'pageSize', 1),
+                                       ids_to_filter_on=request.GET.getlist(
+                                           'id'),
+                                       sort_by=request.GET.get('sortBy'),
+                                       sort_direction=request.GET.get('sortDirection'))
+        return Response(result)
+
+
+class SimilarDocumentsAPIView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, id):
+        similar_document_ids_with_coeff = solr_mlt('documents', str(id),
+                                                   number_candidates=request.GET.get('numberCandidates', 5),
+                                                   threshold=request.GET.get('threshold', 0.0))
+        formatted_response = []
+        for id, title, website, coeff in similar_document_ids_with_coeff:
+            formatted_response.append({'id': id, 'title': title, 'website': website, 'coefficient': coeff})
+        return Response(formatted_response)
 
 class ExportDocumentsLaunch(APIView):
     permission_classes = [permissions.IsAuthenticated]

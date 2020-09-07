@@ -14,6 +14,8 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TruncatePipe } from '../shared/pipelines/truncate';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
+import { SliderModule } from 'primeng/slider';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { NgbDateAdapter, NgbDateNativeAdapter } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
@@ -34,6 +36,8 @@ import { NgbDateAdapter, NgbDateNativeAdapter } from '@ng-bootstrap/ng-bootstrap
     ChartModule,
     OverlayPanelModule,
     ConfirmDialogModule,
+    SliderModule,
+    InputNumberModule,
     ValidatorRoutingModule,
   ],
   providers: [
