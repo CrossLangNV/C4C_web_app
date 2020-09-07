@@ -7,7 +7,8 @@ from django.db import models
 from django.utils import timezone
 from searchapp.solr_call import solr_update
 from safedelete.models import SafeDeleteModel
-from safedelete import SOFT_DELETE_CASCADE
+
+from safedelete.models import SOFT_DELETE_CASCADE
 
 
 class Website(models.Model):
@@ -88,7 +89,7 @@ class AcceptanceStateValue(models.TextChoices):
     REJECTED = 'Rejected'
 
 
-class AcceptanceState(SafeDeleteModel):
+class AcceptanceState(models.Model):
     value = models.CharField(max_length=20,
                              choices=AcceptanceStateValue.choices,
                              default=AcceptanceStateValue.UNVALIDATED, db_index=True)
@@ -131,7 +132,7 @@ class Attachment(models.Model):
         return self.url
 
 
-class Comment(SafeDeleteModel):
+class Comment(models.Model):
     value = models.TextField()
     document = models.ForeignKey(
         'Document', related_name='comments', on_delete=models.CASCADE)
@@ -140,7 +141,7 @@ class Comment(SafeDeleteModel):
     updated_at = models.DateTimeField(auto_now=True)
 
 
-class Tag(SafeDeleteModel):
+class Tag(models.Model):
     value = models.CharField(max_length=50)
     document = models.ForeignKey(
         'Document', related_name='tags', on_delete=models.CASCADE)
