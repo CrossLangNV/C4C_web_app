@@ -3,6 +3,54 @@
     <h3 class="mb-4">{{ concept.name }}</h3>
     <p>Definition: {{ concept.definition }}</p>
     <div>
+      <p><b>Choose Acceptance State:</b></p>
+      <p-selectButton
+        styleClass="mb-4"
+        [options]="stateValues"
+        [(ngModel)]="concept.acceptanceStateValue"
+        (onChange)="onStateChange($event)"
+      >
+      </p-selectButton>
+    </div>
+    <div *ngIf="comments.length">
+      <p><b>Comments:</b></p>
+      <div class="card" *ngFor="let comment of comments">
+        <div class="card-header">
+          {{ comment.username }} ({{
+          comment.createdAt | date: "MMM d, y - h:mm a"
+          }})
+        </div>
+        <div class="card-body">
+          <p class="card-text">{{ comment.value }}</p>
+          <div class="delete-comment my-2">
+            <button class="btn btn-secondary" (click)="onDeleteComment(comment)">
+              <fa-icon [icon]="deleteIcon"></fa-icon> Delete
+            </button>
+            <p-confirmDialog
+              header="Confirmation"
+              icon="pi pi-exclamation-triangle"
+            >
+            </p-confirmDialog>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <form (ngSubmit)="onAddComment()" #addCommentForm="ngForm">
+        <div class="form-group">
+          <label for="comment"><b>New comment:</b></label>
+          <textarea
+            type="text"
+            class="form-control"
+            id="comment"
+            [(ngModel)]="newComment.value"
+            name="comment"
+          ></textarea>
+        </div>
+        <button type="submit" class="btn btn-success">Add</button>
+      </form>
+    </div>
+    <div>
       <h4 class="my-2">Occurs in</h4>
       <table class="table table-striped table-bordered table-hover">
         <thead class="thead-dark">

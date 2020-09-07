@@ -1,5 +1,15 @@
 version: '3'
 services:
+  uima:
+    image: docker.crosslang.com/ctlg-manager/uima-html-to-text:develop-latest
+    ports:
+      - "8008:8008"
+    labels:
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+      kompose.service.expose: "uima.dev.dgfisma.crosslang.com"
+      kompose.service.expose.tls-secret: "uima-certificate"
+
   angular:
     image: docker.crosslang.com/ctlg-manager/angular:develop-latest
     ports:

@@ -1,6 +1,7 @@
 import os
 
 import pysolr
+import textdistance
 
 ROW_LIMIT = 250000
 
@@ -32,6 +33,30 @@ def solr_search_paginated(core="", term="", page_number=1, rows_per_page=10, ids
     start = page_number * int(rows_per_page)
     if core == 'documents':
         term = 'content:"' + term + '"'
+    options = {'rows': rows_per_page,
+               'start': start,
+               'hl': 'on', 'hl.fl': '*',
+               'hl.requireFieldMatch': 'true',
+               'hl.snippets': 3, 'hl.maxAnalyzedChars': -1,
+               'hl.simple.pre': '<span class="highlight">',
+               'hl.simple.post': '</span>'}
+    if ids_to_filter_on:
+        fq_ids = 'id:(' + ' OR '.join(ids_to_filter_on) + ')'
+        options['fq'] = fq_ids
+    if sort_by:
+        options['sort'] = sort_by + ' ' + sort_direction
+    result = client.search(term, **options)
+    search = get_results_highlighted(result)
+    num_found = result.raw_response['response']['numFound']
+    return num_found, search
+
+
+def solr_search_query_paginated(core="", term="", page_number=1, rows_per_page=10, ids_to_filter_on=None,
+                          sort_by=None, sort_direction='asc'):
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    # solr page starts at 0
+    page_number = int(page_number) - 1
+    start = page_number * int(rows_per_page)
     options = {'rows': rows_per_page,
                'start': start,
                'hl': 'on', 'hl.fl': '*',
@@ -138,3 +163,34 @@ def solr_delete(core, id):
         client.commit()
     except pysolr.SolrError:
         pass
+
+
+'''
+Use Solr MoreLikeThis https://lucene.apache.org/solr/guide/8_5/morelikethis.html 
+to find similar documents given a document id. Solr MLT returns candidates, apply coefficient to candidates 
+upon which a threshold can be applied: see https://www.dexstr.io/finding-duplicates-large-set-files/.
+'''
+
+
+def solr_mlt(core, id, mlt_field='title,content', number_candidates=5, threshold=0.0):
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    search_result = client.search('id:' + id, **{'mlt': 'true',
+                                                 'mlt.fl': mlt_field,
+                                                 'mlt.count': number_candidates,
+                                                 'fl': 'id,website,' + mlt_field})
+    # document to compare against
+    base_doc = search_result.docs[0]
+    base_tokens = base_doc['content'][0].split()
+
+    # list of similar documents with Jaccard coefficient
+    similar_documents_with_coeff = []
+    for doc in search_result.raw_response['moreLikeThis'][id]['docs']:
+        candidate_tokens = doc['content'][0].split()
+        similarity = textdistance.jaccard(base_tokens, candidate_tokens)
+        if similarity > float(threshold):
+            similar_documents_with_coeff.append((doc['id'], doc['title'][0], doc['website'][0], similarity))
+
+    # sort descending on coefficient
+    similar_documents_with_coeff.sort(key=lambda x: x[-1], reverse=True)
+
+    return similar_documents_with_coeff

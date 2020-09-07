@@ -16,6 +16,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
+import {SelectButtonModule} from 'primeng/selectbutton';
 import {
   NgbDateAdapter,
   NgbDateNativeAdapter,
@@ -28,16 +29,17 @@ import {
     ConceptDetailSortableHeaderDirective,
     ConceptDocumentDetailsComponent,
   ],
-  imports: [
-    SharedModule,
-    ChipsModule,
-    ToastModule,
-    TooltipModule,
-    OverlayPanelModule,
-    ConfirmDialogModule,
-    SharedModule,
-    GlossaryRoutingModule,
-  ],
+    imports: [
+        SharedModule,
+        ChipsModule,
+        ToastModule,
+        TooltipModule,
+        OverlayPanelModule,
+        ConfirmDialogModule,
+        SharedModule,
+        GlossaryRoutingModule,
+        SelectButtonModule,
+    ],
   providers: [
     ConfirmationService,
     { provide: NgbDateAdapter, useClass: NgbDateNativeAdapter },

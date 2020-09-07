@@ -7,7 +7,8 @@ from rest_framework.pagination import PageNumberPagination
 from glossary.models import AcceptanceState, AcceptanceStateValue, Comment, Concept, Tag
 from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer
 from searchapp.models import Document
-from searchapp.serializers import CommentSerializer, DocumentSerializer
+from searchapp.serializers import DocumentSerializer
+from glossary.serializers import CommentSerializer
 from searchapp.solr_call import solr_search_paginated
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 from django.db.models import Q
