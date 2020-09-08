@@ -8,22 +8,22 @@ import shutil
 from datetime import datetime, timedelta
 from io import BytesIO
 
+import cassis
 import pysolr
 import requests
-import cassis
-from celery import shared_task
+from celery import shared_task, chain
 from jsonlines import jsonlines
 from minio import Minio, ResponseError
 from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
-from searchapp.datahandling import score_documents
-from searchapp.models import Website, Document, AcceptanceState
-from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
 from tika import parser
 from twisted.internet import reactor
 
 from glossary.models import Concept
+from searchapp.datahandling import score_documents
+from searchapp.models import Website, Document, AcceptanceState
+from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -40,11 +40,17 @@ SOLR_URL = "http://ctlg-manager_solr_1:8983"
 def full_service_task(website_id):
     website = Website.objects.get(pk=website_id)
     logger.info("Full service for WEBSITE: %s", website.name)
-    sync_scrapy_to_solr_task(website_id)
-    parse_content_to_plaintext_task(website_id)
-    sync_documents_task(website_id)
-    score_documents_task(website_id)
-    logger.info("Full service for WEBSITE (DONE): %s", website.name)
+    # the following subtasks are linked together in order:
+    # sync_scrapy_to_solr -> parse_content -> sync (solr to django) -> score
+    # a task only starts after the previous finished, immutable signatures (si)
+    # are used since a task doesn't need the result of the previous task: see
+    # https://docs.celeryproject.org/en/stable/userguide/canvas.html
+    chain(
+        sync_scrapy_to_solr_task.si(website_id),
+        parse_content_to_plaintext_task.si(website_id),
+        sync_documents_task.si(website_id),
+        score_documents_task.si(website_id)
+    )()
 
 
 @shared_task
@@ -258,7 +264,6 @@ def extract_terms(website_id):
 
                 i = 0
                 for term in len(list_select):
-
                     # Save the token information
                     token = term.get_covered_text()
                     score = term.tfidfValue

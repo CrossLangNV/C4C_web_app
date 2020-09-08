@@ -1,22 +1,15 @@
-from searchapp.solr_call import solr_search_id
-from searchapp.models import Document, Attachment, Website, AcceptanceState, AcceptanceStateValue
-from tika import parser
-from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
-from minio import Minio, ResponseError
-from jsonlines import jsonlines
 import base64
 import json
 import logging
 import os
 import random
-import shutil
+
 import pysolr
-
 import requests
-from django.core.files.base import ContentFile
-from django.utils.timezone import make_aware
-from django.db.models import Q, Count
+from django.db.models import Q
+from tika import parser
 
+from searchapp.models import Document, Website, AcceptanceState, AcceptanceStateValue
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
