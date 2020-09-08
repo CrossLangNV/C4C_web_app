@@ -22,7 +22,7 @@ from twisted.internet import reactor
 
 from glossary.models import Concept
 from searchapp.datahandling import score_documents
-from searchapp.models import Website, Document, AcceptanceState
+from searchapp.models import Website, Document, AcceptanceState, Tag
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
 
 logger = logging.getLogger(__name__)
@@ -346,12 +346,12 @@ def sync_documents_task(website_id):
             "website": website,
         }
         Document.objects.update_or_create(id=solr_doc["id"], defaults=data)
-    # safe delete documents that have not been updated in a while
+    # tag documents that have not been updated in a while
     how_many_days = 30
     docs = Document.objects.filter(
         date_last_update__lte=datetime.now() - timedelta(days=how_many_days))
     for doc in docs:
-        doc.delete()
+        Tag.objects.create(value="OFFLINE", document=doc)
 
 
 @shared_task
