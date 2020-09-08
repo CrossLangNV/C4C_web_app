@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class WebsiteSerializer(serializers.ModelSerializer):
-    total_documents = serializers.IntegerField()
+    total_documents = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Website
