@@ -1,9 +1,17 @@
 version: '3'
 services:
-  uima:
-    image: docker.crosslang.com/ctlg-manager/uima-html-to-text:develop-latest
+  termextract:
+    image: docker.crosslang.com/ctlg-manager/termextract:latest
     ports:
-    - "8008:8008"
+      - "5001:5001"
+    env_file:
+      - ./secrets/django-docker.env
+
+  uima:
+    build: ./uima-html-to-text
+    ports:
+      - "8008:8008"
+      - "5005:5005"
 
   angular:
     build: ./angular
@@ -126,3 +134,4 @@ volumes:
   solr:
   postgres:
   minio:
+  train:
