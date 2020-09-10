@@ -31,9 +31,10 @@ local_mock_server = "http://localhost:8008"
 UIMA_URL = {"BASE": "http://uima:8008", # http://uima:8008
             "HTML2TEXT": "/html2text",
             "TEXT2HTML": "/text2html",
-            "TYPESYSTEM": "/html2text/typesystem"
+            "TYPESYSTEM": "/html2text/typesystem",
             }
 SOLR_URL = "http://solr:8983"
+TERMEXTRACT_URL = "http://192.168.105.122:5001"
 
 
 @shared_task
@@ -197,7 +198,6 @@ def extract_terms(website_id):
                 "text": document['content_html']
             }
             content_html_text = json.dumps(content_html_text)
-            logger.info("content_html_text: %s", content_html_text)
 
             # Step ONE: Html2Text. Output: XMI
             r = requests.post(UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"], json=content_html_text)
@@ -207,33 +207,27 @@ def extract_terms(website_id):
                     "cas_content": base64.b64encode(r.content).decode('utf-8'),
                     "content_type": "html"
                 }
-                logger.info("text_cas: %s", text_cas)
 
                 # STEP 2: NLP TextExtract. Input XMI/Output XMI
                 # Todo: Change URL to Docker URL and json= to r.content
-                request_nlp = requests.post("http://termextract:5001/dgconcepts/", json=text_cas)
+                request_nlp = requests.post(TERMEXTRACT_URL + "/dgconcepts/", json=text_cas)
                 logger.info("Sent request to TextExtract NLP. Status code: %s", request_nlp.status_code)
-
-                logger.info("request_nlp content: %s", request_nlp.content)
 
                 # STEP 3: Text2Html (XMI OUTPUT)
                 # TODO JSON LOADS
                 cas_plus_content = json.loads(request_nlp.content)
-                cas_plus_text_json = {
-                    "text": base64.b64decode(cas_plus_content['cas_content']).decode("utf-8")
-                }
-                logger.info("cas_plus_text_json: %s", cas_plus_text_json)
-                cas_plus_text_json = json.dumps(cas_plus_text_json)
-                logger.info("Oan: cas plus: %s", cas_plus_text_json)
 
-                # Todo: Change URL to Docker URL
+                decoded_cas_plus = base64.b64decode(cas_plus_content['cas_content']).decode("utf-8")
+
+                cas_plus_text_json = {
+                    "text": decoded_cas_plus
+                }
+
+                # TEXT 2 HTML
                 request_text_to_html = requests.post(UIMA_URL["BASE"] + UIMA_URL["TEXT2HTML"],
                                                      json=cas_plus_text_json)
                 logger.info("Sent request to /text2html. Status code: %s", request_text_to_html.status_code)
-                logger.info("Request body of /text2html%s", request_text_to_html.request.body)
-                logger.info("request_text_to_html content", request_text_to_html.content)
-                final_xmi = request_text_to_html.content.decode("utf-8", errors="ignore")
-                logger.info("final_xmi: %s", final_xmi)
+                final_xmi = request_text_to_html.content.decode("utf-8")
 
                 # STEP 4: Read the Terms (TfIdfs) from the XMI with DKPro Cassis
                 # Write tempfile for typesystem.xml
@@ -267,8 +261,6 @@ def extract_terms(website_id):
                     }
                 ]
 
-                logger.info("escaped atomic: " + json.dumps(atomic_update))
-
                 concept_occurs_tokens = atomic_update[0]['concept_occurs']['set']['tokens']
                 # TODO Later: concept_defined and reporting_obligations
 
@@ -277,7 +269,7 @@ def extract_terms(website_id):
                     cas.get_view(sofa_id).select("de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"))
 
                 i = 0
-                for term in len(list_select):
+                for term in list_select:
                     # Save the token information
                     token = term.get_covered_text()
                     score = term.tfidfValue
@@ -310,8 +302,6 @@ def extract_terms(website_id):
                 concept_occurs_tokens = concept_occurs_tokens.sort(key=lambda x: x['s'])
 
                 escaped_json = json.dumps(atomic_update[0]['concept_occurs']['set'])
-                logger.info("type: %s", type(escaped_json))
-                logger.info("escapedJson: %s", escaped_json)
 
                 atomic_update[0]['concept_occurs']['set'] = escaped_json
                 post_pre_analyzed_to_solr(atomic_update)
