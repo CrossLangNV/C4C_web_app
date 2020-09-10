@@ -1,11 +1,16 @@
 version: '3'
 services:
+  termextract:
+    image: docker.crosslang.com/ctlg-manager/termextract:latest
+    ports:
+      - "5001:5001"
+    restart: always
+      networks:
+        - default
   uima:
     image: docker.crosslang.com/ctlg-manager/uima-html-to-text:develop-latest
     ports:
       - "8008:8008"
-    container_name: "ctlg-manager-uima"
-    hostname: "ctlg-manager-uima"
   networks:
     - default
   labels:

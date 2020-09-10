@@ -28,12 +28,12 @@ from searchapp.solr_call import solr_search_website_sorted, solr_search_website_
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
 local_mock_server = "http://localhost:8008"
-UIMA_URL = {"BASE": "http://ctlg-manager-uima:8008",
+UIMA_URL = {"BASE": "http://uima:8008", # http://uima:8008
             "HTML2TEXT": "/html2text",
             "TEXT2HTML": "/text2html",
             "TYPESYSTEM": "/html2text/typesystem"
             }
-SOLR_URL = "http://ctlg-manager_solr_1:8983"
+SOLR_URL = "http://solr:8983"
 
 
 @shared_task
@@ -172,8 +172,6 @@ def test_solr_preanalyzed_update():
 
 @shared_task
 def extract_terms(website_id):
-    PARAM_MAX_SOLR_UPDATES_PER_TIME = 50
-
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
     core = 'documents'
@@ -198,28 +196,44 @@ def extract_terms(website_id):
             content_html_text = {
                 "text": document['content_html']
             }
-            content_output_json = json.dumps(content_html_text)
+            content_html_text = json.dumps(content_html_text)
+            logger.info("content_html_text: %s", content_html_text)
 
             # Step ONE: Html2Text. Output: XMI
-            r = requests.post(UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"], json=content_output_json)
+            r = requests.post(UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"], json=content_html_text)
             if r.status_code == 200:
                 logger.info('Sent request to /html2text. Status code: %s', r.status_code)
-                text_cas = r.content
+                text_cas = {
+                    "cas_content": base64.b64encode(r.content).decode('utf-8'),
+                    "content_type": "html"
+                }
+                logger.info("text_cas: %s", text_cas)
 
                 # STEP 2: NLP TextExtract. Input XMI/Output XMI
                 # Todo: Change URL to Docker URL and json= to r.content
-                request_nlp = requests.post("http://demo9722763.mockable.io", json=content_output_json)
-                logger.info("Sent request to TextExtract. Status code: %s", request_nlp.status_code)
+                request_nlp = requests.post("http://termextract:5001/dgconcepts/", json=text_cas)
+                logger.info("Sent request to TextExtract NLP. Status code: %s", request_nlp.status_code)
+
+                logger.info("request_nlp content: %s", request_nlp.content)
 
                 # STEP 3: Text2Html (XMI OUTPUT)
+                # TODO JSON LOADS
+                cas_plus_content = json.loads(request_nlp.content)
                 cas_plus_text_json = {
-                    "text": request_nlp.content.decode("utf-8")
+                    "text": base64.b64decode(cas_plus_content['cas_content']).decode("utf-8")
                 }
+                logger.info("cas_plus_text_json: %s", cas_plus_text_json)
+                cas_plus_text_json = json.dumps(cas_plus_text_json)
+                logger.info("Oan: cas plus: %s", cas_plus_text_json)
+
                 # Todo: Change URL to Docker URL
                 request_text_to_html = requests.post(UIMA_URL["BASE"] + UIMA_URL["TEXT2HTML"],
                                                      json=cas_plus_text_json)
                 logger.info("Sent request to /text2html. Status code: %s", request_text_to_html.status_code)
-                final_xmi = request_text_to_html.content.decode("utf-8")
+                logger.info("Request body of /text2html%s", request_text_to_html.request.body)
+                logger.info("request_text_to_html content", request_text_to_html.content)
+                final_xmi = request_text_to_html.content.decode("utf-8", errors="ignore")
+                logger.info("final_xmi: %s", final_xmi)
 
                 # STEP 4: Read the Terms (TfIdfs) from the XMI with DKPro Cassis
                 # Write tempfile for typesystem.xml
