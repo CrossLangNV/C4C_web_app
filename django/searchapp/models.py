@@ -1,14 +1,14 @@
-import binascii
-import uuid
-import pysolr
 import os
+import uuid
 
+import pysolr
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from searchapp.solr_call import solr_update
+from safedelete.models import SOFT_DELETE_CASCADE
 from safedelete.models import SafeDeleteModel
 
-from safedelete.models import SOFT_DELETE_CASCADE
+from searchapp.solr_call import solr_update
 
 
 class Website(models.Model):
@@ -148,3 +148,12 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.value
+
+    def validate_unique(self, *args, **kwargs):
+        super(Tag, self).validate_unique(*args, **kwargs)
+
+        if self.__class__.objects.filter(document=self.document, value=self.value).exists():
+            raise ValidationError(
+                message='Tag with this (document, value) already exists.',
+                code='unique_together',
+            )
