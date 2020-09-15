@@ -151,7 +151,7 @@ class Tag(models.Model):
         return self.value
 
     def save(self, *args, **kwargs):
-        self.validate_unique(*args, **kwargs)
+        self.validate_unique()
         super(Tag, self).save(*args, **kwargs)
 
     def validate_unique(self, *args, **kwargs):
