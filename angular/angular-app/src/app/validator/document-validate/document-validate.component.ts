@@ -193,6 +193,14 @@ export class DocumentValidateComponent implements OnInit {
           website: docWithCoeff.website,
           coeff: docWithCoeff.coefficient,
         });
+        if (docWithCoeff.coefficient >= 0.9) {
+          let rounded_percentage = +(docWithCoeff.coefficient*100).toFixed(2);
+          this.messageService.add({
+            severity: 'info',
+            summary: 'Very likely duplicate document found!',
+            detail: 'Similarity is ' + rounded_percentage + '%',
+          });
+        }
       });
     });
   }
