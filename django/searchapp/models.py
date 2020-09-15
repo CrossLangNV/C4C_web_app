@@ -66,7 +66,8 @@ class Document(SafeDeleteModel):
                 solr_doc['website'] = self.website.name
             elif field == 'date' or field == 'created_at' or field == 'updated_at':
                 solr_doc[field] = value.strftime("%Y-%m-%dT%H:%M:%SZ")
-            elif not field.startswith('_') and field != 'extract_text' and not field.startswith('content') and field != 'file' and field != 'pull':
+            elif not field.startswith('_') and field != 'extract_text' and not field.startswith(
+                    'content') and field != 'file' and field != 'pull':
                 solr_doc[field] = value
 
         # Work around "Object of type UUID is not JSON serializable"
@@ -148,6 +149,10 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.value
+
+    def save(self, *args, **kwargs):
+        self.validate_unique(*args, **kwargs)
+        super(Tag, self).save(*args, **kwargs)
 
     def validate_unique(self, *args, **kwargs):
         super(Tag, self).validate_unique(*args, **kwargs)
