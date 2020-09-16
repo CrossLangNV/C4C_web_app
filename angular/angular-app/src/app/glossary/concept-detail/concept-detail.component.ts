@@ -205,10 +205,11 @@ export class ConceptDetailComponent implements OnInit {
 
   loadDefinedInDocuments() {
     this.service
-      .searchSolrDocuments(
+      .searchSolrPreAnalyzedDocuments(
         this.definedInPage,
         this.definedInPageSize,
-        this.concept.name + ' means',
+        this.concept.definition,
+        "concept_defined",
         [],
         this.definedInSortBy,
         this.definedInSortDirection
@@ -221,7 +222,7 @@ export class ConceptDetailComponent implements OnInit {
         this.getDocuments(solrDocumentIds).subscribe((doc) => {
           doc.forEach((document, index) => {
             let solrContent = solrDocuments[index].content;
-            solrContent = solrContent.map(text => text.replace('<span class=\"highlight\">means</span>', 'means'));
+            // solrContent = solrContent.map(text => text.replace('<span class=\"highlight\">means</span>', 'means'));
             document.content = solrContent;
             this.definedIn.push(document);
           });

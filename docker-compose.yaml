@@ -1,12 +1,5 @@
 version: '3'
 services:
-  termextract:
-    image: docker.crosslang.com/ctlg-manager/termextract:latest
-    ports:
-      - "5001:5001"
-    env_file:
-      - ./secrets/django-docker.env
-
   uima:
     build: ./uima-html-to-text
     ports:

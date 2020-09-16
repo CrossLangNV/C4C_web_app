@@ -28,15 +28,16 @@ from searchapp.solr_call import solr_search_website_sorted, solr_search_website_
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
-local_mock_server = "http://localhost:8008"
-UIMA_URL = {"BASE": "http://uima:8008", # http://uima:8008
+
+sofa_id = "html2textView"
+UIMA_URL = {"BASE": "http://uima:8008",  # http://uima:8008
             "HTML2TEXT": "/html2text",
             "TEXT2HTML": "/text2html",
             "TYPESYSTEM": "/html2text/typesystem",
-            }
+}
 SOLR_URL = "http://solr:8983"
-TERMEXTRACT_URL = "http://192.168.105.122:5001"
-
+TERM_EXTRACT_URL = "http://192.168.105.40:5001/dgconcepts/"  # Don't remove the '/' at the end here
+DEFINITIONS_EXTRACT_URL = "http://192.168.105.40:5002/extract_definitions"
 
 @shared_task
 def full_service_task(website_id):
@@ -130,46 +131,7 @@ def post_pre_analyzed_to_solr(data):
 
 @shared_task
 def test_solr_preanalyzed_update():
-    atomic_update = [
-        {
-            "id": "000f22d9-0351-5a6f-85de-7ee3fa44e943",
-            "concept_occurs": {"set": {
-                "v": "1",
-                "str": json.dumps("new token"),
-                "tokens": [
-
-                ]
-            }}
-        }
-    ]
-
-    concept_occurs_tokens = atomic_update[0]['concept_occurs']['set']['tokens']
-
-    # Save the token information
-    token = "new token"
-    score = "0.90"
-    start = 0
-    end = 3
-
-    # Encode score base64
-    encoded_bytes = base64.b64encode(score.encode("utf-8"))
-    encoded_score = str(encoded_bytes, "utf-8")
-
-    token_to_add = {
-        "t": token,
-        "s": start,
-        "e": end,
-        "y": "word",
-        "p": encoded_score
-    }
-    concept_occurs_tokens.insert(0, token_to_add)
-
-    escaped_json = json.dumps(atomic_update[0]['concept_occurs']['set'])
-    logger.info("type: %s", type(escaped_json))
-    logger.info("escapedJson: %s", escaped_json)
-
-    atomic_update[0]['concept_occurs']['set'] = escaped_json
-    post_pre_analyzed_to_solr(atomic_update)
+    logger.info("To be removed.")
 
 
 @shared_task
@@ -192,66 +154,92 @@ def extract_terms(website_id):
 
     for document in documents:
         if document['content_html'] is not None:
-            doc_id = document['id']
-            logger.info("Extracting terms from document: %s", doc_id)
+            logger.info("Extracting terms from document: %s", document['id'])
 
             content_html_text = {
-                "text": document['content_html']
+                "text": document['content_html'][0]
             }
-            content_html_text = json.dumps(content_html_text)
 
-            # Step ONE: Html2Text. Output: XMI
+            # Step 1: Html2Text - Get XMI from UIMA
             r = requests.post(UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"], json=content_html_text)
             if r.status_code == 200:
                 logger.info('Sent request to /html2text. Status code: %s', r.status_code)
-                text_cas = {
-                    "cas_content": base64.b64encode(r.content).decode('utf-8'),
+
+                # Step 2: NLP Term Definitions
+                # Write tempfile for typesystem.xml
+                typesystem_req = requests.get(UIMA_URL["BASE"] + UIMA_URL["TYPESYSTEM"])
+                typesystem_file = open("typesystem_tmp.xml", "w")
+                typesystem_file.write(typesystem_req.content.decode("utf-8"))
+
+                # Write tempfile for cas.xml
+                with open(typesystem_file.name, 'rb') as f:
+                    ts = cassis.load_typesystem(f)
+
+                content_decoded = r.content.decode('utf-8')
+                encoded_bytes = base64.b64encode(content_decoded.encode("utf-8"))
+                encoded_b64 = str(encoded_bytes, "utf-8")
+
+                input_for_term_defined = {
+                    # TODO: Remove MOCK
+                    "cas_content": encoded_b64,
                     "content_type": "html"
                 }
+                definitions_request = requests.post(DEFINITIONS_EXTRACT_URL,
+                                                    json=input_for_term_defined)
+                logger.info("Sent request to DefinitionExtract NLP. Status code: %s", definitions_request.status_code)
+                definitions_decoded_cas = base64.b64decode(
+                    json.loads(definitions_request.content)['cas_content']).decode("utf-8")
+                # Term definitions are now stored in this cas.
+                cas = cassis.load_cas_from_xmi(definitions_decoded_cas, typesystem=ts)
 
-                # STEP 2: NLP TextExtract. Input XMI/Output XMI
-                # Todo: Change URL to Docker URL and json= to r.content
-                request_nlp = requests.post(TERMEXTRACT_URL + "/dgconcepts/", json=text_cas)
+                # Step 3: NLP TextExtract
+                text_cas = {
+                    "cas_content": json.loads(definitions_request.content)['cas_content'],
+                    "content_type": "html"
+                }
+                request_nlp = requests.post(TERM_EXTRACT_URL, json=text_cas)
                 logger.info("Sent request to TextExtract NLP. Status code: %s", request_nlp.status_code)
+                decoded_cas_plus = base64.b64decode(json.loads(request_nlp.content)['cas_content']).decode("utf-8")
+                # Terms are stored in cas2
+                cas2 = cassis.load_cas_from_xmi(decoded_cas_plus, typesystem=ts)
 
-                # STEP 3: Text2Html (XMI OUTPUT)
-                # TODO JSON LOADS
+                cas1size = len(list(cas.get_view(sofa_id).select(
+                    "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence")))
+                logger.info("cas1 size: %s", cas1size)
+
+                # Term defined, we check which terms are covered by definitions
+                for defi in cas.get_view(sofa_id).select(
+                        "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"):
+                    for term in cas2.get_view(sofa_id).select_covered(
+                            "de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf",
+                            defi):
+                        logger.info("covering term: %s", term.get_covered_text())
+                        logger.info("covering defi: %s", defi.get_covered_text())
+
+                        # Save Term Definitions in Django
+                        Concept.objects.update_or_create(name=term.get_covered_text(), defaults=
+                                                         {'definition': defi.get_covered_text()})
+                        logger.info("Saved new concept '%s' to the Concept Glossary with definition '%s'",
+                                    term.get_covered_text(),
+                                    defi.get_covered_text())
+
+                # Step 4: Text2Html - Send CAS+ (XMI) to UIMA
                 cas_plus_content = json.loads(request_nlp.content)
-
                 decoded_cas_plus = base64.b64decode(cas_plus_content['cas_content']).decode("utf-8")
-
                 cas_plus_text_json = {
                     "text": decoded_cas_plus
                 }
-
-                # TEXT 2 HTML
                 request_text_to_html = requests.post(UIMA_URL["BASE"] + UIMA_URL["TEXT2HTML"],
                                                      json=cas_plus_text_json)
                 logger.info("Sent request to /text2html. Status code: %s", request_text_to_html.status_code)
                 final_xmi = request_text_to_html.content.decode("utf-8")
 
-                # STEP 4: Read the Terms (TfIdfs) from the XMI with DKPro Cassis
-                # Write tempfile for typesystem.xml
-                # Todo: Change URL to Docker URL
-                typesystem_req = requests.get(UIMA_URL["BASE"] + UIMA_URL["TYPESYSTEM"])
-                typesystem_file = open("typesystem_tmp.xml", "w")
-                typesystem_file.write(typesystem_req.content.decode("utf-8"))
-                # Write tempfile for cas.xml
-                cas_file = open("cas_tmp.xml", "w")
-
-                cas_file.write(final_xmi)
-                with open(typesystem_file.name, 'rb') as f:
-                    ts = cassis.load_typesystem(f)
-
-                with open(cas_file.name, 'rb') as f:
-                    cas = cassis.load_cas_from_xmi(f, typesystem=ts)
-
-                # STEP 5: Send to Solr
+                # Step 5: Send term extractions to Solr (term_occurs field)
 
                 # Convert the output to a readable format for Solr
                 atomic_update = [
                     {
-                        "id": doc_id,
+                        "id": document['id'],
                         "concept_occurs": {"set": {
                             "v": "1",
                             "str": json.dumps(cas.sofa_string),
@@ -261,16 +249,11 @@ def extract_terms(website_id):
                         }}
                     }
                 ]
-
                 concept_occurs_tokens = atomic_update[0]['concept_occurs']['set']['tokens']
-                # TODO Later: concept_defined and reporting_obligations
 
-                sofa_id = "html2textView"
-                list_select = list(
-                    cas.get_view(sofa_id).select("de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"))
-
+                # Select all Tfidfs from the CAS
                 i = 0
-                for term in list_select:
+                for term in cas2.get_view(sofa_id).select("de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"):
                     # Save the token information
                     token = term.get_covered_text()
                     score = term.tfidfValue
@@ -291,21 +274,52 @@ def extract_terms(website_id):
                     concept_occurs_tokens.insert(i, token_to_add)
                     i = i + 1
 
-                    # Add to Djangoo
-                    # Todo: Change definition to the one from NLP pipeline
-                    Concept.objects.get_or_create(name=token, definition=token)
+                    logger.info("[concept_occurs] Added term '%s' to the PreAnalyzed payload (i=%d) (token pos: %s-%s)",
+                                token, i, start, end)
 
-                    logger.info("Added term '%s' to the PreAnalyzed payload (i=%d) (token pos: %s-%s)", token, i, start,
-                                end)
-
-                # Sort tokens because this is required for Solr
-                logger.info("concept_occurs_tokens: %s", concept_occurs_tokens)
-                concept_occurs_tokens = concept_occurs_tokens.sort(key=lambda x: x['s'])
-
+                # Step 6: Post term_occurs to Solr
                 escaped_json = json.dumps(atomic_update[0]['concept_occurs']['set'])
-
                 atomic_update[0]['concept_occurs']['set'] = escaped_json
                 post_pre_analyzed_to_solr(atomic_update)
+
+                # Step 7: Send concept terms to Solr ('concept_defined' field)
+                atomic_update_defined = [
+                    {
+                        "id": document['id'],
+                        "concept_defined": {"set": {
+                            "v": "1",
+                            "str": json.dumps(cas.sofa_string),
+                            "tokens": [
+
+                            ]
+                        }}
+                    }
+                ]
+                concept_defined_tokens = atomic_update_defined[0]['concept_defined']['set']['tokens']
+
+                j = 0
+                for defi in cas.get_view(sofa_id).select(
+                        "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"):
+                    token_defined = defi.get_covered_text()
+                    start_defined = term.begin
+                    end_defined = term.end
+
+                    token_to_add_defined = {
+                        "t": token_defined,
+                        "s": start_defined,
+                        "e": end_defined,
+                        "y": "word"
+                    }
+                    concept_defined_tokens.insert(i, token_to_add_defined)
+                    j = j + 1
+
+                    logger.info("[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
+                                token_defined, j, start_defined, end_defined)
+
+                # Step 8: Post term_defined to Solr
+                escaped_json_def = json.dumps(atomic_update_defined[0]['concept_defined']['set'])
+                atomic_update_defined[0]['concept_defined']['set'] = escaped_json_def
+                post_pre_analyzed_to_solr(atomic_update_defined)
 
 
 @shared_task
