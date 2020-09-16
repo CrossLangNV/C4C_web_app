@@ -12,6 +12,7 @@ import cassis
 import pysolr
 import requests
 from celery import shared_task, chain
+from django.core.exceptions import ValidationError
 from jsonlines import jsonlines
 from minio import Minio, ResponseError
 from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
@@ -355,7 +356,11 @@ def sync_documents_task(website_id):
     docs = Document.objects.filter(
         date_last_update__lte=datetime.now() - timedelta(days=how_many_days))
     for doc in docs:
-        Tag.objects.create(value="OFFLINE", document=doc)
+        try:
+            Tag.objects.create(value="OFFLINE", document=doc)
+        except ValidationError as e:
+            # tag exists, skip
+            logger.debug(str(e))
 
 
 @shared_task
