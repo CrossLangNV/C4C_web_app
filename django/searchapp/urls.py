@@ -107,6 +107,8 @@ urlpatterns = [
     path('api/solrdocument/search/<search_term>', views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
     path('api/solrdocument/search/query/<search_term>', views.SolrDocumentSearchQuery.as_view(),
          name='solr_document_search_query_api'),
+    path('api/solrdocument/search/query/preanalyzed/<search_term>', views.SolrDocumentsSearchQueryPreAnalyzed.as_view(),
+         name='solr_document_search_query_preanalyzed_api'),
     path('api/solrdocuments/like/<id>', views.SimilarDocumentsAPIView.as_view(),
          name='similar_documents_api'),
 
