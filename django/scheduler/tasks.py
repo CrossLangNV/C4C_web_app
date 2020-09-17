@@ -301,8 +301,8 @@ def extract_terms(website_id):
                 for defi in cas.get_view(sofa_id).select(
                         "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"):
                     token_defined = defi.get_covered_text()
-                    start_defined = term.begin
-                    end_defined = term.end
+                    start_defined = defi.begin
+                    end_defined = defi.end
 
                     token_to_add_defined = {
                         "t": token_defined,
