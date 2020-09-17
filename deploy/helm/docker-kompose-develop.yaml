@@ -1,5 +1,21 @@
 version: '3'
 services:
+  termextract:
+    image: docker.crosslang.com/ctlg-manager/termextract:latest
+    ports:
+      - "5001:5001"
+    labels:
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+
+  definitionextract:
+    image: docker.crosslang.com/ctlg-manager/definitionextract:latest
+    ports:
+      - "5002:5002"
+    labels:
+      kompose.image-pull-secret: "crosslang"
+      kompose.image-pull-policy: "Always"
+
   uima:
     image: docker.crosslang.com/ctlg-manager/uima-html-to-text:develop-latest
     ports:
