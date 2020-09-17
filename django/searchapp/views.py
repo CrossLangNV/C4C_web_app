@@ -18,7 +18,8 @@ from .models import Website, Document, Attachment, AcceptanceState, AcceptanceSt
 from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
-from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt
+from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt, \
+    solr_search_query_paginated_preanalyzed
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -284,6 +285,20 @@ class SolrDocumentSearchQuery(APIView):
                                            'id'),
                                        sort_by=request.GET.get('sortBy'),
                                        sort_direction=request.GET.get('sortDirection'))
+        return Response(result)
+
+class SolrDocumentsSearchQueryPreAnalyzed(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, search_term, format=None):
+        result = solr_search_query_paginated_preanalyzed(core="documents", term=search_term,
+                                             page_number=request.GET.get('pageNumber', 1),
+                                             rows_per_page=request.GET.get(
+                                                 'pageSize', 1),
+                                             ids_to_filter_on=request.GET.getlist(
+                                                 'id'),
+                                             sort_by=request.GET.get('sortBy'),
+                                             sort_direction=request.GET.get('sortDirection'))
         return Response(result)
 
 
