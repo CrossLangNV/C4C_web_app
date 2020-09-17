@@ -142,7 +142,7 @@ export class ApiService {
     sortBy: string,
     sortDirection: string
   ): Observable<any[]> {
-    let requestUrl = `${this.API_URL}/solrdocument/search/query/preanalyzed/{!term f=${field}}${term}?pageNumber=${pageNumber}&pageSize=${pageSize}&hl=on&hl.fl=content_html`;
+    let requestUrl = `${this.API_URL}/solrdocument/search/query/preanalyzed/{!term f=${field}}${encodeURIComponent(term)}?pageNumber=${pageNumber}&pageSize=${pageSize}&hl=on&hl.fl=*`;
     // let requestUrl = `http://localhost:8983/solr/documents/select?hl.fl=${field}&hl=on&q={!term f=${field}}${term}`;
     idsFilter.forEach((id) => {
       requestUrl += `&id=${id}`;
