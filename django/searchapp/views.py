@@ -104,8 +104,14 @@ class DocumentListAPIView(ListCreateAPIView):
                                                                     Q(acceptance_states__value="Rejected")))
         filtertype = self.request.GET.get('filterType', "")
         if filtertype == "unvalidated":
-            q = q.exclude(Q(acceptance_states__value="Rejected")
-                          | Q(acceptance_states__value="Accepted"))
+            unvalidated_doc_ids = AcceptanceState.objects.filter(value="Unvalidated").values_list('document__id',
+                                                                                                  flat=True).order_by(
+                "document__id").distinct()
+            other_doc_ids = AcceptanceState.objects.exclude(value="Unvalidated").values_list('document__id',
+                                                                                             flat=True).order_by(
+                "document__id").distinct()
+
+            q = q.filter(id__in=unvalidated_doc_ids).difference(q.filter(id__in=other_doc_ids))
         if filtertype == "accepted":
             q = q.filter(acceptance_states__value="Accepted").distinct()
         if filtertype == "rejected":
@@ -278,20 +284,7 @@ class SolrDocumentSearchQuery(APIView):
     # permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, search_term, format=None):
-        result = solr_search_query_paginated(core="documents", term=search_term, page_number=request.GET.get('pageNumber', 1),
-                                       rows_per_page=request.GET.get(
-                                           'pageSize', 1),
-                                       ids_to_filter_on=request.GET.getlist(
-                                           'id'),
-                                       sort_by=request.GET.get('sortBy'),
-                                       sort_direction=request.GET.get('sortDirection'))
-        return Response(result)
-
-class SolrDocumentsSearchQueryPreAnalyzed(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, search_term, format=None):
-        result = solr_search_query_paginated_preanalyzed(core="documents", term=search_term,
+        result = solr_search_query_paginated(core="documents", term=search_term,
                                              page_number=request.GET.get('pageNumber', 1),
                                              rows_per_page=request.GET.get(
                                                  'pageSize', 1),
@@ -299,6 +292,21 @@ class SolrDocumentsSearchQueryPreAnalyzed(APIView):
                                                  'id'),
                                              sort_by=request.GET.get('sortBy'),
                                              sort_direction=request.GET.get('sortDirection'))
+        return Response(result)
+
+
+class SolrDocumentsSearchQueryPreAnalyzed(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, search_term, format=None):
+        result = solr_search_query_paginated_preanalyzed(core="documents", term=search_term,
+                                                         page_number=request.GET.get('pageNumber', 1),
+                                                         rows_per_page=request.GET.get(
+                                                             'pageSize', 1),
+                                                         ids_to_filter_on=request.GET.getlist(
+                                                             'id'),
+                                                         sort_by=request.GET.get('sortBy'),
+                                                         sort_direction=request.GET.get('sortDirection'))
         return Response(result)
 
 
@@ -313,6 +321,7 @@ class SimilarDocumentsAPIView(APIView):
         for id, title, website, coeff in similar_document_ids_with_coeff:
             formatted_response.append({'id': id, 'title': title, 'website': website, 'coefficient': coeff})
         return Response(formatted_response)
+
 
 class ExportDocumentsLaunch(APIView):
     permission_classes = [permissions.IsAuthenticated]
