@@ -115,7 +115,7 @@ class DocumentListAPIView(ListCreateAPIView):
         tag = self.request.GET.get('tag', "")
         if tag:
             q = q.filter(tags__value=tag)
-        return q.order_by("-created_at")
+        return q
 
 
 class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
