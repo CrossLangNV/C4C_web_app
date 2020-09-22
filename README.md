@@ -1,3 +1,11 @@
+## UIMA
+Because the UIMA source code is in a separate Git submodule, execute the following command:
+`git submodule update --init`
+
+After the code is available, the UIMA project must be built with Maven:
+
+`mvn clean install`
+
 ## Django - Solr app
 
 Django search web application with PostgreSQL as the db backend for Django (administration) and with Solr as the main db / search engine.
@@ -5,6 +13,10 @@ Django search web application with PostgreSQL as the db backend for Django (admi
 Provide a `secrets/django-docker.env` and run with `docker-compose up -d` (see secrets/django-docker.env.sample)
 
 Data for both PostgreSQL and Solr is persisted through named volumes.
+
+Configure Solr to have all the fields, run the following command in the solr directory:
+
+`./fields.sh`
 
 
 ### Django data
@@ -71,3 +83,8 @@ curl -k -v --user crosslang:isthebest "https://solr.dgfisma.crosslang.com/solr/f
 
 rancher kubectl cp fisma-ctlg-manager/solr-df687b79b-hrnmj:/var/solr solr-df687b79b-hrnmj
 
+### How to get data in your local environment (updated 22/9/2020)
+- Go to http://localhost:8000/admin/searchapp/website/
+- Add the following websites for example `EURLEX` `SRB`
+- Select the websites and run each action seperately from `Scrape website` to `Extract terms`
+- After a few minutes of scraping with `Scrape website`, restart your celery container because this could take a lot of time
