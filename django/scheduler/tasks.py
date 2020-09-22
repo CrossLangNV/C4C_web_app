@@ -30,7 +30,8 @@ logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
 
 sofa_id = "html2textView"
-UIMA_URL = {"BASE": "http://uima:8008",  # http://uima:8008
+sofa_id_text2html = "text2htmlView"
+UIMA_URL = {"BASE": "http://192.168.105.177:8008",  # http://uima:8008
             "HTML2TEXT": "/html2text",
             "TEXT2HTML": "/text2html",
             "TYPESYSTEM": "/html2text/typesystem",
@@ -180,7 +181,6 @@ def extract_terms(website_id):
                 encoded_b64 = str(encoded_bytes, "utf-8")
 
                 input_for_term_defined = {
-                    # TODO: Remove MOCK
                     "cas_content": encoded_b64,
                     "content_type": "html"
                 }
@@ -190,7 +190,7 @@ def extract_terms(website_id):
                 definitions_decoded_cas = base64.b64decode(
                     json.loads(definitions_request.content)['cas_content']).decode("utf-8")
                 # Term definitions are now stored in this cas.
-                cas = cassis.load_cas_from_xmi(definitions_decoded_cas, typesystem=ts)
+
 
                 # Step 3: NLP TextExtract
                 text_cas = {
@@ -200,30 +200,8 @@ def extract_terms(website_id):
                 request_nlp = requests.post(TERM_EXTRACT_URL, json=text_cas)
                 logger.info("Sent request to TextExtract NLP. Status code: %s", request_nlp.status_code)
                 decoded_cas_plus = base64.b64decode(json.loads(request_nlp.content)['cas_content']).decode("utf-8")
-                # Terms are stored in cas2
-                cas2 = cassis.load_cas_from_xmi(decoded_cas_plus, typesystem=ts)
 
-                cas1size = len(list(cas.get_view(sofa_id).select(
-                    "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence")))
-                logger.info("cas1 size: %s", cas1size)
-
-                # Term defined, we check which terms are covered by definitions
-                for defi in cas.get_view(sofa_id).select(
-                        "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"):
-                    for term in cas2.get_view(sofa_id).select_covered(
-                            "de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf",
-                            defi):
-                        logger.info("covering term: %s", term.get_covered_text())
-                        logger.info("covering defi: %s", defi.get_covered_text())
-
-                        # Save Term Definitions in Django
-                        Concept.objects.update_or_create(name=term.get_covered_text(), defaults=
-                                                         {'definition': defi.get_covered_text()})
-                        logger.info("Saved new concept '%s' to the Concept Glossary with definition '%s'",
-                                    term.get_covered_text(),
-                                    defi.get_covered_text())
-
-                # Step 4: Text2Html - Send CAS+ (XMI) to UIMA
+                # Step 4: Text2Html - Send CAS+ (XMI) to UIMA - TERM EXTRACT
                 cas_plus_content = json.loads(request_nlp.content)
                 decoded_cas_plus = base64.b64decode(cas_plus_content['cas_content']).decode("utf-8")
                 cas_plus_text_json = {
@@ -232,7 +210,79 @@ def extract_terms(website_id):
                 request_text_to_html = requests.post(UIMA_URL["BASE"] + UIMA_URL["TEXT2HTML"],
                                                      json=cas_plus_text_json)
                 logger.info("Sent request to /text2html. Status code: %s", request_text_to_html.status_code)
-                final_xmi = request_text_to_html.content.decode("utf-8")
+                terms_decoded_cas = request_text_to_html.content.decode("utf-8")
+
+                # Step 4: Text2Html - Send CAS+ (XMI) to UIMA - DEFINITION EXTRACT
+                cas_plus_content = json.loads(definitions_request.content)
+                decoded_cas_plus = base64.b64decode(cas_plus_content['cas_content']).decode("utf-8")
+                cas_plus_text_json = {
+                    "text": decoded_cas_plus
+                }
+                request_text_to_html = requests.post(UIMA_URL["BASE"] + UIMA_URL["TEXT2HTML"],
+                                                     json=cas_plus_text_json)
+                logger.info("Sent request to /text2html. Status code: %s", request_text_to_html.status_code)
+                definitions_decoded_cas = request_text_to_html.content.decode("utf-8")
+
+                # Load CAS from NLP
+                cas = cassis.load_cas_from_xmi(definitions_decoded_cas, typesystem=ts)
+                cas2 = cassis.load_cas_from_xmi(terms_decoded_cas, typesystem=ts)
+
+                atomic_update_defined = [
+                    {
+                        "id": document['id'],
+                        "concept_defined": {"set": {
+                            "v": "1",
+                            "str": cas.sofa_string,
+                            "tokens": [
+
+                            ]
+                        }}
+                    }
+                ]
+                concept_defined_tokens = atomic_update_defined[0]['concept_defined']['set']['tokens']
+                j = 0
+
+                count = 0
+                for c in cas.get_view(sofa_id_text2html).select(
+                        "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"):
+                    count = count + 1
+                logger.info("count cas: %s", count)
+
+                # Term defined, we check which terms are covered by definitions
+                for defi in cas.get_view(sofa_id_text2html).select(
+                        "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"):
+                    for term in cas2.get_view(sofa_id_text2html).select_covered(
+                            "de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf",
+                            defi):
+                        logger.info("covering term: '%s' with position (%s, %s)", term.get_covered_text(), term.begin, term.end)
+                        logger.info("covering defi: '%s' with position (%s, %s)", defi.get_covered_text(), defi.begin, defi.end)
+
+                        # Save Term Definitions in Django
+                        Concept.objects.update_or_create(name=term.get_covered_text(), defaults=
+                                                         {'definition': defi.get_covered_text()})
+                        logger.info("Saved new concept '%s' to the Concept Glossary with definition '%s'",
+                                    term.get_covered_text(),
+                                    defi.get_covered_text())
+
+                        # Step 7: Send concept terms to Solr ('concept_defined' field)
+                        token_defined = defi.get_covered_text()
+                        start_defined = defi.begin
+                        end_defined = defi.end
+
+                        token_to_add_defined = {
+                            "t": token_defined,
+                            "s": start_defined,
+                            "e": end_defined,
+                            "y": "word"
+                        }
+                        concept_defined_tokens.insert(j, token_to_add_defined)
+                        j = j + 1
+
+                        logger.info(
+                            "[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
+                            token_defined, j, start_defined, end_defined)
+
+
 
                 # Step 5: Send term extractions to Solr (term_occurs field)
 
@@ -242,7 +292,7 @@ def extract_terms(website_id):
                         "id": document['id'],
                         "concept_occurs": {"set": {
                             "v": "1",
-                            "str": json.dumps(cas.sofa_string),
+                            "str": cas.sofa_string,
                             "tokens": [
 
                             ]
@@ -253,7 +303,7 @@ def extract_terms(website_id):
 
                 # Select all Tfidfs from the CAS
                 i = 0
-                for term in cas2.get_view(sofa_id).select("de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"):
+                for term in cas2.get_view(sofa_id_text2html).select("de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"):
                     # Save the token information
                     token = term.get_covered_text()
                     score = term.tfidfValue
@@ -282,44 +332,11 @@ def extract_terms(website_id):
                 atomic_update[0]['concept_occurs']['set'] = escaped_json
                 post_pre_analyzed_to_solr(atomic_update)
 
-                # Step 7: Send concept terms to Solr ('concept_defined' field)
-                atomic_update_defined = [
-                    {
-                        "id": document['id'],
-                        "concept_defined": {"set": {
-                            "v": "1",
-                            "str": json.dumps(cas.sofa_string),
-                            "tokens": [
-
-                            ]
-                        }}
-                    }
-                ]
-                concept_defined_tokens = atomic_update_defined[0]['concept_defined']['set']['tokens']
-
-                j = 0
-                for defi in cas.get_view(sofa_id).select(
-                        "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"):
-                    token_defined = defi.get_covered_text()
-                    start_defined = term.begin
-                    end_defined = term.end
-
-                    token_to_add_defined = {
-                        "t": token_defined,
-                        "s": start_defined,
-                        "e": end_defined,
-                        "y": "word"
-                    }
-                    concept_defined_tokens.insert(i, token_to_add_defined)
-                    j = j + 1
-
-                    logger.info("[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
-                                token_defined, j, start_defined, end_defined)
-
                 # Step 8: Post term_defined to Solr
                 escaped_json_def = json.dumps(atomic_update_defined[0]['concept_defined']['set'])
                 atomic_update_defined[0]['concept_defined']['set'] = escaped_json_def
                 post_pre_analyzed_to_solr(atomic_update_defined)
+        break
 
 
 @shared_task
@@ -349,6 +366,7 @@ def sync_documents_task(website_id):
             'date_last_update', datetime.now())
         data = {
             "author": solr_doc.get('author', [''])[0][:20],
+            "acceptance_state": solr_doc.get('acceptance_state', [''])[0][:100],
             "celex": solr_doc.get('celex', [''])[0][:20],
             "consolidated_versions": ','.join(x.strip() for x in solr_doc.get('consolidated_versions', [''])),
             "date": solr_doc_date,
