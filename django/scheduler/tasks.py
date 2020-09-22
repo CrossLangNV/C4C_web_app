@@ -31,14 +31,14 @@ workpath = os.path.dirname(os.path.abspath(__file__))
 
 sofa_id = "html2textView"
 sofa_id_text2html = "text2htmlView"
-UIMA_URL = {"BASE": os.environ['CELERY_UIMA_URL'],  # http://uima:8008
+UIMA_URL = {"BASE": os.environ['GLOSSARY_UIMA_URL'],  # http://uima:8008
             "HTML2TEXT": "/html2text",
             "TEXT2HTML": "/text2html",
             "TYPESYSTEM": "/html2text/typesystem",
 }
-SOLR_URL = os.environ['CELERY_SOLR_URL']
-TERM_EXTRACT_URL = os.environ['CELERY_TERM_EXTRACT_URL']  # Don't remove the '/' at the end here
-DEFINITIONS_EXTRACT_URL = os.environ['CELERY_DEFINITIONS_EXTRACT_URL']
+SOLR_URL = os.environ['GLOSSARY_SOLR_URL']
+TERM_EXTRACT_URL = os.environ['GLOSSARY_TERM_EXTRACT_URL']  # Don't remove the '/' at the end here
+DEFINITIONS_EXTRACT_URL = os.environ['GLOSSARY_DEFINITIONS_EXTRACT_URL']
 
 @shared_task
 def reset_pre_analyzed_fields(website_id):
