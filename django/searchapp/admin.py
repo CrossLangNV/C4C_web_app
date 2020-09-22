@@ -27,6 +27,11 @@ rest_site.register(Tag)
 
 rest_site.register(User)
 
+def reset_pre_analyzed_fields(modeladmin, request, queryset):
+    for website in queryset:
+        tasks.reset_pre_analyzed_fields.delay(website.id)
+        logger.info("Deleted PreAnalyzed fields")
+
 
 def full_service(modeladmin, request, queryset):
     for website in queryset:
@@ -89,7 +94,8 @@ class WebsiteAdmin(admin.ModelAdmin):
     list_display = ['name', 'count_documents']
     ordering = ['name']
     actions = [full_service, scrape_website, sync_scrapy_to_solr, parse_content_to_plaintext,
-               sync_documents, score_documents, extract_terms, test_solr_preanalyzed_update, export_documents, delete_from_solr]
+               sync_documents, score_documents, extract_terms, test_solr_preanalyzed_update, export_documents,
+               delete_from_solr, reset_pre_analyzed_fields]
 
     def count_documents(self, doc):
         return doc.documents.count()
