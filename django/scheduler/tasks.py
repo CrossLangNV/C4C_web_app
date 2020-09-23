@@ -390,8 +390,6 @@ def extract_terms(website_id):
                 atomic_update_defined[0]['concept_defined']['set'] = escaped_json_def
                 if len(atomic_update_defined) > 0:
                     post_pre_analyzed_to_solr(atomic_update_defined)
-        break
-
 
 @shared_task
 def score_documents_task(website_id):
