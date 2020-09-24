@@ -26,7 +26,7 @@ from twisted.internet import reactor
 
 from glossary.models import Concept
 from searchapp.datahandling import score_documents
-from searchapp.models import Website, Document, AcceptanceState, Tag
+from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
 
 logger = logging.getLogger(__name__)
@@ -681,6 +681,22 @@ def sync_scrapy_to_solr_task(website_id):
     except ResponseError as err:
         raise
 
+
+@shared_task
+def check_documents_unvalidated_task(website_id):
+    website = Website.objects.get(pk=website_id)
+    logger.info("Set unvalidated field for all documents for website: %s", str(website))
+    docs = Document.objects.filter(website=website)
+    for doc in docs:
+        # get all acceptance states that are not unvalidated
+        validated_states = AcceptanceState.objects.filter(document=doc).exclude(
+            value=AcceptanceStateValue.UNVALIDATED)
+        # update document unvalidated state accordingly
+        if not validated_states:
+            doc.unvalidated = True
+        else:
+            doc.unvalidated = False
+        doc.save()
 
 def create_bucket(client, name):
     try:

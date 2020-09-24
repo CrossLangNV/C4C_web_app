@@ -101,7 +101,7 @@ def score_documents(website_name, solr_documents, use_pdf_files):
                          '/' + core + '/update?commit=true')
 
     # Add unvalidated state for documents without AcceptanceState
-    # This can happen when documents didn't have content of couldn't calculate a score
+    # This can happen when documents didn't have content or couldn't calculate a score
     logger.info("Handling documents without AcceptanceState...")
     website = Website.objects.get(name=website_name)
     docs = Document.objects.filter(Q(website=website) & Q(
