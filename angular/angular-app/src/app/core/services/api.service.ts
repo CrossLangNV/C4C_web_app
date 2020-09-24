@@ -142,18 +142,28 @@ export class ApiService {
     sortBy: string,
     sortDirection: string
   ): Observable<any[]> {
-    let requestUrl = `${this.API_URL}/solrdocument/search/query/preanalyzed/{!term f=${field}}${encodeURIComponent(term)}?pageNumber=${pageNumber}&pageSize=${pageSize}&hl=on&hl.fl=*`;
+    let requestUrl = `${this.API_URL}/solrdocument/search/query/preanalyzed/`;
     // let requestUrl = `http://localhost:8983/solr/documents/select?hl.fl=${field}&hl=on&q={!term f=${field}}${term}`;
-    idsFilter.forEach((id) => {
-      requestUrl += `&id=${id}`;
-    });
+
     if (sortBy) {
-      requestUrl += `&sortBy=${sortBy}`;
+      requestUrl += `?sortBy=${sortBy}`;
       if (sortDirection) {
         requestUrl += `&sortDirection=${sortDirection}`;
       }
+      if (pageNumber) {
+        requestUrl += `&pageNumber=${pageNumber}`;
+      }
+      if (pageSize) {
+        requestUrl += `&pageSize=${pageSize}`;
+      }
     }
-    return this.http.get<any[]>(requestUrl).pipe(
+
+    let formData = new FormData();
+    formData.append('query', `{!term f=${field}}${term}`);
+
+    console.log("requestUrl: "+requestUrl)
+
+    return this.http.post<any[]>(requestUrl, formData).pipe(
       map((data: any[]) => {
         const result = [data[0]];
         result.push(data[1]);

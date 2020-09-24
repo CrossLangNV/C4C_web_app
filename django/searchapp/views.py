@@ -298,13 +298,13 @@ class SolrDocumentSearchQuery(APIView):
 class SolrDocumentsSearchQueryPreAnalyzed(APIView):
     # permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, search_term, format=None):
-        result = solr_search_query_paginated_preanalyzed(core="documents", term=search_term,
+
+
+    def post(self, request, format=None):
+        result = solr_search_query_paginated_preanalyzed(core="documents", term=request.data['query'],
                                                          page_number=request.GET.get('pageNumber', 1),
                                                          rows_per_page=request.GET.get(
                                                              'pageSize', 1),
-                                                         ids_to_filter_on=request.GET.getlist(
-                                                             'id'),
                                                          sort_by=request.GET.get('sortBy'),
                                                          sort_direction=request.GET.get('sortDirection'))
         return Response(result)

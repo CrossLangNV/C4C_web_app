@@ -75,7 +75,7 @@ def solr_search_query_paginated(core="", term="", page_number=1, rows_per_page=1
     return num_found, search
 
 
-def solr_search_query_paginated_preanalyzed(core="", term="", page_number=1, rows_per_page=10, ids_to_filter_on=None,
+def solr_search_query_paginated_preanalyzed(core="", term="", page_number=1, rows_per_page=10,
                                             sort_by=None, sort_direction='asc'):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     # solr page starts at 0
@@ -86,9 +86,6 @@ def solr_search_query_paginated_preanalyzed(core="", term="", page_number=1, row
                'hl': 'on', 'hl.fl': '*',
                'hl.simple.pre': '<span class="highlight">',
                'hl.simple.post': '</span>'}
-    if ids_to_filter_on:
-        fq_ids = 'id:(' + ' OR '.join(ids_to_filter_on) + ')'
-        options['fq'] = fq_ids
     if sort_by:
         options['sort'] = sort_by + ' ' + sort_direction
     result = client.search(term, **options)
