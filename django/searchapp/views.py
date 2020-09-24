@@ -104,14 +104,7 @@ class DocumentListAPIView(ListCreateAPIView):
                                                                     Q(acceptance_states__value="Rejected")))
         filtertype = self.request.GET.get('filterType', "")
         if filtertype == "unvalidated":
-            unvalidated_doc_ids = AcceptanceState.objects.filter(value="Unvalidated").values_list('document__id',
-                                                                                                  flat=True).order_by(
-                "document__id").distinct()
-            other_doc_ids = AcceptanceState.objects.exclude(value="Unvalidated").values_list('document__id',
-                                                                                             flat=True).order_by(
-                "document__id").distinct()
-
-            q = q.filter(id__in=unvalidated_doc_ids).difference(q.filter(id__in=other_doc_ids))
+            q = q.filter(unvalidated=True)
         if filtertype == "accepted":
             q = q.filter(acceptance_states__value="Accepted").distinct()
         if filtertype == "rejected":
@@ -297,8 +290,6 @@ class SolrDocumentSearchQuery(APIView):
 
 class SolrDocumentsSearchQueryPreAnalyzed(APIView):
     # permission_classes = [permissions.IsAuthenticated]
-
-
 
     def post(self, request, format=None):
         result = solr_search_query_paginated_preanalyzed(core="documents", term=request.data['query'],
