@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import shutil
+import time
 from datetime import datetime, timedelta
 from io import BytesIO
 
@@ -198,19 +199,20 @@ def extract_terms(website_id):
 
     for document in documents:
         if document['content_html'] is not None:
-            logger.info("Extracting terms from document: %s", document['id'])
+            logger.info("Extracting terms from document id: %s", document['id'])
 
             content_html_text = {
                 "text": document['content_html'][0]
             }
 
             # Step 1: Html2Text - Get XMI from UIMA
+            start = time.time()
             r = requests.post(UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"], json=content_html_text)
             if r.status_code == 200:
                 logger.info('Sent request to %s. Status code: %s', UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"],
                             r.status_code)
-
-                logger.info("html2text response cas: %s", r.content)
+                end = time.time()
+                logger.info("UIMA Html2Text took %s seconds to succeed.", end-start)
 
                 # Step 2: NLP Term Definitions
                 # Write tempfile for typesystem.xml
@@ -230,9 +232,13 @@ def extract_terms(website_id):
                     "cas_content": encoded_b64,
                     "content_type": "html"
                 }
+
+                start = time.time()
                 definitions_request = requests.post(DEFINITIONS_EXTRACT_URL,
                                                     json=input_for_term_defined)
+                end = time.time()
                 logger.info("Sent request to DefinitionExtract NLP. Status code: %s", definitions_request.status_code)
+                logger.info("DefinitionExtract took %s seconds to succeed.", end-start)
                 definitions_decoded_cas = base64.b64decode(
                     json.loads(definitions_request.content)['cas_content']).decode("utf-8")
 
@@ -241,8 +247,11 @@ def extract_terms(website_id):
                     "cas_content": json.loads(definitions_request.content)['cas_content'],
                     "content_type": "html"
                 }
+                start = time.time()
                 request_nlp = requests.post(TERM_EXTRACT_URL, json=text_cas)
+                end = time.time()
                 logger.info("Sent request to TextExtract NLP. Status code: %s", request_nlp.status_code)
+                logger.info("TermExtract took %s seconds to succeed.", end-start)
                 decoded_cas_plus = base64.b64decode(json.loads(request_nlp.content)['cas_content']).decode("utf-8")
 
                 # Step 4: Text2Html - Send CAS+ (XMI) to UIMA - TERM EXTRACT
@@ -251,11 +260,14 @@ def extract_terms(website_id):
                 cas_plus_text_json = {
                     "text": decoded_cas_plus[39:]
                 }
-                logger.info("cas_plus_text_json: %s", cas_plus_text_json)
+
+                start = time.time()
                 request_text_to_html = requests.post(UIMA_URL["BASE"] + UIMA_URL["TEXT2HTML"],
                                                      json=cas_plus_text_json)
+                end = time.time()
                 logger.info("Sent request to %s. Status code: %s", UIMA_URL["BASE"] + UIMA_URL["TEXT2HTML"],
                             request_text_to_html.status_code)
+                logger.info("UIMA Text2Html took %s seconds to succeed.", end - start)
                 terms_decoded_cas = request_text_to_html.content.decode("utf-8")
 
                 # Step 4: Text2Html - Send CAS+ (XMI) to UIMA - DEFINITION EXTRACT
