@@ -14,6 +14,8 @@ import requests
 from celery import shared_task, chain
 from django.core.exceptions import ValidationError
 from jsonlines import jsonlines
+from langdetect import detect_langs
+from langdetect.lang_detect_exception import LangDetectException
 from minio import Minio, ResponseError
 from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
 from scrapy.crawler import CrawlerRunner
@@ -418,9 +420,11 @@ def sync_documents_task(website_id):
         solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
         solr_doc_date_last_update = solr_doc.get(
             'date_last_update', datetime.now())
+        # sanity check in case date_last_update was a solr array field
+        if isinstance(solr_doc_date_last_update, list):
+            solr_doc_date_last_update = solr_doc_date_last_update[0]
         data = {
             "author": solr_doc.get('author', [''])[0][:20],
-            "acceptance_state": solr_doc.get('acceptance_state', [''])[0][:100],
             "celex": solr_doc.get('celex', [''])[0][:20],
             "consolidated_versions": ','.join(x.strip() for x in solr_doc.get('consolidated_versions', [''])),
             "date": solr_doc_date,
@@ -436,17 +440,49 @@ def sync_documents_task(website_id):
             "various": ''.join(x.strip() for x in solr_doc.get('various', [''])),
             "website": website,
         }
-        Document.objects.update_or_create(id=solr_doc["id"], defaults=data)
-    # tag documents that have not been updated in a while
+        # Update or create the document, this returns a tuple with the django document and a boolean indicating
+        # whether or not the document was created
+        current_doc, current_doc_created = Document.objects.update_or_create(id=solr_doc["id"], defaults=data)
+
+        # if document content is not english, add a FOREIGN Tag to the django document
+        solr_content = solr_doc.get('content', [''])[0]
+        if not is_document_english(solr_content):
+            try:
+                Tag.objects.create(value="FOREIGN", document=current_doc)
+            except ValidationError as e:
+                # tag exists, skip
+                logger.debug(str(e))
+        else:
+            # document is english, remove previous FOREIGN tag if it exists
+            try:
+                foreign_tag = Tag.objects.get(value="FOREIGN", document=current_doc)
+                foreign_tag.delete()
+            except Tag.DoesNotExist:
+                # FOREIGN tag not found, skip
+                pass
+
+    # check for outdated documents based on last time a document was found during scraping
     how_many_days = 30
-    docs = Document.objects.filter(
+    outdated_docs = Document.objects.filter(
         date_last_update__lte=datetime.now() - timedelta(days=how_many_days))
-    for doc in docs:
+    up_to_date_docs = Document.objects.filter(
+        date_last_update__gte=datetime.now() - timedelta(days=how_many_days))
+    # tag documents that have not been updated in a while
+    for doc in outdated_docs:
         try:
             Tag.objects.create(value="OFFLINE", document=doc)
         except ValidationError as e:
             # tag exists, skip
             logger.debug(str(e))
+    # untag if the documents are now up to date
+    for doc in up_to_date_docs:
+        # fetch OFFLINE tag for this document
+        try:
+            offline_tag = Tag.objects.get(value="OFFLINE", document=doc)
+            offline_tag.delete()
+        except Tag.DoesNotExist:
+            # OFFLINE tag not found, skip
+            pass
 
 
 @shared_task
@@ -570,6 +606,27 @@ def parse_content_to_plaintext_task(website_id):
     client.add(items)
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + '/update?commit=true')
+
+
+def is_document_english(plain_text):
+    english = False
+    detect_threshold = 0.4
+    try:
+        langs = detect_langs(plain_text)
+        number_langs = len(langs)
+        # trivial case for 1 language detected
+        if number_langs == 1:
+            if langs[0].lang == 'en':
+                english = True
+        # if 2 or more languages are detected, consider detect probability
+        else:
+            for detected in langs:
+                if detected.lang == 'en' and detected.prob >= detect_threshold:
+                    english = True
+                    break
+    except LangDetectException:
+        pass
+    return english
 
 
 @shared_task
