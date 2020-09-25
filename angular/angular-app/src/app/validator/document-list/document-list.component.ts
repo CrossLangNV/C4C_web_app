@@ -80,13 +80,13 @@ export class DocumentListComponent implements OnInit {
   dateSortIcon: IconDefinition = faSortDown;
   statesSortIcon: IconDefinition = faSort;
   filters = [
-    { id: 'none', name: 'Filter..' },
+    { id: '', name: 'Filter..' },
     { id: 'unvalidated', name: '..Unvalidated' },
     { id: 'accepted', name: '..Accepted' },
     { id: 'rejected', name: '..Rejected' },
   ];
   websites = [
-    { id: 'none', name: 'Website..' },
+    { id: '', name: 'Website..' },
     { id: 'bis', name: '..BIS' },
     { id: 'eiopa', name: '..EIOPA' },
     { id: 'esma', name: '..ESMA' },
