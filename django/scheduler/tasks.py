@@ -6,6 +6,7 @@ import logging
 import os
 import shutil
 import time
+import urllib
 from datetime import datetime, timedelta
 from io import BytesIO
 
@@ -39,7 +40,8 @@ UIMA_URL = {"BASE": os.environ['GLOSSARY_UIMA_URL'],  # http://uima:8008
             "TEXT2HTML": "/text2html",
             "TYPESYSTEM": "/html2text/typesystem",
 }
-SOLR_URL = os.environ['GLOSSARY_SOLR_URL']
+# TODO Theres already a solr defined
+SOLR_URL = os.environ['SOLR_URL']
 TERM_EXTRACT_URL = os.environ['GLOSSARY_TERM_EXTRACT_URL']  # Don't remove the '/' at the end here
 DEFINITIONS_EXTRACT_URL = os.environ['GLOSSARY_DEFINITIONS_EXTRACT_URL']
 
@@ -168,12 +170,14 @@ def export_documents(website_ids=None):
     logging.info("Removed: %s", zip_destination + '.zip')
 
 
+headers = {'Content-Type': 'application/json', 'Accept': '*/*'}
 def post_pre_analyzed_to_solr(data):
-    logger.info("solr post data: %s", json.dumps(data))
-    r = requests.post(SOLR_URL + "/solr/documents/update?commit=true", json=data)
-    logger.info("Sent PreAnalyzed fields to Solr. Got status code %s", r.status_code)
-    logger.info("Response: %s", r.content)
+    params = json.dumps(data).encode('utf8')
+    req = urllib.request.Request("http://solr:8983/solr/documents/update", data=params,
+                                 headers={'content-type': 'application/json'})
+    response = urllib.request.urlopen(req)
 
+    logger.info(response.read().decode('utf8'))
 
 @shared_task
 def test_solr_preanalyzed_update():
@@ -191,7 +195,7 @@ def extract_terms(website_id):
 
     # Query for Solr to find per website that has the content_html field (some do not)
     # TODO: Add "acceptance_state:accepted" to the query to filter out rejected documents
-    q = "website:" + website_name + " AND content_html:*"
+    q = "id:0005e567-04e2-5528-ab6d-0a576b13416c AND website:" + website_name + " AND content_html:*"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -348,27 +352,34 @@ def extract_terms(website_id):
                             "[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
                             token_defined, j, start_defined, end_defined)
 
-
-
                 # Step 5: Send term extractions to Solr (term_occurs field)
 
                 # Convert the output to a readable format for Solr
                 atomic_update = [
                     {
                         "id": document['id'],
-                        "concept_occurs": {"set": {
-                            "v": "1",
-                            "str": cas.sofa_string,
-                            "tokens": [
+                        "concept_occurs": {
+                            "set": {
+                                "v": "1",
+                                "str": cas2.sofa_string,
+                                "tokens": [
 
-                            ]
-                        }}
+                                ]
+                            }
+                        }
                     }
                 ]
+                logger.info("request to solr in bytes (occurs): %s", cas2.sofa_string.encode())
+                logger.info("request to solr in bytes (defined): %s", cas.sofa_string.encode())
+                logger.info("bytes (occurs): %s", bytes(cas2.sofa_string, 'utf-8'))
+                logger.info("bytes (defined): %s", bytes(cas.sofa_string, 'utf-8'))
                 concept_occurs_tokens = atomic_update[0]['concept_occurs']['set']['tokens']
 
                 # Select all Tfidfs from the CAS
                 i = 0
+                logger.info("cas 1 sofa string: %s", cas.get_view(sofa_id_text2html).sofa_string)
+                logger.info("cas 2 sofa string: %s", cas2.get_view(sofa_id_text2html).sofa_string)
+                logger.info("equals = %s", cas2.get_view(sofa_id_text2html).sofa_string == cas.get_view(sofa_id_text2html).sofa_string)
                 for term in cas2.get_view(sofa_id_text2html).select("de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"):
                     # Save the token information
                     token = term.get_covered_text()
@@ -393,6 +404,7 @@ def extract_terms(website_id):
                     logger.info("[concept_occurs] Added term '%s' to the PreAnalyzed payload (i=%d) (token pos: %s-%s)",
                                 token, i, start, end)
 
+
                 # Step 6: Post term_occurs to Solr
                 escaped_json = json.dumps(atomic_update[0]['concept_occurs']['set'])
                 atomic_update[0]['concept_occurs']['set'] = escaped_json
@@ -402,8 +414,16 @@ def extract_terms(website_id):
                 # Step 8: Post term_defined to Solr
                 escaped_json_def = json.dumps(atomic_update_defined[0]['concept_defined']['set'])
                 atomic_update_defined[0]['concept_defined']['set'] = escaped_json_def
-                if len(atomic_update_defined) > 0:
+                if len(concept_defined_tokens) > 0:
                     post_pre_analyzed_to_solr(atomic_update_defined)
+
+                core = 'documents'
+                requests.get(os.environ['SOLR_URL'] +
+                             '/' + core + '/update?commit=true')
+
+
+        break
+
 
 @shared_task
 def score_documents_task(website_id):
