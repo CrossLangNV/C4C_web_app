@@ -102,19 +102,19 @@ class DocumentListAPIView(ListCreateAPIView):
             email = self.request.GET.get('email', "")
             q = q.filter(Q(acceptance_states__user__email=email) & (Q(acceptance_states__value="Accepted") |
                                                                     Q(acceptance_states__value="Rejected")))
-        filtertype = self.request.GET.get('filterType', "")
-        if filtertype == "unvalidated":
-            q = q.filter(unvalidated=True)
-        if filtertype == "accepted":
-            q = q.filter(acceptance_states__value="Accepted").distinct()
-        if filtertype == "rejected":
-            q = q.filter(acceptance_states__value="Rejected").distinct()
         website = self.request.GET.get('website', "")
         if website:
             q = q.filter(website__name__iexact=website)
         tag = self.request.GET.get('tag', "")
         if tag:
             q = q.filter(tags__value=tag)
+        filtertype = self.request.GET.get('filterType', "")
+        if filtertype == "unvalidated":
+            q = q.filter(unvalidated=True)
+        elif filtertype == "accepted":
+            q = q.filter(acceptance_states__value="Accepted").distinct()
+        elif filtertype == "rejected":
+            q = q.filter(acceptance_states__value="Rejected").distinct()
         return q
 
 
