@@ -403,6 +403,9 @@ def extract_terms(website_id):
                     concept_occurs_tokens.insert(i, token_to_add)
                     i = i + 1
 
+                    # Save Term Definitions in Django
+                    Concept.objects.update_or_create(name=term.get_covered_text())
+
                     logger.info("[concept_occurs] Added term '%s' to the PreAnalyzed payload (i=%d) (token pos: %s-%s)",
                                 token, i, start, end)
 
