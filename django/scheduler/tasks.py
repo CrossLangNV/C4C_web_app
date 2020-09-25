@@ -193,8 +193,7 @@ def extract_terms(website_id):
     cursor_mark = "*"
 
     # Query for Solr to find per website that has the content_html field (some do not)
-    # TODO: Add "acceptance_state:accepted" to the query to filter out rejected documents
-    q = "website:" + website_name + " AND content_html:*"
+    q = "website:" + website_name + " AND content_html:* AND acceptance_state:accepted"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
