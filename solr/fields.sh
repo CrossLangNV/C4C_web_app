@@ -7,23 +7,7 @@ SOLR_HOST="http://localhost:8983"
 
 JSON='{
 "add-field-type" : {
-  "name":"preanalyzed_occurs",
-  "class":"solr.PreAnalyzedField",
-  "parserImpl":"org.apache.solr.schema.JsonPreAnalyzedParser",
-  "analyzer": {
-    "tokenizer":{
-       "class":"solr.WhitespaceTokenizerFactory"
-    },
-    "filters":[{
-       "class":"solr.LowerCaseFilterFactory",
-       "class":"solr.HTMLStripCharFilterFactory",
-       "class":"solr.DelimitedPayloadTokenFilterFactory",
-       "encoder":"float"
-    }]
-  }
-},
-"add-field-type" : {
-  "name":"preanalyzed_defined",
+  "name":"preanalyzed",
   "class":"solr.PreAnalyzedField",
   "parserImpl":"org.apache.solr.schema.JsonPreAnalyzedParser",
   "analyzer": {
@@ -115,8 +99,8 @@ JSON='{
 
 {"name":"spider",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"task",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
-{"name":"concept_occurs",                 "type":"preanalyzed_occurs","indexed":true,"termOffsets":true,"stored":true,"termPositions":true,"termVectors":true,"multiValued":false,"storeOffsetsWithPositions":true},
-{"name":"concept_defined",                "type":"preanalyzed_defined","indexed":true,"termOffsets":true,"stored":true,"termPositions":true,"termVectors":true,"multiValued":false,"storeOffsetsWithPositions":true}
+{"name":"concept_occurs",                 "type":"preanalyzed","indexed":true,"termOffsets":true,"stored":true,"termPositions":true,"termVectors":true,"multiValued":false,"storeOffsetsWithPositions":true},
+{"name":"concept_defined",                "type":"preanalyzed","indexed":true,"termOffsets":true,"stored":true,"termPositions":true,"termVectors":true,"multiValued":false,"storeOffsetsWithPositions":true}
 
 ]
 }';

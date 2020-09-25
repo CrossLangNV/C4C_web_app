@@ -204,6 +204,10 @@ def extract_terms(website_id):
 
     for document in documents:
         if document['content_html'] is not None:
+            if len(document['content_html'][0]) > 100000:
+                logger.info("Skipping too big document id: %s", document['id'])
+                continue
+
             logger.info("Extracting terms from document id: %s", document['id'])
 
             content_html_text = {
