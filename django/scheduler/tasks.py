@@ -170,14 +170,13 @@ def export_documents(website_ids=None):
     logging.info("Removed: %s", zip_destination + '.zip')
 
 
-headers = {'Content-Type': 'application/json', 'Accept': '*/*'}
 def post_pre_analyzed_to_solr(data):
     params = json.dumps(data).encode('utf8')
-    req = urllib.request.Request("http://solr:8983/solr/documents/update", data=params,
+    req = urllib.request.Request(os.environ['SOLR_URL'] + "/documents/update", data=params,
                                  headers={'content-type': 'application/json'})
     response = urllib.request.urlopen(req)
-
     logger.info(response.read().decode('utf8'))
+
 
 @shared_task
 def test_solr_preanalyzed_update():
@@ -195,7 +194,7 @@ def extract_terms(website_id):
 
     # Query for Solr to find per website that has the content_html field (some do not)
     # TODO: Add "acceptance_state:accepted" to the query to filter out rejected documents
-    q = "id:0005e567-04e2-5528-ab6d-0a576b13416c AND website:" + website_name + " AND content_html:*"
+    q = "website:" + website_name + " AND content_html:*"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -420,10 +419,6 @@ def extract_terms(website_id):
                 core = 'documents'
                 requests.get(os.environ['SOLR_URL'] +
                              '/' + core + '/update?commit=true')
-
-
-        break
-
 
 @shared_task
 def score_documents_task(website_id):
