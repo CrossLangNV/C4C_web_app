@@ -1,7 +1,7 @@
 version: '3'
 services:
   angular:
-    image: docker.crosslang.com/ctlg-manager/angular:master-latest
+    image: docker.crosslang.com/cefat4cities/cefat4cities/ctlg-manager/angular:master-latest
     ports:
      - "8080:80"
     env_file:
@@ -13,7 +13,7 @@ services:
       kompose.service.expose.tls-secret: "angular-certificate"
 
   django:
-    image: docker.crosslang.com/ctlg-manager/django:master-latest
+    image: docker.crosslang.com/cefat4cities/ctlg-manager/django:master-latest
     command: "./start.sh"
     ports:
       - "8000:8000"
@@ -24,7 +24,7 @@ services:
       kompose.image-pull-policy: "Always"
 
   django_nginx:
-    image: docker.crosslang.com/ctlg-manager/django_nginx:master-latest
+    image: docker.crosslang.com/cefat4cities/ctlg-manager/django_nginx:master-latest
     ports:
       - "8000:8000"
     labels:
@@ -34,7 +34,7 @@ services:
       kompose.service.expose.tls-secret: "django-certificate"
 
   celery:
-    image: docker.crosslang.com/ctlg-manager/django:master-latest
+    image: docker.crosslang.com/cefat4cities/ctlg-manager/django:master-latest
     ports:
       - "8000:8000"
     command: celery -A scheduler worker -l info --uid=nobody --gid=nogroup
@@ -45,7 +45,7 @@ services:
       kompose.image-pull-policy: "Always"
 
   flower:
-    image: docker.crosslang.com/ctlg-manager/django:master-latest
+    image: docker.crosslang.com/cefat4cities/ctlg-manager/django:master-latest
     ports:
       - "5555:5555"
     command: flower -A scheduler --port=5555
@@ -63,7 +63,7 @@ services:
       - "5672:5672"
 
   scrapyd:
-    image: docker.crosslang.com/ctlg-manager/scrapyd:master-latest
+    image: docker.crosslang.com/cefat4cities/ctlg-manager/scrapyd:master-latest
     ports:
       - "6800:6800"
     volumes:
@@ -106,7 +106,7 @@ services:
       kompose.volume.size: 10Gi
 
   docclass:
-    image: docker.crosslang.com/ctlg-manager/docclass:latest
+    image: docker.crosslang.com/cefat4cities/ctlg-manager/docclass:latest
     ports:
       - "5000:5000"
     labels:
