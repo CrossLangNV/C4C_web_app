@@ -8,6 +8,7 @@ pipeline {
         VERSION = ''
         HELM_USERNAME='crosslang'
         HELM_PASSWORD='isthebest'
+        DOCKER_PREFIX='cefat4cities'
     }
 
     agent { label 'master' }
@@ -18,7 +19,7 @@ pipeline {
                 dir('django'){
                     script {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
-                            def customImage = docker.build("ctlg-manager/django:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile.prod .")
+                            def customImage = docker.build("${env.DOCKER_PREFIX}/ctlg-manager/django:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile.prod .")
                             customImage.push()
                             customImage.push("${env.BRANCH_NAME}-latest")
                         }
@@ -27,7 +28,7 @@ pipeline {
                 dir('django/nginx'){
                     script {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
-                            def customImage = docker.build("ctlg-manager/django_nginx:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
+                            def customImage = docker.build("${env.DOCKER_PREFIX}/ctlg-manager/django_nginx:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
                             customImage.push()
                             customImage.push("${env.BRANCH_NAME}-latest")
                         }
@@ -36,7 +37,7 @@ pipeline {
                 dir('angular'){
                     script {
                         docker.withRegistry("https://docker.crosslang.com", "docker-crosslang-com") {
-                            def customImage = docker.build("ctlg-manager/angular:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
+                            def customImage = docker.build("${env.DOCKER_PREFIX}/ctlg-manager/angular:${env.BRANCH_NAME}-${env.BUILD_ID}", "-f Dockerfile .")
                             customImage.push()
                             customImage.push("${env.BRANCH_NAME}-latest")
                         }
@@ -47,7 +48,7 @@ pipeline {
         stage('Build and Test Java Code') {
             steps {
                 dir('uima-html-to-text'){
-                    sh "mvn compile jib:build -Denv.BRANCH_NAME=${env.BRANCH_NAME} -Dimage=docker.crosslang.com/ctlg-manager/uima-html-to-text:${env.BRANCH_NAME}-latest"
+                    sh "mvn compile jib:build -Denv.BRANCH_NAME=${env.BRANCH_NAME} -Dimage=docker.crosslang.com/${env.DOCKER_PREFIX}/ctlg-manager/uima-html-to-text:${env.BRANCH_NAME}-latest"
                 }
             }
         }
