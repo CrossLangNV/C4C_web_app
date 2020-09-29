@@ -1,7 +1,7 @@
 version: '3'
 services:
   termextract:
-    image: docker.crosslang.com/cefat4cities/ctlg-manager/termextract:latest
+    image: docker.crosslang.com/ctlg-manager/termextract:latest
     ports:
       - "5001:5001"
     labels:
@@ -9,7 +9,7 @@ services:
       kompose.image-pull-policy: "Always"
 
   definitionextract:
-    image: docker.crosslang.com/cefat4cities/ctlg-manager/definitionextract:latest
+    image: docker.crosslang.com/ctlg-manager/definitionextract:latest
     ports:
       - "5002:5002"
     labels:
@@ -129,7 +129,7 @@ services:
       kompose.volume.size: 10Gi
 
   docclass:
-    image: docker.crosslang.com/cefat4cities/ctlg-manager/docclass:latest
+    image: docker.crosslang.com/ctlg-manager/docclass:latest
     ports:
       - "5000:5000"
     labels:

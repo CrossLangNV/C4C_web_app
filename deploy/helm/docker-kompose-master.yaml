@@ -106,7 +106,7 @@ services:
       kompose.volume.size: 10Gi
 
   docclass:
-    image: docker.crosslang.com/cefat4cities/ctlg-manager/docclass:latest
+    image: docker.crosslang.com/ctlg-manager/docclass:latest
     ports:
       - "5000:5000"
     labels:
