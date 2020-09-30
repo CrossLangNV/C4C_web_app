@@ -42,7 +42,10 @@ class ScrapyAppPipeline(FilesPipeline):
         return pipeline
 
     def spider_opened(self, spider):
-        self.exporter = S3ItemExporter(spider.name)
+        if spider.website:
+            self.exporter = S3ItemExporter(spider.website.lower())
+        else:
+            self.exporter = S3ItemExporter(spider.name)
         self.exporter.start_exporting()
 
     def spider_closed(self, spider):
@@ -93,7 +96,8 @@ class ScrapyAppPipeline(FilesPipeline):
         self.logger.debug("HANDLING_DOC: %s, %s", item['id'], item['url'])
 
         self.handle_dates(item)
-        item['website'] = info.spider.name
+        if 'website' not in item:
+            item['website'] = info.spider.name
         for file_result in file_results:
             file_name = file_result['path']
             file_path = os.environ['SCRAPY_FILES_FOLDER'] + \
