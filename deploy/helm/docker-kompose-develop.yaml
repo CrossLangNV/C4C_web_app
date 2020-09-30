@@ -148,7 +148,7 @@ services:
     labels:
       kompose.service.expose: "minio.cefat4cities.crosslang.com"
       kompose.service.expose.tls-secret: "minio-certificate"
-      kompose.volume.size: 100Gi
+      kompose.volume.size: 80Gi
 
   tika:
     image: apache/tika
