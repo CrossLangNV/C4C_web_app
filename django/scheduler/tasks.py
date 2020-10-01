@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
 import base64
+import csv
 import json
 import logging
 import os
@@ -589,6 +590,24 @@ def launch_fullsite_crawler(url, website):
     d = runner.crawl('fullsite', url=url, website=website)
     d.addBoth(lambda _: reactor.stop())
     reactor.run()  # the script will block here until the crawling is finished
+
+
+@shared_task
+def launch_fullsite_multiple(urls, websites):
+    for url, website in zip(urls, websites):
+        launch_fullsite_crawler.delay(url, website)
+
+
+@shared_task
+def launch_fullsite_flanders(number_websites):
+    with open(workpath + '/websites/flanders_municipalities.csv') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        line_count = 0
+        for row in csv_reader:
+            if line_count < number_websites:
+                launch_fullsite_crawler.delay(row[0], row[1])
+                line_count += 1
+
 
 @shared_task()
 def parse_content_to_plaintext_task(website_id):
