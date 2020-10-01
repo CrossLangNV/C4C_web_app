@@ -48,7 +48,7 @@ class Document(SafeDeleteModel):
 
     file = models.FileField(null=True, blank=True)
     file_url = models.URLField(
-        max_length=1000, unique=True, null=True, blank=True)
+        max_length=1000, null=True, blank=True)
 
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
