@@ -15,6 +15,7 @@ import { TruncatePipe } from '../shared/pipelines/truncate';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { SliderModule } from 'primeng/slider';
+import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { NgbDateAdapter, NgbDateNativeAdapter } from '@ng-bootstrap/ng-bootstrap';
 import { NgbdSortableHeader } from './document-list/sortable.directive';
@@ -38,6 +39,7 @@ import { NgbdSortableHeader } from './document-list/sortable.directive';
     OverlayPanelModule,
     ConfirmDialogModule,
     SliderModule,
+    ScrollPanelModule,
     InputNumberModule,
     ValidatorRoutingModule,
   ],
