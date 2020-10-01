@@ -85,16 +85,7 @@ export class DocumentListComponent implements OnInit {
     { id: 'accepted', name: '..Accepted' },
     { id: 'rejected', name: '..Rejected' },
   ];
-  websites = [
-    { id: '', name: 'Website..' },
-    { id: 'bis', name: '..BIS' },
-    { id: 'eiopa', name: '..EIOPA' },
-    { id: 'esma', name: '..ESMA' },
-    { id: 'eurlex', name: '..EURLEX' },
-    { id: 'fsb', name: '..FSB' },
-    { id: 'srb', name: '..SRB' },
-    { id: 'eba', name: '..EBA' },
-  ];
+  websites = [ { id: '', name: 'Website..' } ];
   currentDjangoUser: DjangoUser;
   selectedIndex: string = null;
 
@@ -172,6 +163,14 @@ export class DocumentListComponent implements OnInit {
     this.authenticationService.currentDjangoUser.subscribe(
       (x) => (this.currentDjangoUser = x)
     );
+    this.service.getWebsites().subscribe(websites => {
+      websites.forEach(website => {
+        this.websites.push({
+          id: website.name.toLowerCase(),
+          name: '..' + website.name.toUpperCase()
+        })
+      });
+    });
     this.fetchDocuments();
     this.service.messageSource.asObservable().subscribe((value: string) => {
       if (value === 'refresh') {
