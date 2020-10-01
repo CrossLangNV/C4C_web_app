@@ -70,6 +70,9 @@ export class DocumentValidateComponent implements OnInit {
       )
       .subscribe((document) => {
         this.document = document;
+        this.service.getSolrDocumentContent(document.id).subscribe(content => {
+          this.document.content = content;
+        })
         this.getSimilarDocuments(this.similarityThreshold / 100, this.maxSimilarDocuments);
         this.consolidatedVersions = new Map();
         let consolidatedVersionsArr = this.document.consolidatedVersions.split(
