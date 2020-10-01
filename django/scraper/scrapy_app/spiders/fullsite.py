@@ -83,9 +83,9 @@ class FullSiteSpider(scrapy.Spider):
 
         if isinstance(response, HtmlResponse):
 
-            clean_body = self.cleaner.clean_html(response.body)
-            html_content = html.fromstring(clean_body)
-            detected_language = detect(html_content.text_content())
+            cleaned_html = self.cleaner.clean_html(response.body)
+            cleaned_html_object = html.fromstring(cleaned_html)
+            detected_language = detect(cleaned_html_object.text_content())
 
             title = response.xpath('//head/title/text()').get()
 
@@ -105,7 +105,7 @@ class FullSiteSpider(scrapy.Spider):
                 'url': response.url,
                 'title': title,
                 'website': self.website,
-                'content_html': html_content,
+                'content_html': cleaned_html.decode('utf-8'),
                 'date': datetime.datetime.now().isoformat(),
                 'language': detected_language,
                 'pdf_docs': pdf_docs
