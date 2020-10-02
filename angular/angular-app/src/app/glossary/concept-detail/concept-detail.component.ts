@@ -178,7 +178,7 @@ export class ConceptDetailComponent implements OnInit {
     });
   }
 
-  loadOccursInDocuments() {
+  loadOccursInDocumentsPreAnalyzed() {
     this.service
       .searchSolrPreAnalyzedDocuments(
         this.occursInPage,
@@ -201,6 +201,35 @@ export class ConceptDetailComponent implements OnInit {
           });
         });
       });
+  }
+
+  loadOccursInDocuments() {
+    this.service
+      .searchSolrDocuments(
+        this.occursInPage,
+        this.occursInPageSize,
+        this.concept.name,
+        [],
+        this.occursInSortBy,
+        this.occursInSortDirection
+      )
+      .subscribe((data) => {
+        this.occursInTotal = data[0];
+        const solrDocuments = data[1];
+        this.occursIn = [];
+        const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
+        this.getDocuments(solrDocumentIds).subscribe((doc) => {
+          doc.forEach((document, index) => {
+            document.content = solrDocuments[index].content;
+            this.occursIn.push(document);
+          });
+        });
+      });
+  }
+
+  // highlightedContent contains html where concepts are enclosed by <span class="highlight">concept</span>
+  getOffsets(highlightedContent: string, concept: string) {
+
   }
 
   loadDefinedInDocuments() {

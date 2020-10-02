@@ -102,26 +102,19 @@ class DocumentListAPIView(ListCreateAPIView):
             email = self.request.GET.get('email', "")
             q = q.filter(Q(acceptance_states__user__email=email) & (Q(acceptance_states__value="Accepted") |
                                                                     Q(acceptance_states__value="Rejected")))
-        filtertype = self.request.GET.get('filterType', "")
-        if filtertype == "unvalidated":
-            unvalidated_doc_ids = AcceptanceState.objects.filter(value="Unvalidated").values_list('document__id',
-                                                                                                  flat=True).order_by(
-                "document__id").distinct()
-            other_doc_ids = AcceptanceState.objects.exclude(value="Unvalidated").values_list('document__id',
-                                                                                             flat=True).order_by(
-                "document__id").distinct()
-
-            q = q.filter(id__in=unvalidated_doc_ids).difference(q.filter(id__in=other_doc_ids))
-        if filtertype == "accepted":
-            q = q.filter(acceptance_states__value="Accepted").distinct()
-        if filtertype == "rejected":
-            q = q.filter(acceptance_states__value="Rejected").distinct()
         website = self.request.GET.get('website', "")
         if website:
             q = q.filter(website__name__iexact=website)
         tag = self.request.GET.get('tag', "")
         if tag:
             q = q.filter(tags__value=tag)
+        filtertype = self.request.GET.get('filterType', "")
+        if filtertype == "unvalidated":
+            q = q.filter(unvalidated=True)
+        elif filtertype == "accepted":
+            q = q.filter(acceptance_states__value="Accepted").distinct()
+        elif filtertype == "rejected":
+            q = q.filter(acceptance_states__value="Rejected").distinct()
         return q
 
 
@@ -298,13 +291,11 @@ class SolrDocumentSearchQuery(APIView):
 class SolrDocumentsSearchQueryPreAnalyzed(APIView):
     # permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, search_term, format=None):
-        result = solr_search_query_paginated_preanalyzed(core="documents", term=search_term,
+    def post(self, request, format=None):
+        result = solr_search_query_paginated_preanalyzed(core="documents", term=request.data['query'],
                                                          page_number=request.GET.get('pageNumber', 1),
                                                          rows_per_page=request.GET.get(
                                                              'pageSize', 1),
-                                                         ids_to_filter_on=request.GET.getlist(
-                                                             'id'),
                                                          sort_by=request.GET.get('sortBy'),
                                                          sort_direction=request.GET.get('sortDirection'))
         return Response(result)

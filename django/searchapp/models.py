@@ -54,6 +54,7 @@ class Document(SafeDeleteModel):
     updated_at = models.DateTimeField(auto_now=True)
 
     acceptance_state_max_probability = models.FloatField(null=True)
+    unvalidated = models.BooleanField(default=True, editable=False)
 
     def __str__(self):
         return self.title
@@ -115,6 +116,22 @@ class AcceptanceState(models.Model):
 
         ]
         ordering = ['user']
+
+    def save(self, *args, **kwargs):
+        current_doc = Document.objects.get(id=self.document.id)
+        # mark document as validated if new value is not unvalidated
+        if self.value != AcceptanceStateValue.UNVALIDATED:
+            current_doc.unvalidated = False
+            current_doc.save()
+        else:
+            # get all acceptance states that are not unvalidated
+            validated_states = AcceptanceState.objects.filter(document=current_doc).exclude(
+                value=AcceptanceStateValue.UNVALIDATED)
+            # if there are none, this document can be marked again as unvalidated
+            if not validated_states:
+                current_doc.unvalidated = True
+                current_doc.save()
+        super(AcceptanceState, self).save(*args, **kwargs)
 
 
 class Attachment(models.Model):
