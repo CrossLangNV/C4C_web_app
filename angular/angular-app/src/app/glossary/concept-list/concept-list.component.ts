@@ -36,6 +36,8 @@ export interface SortEvent {
   direction: SortDirection;
 }
 
+declare const annotator: any;
+
 @Directive({
   selector: 'th[sortable]',
   host: {
@@ -94,6 +96,12 @@ export class ConceptListComponent implements OnInit {
         this.page = 1;
         this.fetchConcepts();
       });
+  }
+
+  ngAfterViewInit() {
+    var app = new annotator.App();
+    app.include(annotator.ui.main, {element: document.body});
+    app.start();
   }
 
   fetchConcepts() {

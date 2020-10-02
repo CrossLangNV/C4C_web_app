@@ -19,7 +19,12 @@ You can create a admin user with these commands:
 
 The angular app requires an application (uses django-oath-toolkit):
 
-`python manage.py createapplication --client-id $ANGULAR_DJANGO_CLIENT_ID --client-secret $ANGULAR_DJANGO_CLIENT_SECRET --name searchapp confidential password`
+`python manage.py createapplication --name searchapp confidential password`
+
+In your browser, navigate to `http://localhost:8000/admin/oauth2_provider/application/`
+Go to the detail page of the searchapp app by clicking on it's id in the list of applications.
+In the user field, add the admin user.
+
 
 ### Solr data
 
