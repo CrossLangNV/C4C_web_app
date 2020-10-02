@@ -52,7 +52,7 @@ def solr_search_paginated(core="", term="", page_number=1, rows_per_page=10, ids
 
 
 def solr_search_query_paginated(core="", term="", page_number=1, rows_per_page=10, ids_to_filter_on=None,
-                          sort_by=None, sort_direction='asc'):
+                                sort_by=None, sort_direction='asc'):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     # solr page starts at 0
     page_number = int(page_number) - 1
@@ -74,8 +74,9 @@ def solr_search_query_paginated(core="", term="", page_number=1, rows_per_page=1
     num_found = result.raw_response['response']['numFound']
     return num_found, search
 
-def solr_search_query_paginated_preanalyzed(core="", term="", page_number=1, rows_per_page=10, ids_to_filter_on=None,
-                    sort_by=None, sort_direction='asc'):
+
+def solr_search_query_paginated_preanalyzed(core="", term="", page_number=1, rows_per_page=10,
+                                            sort_by=None, sort_direction='asc'):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     # solr page starts at 0
     page_number = int(page_number) - 1
@@ -85,9 +86,6 @@ def solr_search_query_paginated_preanalyzed(core="", term="", page_number=1, row
                'hl': 'on', 'hl.fl': '*',
                'hl.simple.pre': '<span class="highlight">',
                'hl.simple.post': '</span>'}
-    if ids_to_filter_on:
-        fq_ids = 'id:(' + ' OR '.join(ids_to_filter_on) + ')'
-        options['fq'] = fq_ids
     if sort_by:
         options['sort'] = sort_by + ' ' + sort_direction
     result = client.search(term, **options)
@@ -118,7 +116,7 @@ def solr_search_website_with_content(core="", website=""):
 
 def solr_search_website_sorted(core="", website=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    SOLR_SYNC_FIELDS = 'id,title,title_prefix,author,status,type,date,date_last_update,url,eli,celex,file_url,website,summary,various,consolidated_versions'
+    SOLR_SYNC_FIELDS = 'id,title,title_prefix,author,status,type,date,date_last_update,url,eli,celex,file_url,website,summary,various,content,consolidated_versions'
     search = get_results(client.search(
         'website:' + website, **{'rows': ROW_LIMIT, 'fl': SOLR_SYNC_FIELDS, 'sort': 'id asc'}))
     return search
