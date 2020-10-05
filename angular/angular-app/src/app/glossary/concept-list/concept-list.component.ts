@@ -99,9 +99,9 @@ export class ConceptListComponent implements OnInit {
   }
 
   ngAfterViewInit() {
-    var app = new annotator.App();
-    app.include(annotator.ui.main, {element: document.body});
-    app.start();
+    // var app = new annotator.App();
+    // app.include(annotator.ui.main, {element: document.body});
+    // app.start();
   }
 
   fetchConcepts() {
