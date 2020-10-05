@@ -39,18 +39,30 @@ class EsmaScraperSpider(scrapy.Spider):
         if publication_section is not None:
             section = publication_section.getText()
             newdict.update({"section": section})
-        pdf_link = element.find('a')
-        if pdf_link is not None:
-            pdf_link = pdf_link.get('href')
-            output = parser.from_file(pdf_link)
+        document_link = element.find('a')
+        if document_link is not None:
+            document_link = document_link.get('href')
+            output = parser.from_file(document_link)
             content = output.get('content')
             metadata = output.get('metadata')
-            if content is not None and metadata is not None:
-                if metadata.get('Content-Type') == 'application/pdf' and is_document_english(content):
-                    if not pdf_link.startswith("/databases-library"):
-                        newdict.update({"pdf_docs": [pdf_link]})
-                        # doc url == pdf url for esma
-                        newdict.update({"url": pdf_link})
+            content_type = metadata.get('Content-Type')
+            if content is not None and content_type is not None:
+                if is_document_english(content):
+                    if isinstance(content_type, list):
+                        if 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in content_type or 'application/vnd.ms-excel' in content_type:
+                            newdict.update({
+                                'other_docs': [document_link]
+                            })
+                            newdict.update({
+                                "url": document_link
+                            })
+
+                    if metadata.get('Content-Type') == 'application/pdf' and is_document_english(content):
+                        if not document_link.startswith("/databases-library"):
+                            newdict.update({"pdf_docs": [document_link]})
+                            # doc url == pdf url for esma
+                            newdict.update({"url": document_link})
+                    
         if 'url' in newdict:
             return newdict
 
