@@ -102,7 +102,8 @@ def full_service_task(website_id):
         sync_scrapy_to_solr_task.si(website_id),
         parse_content_to_plaintext_task.si(website_id),
         sync_documents_task.si(website_id),
-        score_documents_task.si(website_id)
+        score_documents_task.si(website_id),
+        check_documents_unvalidated_task.si(website_id)
     )()
 
 
