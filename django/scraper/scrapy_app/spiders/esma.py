@@ -1,8 +1,12 @@
 # -*- coding: UTF-8 -*-
 
+from datetime import datetime
+
 import bs4
 import scrapy
-from datetime import datetime
+from langdetect import detect_langs
+from langdetect.lang_detect_exception import LangDetectException
+from tika import parser
 
 
 class EsmaScraperSpider(scrapy.Spider):
@@ -38,10 +42,15 @@ class EsmaScraperSpider(scrapy.Spider):
         pdf_link = element.find('a')
         if pdf_link is not None:
             pdf_link = pdf_link.get('href')
-            if not pdf_link.startswith("/databases-library"):
-                newdict.update({"pdf_docs": [pdf_link]})
-                # doc url == pdf url for esma
-                newdict.update({"url": pdf_link})
+            output = parser.from_file(pdf_link)
+            content = output.get('content')
+            metadata = output.get('metadata')
+            if content is not None and metadata is not None:
+                if metadata.get('Content-Type') == 'application/pdf' and is_document_english(content):
+                    if not pdf_link.startswith("/databases-library"):
+                        newdict.update({"pdf_docs": [pdf_link]})
+                        # doc url == pdf url for esma
+                        newdict.update({"url": pdf_link})
         if 'url' in newdict:
             return newdict
 
@@ -58,3 +67,23 @@ class EsmaScraperSpider(scrapy.Spider):
     def parse_single(self, element):
         data = self.get_metadata(element)
         return data
+
+def is_document_english(plain_text):
+    english = False
+    detect_threshold = 0.4
+    try:
+        langs = detect_langs(plain_text)
+        number_langs = len(langs)
+        # trivial case for 1 language detected
+        if number_langs == 1:
+            if langs[0].lang == 'en':
+                english = True
+        # if 2 or more languages are detected, consider detect probability
+        else:
+            for detected in langs:
+                if detected.lang == 'en' and detected.prob >= detect_threshold:
+                    english = True
+                    break
+    except LangDetectException:
+        pass
+    return english
