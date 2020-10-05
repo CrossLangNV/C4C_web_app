@@ -27,13 +27,15 @@ class EiopaSpider(scrapy.Spider):
             yield scrapy.Request(response.urljoin(next_page_url))
 
     def parse_single(self, response):
-        data = {
-            'title_prefix': response.meta['title_prefix'],
-            'title': response.meta['title'],
-            'date': datetime.strptime(response.meta['date'], '%d %b %Y'),
-            'type': response.meta['type'],
-            'url': response.url,
-            'summary': response.css("div[id='main-content'] ::text").extract(),
-            'pdf_docs': response.css("a.related-item.file-type-pdf::attr(href)").extract()
-        }
+        english_pdfs = response.xpath("//a[contains(@download, 'EN.pdf')]").css('a::attr(href)').extract()
+        if len(english_pdfs) >= 1:
+            data = {
+                'title_prefix': response.meta['title_prefix'],
+                'title': response.meta['title'],
+                'date': datetime.strptime(response.meta['date'], '%d %b %Y'),
+                'type': response.meta['type'],
+                'url': response.url,
+                'summary': response.css("div[id='main-content'] ::text").extract(),
+                'pdf_docs': english_pdfs
+            }
         return data
