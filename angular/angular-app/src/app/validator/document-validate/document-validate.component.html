@@ -172,7 +172,12 @@
 
   <div [innerHTML]="document.content" class="modal-body"></div>
   <div class="modal-footer">
-    <a (click)="goToLink(document.file_url)" class="text-primary">
+    <a *ngIf="document.file_url" (click)="goToLink(document.file_url)" class="text-primary">
+      <button type="button" class="btn btn-primary">
+        See original
+      </button>
+    </a>
+    <a *ngIf="!document.file_url && document.celex" (click)="goToLink('https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:' + document.celex + '&from=EN')" class="text-primary">
       <button type="button" class="btn btn-primary">
         See original
       </button>
@@ -184,3 +189,4 @@
 </ng-template>
 
 <p-toast position="top-center"></p-toast>
+
