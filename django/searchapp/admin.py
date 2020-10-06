@@ -29,10 +29,6 @@ rest_site.register(Tag)
 rest_site.register(User)
 
 
-def delete_deprecated_acceptance_states():
-    tasks.delete_deprecated_acceptance_states().delay()
-
-
 def reset_pre_analyzed_fields(modeladmin, request, queryset):
     for website in queryset:
         tasks.reset_pre_analyzed_fields.delay(website.id)
@@ -101,8 +97,7 @@ class WebsiteAdmin(admin.ModelAdmin):
     list_display = ['name', 'count_documents']
     ordering = ['name']
     actions = [full_service, scrape_website, sync_scrapy_to_solr, parse_content_to_plaintext,
-               sync_documents, score_documents, check_documents_unvalidated, extract_terms,
-               delete_deprecated_acceptance_states, export_documents,
+               sync_documents, score_documents, check_documents_unvalidated, extract_terms, export_documents,
                delete_from_solr, reset_pre_analyzed_fields]
 
     def count_documents(self, doc):
