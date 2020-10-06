@@ -1,8 +1,12 @@
 # -*- coding: UTF-8 -*-
 
+from datetime import datetime
+
 import bs4
 import scrapy
-from datetime import datetime
+from langdetect import detect_langs
+from langdetect.lang_detect_exception import LangDetectException
+from tika import parser
 
 
 class EsmaScraperSpider(scrapy.Spider):
@@ -35,13 +39,30 @@ class EsmaScraperSpider(scrapy.Spider):
         if publication_section is not None:
             section = publication_section.getText()
             newdict.update({"section": section})
-        pdf_link = element.find('a')
-        if pdf_link is not None:
-            pdf_link = pdf_link.get('href')
-            if not pdf_link.startswith("/databases-library"):
-                newdict.update({"pdf_docs": [pdf_link]})
-                # doc url == pdf url for esma
-                newdict.update({"url": pdf_link})
+        document_link = element.find('a')
+        if document_link is not None:
+            document_link = document_link.get('href')
+            output = parser.from_file(document_link)
+            content = output.get('content')
+            metadata = output.get('metadata')
+            content_type = metadata.get('Content-Type')
+            if content is not None and content_type is not None:
+                if is_document_english(content):
+                    if isinstance(content_type, list):
+                        if 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in content_type or 'application/vnd.ms-excel' in content_type:
+                            newdict.update({
+                                'other_docs': [document_link]
+                            })
+                            newdict.update({
+                                "url": document_link
+                            })
+
+                    if metadata.get('Content-Type') == 'application/pdf' and is_document_english(content):
+                        if not document_link.startswith("/databases-library"):
+                            newdict.update({"pdf_docs": [document_link]})
+                            # doc url == pdf url for esma
+                            newdict.update({"url": document_link})
+                    
         if 'url' in newdict:
             return newdict
 
@@ -58,3 +79,23 @@ class EsmaScraperSpider(scrapy.Spider):
     def parse_single(self, element):
         data = self.get_metadata(element)
         return data
+
+def is_document_english(plain_text):
+    english = False
+    detect_threshold = 0.4
+    try:
+        langs = detect_langs(plain_text)
+        number_langs = len(langs)
+        # trivial case for 1 language detected
+        if number_langs == 1:
+            if langs[0].lang == 'en':
+                english = True
+        # if 2 or more languages are detected, consider detect probability
+        else:
+            for detected in langs:
+                if detected.lang == 'en' and detected.prob >= detect_threshold:
+                    english = True
+                    break
+    except LangDetectException:
+        pass
+    return english
