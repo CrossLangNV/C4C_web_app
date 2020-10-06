@@ -59,7 +59,7 @@ def delete_deprecated_acceptance_states():
     acceptances = [str(acc['document_id']) for acc in acceptance_states]
 
     diff = list(set(acceptances) - set(documents))
-    count = AcceptanceState.objects.all().filter(id__in=diff).delete()
+    count = AcceptanceState.objects.all().filter(document_id__in=diff).delete()
 
     logger.info("Deleted %s deprecated acceptance states", count)
 
