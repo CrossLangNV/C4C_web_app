@@ -87,7 +87,7 @@
           </button>
         </td>
       </tr>
-      <tr *ngIf="document.celex">
+      <tr *ngIf="!document.file_url && document.celex">
         <td>
           <button
             type="button"
