@@ -15,6 +15,7 @@ import pysolr
 import requests
 from celery import shared_task, chain
 from django.core.exceptions import ValidationError
+from django.db.models.functions import Length
 from jsonlines import jsonlines
 from langdetect import detect_langs
 from langdetect.lang_detect_exception import LangDetectException
@@ -45,6 +46,22 @@ SOLR_URL = os.environ['SOLR_URL']
 # Don't remove the '/' at the end here
 TERM_EXTRACT_URL = os.environ['GLOSSARY_TERM_EXTRACT_URL']
 DEFINITIONS_EXTRACT_URL = os.environ['GLOSSARY_DEFINITIONS_EXTRACT_URL']
+
+
+@shared_task()
+def delete_deprecated_acceptance_states():
+    acceptance_states = AcceptanceState.objects.all().order_by("document").distinct(
+        "document_id").annotate(text_len=Length('document__title')).filter(text_len__gt=1).values()
+    documents = Document.objects.all().annotate(text_len=Length('title')).filter(
+        text_len__gt=1).values()
+
+    documents = [str(doc['id']) for doc in documents]
+    acceptances = [str(acc['document_id']) for acc in acceptance_states]
+
+    diff = list(set(acceptances) - set(documents))
+    count = AcceptanceState.objects.all().filter(id__in=diff).delete()
+
+    logger.info("Deleted %s deprecated acceptance states", count)
 
 
 @shared_task
