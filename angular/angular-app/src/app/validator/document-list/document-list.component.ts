@@ -71,6 +71,7 @@ export class DocumentListComponent implements OnInit {
     validatedPercent: 0,
     autoValidatedSize: 0,
     autoValidatedPercent: 0,
+    totalValidatedDocuments: 0,
   };
   userIcon: IconDefinition;
   chipIcon: IconDefinition;
@@ -105,6 +106,10 @@ export class DocumentListComponent implements OnInit {
     this.service.getDocumentStats().subscribe((result) => {
       // Total
       this.stats.total = result.count_total;
+
+      // Rejected & Accepted
+
+
       // Human
       this.stats.unvalidatedSize =
         result.count_total - result.count_accepted - result.count_rejected;
@@ -177,6 +182,10 @@ export class DocumentListComponent implements OnInit {
         this.fetchDocuments();
       }
     });
+
+    this.documentService.total_documents().subscribe((value: number) => {
+      this.stats.totalValidatedDocuments = value
+    })
   }
 
   onSort({ column, direction }: SortEvent) {

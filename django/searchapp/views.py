@@ -368,3 +368,11 @@ def document_stats(request):
             'count_autoaccepted': q6.count(),
             'count_autorejected': q7.count()
         })
+
+
+@api_view(['GET'])
+def count_total_documents(request):
+    if request.method == 'GET':
+        q = Document.objects.annotate(
+            text_len=Length('title')).filter(text_len__gt=1).count()
+        return Response(q)
