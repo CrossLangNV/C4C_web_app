@@ -95,6 +95,9 @@ urlpatterns = [
     path('api/stats', views.document_stats,
          name='document_stats'),
 
+    path('api/stats/total_documents', views.count_total_documents,
+         name='total_documents'),
+
     # Super
     path('api/super', views.IsSuperUserAPIView.as_view(), name='super_api'),
 
