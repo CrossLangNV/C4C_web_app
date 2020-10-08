@@ -1,22 +1,15 @@
-from searchapp.solr_call import solr_search_id
-from searchapp.models import Document, Attachment, Website, AcceptanceState, AcceptanceStateValue
-from tika import parser
-from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
-from minio import Minio, ResponseError
-from jsonlines import jsonlines
 import base64
 import json
 import logging
 import os
 import random
-import shutil
+
 import pysolr
-
 import requests
-from django.core.files.base import ContentFile
-from django.utils.timezone import make_aware
-from django.db.models import Q, Count
+from django.db.models import Q
+from tika import parser
 
+from searchapp.models import Document, Website, AcceptanceState, AcceptanceStateValue
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -108,7 +101,7 @@ def score_documents(website_name, solr_documents, use_pdf_files):
                          '/' + core + '/update?commit=true')
 
     # Add unvalidated state for documents without AcceptanceState
-    # This can happen when documents didn't have content of couldn't calculate a score
+    # This can happen when documents didn't have content or couldn't calculate a score
     logger.info("Handling documents without AcceptanceState...")
     website = Website.objects.get(name=website_name)
     docs = Document.objects.filter(Q(website=website) & Q(
@@ -134,35 +127,6 @@ def score_documents(website_name, solr_documents, use_pdf_files):
     logger.info("Committing SOLR index...")
     core = 'documents'
     requests.get(os.environ['SOLR_URL'] + '/' + core + '/update?commit=true')
-
-
-# def score_export(website_name, documents, scores):
-#     if not os.path.exists(workpath + '/score/jsonl/' + website_name):
-#         os.makedirs(workpath + '/score/jsonl/' + website_name)
-#     for document, score in zip(documents, scores):
-#         if document:
-#             with jsonlines.open(workpath + '/score/jsonl/' + website_name + '/doc_' + document['id'] + '.jsonl',
-#                                 mode='w') as f:
-#                 f.write(document)
-#                 f.write(score)
-
-#     # create zip file for all .jsonl files
-#     zip_destination = workpath + '/score'
-#     shutil.make_archive(zip_destination, 'zip', workpath + '/score/jsonl')
-
-#     # upload zip to minio
-#     minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
-#                          secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
-#     try:
-#         minio_client.make_bucket('score')
-#     except BucketAlreadyOwnedByYou as err:
-#         pass
-#     except BucketAlreadyExists as err:
-#         pass
-#     except ResponseError as err:
-#         raise
-#     minio_client.fput_object(
-#         'score', '.zip', zip_destination + '.zip')
 
 
 def parse_pdf_from_url(url):

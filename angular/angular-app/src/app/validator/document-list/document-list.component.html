@@ -16,13 +16,12 @@
               type="search"
               name="content"
               class="form-control form-control-sm"
-              [(ngModel)]="keyword"
-              (ngModelChange)="onSearch($event)"
+              [(ngModel)]="documentService.searchTerm"
             />
           </div>
           <select
             class="form-control form-control-sm m-1 col-2"
-            [(ngModel)]="filterType"
+            [(ngModel)]="documentService.filterType"
             (change)="filterResetPage()"
           >
             <option *ngFor="let f of filters" [ngValue]="f.id">{{
@@ -31,7 +30,7 @@
           </select>
           <select
             class="form-control form-control-sm m-1 col-2"
-            [(ngModel)]="websiteFilter"
+            [(ngModel)]="documentService.website"
             (change)="filterResetPage()"
           >
             <option *ngFor="let f of websites" [ngValue]="f.id">{{
@@ -42,7 +41,7 @@
             <span ngbTooltip="Show your own validations">
               <p-inputSwitch
                 (onChange)="filterResetPage()"
-                [(ngModel)]="showOnlyOwn"
+                [(ngModel)]="documentService.showOnlyOwn"
                 >Own</p-inputSwitch
               ></span
             >
@@ -53,7 +52,7 @@
             <hr class="my-2" />
             <div class="d-flex progress justify-content-between p-0">
               <div>
-                Total: <u>{{ stats.total }}</u
+                Validated documents: <u>{{ stats.total }} / {{stats.totalValidatedDocuments}}</u
                 ><!-- Unvalidated :
                 <u>{{ stats.unvalidatedSize }}</u>-->
                 Auto-rejected :
@@ -61,7 +60,7 @@
                 <u>{{ stats.autoAcceptedSize }} </u>
               </div>
               <div>
-                Documents found: <u>{{ collectionSize }}</u>
+                Documents found: <u>{{ documentService.total$ | async }}</u>
                 <span class="" *ngIf="filterActive">
                   <fa-icon
                     (click)="resetFilters()"
@@ -134,10 +133,10 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngIf="documents$ && documents$.length == 0">
+        <tr *ngIf="documentResults$ && (documentService.total$ | async) == 0">
           <td colspan="5">No results.</td>
         </tr>
-        <tr *ngFor="let document of documents$; let i = index">
+        <tr *ngFor="let document of (documentResults$ | async)?.results; let i = index">
           <td>
             <a
               (click)="setIndex(document.id)"
@@ -207,16 +206,18 @@
         </tr>
       </tbody>
     </table>
-    <div class="d-flex justify-content-between p-0">
+    <div class="d-flex justify-content-start p-0">
       <ngb-pagination
-        (pageChange)="loadPage($event)"
-        [collectionSize]="collectionSize"
-        [(page)]="page"
+        [collectionSize]="documentService.total$ | async"
+        [(page)]="documentService.page"
         [pageSize]="pageSize"
         [maxSize]="10"
         [ellipses]="true"
       >
       </ngb-pagination>
+      <div class="ml-3 p-0" *ngIf="documentService.loading$ | async">
+        <span>Loading <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div></span>
+      </div>
     </div>
     <hr class="my-2" />
   </div>

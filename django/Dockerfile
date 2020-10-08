@@ -24,4 +24,3 @@ RUN pip install -r requirements.txt
 # Install needed packages for SCRAPY specified in requirements.txt
 ADD ./scraper/requirements.txt ./scraper
 RUN pip install -r scraper/requirements.txt
-

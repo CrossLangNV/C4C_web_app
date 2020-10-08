@@ -1,17 +1,10 @@
 import logging
 import os
-from urllib.parse import quote
 
-import requests
 from celery.result import AsyncResult
-from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Q, Count
 from django.db.models.functions import Length
 from django.http import FileResponse
-from django.shortcuts import render
-from django.urls import reverse_lazy
-from django.views.decorators.cache import cache_page
-from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
 from minio import Minio
 from rest_framework import permissions, filters, status
 from rest_framework.decorators import api_view
@@ -20,14 +13,13 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from scheduler.tasks import export_documents, export_delete, sync_documents_task, score_documents_task
-from .forms import DocumentForm, WebsiteForm
+from scheduler.tasks import export_documents, sync_documents_task, score_documents_task
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
 from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
-from .solr_call import solr_search, solr_search_id, solr_search_document_id_sorted, \
-    solr_search_paginated
+from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt, \
+    solr_search_query_paginated_preanalyzed
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -110,21 +102,20 @@ class DocumentListAPIView(ListCreateAPIView):
             email = self.request.GET.get('email', "")
             q = q.filter(Q(acceptance_states__user__email=email) & (Q(acceptance_states__value="Accepted") |
                                                                     Q(acceptance_states__value="Rejected")))
-        filtertype = self.request.GET.get('filterType', "")
-        if filtertype == "unvalidated":
-            q = q.exclude(Q(acceptance_states__value="Rejected")
-                          | Q(acceptance_states__value="Accepted"))
-        if filtertype == "accepted":
-            q = q.filter(acceptance_states__value="Accepted").distinct()
-        if filtertype == "rejected":
-            q = q.filter(acceptance_states__value="Rejected").distinct()
         website = self.request.GET.get('website', "")
         if website:
             q = q.filter(website__name__iexact=website)
         tag = self.request.GET.get('tag', "")
         if tag:
             q = q.filter(tags__value=tag)
-        return q.order_by("-created_at")
+        filtertype = self.request.GET.get('filterType', "")
+        if filtertype == "unvalidated":
+            q = q.filter(unvalidated=True)
+        elif filtertype == "accepted":
+            q = q.filter(acceptance_states__value="Accepted").distinct()
+        elif filtertype == "rejected":
+            q = q.filter(acceptance_states__value="Rejected").distinct()
+        return q
 
 
 class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
@@ -282,6 +273,47 @@ class SolrDocumentSearch(APIView):
         return Response(result)
 
 
+class SolrDocumentSearchQuery(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, search_term, format=None):
+        result = solr_search_query_paginated(core="documents", term=search_term,
+                                             page_number=request.GET.get('pageNumber', 1),
+                                             rows_per_page=request.GET.get(
+                                                 'pageSize', 1),
+                                             ids_to_filter_on=request.GET.getlist(
+                                                 'id'),
+                                             sort_by=request.GET.get('sortBy'),
+                                             sort_direction=request.GET.get('sortDirection'))
+        return Response(result)
+
+
+class SolrDocumentsSearchQueryPreAnalyzed(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, format=None):
+        result = solr_search_query_paginated_preanalyzed(core="documents", term=request.data['query'],
+                                                         page_number=request.GET.get('pageNumber', 1),
+                                                         rows_per_page=request.GET.get(
+                                                             'pageSize', 1),
+                                                         sort_by=request.GET.get('sortBy'),
+                                                         sort_direction=request.GET.get('sortDirection'))
+        return Response(result)
+
+
+class SimilarDocumentsAPIView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, id):
+        similar_document_ids_with_coeff = solr_mlt('documents', str(id),
+                                                   number_candidates=request.GET.get('numberCandidates', 5),
+                                                   threshold=request.GET.get('threshold', 0.0))
+        formatted_response = []
+        for id, title, website, coeff in similar_document_ids_with_coeff:
+            formatted_response.append({'id': id, 'title': title, 'website': website, 'coefficient': coeff})
+        return Response(formatted_response)
+
+
 class ExportDocumentsLaunch(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -309,15 +341,14 @@ class ExportDocumentsDownload(APIView):
         file = minio_client.get_object('export', task_id + '.zip')
         response = FileResponse(file, as_attachment=True)
         response['Content-Disposition'] = 'attachment; filename="%s"' % 'exported_docs.zip'
-        # delete export contents
-        export_delete.delay(task_id)
         return response
 
 
 @api_view(['GET'])
 def document_stats(request):
     if request.method == 'GET':
-        q1 = AcceptanceState.objects.all().order_by("document").distinct("document_id")
+        q1 = AcceptanceState.objects.all().order_by("document").distinct("document_id").annotate(
+            text_len=Length('document__title')).filter(text_len__gt=1)
         q2 = q1.exclude(Q(value="Rejected") | Q(value="Accepted")
                         & Q(probability_model__isnull=True))
         q3 = q1.filter(Q(value="Accepted") & Q(probability_model__isnull=True))
@@ -338,3 +369,11 @@ def document_stats(request):
             'count_autoaccepted': q6.count(),
             'count_autorejected': q7.count()
         })
+
+
+@api_view(['GET'])
+def count_total_documents(request):
+    if request.method == 'GET':
+        q = Document.objects.annotate(
+            text_len=Length('title')).filter(text_len__gt=1).count()
+        return Response(q)

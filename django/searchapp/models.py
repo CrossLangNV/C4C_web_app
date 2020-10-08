@@ -1,12 +1,14 @@
-import binascii
-import uuid
-import pysolr
 import os
+import uuid
 
+import pysolr
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from searchapp.solr_call import solr_update
+from safedelete.models import SOFT_DELETE_CASCADE
 from safedelete.models import SafeDeleteModel
+
+from searchapp.solr_call import solr_update
 
 
 class Website(models.Model):
@@ -19,6 +21,7 @@ class Website(models.Model):
 
 
 class Document(SafeDeleteModel):
+    _safedelete_policy = SOFT_DELETE_CASCADE
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     celex = models.CharField(max_length=20, default="", blank=True)
@@ -51,6 +54,7 @@ class Document(SafeDeleteModel):
     updated_at = models.DateTimeField(auto_now=True)
 
     acceptance_state_max_probability = models.FloatField(null=True)
+    unvalidated = models.BooleanField(default=True, editable=False)
 
     def __str__(self):
         return self.title
@@ -63,7 +67,8 @@ class Document(SafeDeleteModel):
                 solr_doc['website'] = self.website.name
             elif field == 'date' or field == 'created_at' or field == 'updated_at':
                 solr_doc[field] = value.strftime("%Y-%m-%dT%H:%M:%SZ")
-            elif not field.startswith('_') and field != 'extract_text' and not field.startswith('content') and field != 'file' and field != 'pull':
+            elif not field.startswith('_') and field != 'extract_text' and not field.startswith(
+                    'content') and field != 'file' and field != 'pull':
                 solr_doc[field] = value
 
         # Work around "Object of type UUID is not JSON serializable"
@@ -112,6 +117,22 @@ class AcceptanceState(models.Model):
         ]
         ordering = ['user']
 
+    def save(self, *args, **kwargs):
+        current_doc = Document.objects.get(id=self.document.id)
+        # mark document as validated if new value is not unvalidated
+        if self.value != AcceptanceStateValue.UNVALIDATED:
+            current_doc.unvalidated = False
+            current_doc.save()
+        else:
+            # get all acceptance states that are not unvalidated
+            validated_states = AcceptanceState.objects.filter(document=current_doc).exclude(
+                value=AcceptanceStateValue.UNVALIDATED)
+            # if there are none, this document can be marked again as unvalidated
+            if not validated_states:
+                current_doc.unvalidated = True
+                current_doc.save()
+        super(AcceptanceState, self).save(*args, **kwargs)
+
 
 class Attachment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -145,3 +166,16 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.value
+
+    def save(self, *args, **kwargs):
+        self.validate_unique()
+        super(Tag, self).save(*args, **kwargs)
+
+    def validate_unique(self, *args, **kwargs):
+        super(Tag, self).validate_unique(*args, **kwargs)
+
+        if self.__class__.objects.filter(document=self.document, value=self.value).exists():
+            raise ValidationError(
+                message='Tag with this (document, value) already exists.',
+                code='unique_together',
+            )
