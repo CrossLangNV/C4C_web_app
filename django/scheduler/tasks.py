@@ -191,6 +191,8 @@ def export_documents(website_ids=None):
 
 
 def post_pre_analyzed_to_solr(data):
+    logger.info("send to solr: %s", json.dumps(data))
+
     params = json.dumps(data).encode('utf8')
     req = urllib.request.Request(os.environ['SOLR_URL'] + "/documents/update", data=params,
                                  headers={'content-type': 'application/json'})
@@ -336,7 +338,7 @@ def extract_terms(website_id):
                 atomic_update_defined = [
                     {
                         "id": document['id'],
-                        "concept_defined": {"set": {
+                        "cl_concept_defined": {"set": {
                             "v": "1",
                             "str": cas.sofa_string,
                             "tokens": [
@@ -345,7 +347,7 @@ def extract_terms(website_id):
                         }}
                     }
                 ]
-                concept_defined_tokens = atomic_update_defined[0]['concept_defined']['set']['tokens']
+                concept_defined_tokens = atomic_update_defined[0]['cl_concept_defined']['set']['tokens']
                 j = 0
 
                 # Term defined, we check which terms are covered by definitions
@@ -387,7 +389,7 @@ def extract_terms(website_id):
                 atomic_update = [
                     {
                         "id": document['id'],
-                        "concept_occurs": {
+                        "cl_concept_occurs": {
                             "set": {
                                 "v": "1",
                                 "str": cas2.sofa_string,
@@ -398,7 +400,7 @@ def extract_terms(website_id):
                         }
                     }
                 ]
-                concept_occurs_tokens = atomic_update[0]['concept_occurs']['set']['tokens']
+                concept_occurs_tokens = atomic_update[0]['cl_concept_occurs']['set']['tokens']
 
                 # Select all Tfidfs from the CAS
                 i = 0
@@ -432,16 +434,16 @@ def extract_terms(website_id):
 
                 # Step 6: Post term_occurs to Solr
                 escaped_json = json.dumps(
-                    atomic_update[0]['concept_occurs']['set'])
-                atomic_update[0]['concept_occurs']['set'] = escaped_json
+                    atomic_update[0]['cl_concept_occurs']['set'])
+                atomic_update[0]['cl_concept_occurs']['set'] = escaped_json
                 logger.info("Detected %s concepts", len(concept_occurs_tokens))
                 if len(concept_occurs_tokens) > 0:
                     post_pre_analyzed_to_solr(atomic_update)
 
                 # Step 8: Post term_defined to Solr
                 escaped_json_def = json.dumps(
-                    atomic_update_defined[0]['concept_defined']['set'])
-                atomic_update_defined[0]['concept_defined']['set'] = escaped_json_def
+                    atomic_update_defined[0]['cl_concept_defined']['set'])
+                atomic_update_defined[0]['cl_concept_defined']['set'] = escaped_json_def
                 logger.info("Detected %s concept definitions",
                             len(concept_defined_tokens))
                 if len(concept_defined_tokens) > 0:
