@@ -6,8 +6,8 @@ from datetime import datetime
 import requests
 import scrapy
 from minio import Minio
-from scrapy.pipelines.files import FilesPipeline
 from scrapy import signals
+from scrapy.pipelines.files import FilesPipeline
 
 from scraper.scrapy_app.minio_call import S3ItemExporter
 
@@ -97,7 +97,7 @@ class ScrapyAppPipeline(FilesPipeline):
         for file_result in file_results:
             file_name = file_result['path']
             file_path = os.environ['SCRAPY_FILES_FOLDER'] + \
-                'files/' + info.spider.name + "/" + file_name
+                        'files/' + info.spider.name + "/" + file_name
             # There will be only 1 file_result from cellar, so we store that as the content_html
             if file_result['url'].startswith('http://publications.europa.eu/resource/cellar/'):
                 f = open(file_path, "r")
@@ -105,11 +105,12 @@ class ScrapyAppPipeline(FilesPipeline):
                 self.logger.info(
                     "GOT HTML FROM CELLAR for ITEM: %s", item['url'])
             else:
-                # store in minio
-                if not 'file_url' in item:
+                # initialize file_url and file_name fields
+                if 'file_url' not in item:
                     item['file_url'] = []
-                if not 'file_name' in item:
+                if 'file_name' not in item:
                     item['file_name'] = []
+                # store file in minio
                 file_minio_path = self.minio_upload(file_path, file_name)
                 item['file_url'].append(file_result['url'])
                 item['file_name'].append(file_minio_path)

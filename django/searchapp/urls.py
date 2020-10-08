@@ -95,6 +95,9 @@ urlpatterns = [
     path('api/stats', views.document_stats,
          name='document_stats'),
 
+    path('api/stats/total_documents', views.count_total_documents,
+         name='total_documents'),
+
     # Super
     path('api/super', views.IsSuperUserAPIView.as_view(), name='super_api'),
 
@@ -104,8 +107,13 @@ urlpatterns = [
          views.SolrFile.as_view(), name='solr_file_search_api'),
     path('api/solrdocument/<id>', views.SolrDocument.as_view(),
          name='solr_document_api'),
-    path('api/solrdocument/search/<search_term>',
-         views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
+    path('api/solrdocument/search/<search_term>', views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
+    path('api/solrdocument/search/query/<search_term>', views.SolrDocumentSearchQuery.as_view(),
+         name='solr_document_search_query_api'),
+    path('api/solrdocument/search/query/preanalyzed/', views.SolrDocumentsSearchQueryPreAnalyzed.as_view(),
+         name='solr_document_search_query_preanalyzed_api'),
+    path('api/solrdocuments/like/<id>', views.SimilarDocumentsAPIView.as_view(),
+         name='similar_documents_api'),
 
     # Export
     path('api/export/launch', views.ExportDocumentsLaunch.as_view(),

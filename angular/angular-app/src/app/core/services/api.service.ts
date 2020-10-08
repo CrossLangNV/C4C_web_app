@@ -33,6 +33,8 @@ import {
   RoAdapter,
 } from 'src/app/shared/models/ro';
 import * as rosData from './ros.json';
+import {ConceptAcceptanceState, ConceptAcceptanceStateAdapter} from "../../shared/models/conceptAcceptanceState";
+import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/conceptComment";
 
 @Injectable({
   providedIn: 'root',
@@ -65,6 +67,8 @@ export class ApiService {
     private tagAdapter: TagAdapter,
     private conceptTagAdapter: ConceptTagAdapter,
     private conceptAdapter: ConceptAdapter,
+    private conceptAcceptanceStateAdapter: ConceptAcceptanceStateAdapter,
+    private conceptCommentAdapter: ConceptCommentAdapter,
     private roAdapter: RoAdapter
   ) {
     this.messageSource = new Subject<string>();
@@ -121,6 +125,45 @@ export class ApiService {
       }
     }
     return this.http.get<any[]>(requestUrl).pipe(
+      map((data: any[]) => {
+        const result = [data[0]];
+        result.push(data[1]);
+        return result;
+      })
+    );
+  }
+
+  public searchSolrPreAnalyzedDocuments(
+    pageNumber: number,
+    pageSize: number,
+    term: string,
+    field: string,
+    idsFilter: string[],
+    sortBy: string,
+    sortDirection: string
+  ): Observable<any[]> {
+    let requestUrl = `${this.API_URL}/solrdocument/search/query/preanalyzed/`;
+    // let requestUrl = `http://localhost:8983/solr/documents/select?hl.fl=${field}&hl=on&q={!term f=${field}}${term}`;
+
+    if (sortBy) {
+      requestUrl += `?sortBy=${sortBy}`;
+      if (sortDirection) {
+        requestUrl += `&sortDirection=${sortDirection}`;
+      }
+      if (pageNumber) {
+        requestUrl += `&pageNumber=${pageNumber}`;
+      }
+      if (pageSize) {
+        requestUrl += `&pageSize=${pageSize}`;
+      }
+    }
+
+    let formData = new FormData();
+    formData.append('query', `{!term f=${field}}${term}`);
+
+    console.log("requestUrl: "+requestUrl)
+
+    return this.http.post<any[]>(requestUrl, formData).pipe(
       map((data: any[]) => {
         const result = [data[0]];
         result.push(data[1]);
@@ -289,6 +332,12 @@ export class ApiService {
     return this.http.get<string[]>(`${this.API_URL}/stats`);
   }
 
+  public getSimilarDocuments(id: string, threshold: number, numberCandidates: number): Observable<any[]> {
+    return this.http.get<any[]>(
+      `${this.API_URL}/solrdocuments/like/${id}?threshold=${threshold}&numberCandidates=${numberCandidates}`
+    );
+  }
+
   public getStateValues(): Observable<string[]> {
     return this.http.get<string[]>(`${this.API_URL}/state/value`);
   }
@@ -374,19 +423,19 @@ export class ApiService {
       .pipe(map((item) => this.conceptAdapter.adapt(item)));
   }
 
-  public getConceptComment(id: string): Observable<Comment> {
+  public getConceptComment(id: string): Observable<ConceptComment> {
     return this.http
-      .get<Comment>(`${this.API_GLOSSARY_URL}/comment/${id}`)
-      .pipe(map((item) => this.commentAdapter.adapt(item)));
+      .get<ConceptComment>(`${this.API_GLOSSARY_URL}/comment/${id}`)
+      .pipe(map((item) => this.conceptCommentAdapter.adapt(item)));
   }
 
-  public addConceptComment(comment: Comment): Observable<Comment> {
+  public addConceptComment(comment: ConceptComment): Observable<ConceptComment> {
     return this.http
-      .post<Comment>(
+      .post<ConceptComment>(
         `${this.API_GLOSSARY_URL}/comments`,
-        this.commentAdapter.encode(comment)
+        this.conceptCommentAdapter.encode(comment)
       )
-      .pipe(map((item) => this.commentAdapter.adapt(item)));
+      .pipe(map((item) => this.conceptCommentAdapter.adapt(item)));
   }
 
   public deleteConceptComment(id: string): Observable<any> {
@@ -404,6 +453,23 @@ export class ApiService {
 
   public deleteConceptTag(id: string): Observable<any> {
     return this.http.delete(`${this.API_GLOSSARY_URL}/tag/${id}`);
+  }
+
+  public getConceptStateValues(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.API_GLOSSARY_URL}/state/value`);
+  }
+
+  public getConceptState(id: string): Observable<ConceptAcceptanceState> {
+    return this.http
+      .get<ConceptAcceptanceState>(`${this.API_GLOSSARY_URL}/state/${id}`)
+      .pipe(map((item) => this.conceptAcceptanceStateAdapter.adapt(item)));
+  }
+
+  public updateConceptState(state: ConceptAcceptanceState): Observable<ConceptAcceptanceState> {
+    return this.http.put<ConceptAcceptanceState>(
+      `${this.API_GLOSSARY_URL}/state/${state.id}`,
+      this.conceptAcceptanceStateAdapter.encode(state)
+    );
   }
 
   //

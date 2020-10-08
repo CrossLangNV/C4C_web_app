@@ -1,44 +1,22 @@
 version: '3'
 services:
-  termextract:
-    image: docker.crosslang.com/ctlg-manager/termextract:latest
-    ports:
-      - "5001:5001"
-
-  definitionextract:
-    image: docker.crosslang.com/ctlg-manager/definitionextract:latest
-    ports:
-      - "5002:5002"
-
-  uima:
-    image: docker.crosslang.com/ctlg-manager/uima-html-to-text:develop-latest
-    ports:
-      - "8008:8008"
-  networks:
-    - default
-  labels:
-    - traefik.http.routers.angular.rule=Host(`uima.staging.dgfisma.crosslang.com`)
-    - traefik.http.routers.angular.tls=true
-    - traefik.http.routers.angular.tls.certresolver=le
-    - traefik.http.routers.angular.entrypoints=websecure
-
   angular:
-    image: docker.crosslang.com/ctlg-manager/angular:develop-latest
+    image: docker.crosslang.com/ctlg-manager/angular:master-latest
     restart: always
     env_file:
       - ./secrets/django-docker.env.sample
-    depends_on:
+    depends_on: 
       - django
     networks:
       - default
     labels:
-      - traefik.http.routers.angular.rule=Host(`angular.staging.dgfisma.crosslang.com`)
+      - traefik.http.routers.angular.rule=Host(`angular.dgfisma.crosslang.com`)
       - traefik.http.routers.angular.tls=true
       - traefik.http.routers.angular.tls.certresolver=le
       - traefik.http.routers.angular.entrypoints=websecure
 
   django:
-    image: docker.crosslang.com/ctlg-manager/django:develop-latest
+    image: docker.crosslang.com/ctlg-manager/django:master-latest
     restart: always
     env_file:
       - ./secrets/django-docker.env.sample
@@ -51,7 +29,7 @@ services:
       - default
 
   django_nginx:
-    image: docker.crosslang.com/ctlg-manager/django_nginx:develop-latest
+    image: docker.crosslang.com/ctlg-manager/django_nginx:master-latest
     expose: [8000]
     restart: always
     depends_on:
@@ -59,62 +37,62 @@ services:
     networks:
       - default
     labels:
-      - traefik.http.routers.django.rule=Host(`django.staging.dgfisma.crosslang.com`)
+      - traefik.http.routers.django.rule=Host(`django.dgfisma.crosslang.com`)
       - traefik.http.routers.django.tls=true
       - traefik.http.routers.django.tls.certresolver=le
       - traefik.http.routers.django.entrypoints=websecure
       - traefik.http.services.django.loadbalancer.server.port=8000
 
   celery:
-    image: docker.crosslang.com/ctlg-manager/django:develop-latest
+    image: docker.crosslang.com/ctlg-manager/django:master-latest
     command: celery -A scheduler worker -l info
     restart: always
-    env_file:
+    env_file: 
       - ./secrets/django-docker.env.sample
-    restart:
+    restart: 
       always
-    depends_on:
+    depends_on: 
       - django
       - rabbitmq
     networks:
       - default
 
   celery_beat:
-    image: docker.crosslang.com/ctlg-manager/django:develop-latest
+    image: docker.crosslang.com/ctlg-manager/django:master-latest
     command: celery -A scheduler beat -l info
     restart: always
-    env_file:
+    env_file: 
       - ./secrets/django-docker.env.sample
-    restart:
+    restart: 
       always
-    depends_on:
+    depends_on: 
       - django
       - rabbitmq
     networks:
       - default
 
   flower:
-    image: docker.crosslang.com/ctlg-manager/django:develop-latest
+    image: docker.crosslang.com/ctlg-manager/django:master-latest
     expose: [5555]
     restart: always
     command: flower -A scheduler --port=5555 --persistent
-    env_file:
+    env_file: 
       - ./secrets/django-docker.env.sample
-    restart:
+    restart: 
       always
-    depends_on:
+    depends_on: 
       - celery
     networks:
       - default
     labels:
-      - traefik.http.routers.flower.rule=Host(`flower.staging.dgfisma.crosslang.com`)
+      - traefik.http.routers.flower.rule=Host(`flower.dgfisma.crosslang.com`)
       - traefik.http.routers.flower.tls=true
       - traefik.http.routers.flower.tls.certresolver=le
       - traefik.http.routers.flower.entrypoints=websecure
       - traefik.http.services.flower.loadbalancer.server.port=5555
       - traefik.http.routers.flower.middlewares=flower-auth
       - traefik.http.middlewares.flower-auth.basicauth.users=crosslang:$$apr1$$YFFXh8UA$$g51It6.RN49bYEZepvxPA0
-
+    
   rabbitmq:
     image: rabbitmq
     restart: always
@@ -125,14 +103,14 @@ services:
     image: solr:8-slim
     restart: always
     volumes:
-      - /mnt/HC_Volume_6140810/ctlg-manager/solr:/var/solr
+      - /mnt/fisma-prod/ctlg-manager/solr:/var/solr
     environment:
       - SOLR_HEAP=4g
     command: solr-precreate documents
     networks:
       - default
     labels:
-      - traefik.http.routers.solr.rule=Host(`solr.staging.dgfisma.crosslang.com`)
+      - traefik.http.routers.solr.rule=Host(`solr.dgfisma.crosslang.com`)
       - traefik.http.routers.solr.tls=true
       - traefik.http.routers.solr.tls.certresolver=le
       - traefik.http.routers.solr.entrypoints=websecure
@@ -145,7 +123,7 @@ services:
     env_file:
       - ./secrets/django-docker.env.sample
     volumes:
-      - /mnt/HC_Volume_6140810/ctlg-manager/postgres:/var/lib/postgresql/data
+      - /mnt/fisma-prod/ctlg-manager/postgres:/var/lib/postgresql/data
     networks:
       - default
 
@@ -162,11 +140,11 @@ services:
     env_file:
       - ./secrets/django-docker.env.sample
     volumes:
-      - /mnt/HC_Volume_6140810/ctlg-manager/minio:/data
+      - /mnt/fisma-prod/ctlg-manager/minio:/data
     networks:
       - default
     labels:
-      - traefik.http.routers.minio.rule=Host(`minio.staging.dgfisma.crosslang.com`)
+      - traefik.http.routers.minio.rule=Host(`minio.dgfisma.crosslang.com`)
       - traefik.http.routers.minio.tls=true
       - traefik.http.routers.minio.tls.certresolver=le
       - traefik.http.routers.minio.entrypoints=websecure

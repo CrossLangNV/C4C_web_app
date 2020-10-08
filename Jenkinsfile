@@ -1,5 +1,9 @@
 #!groovy
 pipeline {
+    tools {
+        maven 'maven 3.3.9'
+        jdk 'Java 1.8'
+    }
     environment {
         VERSION = ''
         HELM_USERNAME='crosslang'
@@ -37,6 +41,13 @@ pipeline {
                             customImage.push("${env.BRANCH_NAME}-latest")
                         }
                     }
+                }
+            }
+        }
+        stage('Build and Test Java Code') {
+            steps {
+                dir('uima-html-to-text'){
+                    sh "mvn compile jib:build -Denv.BRANCH_NAME=${env.BRANCH_NAME} -Dimage=docker.crosslang.com/ctlg-manager/uima-html-to-text:${env.BRANCH_NAME}-latest"
                 }
             }
         }

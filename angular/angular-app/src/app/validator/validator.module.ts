@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DocumentListComponent, NgbdSortableHeaderDirective } from './document-list/document-list.component';
+import { DocumentListComponent } from './document-list/document-list.component';
 import { SharedModule } from '../shared/shared.module';
 import { ValidatorRoutingModule } from './validator-routing.module';
 import { DocumentValidateComponent } from './document-validate/document-validate.component';
@@ -14,12 +14,15 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { TruncatePipe } from '../shared/pipelines/truncate';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
+import { SliderModule } from 'primeng/slider';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { NgbDateAdapter, NgbDateNativeAdapter } from '@ng-bootstrap/ng-bootstrap';
+import { NgbdSortableHeader } from './document-list/sortable.directive';
 
 @NgModule({
   declarations: [
     DocumentListComponent,
-    NgbdSortableHeaderDirective,
+    NgbdSortableHeader,
     DocumentValidateComponent,
     TruncatePipe,
   ],
@@ -34,6 +37,8 @@ import { NgbDateAdapter, NgbDateNativeAdapter } from '@ng-bootstrap/ng-bootstrap
     ChartModule,
     OverlayPanelModule,
     ConfirmDialogModule,
+    SliderModule,
+    InputNumberModule,
     ValidatorRoutingModule,
   ],
   providers: [

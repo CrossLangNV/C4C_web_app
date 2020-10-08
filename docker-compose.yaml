@@ -1,5 +1,11 @@
 version: '3'
 services:
+  uima:
+    build: ./uima-html-to-text
+    ports:
+      - "8008:8008"
+      - "5005:5005"
+
   angular:
     build: ./angular
     ports:
@@ -121,3 +127,4 @@ volumes:
   solr:
   postgres:
   minio:
+  train:
