@@ -32,7 +32,6 @@ rest_site.register(User)
 def reset_pre_analyzed_fields(modeladmin, request, queryset):
     for website in queryset:
         tasks.reset_pre_analyzed_fields.delay(website.id)
-        logger.info("Deleted PreAnalyzed fields")
 
 
 def full_service(modeladmin, request, queryset):
@@ -85,10 +84,6 @@ def extract_terms(modeladmin, request, queryset):
         logger.info("Done extracting terms!!!!")
 
 
-def test_solr_preanalyzed_update(modeladmin, request, queryset):
-    tasks.test_solr_preanalyzed_update()
-
-
 def delete_from_solr(modeladmin, requerst, queryset):
     for website in queryset:
         r = requests.post(os.environ['SOLR_URL'] + '/' +
@@ -102,8 +97,7 @@ class WebsiteAdmin(admin.ModelAdmin):
     list_display = ['name', 'count_documents']
     ordering = ['name']
     actions = [full_service, scrape_website, sync_scrapy_to_solr, parse_content_to_plaintext,
-               sync_documents, score_documents, check_documents_unvalidated, extract_terms,
-               test_solr_preanalyzed_update, export_documents,
+               sync_documents, score_documents, check_documents_unvalidated, extract_terms, export_documents,
                delete_from_solr, reset_pre_analyzed_fields]
 
     def count_documents(self, doc):
