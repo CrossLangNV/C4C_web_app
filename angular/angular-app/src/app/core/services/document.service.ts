@@ -147,4 +147,10 @@ export class DocumentService {
       `${this.API_URL}/documents${pageQuery}`
     );
   }
+
+  public total_documents(): Observable<number> {
+    return this.http.get<number>(
+      `${this.API_URL}/stats/total_documents`
+    );
+  }
 }

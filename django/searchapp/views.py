@@ -347,7 +347,8 @@ class ExportDocumentsDownload(APIView):
 @api_view(['GET'])
 def document_stats(request):
     if request.method == 'GET':
-        q1 = AcceptanceState.objects.all().order_by("document").distinct("document_id")
+        q1 = AcceptanceState.objects.all().order_by("document").distinct("document_id").annotate(
+            text_len=Length('document__title')).filter(text_len__gt=1)
         q2 = q1.exclude(Q(value="Rejected") | Q(value="Accepted")
                         & Q(probability_model__isnull=True))
         q3 = q1.filter(Q(value="Accepted") & Q(probability_model__isnull=True))
@@ -368,3 +369,11 @@ def document_stats(request):
             'count_autoaccepted': q6.count(),
             'count_autorejected': q7.count()
         })
+
+
+@api_view(['GET'])
+def count_total_documents(request):
+    if request.method == 'GET':
+        q = Document.objects.annotate(
+            text_len=Length('title')).filter(text_len__gt=1).count()
+        return Response(q)

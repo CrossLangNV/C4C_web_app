@@ -107,7 +107,7 @@ CLOSESPIDER_ERRORCOUNT = 1
 
 COMPRESSION_ENABLED = True
 
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = 'DEBUG'
 
 # Follow redirect on http://publications.europa.eu/resource/celex/32018D1720
 # Still got errors downloading, implemented workaround in:
