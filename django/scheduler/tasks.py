@@ -502,24 +502,6 @@ def sync_documents_task(website_id):
         current_doc, current_doc_created = Document.objects.update_or_create(
             id=solr_doc["id"], defaults=data)
 
-        # if document content is not english, add a FOREIGN Tag to the django document
-        solr_content = solr_doc.get('content', [''])[0]
-        if not is_document_english(solr_content):
-            try:
-                Tag.objects.create(value="FOREIGN", document=current_doc)
-            except ValidationError as e:
-                # tag exists, skip
-                logger.debug(str(e))
-        else:
-            # document is english, remove previous FOREIGN tag if it exists
-            try:
-                foreign_tag = Tag.objects.get(
-                    value="FOREIGN", document=current_doc)
-                foreign_tag.delete()
-            except Tag.DoesNotExist:
-                # FOREIGN tag not found, skip
-                pass
-
     # check for outdated documents based on last time a document was found during scraping
     how_many_days = 30
     outdated_docs = Document.objects.filter(
