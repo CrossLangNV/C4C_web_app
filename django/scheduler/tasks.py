@@ -527,6 +527,22 @@ def sync_documents_task(website_id):
 
 
 @shared_task
+def delete_documents_not_in_solr_task(website_id):
+    website = Website.objects.get(pk=website_id)
+    # query Solr for available documents
+    solr_documents = solr_search_website_sorted(
+        core='documents', website=website.name.lower())
+    # delete django Documents that no longer exist in Solr
+    django_documents = list(Document.objects.filter(website=website))
+    django_doc_ids = [str(django_doc.id) for django_doc in django_documents]
+    solr_doc_ids = [solr_doc["id"] for solr_doc in solr_documents]
+    to_delete_doc_ids = set(django_doc_ids) - set(solr_doc_ids)
+    to_delete_docs = Document.objects.filter(pk__in=to_delete_doc_ids)
+    logger.info('Deleting deprecated documents...')
+    to_delete_docs.delete()
+
+
+@shared_task
 def scrape_website_task(website_id, delay=True):
     # lookup website and start scraping
     website = Website.objects.get(pk=website_id)
