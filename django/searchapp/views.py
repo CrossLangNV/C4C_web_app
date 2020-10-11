@@ -32,7 +32,7 @@ class WebsiteListAPIView(ListCreateAPIView):
 
     def get_queryset(self):
         queryset = Website.objects.annotate(
-            total_documents=Count('documents')
+            total_documents=Count('documents', filter=Q(documents__deleted__isnull=True))
         )
         return queryset
 
@@ -44,7 +44,7 @@ class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         queryset = Website.objects.annotate(
-            total_documents=Count('documents')
+            total_documents=Count('documents', filter=Q(documents__deleted__isnull=True))
         )
         return queryset
 
