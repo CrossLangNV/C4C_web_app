@@ -44,37 +44,37 @@ class EbaSpider(scrapy.Spider):
             output = parser.from_file(pdf_url)
             if 'content' in output:
                 content = output['content']
-                if is_document_english(content):
+                if self.is_document_english(content):
                     data = {
                         'title': td.css("p.ResultTitle a::text").extract_first(),
                         'date': datetime.strptime(dates[0], self.date_format),
                         # 'date_last_update': datetime.strptime(dates[1], self.date_format),
                         'type': self.spider_type.name.title(),
                         'url': td.css("p.ResultTitle a::attr(href)").extract_first(),
-                        'pdf_docs': pdf_url
+                        'pdf_docs': [pdf_url]
                     }
                     yield data
 
-        nex_page_url = response.css("li.next a::attr(href)").extract_first()
-        if nex_page_url is not None:
-            yield scrapy.Request(response.urljoin(nex_page_url))
+        next_page_url = response.css("li.next a::attr(href)").extract_first()
+        if next_page_url is not None:
+            yield scrapy.Request(response.urljoin(next_page_url))
 
-def is_document_english(plain_text):
-    english = False
-    detect_threshold = 0.4
-    try:
-        langs = detect_langs(plain_text)
-        number_langs = len(langs)
-        # trivial case for 1 language detected
-        if number_langs == 1:
-            if langs[0].lang == 'en':
-                english = True
-        # if 2 or more languages are detected, consider detect probability
-        else:
-            for detected in langs:
-                if detected.lang == 'en' and detected.prob >= detect_threshold:
+    def is_document_english(self, plain_text):
+        english = False
+        detect_threshold = 0.4
+        try:
+            langs = detect_langs(plain_text)
+            number_langs = len(langs)
+            # trivial case for 1 language detected
+            if number_langs == 1:
+                if langs[0].lang == 'en':
                     english = True
-                    break
-    except LangDetectException:
-        pass
-    return english
+            # if 2 or more languages are detected, consider detect probability
+            else:
+                for detected in langs:
+                    if detected.lang == 'en' and detected.prob >= detect_threshold:
+                        english = True
+                        break
+        except LangDetectException:
+            pass
+        return english
