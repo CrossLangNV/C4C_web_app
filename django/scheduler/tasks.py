@@ -487,7 +487,7 @@ def score_documents_task(website_id, **kwargs):
     website = Website.objects.get(pk=website_id)
     logger.info("Scoring documents with WEBSITE: " + website.name)
     solr_documents = solr_search_website_with_content(
-        'documents', website.name)
+        'documents', website.name, date=kwargs.get('date', None))
     use_pdf_files = True
     if website.name.lower() == 'eurlex':
         use_pdf_files = False
