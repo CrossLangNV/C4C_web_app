@@ -500,8 +500,10 @@ def sync_documents_task(website_id, **kwargs):
     website = Website.objects.get(pk=website_id)
     logger.info("Syncing documents with WEBSITE: " + website.name)
     # query Solr for available documents and sync with Django
+
+    date = kwargs.get('date', None)
     solr_documents = solr_search_website_sorted(
-        core='documents', website=website.name.lower())
+        core='documents', website=website.name.lower(), date=date)
     for solr_doc in solr_documents:
         solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
         solr_doc_date_last_update = solr_doc.get(
