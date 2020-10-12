@@ -102,12 +102,12 @@ AUTOTHROTTLE_DEBUG = False
 # HTTPCACHE_POLICY = 'scrapy.extensions.httpcache.RFC2616Policy'
 # HTTPCACHE_GZIP = True
 
-# Exit on first error
-CLOSESPIDER_ERRORCOUNT = 1
+# Exit on first error (TEMP DISABLED)
+CLOSESPIDER_ERRORCOUNT = 0
 
 COMPRESSION_ENABLED = True
 
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = 'DEBUG'
 
 # Follow redirect on http://publications.europa.eu/resource/celex/32018D1720
 # Still got errors downloading, implemented workaround in:

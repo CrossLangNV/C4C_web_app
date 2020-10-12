@@ -54,23 +54,23 @@ export class DocumentListComponent implements OnInit {
   pageSize = 5;
   filterActive = false;
   stats = {
-    total: 0,
+    classifiedSize: 0,
+    classifiedPercent: 0,
     unvalidatedSize: 0,
     unvalidatedPercent: 0,
     acceptedSize: 0,
     acceptedPercent: 0,
     rejectedSize: 0,
     rejectedPercent: 0,
+    autoClassifiedSize: 0,
+    autoClassifiedPercent: 0,
     autoUnvalidatedSize: 0,
     autoUnvalidatedPercent: 0,
     autoAcceptedSize: 0,
     autoAcceptedPercent: 0,
     autoRejectedSize: 0,
     autoRejectedPercent: 0,
-    validatedSize: 0,
-    validatedPercent: 0,
-    autoValidatedSize: 0,
-    autoValidatedPercent: 0,
+    totalDocuments: 0,
   };
   userIcon: IconDefinition;
   chipIcon: IconDefinition;
@@ -85,16 +85,7 @@ export class DocumentListComponent implements OnInit {
     { id: 'accepted', name: '..Accepted' },
     { id: 'rejected', name: '..Rejected' },
   ];
-  websites = [
-    { id: '', name: 'Website..' },
-    { id: 'bis', name: '..BIS' },
-    { id: 'eiopa', name: '..EIOPA' },
-    { id: 'esma', name: '..ESMA' },
-    { id: 'eurlex', name: '..EURLEX' },
-    { id: 'fsb', name: '..FSB' },
-    { id: 'srb', name: '..SRB' },
-    { id: 'eba', name: '..EBA' },
-  ];
+  websites = [ { id: '', name: 'Website..' } ];
   currentDjangoUser: DjangoUser;
   selectedIndex: string = null;
 
@@ -112,57 +103,61 @@ export class DocumentListComponent implements OnInit {
     this.documentResults$ = this.documentService.documentResults$;
     // Fetch statistics
     this.service.getDocumentStats().subscribe((result) => {
-      // Total
-      this.stats.total = result.count_total;
       // Human
-      this.stats.unvalidatedSize =
-        result.count_total - result.count_accepted - result.count_rejected;
+      this.stats.unvalidatedSize = result.count_unvalidated;
+      this.stats.acceptedSize = result.count_accepted;
+      this.stats.rejectedSize = result.count_rejected;
+      this.stats.classifiedSize = this.stats.unvalidatedSize + this.stats.acceptedSize + this.stats.rejectedSize;
+
+      this.stats.classifiedPercent =
+        (this.stats.classifiedSize / this.stats.totalDocuments) * 100;
+      this.stats.classifiedPercent =
+        Math.round((this.stats.classifiedPercent + Number.EPSILON) * 100) / 100;
+
       this.stats.unvalidatedPercent =
-        (this.stats.unvalidatedSize / result.count_total) * 100;
+        (this.stats.unvalidatedSize / this.stats.classifiedSize) * 100;
       this.stats.unvalidatedPercent =
         Math.round((this.stats.unvalidatedPercent + Number.EPSILON) * 100) /
         100;
-      this.stats.acceptedSize = result.count_accepted;
+
       this.stats.acceptedPercent =
-        (this.stats.acceptedSize / result.count_total) * 100;
+        (this.stats.acceptedSize / this.stats.classifiedSize) * 100;
       this.stats.acceptedPercent =
         Math.round((this.stats.acceptedPercent + Number.EPSILON) * 100) / 100;
-      this.stats.rejectedSize = result.count_rejected;
+
       this.stats.rejectedPercent =
-        (this.stats.rejectedSize / result.count_total) * 100;
+        (this.stats.rejectedSize / this.stats.classifiedSize) * 100;
       this.stats.rejectedPercent =
         Math.round((this.stats.rejectedPercent + Number.EPSILON) * 100) / 100;
-      this.stats.validatedSize =
-        result.count_total - this.stats.unvalidatedSize;
-      this.stats.validatedPercent =
-        (this.stats.validatedSize / result.count_total) * 100;
-      this.stats.validatedPercent =
-        Math.round((this.stats.validatedPercent + Number.EPSILON) * 100) / 100;
+
       // Classifier
       this.stats.autoUnvalidatedSize = result.count_autounvalidated;
+      this.stats.autoAcceptedSize = result.count_autoaccepted;
+      this.stats.autoRejectedSize = result.count_autorejected;
+      this.stats.autoClassifiedSize = this.stats.autoUnvalidatedSize + this.stats.autoAcceptedSize
+        + this.stats.autoRejectedSize;
+
+      this.stats.autoClassifiedPercent = (this.stats.autoClassifiedSize / this.stats.totalDocuments) * 100;
+      this.stats.autoClassifiedPercent =
+        Math.round((this.stats.autoClassifiedPercent + Number.EPSILON) * 100) /
+        100;
+
       this.stats.autoUnvalidatedPercent =
-        (this.stats.autoUnvalidatedSize / result.count_total) * 100;
+        (this.stats.autoUnvalidatedSize / this.stats.autoClassifiedSize) * 100;
       this.stats.autoUnvalidatedPercent =
         Math.round((this.stats.autoUnvalidatedPercent + Number.EPSILON) * 100) /
         100;
-      this.stats.autoAcceptedSize = result.count_autoaccepted;
+
       this.stats.autoAcceptedPercent =
-        (this.stats.autoAcceptedSize / result.count_total) * 100;
+        (this.stats.autoAcceptedSize / this.stats.autoClassifiedSize) * 100;
       this.stats.autoAcceptedPercent =
         Math.round((this.stats.autoAcceptedPercent + Number.EPSILON) * 100) /
         100;
-      this.stats.autoRejectedSize = result.count_autorejected;
+
       this.stats.autoRejectedPercent =
-        (this.stats.autoRejectedSize / result.count_total) * 100;
+        (this.stats.autoRejectedSize / this.stats.autoClassifiedSize) * 100;
       this.stats.autoRejectedPercent =
         Math.round((this.stats.autoRejectedPercent + Number.EPSILON) * 100) /
-        100;
-      this.stats.autoValidatedSize =
-        result.count_total - result.count_autounvalidated;
-      this.stats.autoValidatedPercent =
-        (this.stats.autoValidatedSize / result.count_total) * 100;
-      this.stats.autoValidatedPercent =
-        Math.round((this.stats.autoValidatedPercent + Number.EPSILON) * 100) /
         100;
     });
   }
@@ -172,6 +167,17 @@ export class DocumentListComponent implements OnInit {
     this.authenticationService.currentDjangoUser.subscribe(
       (x) => (this.currentDjangoUser = x)
     );
+    this.service.getWebsites().subscribe((websites) => {
+      websites.forEach((website) => {
+        this.websites.push({
+          id: website.name.toLowerCase(),
+          name: '..' + website.name.toUpperCase(),
+        });
+      });
+    });
+    this.documentService.total_documents().subscribe((value: number) => {
+      this.stats.totalDocuments = value;
+    });
     this.fetchDocuments();
     this.service.messageSource.asObservable().subscribe((value: string) => {
       if (value === 'refresh') {
