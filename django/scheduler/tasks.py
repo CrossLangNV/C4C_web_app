@@ -193,8 +193,6 @@ def export_documents(website_ids=None):
 
 
 def post_pre_analyzed_to_solr(data):
-    logger.info("send to solr: %s", json.dumps(data))
-
     params = json.dumps(data).encode('utf8')
     req = urllib.request.Request(os.environ['SOLR_URL'] + "/documents/update", data=params,
                                  headers={'content-type': 'application/json'})
