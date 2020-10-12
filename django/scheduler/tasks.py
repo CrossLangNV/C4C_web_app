@@ -424,7 +424,6 @@ def extract_terms(website_id):
                 # Select all Tfidfs from the CAS
                 i = 0
                 for term in cas2.get_view(sofa_id_html2text).select(TFIDF_CLASS):
-                    logger.info("cas2 term: ", term)
                     # Save the token information
                     token = term.get_covered_text()
                     score = term.tfidfValue
