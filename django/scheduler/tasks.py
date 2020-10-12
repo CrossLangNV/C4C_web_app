@@ -122,7 +122,8 @@ def full_service_task(website_id, **kwargs):
         parse_content_to_plaintext_task.si(website_id, date=kwargs.get('date', None)),
         sync_documents_task.si(website_id, date=kwargs.get('date', None)),
         score_documents_task.si(website_id, date=kwargs.get('date', None)),
-        check_documents_unvalidated_task.si(website_id)
+        check_documents_unvalidated_task.si(website_id),
+        extract_terms.si(website_id),
     )()
 
 
