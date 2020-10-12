@@ -218,8 +218,7 @@ def extract_terms(website_id):
 
     # TODO Do'nt forget to change
     # Query for Solr to find per website that has the content_html field (some do not)
-    #q = "website:" + website_name + " AND content_html:* AND acceptance_state:accepted"
-    q = "website:" + website_name + " AND content_html:*"
+    q = "website:" + website_name + " AND content_html:* AND acceptance_state:accepted"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -233,8 +232,8 @@ def extract_terms(website_id):
                 logger.info("Skipping too big document id: %s", document['id'])
                 continue
 
-            logger.info("Extracting terms from document id: %s",
-                        document['id'])
+            logger.info("Extracting terms from document id: %s (%s chars)",
+                        document['id'], len(document['content_html'][0]))
 
             content_html_text = {
                 "text": document['content_html'][0]
