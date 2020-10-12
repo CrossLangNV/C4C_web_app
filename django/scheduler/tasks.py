@@ -482,9 +482,6 @@ def extract_terms(website_id):
                 requests.get(os.environ['SOLR_URL'] +
                              '/' + core + '/update?commit=true')
 
-        break
-
-
 @shared_task
 def score_documents_task(website_id):
     # lookup documents for website and score them
