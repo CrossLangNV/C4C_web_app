@@ -533,28 +533,29 @@ def sync_documents_task(website_id, **kwargs):
         current_doc, current_doc_created = Document.objects.update_or_create(
             id=solr_doc["id"], defaults=data)
 
-    # check for outdated documents based on last time a document was found during scraping
-    how_many_days = 30
-    outdated_docs = Document.objects.filter(
-        date_last_update__lte=datetime.now() - timedelta(days=how_many_days))
-    up_to_date_docs = Document.objects.filter(
-        date_last_update__gte=datetime.now() - timedelta(days=how_many_days))
-    # tag documents that have not been updated in a while
-    for doc in outdated_docs:
-        try:
-            Tag.objects.create(value="OFFLINE", document=doc)
-        except ValidationError as e:
-            # tag exists, skip
-            logger.debug(str(e))
-    # untag if the documents are now up to date
-    for doc in up_to_date_docs:
-        # fetch OFFLINE tag for this document
-        try:
-            offline_tag = Tag.objects.get(value="OFFLINE", document=doc)
-            offline_tag.delete()
-        except Tag.DoesNotExist:
-            # OFFLINE tag not found, skip
-            pass
+    if not date:
+        # check for outdated documents based on last time a document was found during scraping
+        how_many_days = 30
+        outdated_docs = Document.objects.filter(
+            date_last_update__lte=datetime.now() - timedelta(days=how_many_days))
+        up_to_date_docs = Document.objects.filter(
+            date_last_update__gte=datetime.now() - timedelta(days=how_many_days))
+        # tag documents that have not been updated in a while
+        for doc in outdated_docs:
+            try:
+                Tag.objects.create(value="OFFLINE", document=doc)
+            except ValidationError as e:
+                # tag exists, skip
+                logger.debug(str(e))
+        # untag if the documents are now up to date
+        for doc in up_to_date_docs:
+            # fetch OFFLINE tag for this document
+            try:
+                offline_tag = Tag.objects.get(value="OFFLINE", document=doc)
+                offline_tag.delete()
+            except Tag.DoesNotExist:
+                # OFFLINE tag not found, skip
+                pass
 
 
 @shared_task
