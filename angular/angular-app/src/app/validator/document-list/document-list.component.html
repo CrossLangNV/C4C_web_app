@@ -49,41 +49,49 @@
         </div>
         <div class="row">
           <div class="col">
+            <div class="d-flex progress justify-content-end p-0 my-2">
+              Documents found: <u>{{ documentService.total$ | async }}</u>
+              <span class="" *ngIf="filterActive">
+                <fa-icon (click)="resetFilters()" class="p-2" ngbTooltip="Reset filters" [icon]="resetIcon"></fa-icon>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
             <hr class="my-2" />
-            <div class="d-flex progress justify-content-between p-0">
+            <div class="d-flex progress justify-content-between p-0 my-2">
               <div>
-                Total: <u>{{ stats.total }}</u
+                Auto-validated documents: <u>{{ stats.autoClassifiedSize }} / {{stats.totalDocuments}}</u
                 ><!-- Unvalidated :
                 <u>{{ stats.unvalidatedSize }}</u>-->
-                Auto-rejected :
-                <u>{{ stats.autoRejectedSize }}</u> Auto-validated :
-                <u>{{ stats.autoAcceptedSize }} </u>
-              </div>
-              <div>
-                Documents found: <u>{{ documentService.total$ | async }}</u>
-                <span class="" *ngIf="filterActive">
-                  <fa-icon
-                    (click)="resetFilters()"
-                    class="p-2"
-                    ngbTooltip="Reset filters"
-                    [icon]="resetIcon"
-                  ></fa-icon>
-                </span>
+                ( Auto-accepted :
+                <u>{{ stats.autoAcceptedSize }}</u>, Auto-rejected :
+                <u>{{ stats.autoRejectedSize }}</u> )
               </div>
             </div>
-            <hr class="my-2" />
             <ngb-progressbar
               [showValue]="true"
               type="success"
-              [value]="stats.autoValidatedPercent"
+              [value]="stats.autoClassifiedPercent"
               (click)="updateChart1($event)"
               (click)="op1.toggle($event)"
             ></ngb-progressbar>
             <hr class="my-2" />
+            <div class="d-flex progress justify-content-between p-0 my-2">
+              <div>
+                Human validated documents: <u>{{ stats.classifiedSize }} / {{stats.totalDocuments}}</u
+                ><!-- Unvalidated :
+                <u>{{ stats.unvalidatedSize }}</u>-->
+                ( Accepted :
+                <u>{{ stats.acceptedSize }}</u>, Rejected :
+                <u>{{ stats.rejectedSize }}</u> )
+              </div>
+            </div>
             <ngb-progressbar
               [showValue]="true"
               type="success"
-              [value]="stats.validatedPercent"
+              [value]="stats.classifiedPercent"
               (click)="updateChart2($event)"
               (click)="op2.toggle($event)"
             ></ngb-progressbar>

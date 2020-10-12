@@ -15,6 +15,7 @@ import pysolr
 import requests
 from celery import shared_task, chain
 from django.core.exceptions import ValidationError
+from django.db.models.functions import Length
 from jsonlines import jsonlines
 from langdetect import detect_langs
 from langdetect.lang_detect_exception import LangDetectException
@@ -45,6 +46,22 @@ SOLR_URL = os.environ['SOLR_URL']
 # Don't remove the '/' at the end here
 TERM_EXTRACT_URL = os.environ['GLOSSARY_TERM_EXTRACT_URL']
 DEFINITIONS_EXTRACT_URL = os.environ['GLOSSARY_DEFINITIONS_EXTRACT_URL']
+
+
+@shared_task()
+def delete_deprecated_acceptance_states():
+    acceptance_states = AcceptanceState.objects.all().order_by("document").distinct(
+        "document_id").annotate(text_len=Length('document__title')).filter(text_len__gt=1).values()
+    documents = Document.objects.all().annotate(text_len=Length('title')).filter(
+        text_len__gt=1).values()
+
+    documents = [str(doc['id']) for doc in documents]
+    acceptances = [str(acc['document_id']) for acc in acceptance_states]
+
+    diff = list(set(acceptances) - set(documents))
+    count = AcceptanceState.objects.all().filter(document_id__in=diff).delete()
+
+    logger.info("Deleted %s deprecated acceptance states", count)
 
 
 @shared_task
@@ -102,7 +119,8 @@ def full_service_task(website_id):
         sync_scrapy_to_solr_task.si(website_id),
         parse_content_to_plaintext_task.si(website_id),
         sync_documents_task.si(website_id),
-        score_documents_task.si(website_id)
+        score_documents_task.si(website_id),
+        check_documents_unvalidated_task.si(website_id)
     )()
 
 
@@ -484,24 +502,6 @@ def sync_documents_task(website_id):
         current_doc, current_doc_created = Document.objects.update_or_create(
             id=solr_doc["id"], defaults=data)
 
-        # if document content is not english, add a FOREIGN Tag to the django document
-        solr_content = solr_doc.get('content', [''])[0]
-        if not is_document_english(solr_content):
-            try:
-                Tag.objects.create(value="FOREIGN", document=current_doc)
-            except ValidationError as e:
-                # tag exists, skip
-                logger.debug(str(e))
-        else:
-            # document is english, remove previous FOREIGN tag if it exists
-            try:
-                foreign_tag = Tag.objects.get(
-                    value="FOREIGN", document=current_doc)
-                foreign_tag.delete()
-            except Tag.DoesNotExist:
-                # FOREIGN tag not found, skip
-                pass
-
     # check for outdated documents based on last time a document was found during scraping
     how_many_days = 30
     outdated_docs = Document.objects.filter(
@@ -524,6 +524,22 @@ def sync_documents_task(website_id):
         except Tag.DoesNotExist:
             # OFFLINE tag not found, skip
             pass
+
+
+@shared_task
+def delete_documents_not_in_solr_task(website_id):
+    website = Website.objects.get(pk=website_id)
+    # query Solr for available documents
+    solr_documents = solr_search_website_sorted(
+        core='documents', website=website.name.lower())
+    # delete django Documents that no longer exist in Solr
+    django_documents = list(Document.objects.filter(website=website))
+    django_doc_ids = [str(django_doc.id) for django_doc in django_documents]
+    solr_doc_ids = [solr_doc["id"] for solr_doc in solr_documents]
+    to_delete_doc_ids = set(django_doc_ids) - set(solr_doc_ids)
+    to_delete_docs = Document.objects.filter(pk__in=to_delete_doc_ids)
+    logger.info('Deleting deprecated documents...')
+    to_delete_docs.delete()
 
 
 @shared_task

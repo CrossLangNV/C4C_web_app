@@ -19,3 +19,7 @@ th[sortable].desc:before {
   transform: rotate(180deg);
   -ms-transform: rotate(180deg);
 }
+
+a.website-url {
+  word-break: break-all;
+}
