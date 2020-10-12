@@ -390,14 +390,14 @@ def extract_terms(website_id):
                     concept_defined_tokens.insert(j, token_to_add_defined)
                     j = j + 1
 
-                    logger.info(
-                        "[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
-                        token_defined, j, start_defined, end_defined)
+                    #logger.info(
+                        #"[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
+                        #token_defined, j, start_defined, end_defined)
 
 
                     # Save Term Definitions in Django
                     Concept.objects.update_or_create(name=term_name, definition=defi.get_covered_text())
-                    logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
+                    #logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
 
                 # Step 5: Send term extractions to Solr (term_occurs field)
 
@@ -448,8 +448,8 @@ def extract_terms(website_id):
                     Concept.objects.update_or_create(
                         name=term.get_covered_text())
 
-                    logger.info("[concept_occurs] Added term '%s' to the PreAnalyzed payload (i=%d) (token pos: %s-%s)",
-                                token, i, start, end)
+                    #logger.info("[concept_occurs] Added term '%s' to the PreAnalyzed payload (i=%d) (token pos: %s-%s)",
+                                #token, i, start, end)
 
                 # Step 6: Post term_occurs to Solr
                 escaped_json = json.dumps(
