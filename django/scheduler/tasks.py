@@ -109,7 +109,7 @@ def reset_pre_analyzed_fields(website_id):
 
 
 @shared_task
-def full_service_task(website_id):
+def full_service_task(website_id, **kwargs):
     website = Website.objects.get(pk=website_id)
     logger.info("Full service for WEBSITE: %s", website.name)
     # the following subtasks are linked together in order:
@@ -119,9 +119,9 @@ def full_service_task(website_id):
     # https://docs.celeryproject.org/en/stable/userguide/canvas.html
     chain(
         sync_scrapy_to_solr_task.si(website_id),
-        parse_content_to_plaintext_task.si(website_id),
-        sync_documents_task.si(website_id),
-        score_documents_task.si(website_id),
+        parse_content_to_plaintext_task.si(website_id, kwargs.get('date', None)),
+        sync_documents_task.si(website_id, kwargs.get('date', None)),
+        score_documents_task.si(website_id, kwargs.get('date', None)),
         check_documents_unvalidated_task.si(website_id)
     )()
 
@@ -482,7 +482,7 @@ def extract_terms(website_id):
                              '/' + core + '/update?commit=true')
 
 @shared_task
-def score_documents_task(website_id):
+def score_documents_task(website_id, **kwargs):
     # lookup documents for website and score them
     website = Website.objects.get(pk=website_id)
     logger.info("Scoring documents with WEBSITE: " + website.name)
@@ -495,7 +495,7 @@ def score_documents_task(website_id):
 
 
 @shared_task
-def sync_documents_task(website_id):
+def sync_documents_task(website_id, **kwargs):
     # lookup documents for website and sync them
     website = Website.objects.get(pk=website_id)
     logger.info("Syncing documents with WEBSITE: " + website.name)
@@ -625,19 +625,24 @@ def launch_crawler(spider, spider_type, date_start, date_end):
 
 
 @shared_task()
-def parse_content_to_plaintext_task(website_id):
+def parse_content_to_plaintext_task(website_id, **kwargs):
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
     logger.info('Adding content to each %s document.', website_name)
     page_number = 0
     rows_per_page = 250
     cursor_mark = "*"
+    date = kwargs.get('date', None)
     # Make sure solr index is updated
     core = 'documents'
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + '/update?commit=true')
     # select all records where content is empty and content_html is not
-    q = "-content: [\"\" TO *] AND ( content_html: [* TO *] OR file_name: [* TO *] ) AND website:" + website_name + " AND date:[2020-01-01T00:00:00Z TO NOW]"
+
+    q = "-content: [\"\" TO *] AND ( content_html: [* TO *] OR file_name: [* TO *] ) AND website:" + website_name
+    if date:
+        q = q + " AND date:["+date+" TO NOW]"  # eg. 2013-07-17T00:00:00Z
+
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
                'cursorMark': cursor_mark, 'sort': 'id asc'}

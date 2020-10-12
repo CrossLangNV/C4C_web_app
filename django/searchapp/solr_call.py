@@ -107,18 +107,28 @@ def solr_search_id_sorted(core="", id=""):
     return search
 
 
-def solr_search_website_with_content(core="", website=""):
+def solr_search_website_with_content(core="", website="", **kwargs):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    date = kwargs.get('date', None)
+    query = 'website:' + website
+
+    if date:
+        query = query + " AND date:["+date+" TO NOW]"
     search = client.search(
-        'website:' + website, **{'rows': 250, 'start': 0, 'cursorMark': "*", 'sort': 'id asc'})
+        query, **{'rows': 250, 'start': 0, 'cursorMark': "*", 'sort': 'id asc'})
     return search
 
 
-def solr_search_website_sorted(core="", website=""):
+def solr_search_website_sorted(core="", website="", **kwargs):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     SOLR_SYNC_FIELDS = 'id,title,title_prefix,author,status,type,date,date_last_update,url,eli,celex,file_url,website,summary,various,consolidated_versions'
+    date = kwargs.get('date', None)
+    query = 'website:' + website
+
+    if date:
+        query = query + " AND date:["+date+" TO NOW]"
     search = get_results(client.search(
-        'website:' + website, **{'rows': ROW_LIMIT, 'fl': SOLR_SYNC_FIELDS, 'sort': 'id asc'}))
+        query, **{'rows': ROW_LIMIT, 'fl': SOLR_SYNC_FIELDS, 'sort': 'id asc'}))
     return search
 
 
