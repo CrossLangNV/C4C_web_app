@@ -119,9 +119,9 @@ def full_service_task(website_id, **kwargs):
     # https://docs.celeryproject.org/en/stable/userguide/canvas.html
     chain(
         sync_scrapy_to_solr_task.si(website_id),
-        parse_content_to_plaintext_task.si(website_id, kwargs.get('date', None)),
-        sync_documents_task.si(website_id, kwargs.get('date', None)),
-        score_documents_task.si(website_id, kwargs.get('date', None)),
+        parse_content_to_plaintext_task.si(website_id, date=kwargs.get('date', None)),
+        sync_documents_task.si(website_id, date=kwargs.get('date', None)),
+        score_documents_task.si(website_id, date=kwargs.get('date', None)),
         check_documents_unvalidated_task.si(website_id)
     )()
 
