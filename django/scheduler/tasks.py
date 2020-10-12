@@ -199,12 +199,6 @@ def post_pre_analyzed_to_solr(data):
     response = urllib.request.urlopen(req)
     logger.info(response.read().decode('utf8'))
 
-
-@shared_task
-def test_solr_preanalyzed_update():
-    logger.info("To be removed.")
-
-
 @shared_task
 def extract_terms(website_id):
     website = Website.objects.get(pk=website_id)
@@ -271,7 +265,7 @@ def extract_terms(website_id):
 
                 input_for_term_defined = {
                     "cas_content": encoded_b64,
-                    "content_type": "html"
+                    "content_type": "html",
                 }
 
                 start = time.time()
@@ -288,7 +282,8 @@ def extract_terms(website_id):
                 # Step 3: NLP TextExtract
                 text_cas = {
                     "cas_content": json.loads(definitions_request.content)['cas_content'],
-                    "content_type": "html"
+                    "content_type": "html",
+                    "extract_supergrams": "true"
                 }
                 start = time.time()
                 request_nlp = requests.post(TERM_EXTRACT_URL, json=text_cas)
@@ -427,7 +422,6 @@ def extract_terms(website_id):
                 concept_occurs_tokens = atomic_update[0]['concept_occurs']['set']['tokens']
 
                 # Select all Tfidfs from the CAS
-                logger.info(cas2.to_xmi())
                 i = 0
                 for term in cas2.get_view(sofa_id_html2text).select(TFIDF_CLASS):
                     logger.info("cas2 term: ", term)
