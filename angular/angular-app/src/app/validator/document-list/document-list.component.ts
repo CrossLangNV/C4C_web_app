@@ -181,7 +181,8 @@ export class DocumentListComponent implements OnInit {
     this.fetchDocuments();
     this.service.messageSource.asObservable().subscribe((value: string) => {
       if (value === 'refresh') {
-        this.fetchDocuments();
+        // trigger documentService to update the list
+        this.documentService.page = this.documentService.page;
       }
     });
   }
