@@ -84,6 +84,12 @@ export class ConceptListComponent implements OnInit {
   nameSortIcon: IconDefinition = faSort;
   dateSortIcon: IconDefinition = faSortDown;
   statesSortIcon: IconDefinition = faSort;
+  filters = [
+    { id: '', name: 'Filter..' },
+    { id: 'unvalidated', name: '..Unvalidated' },
+    { id: 'accepted', name: '..Accepted' },
+    { id: 'rejected', name: '..Rejected' },
+  ];
 
   constructor(private service: ApiService) {}
 
