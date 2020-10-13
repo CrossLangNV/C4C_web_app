@@ -479,8 +479,12 @@ def extract_terms(website_id):
                     queryset = Concept.objects.filter(name=term.get_covered_text())
                     if not queryset.exists():
                         # Save Term Definitions in Django
-                        Concept.objects.update_or_create(
-                            name=term.get_covered_text())
+
+                        if (len(term.get_covered_text()) <= 200 ):
+                            Concept.objects.update_or_create(
+                                name=term.get_covered_text())
+                        else:
+                            logger.info("WARNING: A term has been skipped because the term name was too long. Must be fixed soon!")
 
                     #logger.info("[concept_occurs] Added term '%s' to the PreAnalyzed payload (i=%d) (token pos: %s-%s)",
                                 #token, i, start, end)
