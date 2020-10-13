@@ -60,20 +60,6 @@
           >&nbsp;<span *ngIf="doc.pull" class="badge badge-secondary">NEW</span>
         </h4>
         <p class="small font-italic">{{ doc.date }}</p>
-        <div *ngIf="adminMode; else elseBlock">
-          Acceptance states:
-          <div *ngFor="let docStates of acceptanceStatesByDocument | keyvalue">
-            <ul *ngFor="let state of docStates.value">
-              <li *ngIf="state.documentId === doc.id">
-                <a routerLink="/dashboard">{{ state.username }}</a> says
-                {{ state.value }}
-              </li>
-            </ul>
-          </div>
-        </div>
-        <ng-template #elseBlock>
-          <p>Acceptance state: {{ doc.acceptanceState }}</p>
-        </ng-template>
         <div>
           <p>
             <a class="document-url" href="{{ doc.url }}">{{ doc.url }}</a>

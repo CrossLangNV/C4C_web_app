@@ -128,7 +128,7 @@ export class ConceptDetailComponent implements OnInit {
           });
         }
 
-        this.loadOccursInDocuments();
+        this.loadOccursInDocumentsPreAnalyzed();
         this.loadDefinedInDocuments();
       });
     this.deleteIcon = faTrashAlt;
@@ -269,7 +269,7 @@ export class ConceptDetailComponent implements OnInit {
 
   loadOccursInPage(page: number) {
     this.occursInPage = page;
-    this.loadOccursInDocuments();
+    this.loadOccursInDocumentsPreAnalyzed();
   }
 
   loadDefinedInPage(page: number) {
@@ -290,7 +290,7 @@ export class ConceptDetailComponent implements OnInit {
       this.occursInSortBy = 'date';
       this.occursInSortDirection = 'desc';
       this.occursInDateSortIcon = faSortDown;
-      this.loadOccursInDocuments();
+      this.loadOccursInDocumentsPreAnalyzed();
     } else {
       this.occursInSortDirection = direction;
       this.occursInSortBy = column;
@@ -300,7 +300,7 @@ export class ConceptDetailComponent implements OnInit {
       } else {
         this.occursInDateSortIcon = faSort;
       }
-      this.loadOccursInDocuments();
+      this.loadOccursInDocumentsPreAnalyzed();
     }
   }
 
