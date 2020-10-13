@@ -231,8 +231,6 @@ def get_stats_for_html_size(website_id):
     logger.info("[Document stats]: Documents over 1M lines: %s", size_2)
 
 
-
-
 @shared_task
 def extract_terms(website_id):
     website = Website.objects.get(pk=website_id)
@@ -244,7 +242,7 @@ def extract_terms(website_id):
 
     # TODO Do'nt forget to change
     # Query for Solr to find per website that has the content_html field (some do not)
-    q = "website:" + website_name + " AND content_html:* AND acceptance_state:accepted AND id:0007eb4c-c990-5c97-9d28-356bb706fcda"
+    q = "website:" + website_name + " AND content_html:* AND acceptance_state:accepted"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -295,7 +293,7 @@ def extract_terms(website_id):
                 # TODO Testing the HTML view
                 html2text_cas = cassis.load_cas_from_xmi(
                     content_decoded, typesystem=ts)
-                html2text_sofastring = html2text_cas.sofa_string
+                #html2text_sofastring = html2text_cas.sofa_string
 
                 input_for_term_defined = {
                     "cas_content": encoded_b64,
@@ -434,12 +432,9 @@ def extract_terms(website_id):
 
                     # Save Term Definitions in Django
                     Concept.objects.update_or_create(name=term_name, definition=defi.get_covered_text())
-                    logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
+                    #logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
 
                 # Step 5: Send term extractions to Solr (term_occurs field)
-
-
-
 
                 # Convert the output to a readable format for Solr
                 atomic_update = [
@@ -510,6 +505,7 @@ def extract_terms(website_id):
                 core = 'documents'
                 requests.get(os.environ['SOLR_URL'] +
                              '/' + core + '/update?commit=true')
+
 
 @shared_task
 def score_documents_task(website_id, **kwargs):
