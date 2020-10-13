@@ -396,11 +396,11 @@ def extract_terms(website_id):
                 j = 0
 
                 # Term defined, we check which terms are covered by definitions
-                for defi in cas.get_view(sofa_id_html2text).select(SENTENCE_CLASS):
+                for defi in cas2.get_view(sofa_id_html2text).select(SENTENCE_CLASS):
                     term_name = "Unknown"
 
                     i = 0
-                    for term in cas2.get_view(sofa_id_html2text).select_covering(TFIDF_CLASS, defi):
+                    for term in cas2.get_view(sofa_id_html2text).select_covered(TFIDF_CLASS, defi):
                         if i > 1:
                             logger.info("Found multiple terms: %s", term.get_covered_text())
 
