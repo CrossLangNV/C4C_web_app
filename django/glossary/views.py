@@ -23,15 +23,14 @@ class SmallResultsSetPagination(PageNumberPagination):
 class ConceptListAPIView(ListCreateAPIView):
     # permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
-
-    # TODO Remove the Unknown term and empty definition exclude filter
-    queryset = Concept.objects.all().exclude(name__exact='Unknown').exclude(definition__exact='')
+    queryset = Concept.objects.all()
     serializer_class = ConceptSerializer
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['name', 'acceptance_state_max_probability']
 
     def get_queryset(self):
-        q = Concept.objects.all()
+        # TODO Remove the Unknown term and empty definition exclude filter
+        q = Concept.objects.all().exclude(name__exact='Unknown').exclude(definition__exact='')
         keyword = self.request.GET.get('keyword', "")
         if keyword:
             q = q.filter(name__icontains=keyword)
