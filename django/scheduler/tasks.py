@@ -375,6 +375,9 @@ def extract_terms(website_id):
                 cas2 = cassis.load_cas_from_xmi(
                     terms_decoded_cas, typesystem=ts)
 
+                logger.info("CAS 1 (Definitions): %s", cas.to_xmi())
+                logger.info("CAS 2 (Terms): %s", cas.to_xmi())
+
                 html2text_sofastring = cas.get_view(sofa_id_html2text).sofa_string
 
                 atomic_update_defined = [
