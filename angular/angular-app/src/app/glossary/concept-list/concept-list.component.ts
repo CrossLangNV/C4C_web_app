@@ -95,6 +95,11 @@ export class ConceptListComponent implements OnInit {
 
   ngOnInit() {
     this.fetchConcepts();
+    this.service.messageSource.asObservable().subscribe((value: string) => {
+      if (value === 'refresh') {
+        this.fetchConcepts();
+      }
+    });
     this.searchTermChanged
       .pipe(debounceTime(600), distinctUntilChanged())
       .subscribe((model) => {
