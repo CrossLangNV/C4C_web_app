@@ -434,7 +434,7 @@ def extract_terms(website_id):
 
                     # Save Term Definitions in Django
                     Concept.objects.update_or_create(name=term_name, definition=defi.get_covered_text())
-                    #logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
+                    logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
 
                 # Step 5: Send term extractions to Solr (term_occurs field)
 
