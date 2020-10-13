@@ -200,6 +200,39 @@ def post_pre_analyzed_to_solr(data):
     response = urllib.request.urlopen(req)
     logger.info(response.read().decode('utf8'))
 
+
+@shared_task
+def get_stats_for_html_size(website_id):
+    core = 'documents'
+    page_number = 0
+    rows_per_page = 250
+    cursor_mark = "*"
+
+    website = Website.objects.get(pk=website_id)
+    website_name = website.name.lower()
+    q = "website:" + website_name + " AND content_html:* AND acceptance_state:accepted"
+
+    # Load all documents from Solr
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    options = {'rows': rows_per_page, 'start': page_number,
+               'cursorMark': cursor_mark, 'sort': 'id asc', 'fl': 'content_html,id'}
+    documents = client.search(q, **options)
+
+    size_1 = 0
+    size_2 = 0
+    for document in documents:
+        if document['content_html'] is not None:
+            if len(document['content_html'][0]) > 500000:
+                size_1 = size_1 + 1
+            elif len(document['content_html'][0]) > 1000000:
+                size_2 = size_2 + 1
+
+    logger.info("[Document stats]: Documents over 500k lines: %s", size_1)
+    logger.info("[Document stats]: Documents over 1M lines: %s", size_2)
+
+
+
+
 @shared_task
 def extract_terms(website_id):
     website = Website.objects.get(pk=website_id)
@@ -211,7 +244,7 @@ def extract_terms(website_id):
 
     # TODO Do'nt forget to change
     # Query for Solr to find per website that has the content_html field (some do not)
-    q = "website:" + website_name + " AND content_html:* AND acceptance_state:accepted"
+    q = "website:" + website_name + " AND content_html:* AND acceptance_state:accepted AND id:0007eb4c-c990-5c97-9d28-356bb706fcda"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
