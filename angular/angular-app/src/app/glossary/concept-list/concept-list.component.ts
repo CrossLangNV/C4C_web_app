@@ -75,7 +75,7 @@ export class ConceptListComponent implements OnInit {
   keyword = '';
   filterTag = '';
   sortBy = 'name';
-  filterType = 'none';
+  filterType = '';
   searchTermChanged: Subject<string> = new Subject<string>();
   userIcon: IconDefinition = faUserAlt;
   chipIcon: IconDefinition = faMicrochip;
