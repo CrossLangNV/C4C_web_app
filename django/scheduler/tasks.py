@@ -375,8 +375,8 @@ def extract_terms(website_id):
                 cas2 = cassis.load_cas_from_xmi(
                     terms_decoded_cas, typesystem=ts)
 
-                logger.info("CAS 1 (Definitions): %s", cas.to_xmi())
-                logger.info("CAS 2 (Terms): %s", cas.to_xmi())
+                # logger.info("CAS 1 (Definitions): %s", cas.to_xmi())
+                # logger.info("CAS 2 (Terms): %s", cas.to_xmi())
 
                 html2text_sofastring = cas.get_view(sofa_id_html2text).sofa_string
 
@@ -481,9 +481,11 @@ def extract_terms(website_id):
                     concept_occurs_tokens.insert(i, token_to_add)
                     i = i + 1
 
-                    # Save Term Definitions in Django
-                    Concept.objects.update_or_create(
-                        name=term.get_covered_text())
+                    queryset = Concept.objects.filter(name=term.get_covered_text())
+                    if not queryset.exists():
+                        # Save Term Definitions in Django
+                        Concept.objects.update_or_create(
+                            name=term.get_covered_text())
 
                     #logger.info("[concept_occurs] Added term '%s' to the PreAnalyzed payload (i=%d) (token pos: %s-%s)",
                                 #token, i, start, end)
