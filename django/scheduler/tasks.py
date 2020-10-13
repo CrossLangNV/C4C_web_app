@@ -397,13 +397,12 @@ def extract_terms(website_id):
                 for defi in cas2.get_view(sofa_id_html2text).select(SENTENCE_CLASS):
                     term_name = "Unknown"
 
-                    i = 0
-                    for term in cas2.get_view(sofa_id_html2text).select_covered(TFIDF_CLASS, defi):
+                    for i, term in enumerate(cas2.get_view(sofa_id_html2text).select_covered(TFIDF_CLASS, defi)):
                         if i > 1:
                             logger.info("Found multiple terms: %s", term.get_covered_text())
+                            break
 
                         term_name = term.get_covered_text()
-                        i = i + 1
 
                     token_defined = defi.get_covered_text()
                     start_defined = defi.begin
