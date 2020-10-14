@@ -400,24 +400,25 @@ def extract_terms(website_id):
                     end_defined = defi.end
 
                     # Step 7: Send concept terms to Solr ('concept_defined' field)
+                    # avoid: Caused by: java.lang.IllegalArgumentException: Document contains at least one immense term in field="concept_defined" (whose UTF8 encoding is longer than the max length 32766),
+                    if len(token_defined.encode('utf-8')) > 32000:
+                        token_to_add_defined = {
+                            "t": token_defined,
+                            "s": start_defined,
+                            "e": end_defined,
+                            "y": "word"
+                        }
+                        concept_defined_tokens.insert(j, token_to_add_defined)
+                        j = j + 1
 
-                    token_to_add_defined = {
-                        "t": token_defined,
-                        "s": start_defined,
-                        "e": end_defined,
-                        "y": "word"
-                    }
-                    concept_defined_tokens.insert(j, token_to_add_defined)
-                    j = j + 1
+                        # logger.info(
+                        # "[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
+                        # token_defined, j, start_defined, end_defined)
 
-                    # logger.info(
-                    # "[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
-                    # token_defined, j, start_defined, end_defined)
-
-                    # Save Term Definitions in Django
-                    Concept.objects.update_or_create(
-                        name=term_name, definition=defi.get_covered_text(), lemma=lemma_name)
-                    # logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
+                        # Save Term Definitions in Django
+                        Concept.objects.update_or_create(
+                            name=term_name, definition=defi.get_covered_text(), lemma=lemma_name)
+                        # logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
 
                 # Step 5: Send term extractions to Solr (term_occurs field)
 
