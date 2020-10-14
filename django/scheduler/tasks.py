@@ -228,8 +228,10 @@ def get_stats_for_html_size(website_id):
         if document['content_html'] is not None:
             if len(document['content_html'][0]) > 500000:
                 size_1 = size_1 + 1
+                logger.info("500K document id: %s", document['id'])
             elif len(document['content_html'][0]) > 1000000:
                 size_2 = size_2 + 1
+                logger.info("1M document id: %s", document['id'])
 
     logger.info("[Document stats]: Documents over 500k lines: %s", size_1)
     logger.info("[Document stats]: Documents over 1M lines: %s", size_2)

@@ -2,6 +2,7 @@ import os
 
 import pysolr
 import textdistance
+import logging
 
 ROW_LIMIT = 250000
 
@@ -170,7 +171,7 @@ def get_results_highlighted_preanalyzed(response):
             if document_field in response.highlighting[doc['id']]:
                 doc[document_field] = response.highlighting[doc['id']][document_field]
                 results.append(doc)
-        return results
+    return results
 
 
 def solr_update(core, document):
