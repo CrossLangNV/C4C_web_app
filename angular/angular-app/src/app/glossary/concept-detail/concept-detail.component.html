@@ -89,7 +89,7 @@
       <div class="d-flex justify-content-between p-0">
         <ngb-pagination
           (pageChange)="loadOccursInPage($event)"
-          [collectionSize]="occursInTotal"
+          [collectionSize]="occursIn.length"
           [(page)]="occursInPage"
           [pageSize]="occursInPageSize"
           [maxSize]="10"
@@ -137,7 +137,7 @@
       <div class="d-flex justify-content-between p-0">
         <ngb-pagination
           (pageChange)="loadDefinedInPage($event)"
-          [collectionSize]="definedInTotal"
+          [collectionSize]="definedIn.length"
           [(page)]="definedInPage"
           [pageSize]="definedInPageSize"
           [maxSize]="10"
