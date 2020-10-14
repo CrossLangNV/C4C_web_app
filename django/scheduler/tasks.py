@@ -316,7 +316,7 @@ def extract_terms(website_id):
                 text_cas = {
                     "cas_content": json.loads(definitions_request.content)['cas_content'],
                     "content_type": "html",
-                    "extract_supergrams": "true"
+                    "extract_supergrams": "false"
                 }
                 start = time.time()
                 request_nlp = requests.post(TERM_EXTRACT_URL, json=text_cas)
@@ -484,7 +484,8 @@ def extract_terms(website_id):
                             Concept.objects.update_or_create(
                                 name=term.get_covered_text())
                         else:
-                            logger.info("WARNING: A term has been skipped because the term name was too long. Must be fixed soon!")
+                            logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
+                                        "Consider disabling supergrams or change the length in the database", token)
 
                     #logger.info("[concept_occurs] Added term '%s' to the PreAnalyzed payload (i=%d) (token pos: %s-%s)",
                                 #token, i, start, end)

@@ -196,8 +196,10 @@ export class ConceptDetailComponent implements OnInit {
         const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
         this.getDocuments(solrDocumentIds).subscribe((doc) => {
           doc.forEach((document, index) => {
-            document.content = solrDocuments[index].concept_occurs;
-            this.occursIn.push(document);
+            if ("concept_occurs" in solrDocuments[index]) {
+              document.content = solrDocuments[index].concept_occurs;
+              this.occursIn.push(document);
+            }
           });
         });
       });
