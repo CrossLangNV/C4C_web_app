@@ -128,7 +128,7 @@ export class ConceptDetailComponent implements OnInit {
           });
         }
 
-        this.loadOccursInDocumentsPreAnalyzed();
+        this.loadOccursInDocuments();
         this.loadDefinedInDocuments();
       });
     this.deleteIcon = faTrashAlt;
@@ -178,7 +178,7 @@ export class ConceptDetailComponent implements OnInit {
     });
   }
 
-  loadOccursInDocumentsPreAnalyzed() {
+  loadOccursInDocuments() {
     this.service
       .searchSolrPreAnalyzedDocuments(
         this.occursInPage,
@@ -205,35 +205,6 @@ export class ConceptDetailComponent implements OnInit {
       });
   }
 
-  loadOccursInDocuments() {
-    this.service
-      .searchSolrDocuments(
-        this.occursInPage,
-        this.occursInPageSize,
-        this.concept.name,
-        [],
-        this.occursInSortBy,
-        this.occursInSortDirection
-      )
-      .subscribe((data) => {
-        this.occursInTotal = data[0];
-        const solrDocuments = data[1];
-        this.occursIn = [];
-        const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
-        this.getDocuments(solrDocumentIds).subscribe((doc) => {
-          doc.forEach((document, index) => {
-            document.content = solrDocuments[index].content;
-            this.occursIn.push(document);
-          });
-        });
-      });
-  }
-
-  // highlightedContent contains html where concepts are enclosed by <span class="highlight">concept</span>
-  getOffsets(highlightedContent: string, concept: string) {
-
-  }
-
   loadDefinedInDocuments() {
     this.service
       .searchSolrPreAnalyzedDocuments(
@@ -252,10 +223,11 @@ export class ConceptDetailComponent implements OnInit {
         const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
         this.getDocuments(solrDocumentIds).subscribe((doc) => {
           doc.forEach((document, index) => {
-            let solrContent = solrDocuments[index].concept_defined;
-            // solrContent = solrContent.map(text => text.replace('<span class=\"highlight\">means</span>', 'means'));
-            document.content = solrContent;
-            this.definedIn.push(document);
+            if ("concept_defined" in solrDocuments[index]) {
+              let solrContent = solrDocuments[index].concept_defined;
+              document.content = solrContent;
+              this.definedIn.push(document);
+            }
           });
         });
       });
@@ -271,7 +243,7 @@ export class ConceptDetailComponent implements OnInit {
 
   loadOccursInPage(page: number) {
     this.occursInPage = page;
-    this.loadOccursInDocumentsPreAnalyzed();
+    this.loadOccursInDocuments();
   }
 
   loadDefinedInPage(page: number) {
@@ -292,7 +264,7 @@ export class ConceptDetailComponent implements OnInit {
       this.occursInSortBy = 'date';
       this.occursInSortDirection = 'desc';
       this.occursInDateSortIcon = faSortDown;
-      this.loadOccursInDocumentsPreAnalyzed();
+      this.loadOccursInDocuments();
     } else {
       this.occursInSortDirection = direction;
       this.occursInSortBy = column;
@@ -302,7 +274,7 @@ export class ConceptDetailComponent implements OnInit {
       } else {
         this.occursInDateSortIcon = faSort;
       }
-      this.loadOccursInDocumentsPreAnalyzed();
+      this.loadOccursInDocuments();
     }
   }
 
