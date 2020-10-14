@@ -49,6 +49,7 @@ DEFINITIONS_EXTRACT_URL = os.environ['GLOSSARY_DEFINITIONS_EXTRACT_URL']
 PARAGRAPH_DETECT_URL = os.environ['GLOSSARY_PARAGRAPH_DETECT_URL']
 SENTENCE_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
 TFIDF_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"
+LEMMA_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Lemma"
 PARAGRAPH_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Paragraph"
 
 
@@ -245,8 +246,8 @@ def extract_terms(website_id):
 
     # TODO Do'nt forget to change
     # Query for Solr to find per website that has the content_html field (some do not)
-#    q = "website:" + website_name + \
-#        " AND content_html:* AND acceptance_state:accepted AND id:0007eb4c-c990-5c97-9d28-356bb706fcda"
+    # q = "website:" + website_name + \
+    #     " AND content_html:* AND acceptance_state:accepted AND id:0007eb4c-c990-5c97-9d28-356bb706fcda"
     q = "website:" + website_name + " AND content_html:* AND acceptance_state:accepted"
 
     # Load all documents from Solr
@@ -372,6 +373,7 @@ def extract_terms(website_id):
                 # Term defined, we check which terms are covered by definitions
                 for defi in cas2.get_view(sofa_id_html2text).select(SENTENCE_CLASS):
                     term_name = "Unknown"
+                    lemma_name = ""
 
                     for i, term in enumerate(cas2.get_view(sofa_id_html2text).select_covered(TFIDF_CLASS, defi)):
                         if i > 1:
@@ -380,7 +382,12 @@ def extract_terms(website_id):
                             break
 
                         term_name = term.get_covered_text()
+                        # Retrieve the lemma for the term
+                        for lemma in cas2.get_view(sofa_id_html2text).select_covered(LEMMA_CLASS, term):
+                            if term.begin == lemma.begin and term.end == lemma.end:
+                                lemma_name = lemma.value
 
+                    # Handle paragraphs
                     for par in cas.get_view(sofa_id_html2text).select_covering(PARAGRAPH_CLASS, defi):
 
                         if par.begin == defi.begin:  # if beginning of paragraph == beginning of a definition ==> this detected paragraph should replace the definition
@@ -402,13 +409,13 @@ def extract_terms(website_id):
                     j = j + 1
 
                     # logger.info(
-                    #"[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
+                    # "[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
                     # token_defined, j, start_defined, end_defined)
 
                     # Save Term Definitions in Django
                     Concept.objects.update_or_create(
-                        name=term_name, definition=defi.get_covered_text())
-                    #logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
+                        name=term_name, definition=defi.get_covered_text(), lemma=lemma_name)
+                    # logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
 
                 # Step 5: Send term extractions to Solr (term_occurs field)
 
@@ -452,14 +459,19 @@ def extract_terms(website_id):
                     concept_occurs_tokens.insert(i, token_to_add)
                     i = i + 1
 
+                    # Retrieve the lemma for the term
+                    lemma_name = ""
+                    for lemma in cas2.get_view(sofa_id_html2text).select_covered(LEMMA_CLASS, term):
+                        if term.begin == lemma.begin and term.end == lemma.end:
+                            lemma_name = lemma.value
+
                     queryset = Concept.objects.filter(
                         name=term.get_covered_text())
                     if not queryset.exists():
                         # Save Term Definitions in Django
-
                         if (len(term.get_covered_text()) <= 200):
                             Concept.objects.update_or_create(
-                                name=term.get_covered_text())
+                                name=term.get_covered_text(), lemma=lemma_name)
                         else:
                             logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
                                         "Consider disabling supergrams or change the length in the database", token)
