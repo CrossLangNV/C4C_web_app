@@ -2,6 +2,7 @@ import os
 
 import pysolr
 import textdistance
+import logging
 
 ROW_LIMIT = 250000
 
@@ -165,11 +166,14 @@ def get_results_highlighted_preanalyzed(response):
     fields = ["concept_occurs", "concept_defined"]
     # iterate over docs
     for doc in response:
+        logging.info("doc: %s", doc)
         for document_field in fields:
+            logging.info("document_field: %s", document_field)
             # iterate over every key in single doc dictionary
             if document_field in response.highlighting[doc['id']]:
                 doc[document_field] = response.highlighting[doc['id']][document_field]
                 results.append(doc)
+                logging.info("appended doc to results: %s", doc)
         return results
 
 
