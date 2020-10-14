@@ -378,7 +378,7 @@ def extract_terms(website_id):
                     lemma_name = ""
 
                     for i, term in enumerate(cas2.get_view(sofa_id_html2text).select_covered(TFIDF_CLASS, defi)):
-                        if i > 1:
+                        if i > 0:
                             logger.info("Found multiple terms: %s",
                                         term.get_covered_text())
                             break
