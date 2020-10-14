@@ -51,9 +51,9 @@ def score_documents(website_name, solr_documents, use_pdf_files):
                                         "content": {"set": content}})
                 accepted_probability, accepted_probability_index = max(
                     [(r['accepted_probability'], i) for i, r in enumerate(classifier_responses)])
-        elif solr_doc.get('content_html'):
+        elif solr_doc.get('content'):
             # classifier uses base64 content
-            content = solr_doc['content_html'][0]
+            content = solr_doc['content'][0]
             classifier_response = classify(
                 str(solr_doc["id"]), content, 'html')
             accepted_probability = classifier_response["accepted_probability"]
@@ -156,9 +156,9 @@ def classify(django_doc_id, content, content_type):
     content_bytes = bytes(content, 'utf-8')
     # don't classify if content > max_content_size_bytes
     if len(content_bytes) <= max_content_size_bytes:
-        content_html_b64 = base64.b64encode(
+        content_b64 = base64.b64encode(
             content_bytes).decode('utf-8')
-        data = {'content': content_html_b64,
+        data = {'content': content_b64,
                 'content_type': content_type}
         logger.debug("Sending content for doc id: " + django_doc_id)
         response = requests.post(classifier_url, json=data)
