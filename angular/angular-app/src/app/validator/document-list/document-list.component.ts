@@ -107,7 +107,7 @@ export class DocumentListComponent implements OnInit {
       this.stats.unvalidatedSize = result.count_unvalidated;
       this.stats.acceptedSize = result.count_accepted;
       this.stats.rejectedSize = result.count_rejected;
-      this.stats.classifiedSize = this.stats.unvalidatedSize + this.stats.acceptedSize + this.stats.rejectedSize;
+      this.stats.classifiedSize = this.stats.acceptedSize + this.stats.rejectedSize;
 
       this.stats.classifiedPercent =
         (this.stats.classifiedSize / this.stats.totalDocuments) * 100;
@@ -115,18 +115,18 @@ export class DocumentListComponent implements OnInit {
         Math.round((this.stats.classifiedPercent + Number.EPSILON) * 100) / 100;
 
       this.stats.unvalidatedPercent =
-        (this.stats.unvalidatedSize / this.stats.classifiedSize) * 100;
+        (this.stats.unvalidatedSize / (this.stats.classifiedSize + this.stats.unvalidatedSize)) * 100;
       this.stats.unvalidatedPercent =
         Math.round((this.stats.unvalidatedPercent + Number.EPSILON) * 100) /
         100;
 
       this.stats.acceptedPercent =
-        (this.stats.acceptedSize / this.stats.classifiedSize) * 100;
+        (this.stats.acceptedSize / (this.stats.classifiedSize + this.stats.unvalidatedSize)) * 100;
       this.stats.acceptedPercent =
         Math.round((this.stats.acceptedPercent + Number.EPSILON) * 100) / 100;
 
       this.stats.rejectedPercent =
-        (this.stats.rejectedSize / this.stats.classifiedSize) * 100;
+        (this.stats.rejectedSize / (this.stats.classifiedSize + this.stats.unvalidatedSize)) * 100;
       this.stats.rejectedPercent =
         Math.round((this.stats.rejectedPercent + Number.EPSILON) * 100) / 100;
 
@@ -134,8 +134,7 @@ export class DocumentListComponent implements OnInit {
       this.stats.autoUnvalidatedSize = result.count_autounvalidated;
       this.stats.autoAcceptedSize = result.count_autoaccepted;
       this.stats.autoRejectedSize = result.count_autorejected;
-      this.stats.autoClassifiedSize = this.stats.autoUnvalidatedSize + this.stats.autoAcceptedSize
-        + this.stats.autoRejectedSize;
+      this.stats.autoClassifiedSize = this.stats.autoAcceptedSize + this.stats.autoRejectedSize;
 
       this.stats.autoClassifiedPercent = (this.stats.autoClassifiedSize / this.stats.totalDocuments) * 100;
       this.stats.autoClassifiedPercent =
@@ -143,19 +142,19 @@ export class DocumentListComponent implements OnInit {
         100;
 
       this.stats.autoUnvalidatedPercent =
-        (this.stats.autoUnvalidatedSize / this.stats.autoClassifiedSize) * 100;
+        (this.stats.autoUnvalidatedSize / (this.stats.autoClassifiedSize + this.stats.autoUnvalidatedSize)) * 100;
       this.stats.autoUnvalidatedPercent =
         Math.round((this.stats.autoUnvalidatedPercent + Number.EPSILON) * 100) /
         100;
 
       this.stats.autoAcceptedPercent =
-        (this.stats.autoAcceptedSize / this.stats.autoClassifiedSize) * 100;
+        (this.stats.autoAcceptedSize / (this.stats.autoClassifiedSize + this.stats.autoUnvalidatedSize)) * 100;
       this.stats.autoAcceptedPercent =
         Math.round((this.stats.autoAcceptedPercent + Number.EPSILON) * 100) /
         100;
 
       this.stats.autoRejectedPercent =
-        (this.stats.autoRejectedSize / this.stats.autoClassifiedSize) * 100;
+        (this.stats.autoRejectedSize / (this.stats.autoClassifiedSize + this.stats.autoUnvalidatedSize)) * 100;
       this.stats.autoRejectedPercent =
         Math.round((this.stats.autoRejectedPercent + Number.EPSILON) * 100) /
         100;
