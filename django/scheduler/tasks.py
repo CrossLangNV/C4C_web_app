@@ -401,7 +401,7 @@ def extract_terms(website_id):
 
                     # Step 7: Send concept terms to Solr ('concept_defined' field)
                     # avoid: Caused by: java.lang.IllegalArgumentException: Document contains at least one immense term in field="concept_defined" (whose UTF8 encoding is longer than the max length 32766),
-                    if len(token_defined.encode('utf-8')) > 32000:
+                    if len(token_defined.encode('utf-8')) < 32000:
                         token_to_add_defined = {
                             "t": token_defined,
                             "s": start_defined,
