@@ -192,6 +192,10 @@ export class ConceptDetailComponent implements OnInit {
       .subscribe((data) => {
         this.occursInTotal = data[0];
         const solrDocuments = data[1];
+
+        console.log("data[0]", data[0])
+        console.log("data[1]", data[1])
+
         this.occursIn = [];
         const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
         this.getDocuments(solrDocumentIds).subscribe((doc) => {
