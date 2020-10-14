@@ -91,7 +91,7 @@ def solr_search_query_paginated_preanalyzed(core="", term="", page_number=1, row
     if sort_by:
         options['sort'] = sort_by + ' ' + sort_direction
     result = client.search(term, **options)
-    search = get_results_highlighted(result)
+    search = get_results_highlighted_preanalyzed(result)
     num_found = result.raw_response['response']['numFound']
     return num_found, search
 
@@ -158,6 +158,19 @@ def get_results_highlighted(response):
                 doc[key] = response.highlighting[doc['id']][key]
         results.append(doc)
     return results
+
+
+def get_results_highlighted_preanalyzed(response):
+    results = []
+    fields = ["concept_occurs", "concept_defined"]
+    # iterate over docs
+    for doc in response:
+        for document_field in fields:
+            # iterate over every key in single doc dictionary
+            if document_field in response.highlighting[doc['id']]:
+                doc[document_field] = response.highlighting[doc['id']][document_field]
+                results.append(doc)
+        return results
 
 
 def solr_update(core, document):
