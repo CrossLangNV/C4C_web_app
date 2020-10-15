@@ -534,7 +534,6 @@ def extract_terms(website_id):
         core = 'documents'
         requests.get(os.environ['SOLR_URL'] +
                      '/' + core + '/update?commit=true')
-        break
 
 @shared_task
 def score_documents_task(website_id, **kwargs):
