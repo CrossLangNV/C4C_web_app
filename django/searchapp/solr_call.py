@@ -87,6 +87,7 @@ def solr_search_query_paginated_preanalyzed(core="", term="", page_number=1, row
                # TODO Need fl here?
                # 'fl': 'concept_defined,concept_occurs',
                'hl': 'on', 'hl.fl': 'concept_defined,concept_occurs',
+               'hl.maxAnalyzedChars': -1,
                'hl.simple.pre': '<span class="highlight">',
                'hl.simple.post': '</span>'}
     if sort_by:
