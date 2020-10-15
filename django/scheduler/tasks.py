@@ -252,8 +252,8 @@ def extract_terms(website_id):
     # Query for Solr to find per website that has the content_html field (some do not)
     # q = "website:" + website_name + \
     #     " AND content_html:* AND acceptance_state:accepted AND id:0007eb4c-c990-5c97-9d28-356bb706fcda"
-    # q = "website:" + website_name + " AND acceptance_state:accepted AND content_html:*"
-    q = "website:" + website_name + " AND content:* AND -content_html:[* TO *]"
+    q = "website:" + website_name + " AND acceptance_state:accepted"
+    # q = "website:" + website_name + " AND content:* AND -content_html:[* TO *]"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -268,12 +268,8 @@ def extract_terms(website_id):
         r = None
         paragraph_request = None
 
-        logger.info("content_html" in document)
-        logger.info("content" in document)
-        logger.info("content_html" not in document and "content" in document)
-
         if "content_html" in document:
-            logger.info("Extracting terms from document id: %s (%s chars)",
+            logger.info("Extracting terms from HTML document id: %s (%s chars)",
                         document['id'], len(document['content_html'][0]))
             is_html = True
         elif "content_html" not in document and "content" in document:
