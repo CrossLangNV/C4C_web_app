@@ -1,6 +1,6 @@
 <div *ngIf="website">
   <div class="jumbotron">
-    <div class="row">
+    <div class="row text-break">
       <h3 (click)="titleIsBeingEdited = true" *ngIf="!titleIsBeingEdited" class="name">
         <!-- <h3 class="name"> -->
         <span class="editable">{{ website.name }}</span>
@@ -14,7 +14,7 @@
       </h3>
     </div>
 
-    <div class="row">
+    <div class="row text-break">
       <div (click)="urlIsBeingEdited = true" *ngIf="!urlIsBeingEdited" class="url mt-4 mb-3">
         <!-- <div class="url mt-4 mb-3"> -->
         URL: <span class="editable">{{ website.url }}</span>
@@ -28,7 +28,7 @@
       </div>
     </div>
 
-    <div class="row">
+    <div class="row text-break">
       <div (click)="contentIsBeingEdited = true" *ngIf="!contentIsBeingEdited" class="content mt-4 mb-3 text-justify">
         <!-- <div class="content mt-4 mb-3 text-justify"> -->
         Content: <span class="editable">{{ website.content }}</span>
