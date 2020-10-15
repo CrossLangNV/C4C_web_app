@@ -410,7 +410,7 @@ def extract_terms(website_id):
             lemma_name = ""
 
             for i, term in enumerate(cas2.get_view(sofa_id_html2text).select_covered(TFIDF_CLASS, defi)):
-                if i > 1:
+                if i > 0:
                     logger.info("Found multiple terms: %s",
                                 term.get_covered_text())
                     break
@@ -433,23 +433,24 @@ def extract_terms(website_id):
 
             # Step 7: Send concept terms to Solr ('concept_defined' field)
 
-            token_to_add_defined = {
-                "t": token_defined,
-                "s": start_defined,
-                "e": end_defined,
-                "y": "word"
-            }
-            concept_defined_tokens.insert(j, token_to_add_defined)
-            j = j + 1
+            if len(token_defined.encode('utf-8')) < 32000:
+                token_to_add_defined = {
+                    "t": token_defined,
+                    "s": start_defined,
+                    "e": end_defined,
+                    "y": "word"
+                }
+                concept_defined_tokens.insert(j, token_to_add_defined)
+                j = j + 1
 
-            # logger.info(
-            # "[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
-            # token_defined, j, start_defined, end_defined)
+                # logger.info(
+                # "[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
+                # token_defined, j, start_defined, end_defined)
 
-            # Save Term Definitions in Django
-            Concept.objects.update_or_create(
-                name=term_name, definition=defi.get_covered_text(), lemma=lemma_name)
-            # logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
+                # Save Term Definitions in Django
+                Concept.objects.update_or_create(
+                    name=term_name, definition=defi.get_covered_text(), lemma=lemma_name)
+                # logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
 
         # Step 5: Send term extractions to Solr (term_occurs field)
 
