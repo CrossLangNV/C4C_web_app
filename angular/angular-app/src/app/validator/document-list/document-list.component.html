@@ -17,6 +17,7 @@
               name="content"
               class="form-control form-control-sm"
               [(ngModel)]="documentService.searchTerm"
+              (keypress)="filterResetPage()"
             />
           </div>
           <select
@@ -221,6 +222,7 @@
         [pageSize]="pageSize"
         [maxSize]="10"
         [ellipses]="true"
+        (pageChange)="onPageChange()"
       >
       </ngb-pagination>
       <div class="ml-3 p-0" *ngIf="documentService.loading$ | async">

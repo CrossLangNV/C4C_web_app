@@ -245,6 +245,11 @@ export class DocumentListComponent implements OnInit {
 
   filterResetPage() {
     this.documentService.page = 1;
+    this.router.navigate(['/validator']);
+  }
+
+  onPageChange() {
+    this.router.navigate(['/validator']);
   }
 
   setIndex(index: string) {
@@ -266,6 +271,7 @@ export class DocumentListComponent implements OnInit {
     this.documentService.showOnlyOwn = false;
     this.documentService.filterType = '';
     this.documentService.website = '';
+    this.router.navigate(['/validator']);
   }
 
   updateChart1(event: Event) {
