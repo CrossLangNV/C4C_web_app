@@ -226,6 +226,10 @@
         (pageChange)="onPageChange()"
       >
       </ngb-pagination>
+      <div class="ml-3 p-1">
+        <input class="input-sm" type="number" [min]="1" [max]="documentService.total$ | async"
+          [(ngModel)]="documentService.page">
+      </div>
       <div class="ml-3 p-0" *ngIf="documentService.loading$ | async">
         <span>Loading <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div></span>
       </div>
