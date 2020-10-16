@@ -67,7 +67,7 @@
           </tr>
         </tbody>
       </table>
-      <ngb-pagination [(page)]="similarDocsPage" [pageSize]="5" [collectionSize]="similarDocuments.length">
+      <ngb-pagination [(page)]="similarDocsPage" [pageSize]="5" [rotate]="true" [collectionSize]="similarDocuments.length">
       </ngb-pagination>
     </div>
     <ng-template #noSimilar><div class="my-4">No similar documents were found.</div></ng-template>
