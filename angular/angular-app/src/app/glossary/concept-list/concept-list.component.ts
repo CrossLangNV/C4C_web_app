@@ -23,6 +23,7 @@ import {
 import { Subject } from 'rxjs';
 import { ConceptTag } from 'src/app/shared/models/ConceptTag';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import {Router} from "@angular/router";
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -91,7 +92,10 @@ export class ConceptListComponent implements OnInit {
     { id: 'rejected', name: '..Rejected' },
   ];
 
-  constructor(private service: ApiService) {}
+  constructor(
+    private service: ApiService,
+    private router: Router,
+    ) {}
 
   ngOnInit() {
     this.fetchConcepts();
@@ -142,9 +146,14 @@ export class ConceptListComponent implements OnInit {
     }
   }
 
+  onPageChange() {
+    this.router.navigate(['/glossary']);
+  }
+
   filterResetPage() {
     this.page = 1;
     this.fetchConcepts();
+    this.router.navigate(['/glossary']);
   }
 
   setIndex(index: string) {
