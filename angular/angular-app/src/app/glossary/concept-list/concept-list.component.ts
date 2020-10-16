@@ -24,6 +24,8 @@ import { Subject } from 'rxjs';
 import { ConceptTag } from 'src/app/shared/models/ConceptTag';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import {Router} from "@angular/router";
+import {DjangoUser} from "../../shared/models/django_user";
+import {AuthenticationService} from "../../core/auth/authentication.service";
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -85,6 +87,7 @@ export class ConceptListComponent implements OnInit {
   nameSortIcon: IconDefinition = faSort;
   dateSortIcon: IconDefinition = faSortDown;
   statesSortIcon: IconDefinition = faSort;
+  currentDjangoUser: DjangoUser;
   filters = [
     { id: '', name: 'Filter..' },
     { id: 'unvalidated', name: '..Unvalidated' },
@@ -95,9 +98,19 @@ export class ConceptListComponent implements OnInit {
   constructor(
     private service: ApiService,
     private router: Router,
-    ) {}
+    private authenticationService: AuthenticationService,
+  ) {}
 
   ngOnInit() {
+    this.authenticationService.currentDjangoUser.subscribe(
+      (x) => (this.currentDjangoUser = x)
+    );
+
+    // Force login page when not authenticated
+    if (this.currentDjangoUser == null) {
+      this.router.navigate(['/login']);
+    }
+
     this.fetchConcepts();
     this.service.messageSource.asObservable().subscribe((value: string) => {
       if (value === 'refresh') {
