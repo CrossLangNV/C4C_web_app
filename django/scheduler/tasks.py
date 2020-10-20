@@ -838,6 +838,21 @@ def check_documents_unvalidated_task(website_id):
         doc.save()
 
 
+@shared_task
+def check_formex_availability():
+    cellar_api = 'http://publications.europa.eu/resource/celex/'
+    eurlex_website = Website.objects.get(name__iexact="eurlex")
+    logger.info("Check each EurLex document if it has Formex v4 content and update Document formex_available field")
+    eurlex_docs = Document.objects.filter(website=eurlex_website)
+    for doc in eurlex_docs:
+        celex = doc.celex
+        headers = {'Accept': 'application/list;mtype=fmx4', 'Accept-Language': 'eng'}
+        response = requests.get(cellar_api + celex, headers=headers)
+        if response.status_code == 200:
+            doc.formex_available = True
+            doc.save()
+
+
 def create_bucket(client, name):
     try:
         client.make_bucket(name)
