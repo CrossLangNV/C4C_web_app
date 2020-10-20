@@ -72,7 +72,7 @@
         <tbody>
           <tr *ngFor="let doc of occursIn">
             <td>
-              {{ doc.websiteName }}
+              {{ doc.website[0] | uppercase }}
             </td>
             <td>
               <a [routerLink]="['/document', concept.id, doc.id]">
@@ -82,7 +82,7 @@
             <td>
               {{ doc.date | date }}
             </td>
-            <td [innerHTML]="doc.content"></td>
+            <td [innerHTML]="doc.concept_occurs"></td>
           </tr>
         </tbody>
       </table>
@@ -121,7 +121,7 @@
         <tbody>
           <tr *ngFor="let doc of definedIn">
             <td>
-              {{ doc.websiteName }}
+              {{ doc.website[0] | uppercase }}
             </td>
             <td>
               <a [routerLink]="['/document', concept.id, doc.id]">
@@ -131,7 +131,7 @@
             <td>
               {{ doc.date | date }}
             </td>
-            <td [innerHTML]="doc.content"></td>
+            <td [innerHTML]="doc.concept_defined"></td>
           </tr>
         </tbody>
       </table>

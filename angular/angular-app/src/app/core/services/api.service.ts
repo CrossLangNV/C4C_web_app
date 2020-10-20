@@ -161,8 +161,6 @@ export class ApiService {
     let formData = new FormData();
     formData.append('query', `{!term f=${field}}${term}`);
 
-    console.log("requestUrl: "+requestUrl)
-
     return this.http.post<any[]>(requestUrl, formData).pipe(
       map((data: any[]) => {
         const result = [data[0]];
