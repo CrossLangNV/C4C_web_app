@@ -191,21 +191,7 @@ export class ConceptDetailComponent implements OnInit {
       )
       .subscribe((data) => {
         this.occursInTotal = data[0];
-        const solrDocuments = data[1];
-
-        console.log("data[0]", data[0])
-        console.log("data[1]", data[1])
-
-        this.occursIn = [];
-        const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
-        this.getDocuments(solrDocumentIds).subscribe((doc) => {
-          doc.forEach((document, index) => {
-            if ("concept_occurs" in solrDocuments[index]) {
-              document.content = solrDocuments[index].concept_occurs;
-              this.occursIn.push(document);
-            }
-          });
-        });
+        this.occursIn = data[1];
       });
   }
 
@@ -222,18 +208,7 @@ export class ConceptDetailComponent implements OnInit {
       )
       .subscribe((data) => {
         this.definedInTotal = data[0];
-        const solrDocuments = data[1];
-        this.definedIn = [];
-        const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
-        this.getDocuments(solrDocumentIds).subscribe((doc) => {
-          doc.forEach((document, index) => {
-            if ("concept_defined" in solrDocuments[index]) {
-              let solrContent = solrDocuments[index].concept_defined;
-              document.content = solrContent;
-              this.definedIn.push(document);
-            }
-          });
-        });
+        this.definedIn = data[1];
       });
   }
 

@@ -1,6 +1,7 @@
 import os
 
 import pysolr
+import requests
 import textdistance
 import logging
 
@@ -78,23 +79,27 @@ def solr_search_query_paginated(core="", term="", page_number=1, rows_per_page=1
 
 def solr_search_query_paginated_preanalyzed(core="", term="", page_number=1, rows_per_page=10,
                                             sort_by=None, sort_direction='asc'):
-    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    url = os.environ['SOLR_URL'] + '/' + core + '/select/'
     # solr page starts at 0
     page_number = int(page_number) - 1
     start = page_number * int(rows_per_page)
-    options = {'rows': rows_per_page,
-               'start': start,
-               # TODO Need fl here?
-               # 'fl': 'concept_defined,concept_occurs',
-               'hl': 'on', 'hl.fl': 'concept_defined,concept_occurs',
-               'hl.maxAnalyzedChars': -1,
-               'hl.simple.pre': '<span class="highlight">',
-               'hl.simple.post': '</span>'}
+    options = {'q': term,
+        'hl': 'on',
+        'fl': 'id,title,website,date',
+        'hl.fl': 'concept_defined, concept_occurs',
+        'hl.maxAnalyzedChars': '-1',
+        'hl.simple.pre': '<span class="highlight">',
+        'hl.simple.post': '</span>',
+        'start': start,
+        'rows': rows_per_page
+    }
+    
     if sort_by:
         options['sort'] = sort_by + ' ' + sort_direction
-    result = client.search(term, **options)
+    response = requests.request("POST", url, data = options)
+    result = response.json()
     search = get_results_highlighted_preanalyzed(result)
-    num_found = result.raw_response['response']['numFound']
+    num_found = result['response']['numFound']
     return num_found, search
 
 
@@ -166,11 +171,11 @@ def get_results_highlighted_preanalyzed(response):
     results = []
     fields = ["concept_occurs", "concept_defined"]
     # iterate over docs
-    for doc in response:
+    for doc in response['response']['docs']:
         for document_field in fields:
             # iterate over every key in single doc dictionary
-            if document_field in response.highlighting[doc['id']]:
-                doc[document_field] = response.highlighting[doc['id']][document_field]
+            if document_field in response['highlighting'][doc['id']]:
+                doc[document_field] = response['highlighting'][doc['id']][document_field]
                 results.append(doc)
     return results
 
@@ -234,7 +239,8 @@ def solr_mlt(core, id, mlt_field='title,content', number_candidates=5, threshold
         candidate_tokens = doc['content'][0].split()
         similarity = textdistance.jaccard(base_tokens, candidate_tokens)
         if similarity > float(threshold):
-            similar_documents_with_coeff.append((doc['id'], doc['title'][0], doc['website'][0], similarity))
+            similar_documents_with_coeff.append(
+                (doc['id'], doc['title'][0], doc['website'][0], similarity))
 
     # sort descending on coefficient
     similar_documents_with_coeff.sort(key=lambda x: x[-1], reverse=True)
