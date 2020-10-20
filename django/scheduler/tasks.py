@@ -13,7 +13,7 @@ from io import BytesIO
 import cassis
 import pysolr
 import requests
-from cassis import Cas
+from cassis import Cas, load_cas_from_xmi
 from cassis.typesystem import load_typesystem
 from celery import shared_task, chain
 from django.core.exceptions import ValidationError
@@ -49,10 +49,12 @@ SOLR_URL = os.environ['SOLR_URL']
 TERM_EXTRACT_URL = os.environ['GLOSSARY_TERM_EXTRACT_URL']
 DEFINITIONS_EXTRACT_URL = os.environ['GLOSSARY_DEFINITIONS_EXTRACT_URL']
 PARAGRAPH_DETECT_URL = os.environ['GLOSSARY_PARAGRAPH_DETECT_URL']
+RO_EXTRACT_URL = os.environ['RO_EXTRACT_URL']
 SENTENCE_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
 TFIDF_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"
 LEMMA_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Lemma"
 PARAGRAPH_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Paragraph"
+VALUE_BETWEEN_TAG_TYPE_CLASS = "com.crosslang.uimahtmltotext.uima.type.ValueBetweenTagType"
 
 
 @shared_task()
@@ -239,6 +241,176 @@ def get_stats_for_html_size(website_id):
     logger.info("[Document stats]: Documents over 1M lines: %s", size_2)
 
 
+def get_html2text_cas(content_html):
+    content_html_text = {
+        "text": content_html
+    }
+    start = time.time()
+    r = requests.post(
+        UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"], json=content_html_text)
+
+    logger.info('Sent request to %s. Status code: %s', UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"],
+                r.status_code)
+    end = time.time()
+    logger.info(
+        "UIMA Html2Text took %s seconds to succeed.", end - start)
+    return r
+
+
+def create_cas(sofa):
+    with open("typesystem_tmp.xml", 'rb') as f:
+        ts = load_typesystem(f)
+
+    cas = Cas(typesystem=ts)
+    cas.sofa_string = sofa
+    return cas
+
+
+def get_cas_from_pdf(ts, content):
+    logger.info("its a pdf")
+    # Logic for documents without HTML, that have a "content" field which is a PDF to HTML done by Tika
+    # Create a new cas here
+    tika_cas = create_cas(content)
+
+    encoded_cas = base64.b64encode(bytes(tika_cas.to_xmi(), 'utf-8')).decode()
+
+    # Then send this cas to NLP Paragraph detection
+    input_for_paragraph_detection = {
+        "cas_content": encoded_cas,
+        "content_type": "pdf",
+    }
+    return requests.post(PARAGRAPH_DETECT_URL,
+                      json=input_for_paragraph_detection)
+
+
+def generate_filesystem():
+    typesystem_req = requests.get(
+        UIMA_URL["BASE"] + UIMA_URL["TYPESYSTEM"])
+    typesystem_file = open("typesystem_tmp.xml", "w")
+    typesystem_file.write(typesystem_req.content.decode("utf-8"))
+
+
+def get_cas_from_paragraph_detection(content_encoded):
+    input_for_paragraph_detection = {
+        "cas_content": content_encoded,
+        "content_type": "html",
+    }
+
+    paragraph_request = requests.post(PARAGRAPH_DETECT_URL,
+                                      json=input_for_paragraph_detection)
+    logger.info("Sent request to Paragraph Detection. Status code: %s",
+                paragraph_request.status_code)
+
+    return paragraph_request
+
+
+def get_reporting_obligations(input_cas_encoded):
+    input_for_reporting_obligations = {
+        "cas_content": input_cas_encoded,
+        "content_type": "html",
+    }
+
+    ro_request = requests.post(RO_EXTRACT_URL,
+                               json=input_for_reporting_obligations)
+    logger.info("Sent request to RO Extraction. Status code: %s",
+                ro_request.status_code)
+
+    return ro_request
+
+
+def get_encoded_content_from_cas(r):
+    content_decoded = r.content.decode('utf-8')
+    encoded_bytes = base64.b64encode(
+        content_decoded.encode("utf-8"))
+    return str(encoded_bytes, "utf-8")
+
+
+@shared_task
+def extract_reporting_obligations(website_id):
+    website = Website.objects.get(pk=website_id)
+    website_name = website.name.lower()
+    core = 'documents'
+    page_number = 0
+    rows_per_page = 250
+    cursor_mark = "*"
+
+    q = "website:" + website_name + " AND acceptance_state:accepted"
+    # q = "website:" + website_name + " AND content:* AND -content_html:[* TO *]"
+
+    # Load all documents from Solr
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    options = {'rows': rows_per_page, 'start': page_number,
+               'cursorMark': cursor_mark, 'sort': 'id asc', 'fl': 'content_html,content,id'}
+    documents = client.search(q, **options)
+
+    for document in documents:
+        logger.info("Started RO extraction for document id: %s", document['id'])
+
+        is_html = False
+        is_pdf = False
+        r = None
+        paragraph_request = None
+
+        if "content_html" in document:
+            logger.info("Extracting terms from HTML document id: %s (%s chars)",
+                        document['id'], len(document['content_html'][0]))
+            is_html = True
+        elif "content_html" not in document and "content" in document:
+            logger.info("Extracting terms from PDF document id: %s (%s chars)",
+                        document['id'], len(document['content'][0]))
+            is_pdf = True
+
+        if is_html:
+            r = get_html2text_cas(document['content_html'][0])
+
+        # Write tempfile for typesystem.xml
+        typesystem_file = None
+        if is_html:
+            generate_filesystem()
+
+        # Write tempfile for cas.xml
+        with open("typesystem_tmp.xml", 'rb') as f:
+            ts = load_typesystem(f)
+
+        # Paragraph detection for PDF + fallback cas for not having a html2text request
+        if is_pdf:
+            r = get_cas_from_pdf(ts, document['content'])
+            paragraph_request = r
+
+        encoded_b64 = get_encoded_content_from_cas(r)
+
+        # Paragraph Detection for HTML
+        if is_html:
+            paragraph_request = get_cas_from_paragraph_detection(encoded_b64)
+
+        # Send to RO API
+        res = json.loads(paragraph_request.content.decode('utf-8'))
+        ro_request = get_reporting_obligations(res['cas_content'])
+
+        # Create new cas with sofa from RO API
+        ro_cas = base64.b64decode( json.loads(ro_request.content)[ 'cas_content' ] ).decode( 'utf-8' )
+        logger.info("ro_cas: %s", ro_cas)
+
+        cas = load_cas_from_xmi(ro_cas, typesystem=ts)
+        sofa_reporting_obligations = cas.get_view("ReportingObligationsView").sofa_string
+        logger.info("sofa_reporting_obligations: %s", sofa_reporting_obligations)
+
+        # Now send the CAS to UIMA Html2Text for the VBTT annotations (paragraph_request)
+        r = get_html2text_cas(sofa_reporting_obligations)
+        cas_html2text = load_cas_from_xmi(r.content.decode("utf-8"), typesystem=ts)
+
+        logger.info("cas_html2text: %s", cas_html2text.to_xmi())
+
+        # Read out the VBTT annotations
+        for vbtt in cas.get_view(sofa_id_html2text).select(VALUE_BETWEEN_TAG_TYPE_CLASS):
+            if vbtt.tagName == "p":
+                logger.info("VBTT: %s", vbtt)
+
+
+        break
+
+
+
 @shared_task
 def extract_terms(website_id):
     website = Website.objects.get(pk=website_id)
@@ -248,10 +420,6 @@ def extract_terms(website_id):
     rows_per_page = 250
     cursor_mark = "*"
 
-    # TODO Do'nt forget to change
-    # Query for Solr to find per website that has the content_html field (some do not)
-    # q = "website:" + website_name + \
-    #     " AND content_html:* AND acceptance_state:accepted AND id:0007eb4c-c990-5c97-9d28-356bb706fcda"
     q = "website:" + website_name + " AND acceptance_state:accepted"
     # q = "website:" + website_name + " AND content:* AND -content_html:[* TO *]"
 
