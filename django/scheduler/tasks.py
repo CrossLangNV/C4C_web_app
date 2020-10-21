@@ -559,13 +559,13 @@ def launch_crawler(spider, spider_type, date_start, date_end):
 
 
 @shared_task
-def launch_fullsite_crawler(url, website):
+def launch_fullsite_crawler(url, website, language):
     scrapy_settings_path = 'scraper.scrapy_app.settings'
     os.environ.setdefault('SCRAPY_SETTINGS_MODULE', scrapy_settings_path)
     settings = get_project_settings()
     settings['celery_id'] = launch_crawler.request.id
     runner = CrawlerRunner(settings=settings)
-    d = runner.crawl('fullsite', url=url, website=website)
+    d = runner.crawl('fullsite', url=url, website=website, language=language)
     d.addBoth(lambda _: reactor.stop())
     reactor.run()  # the script will block here until the crawling is finished
 

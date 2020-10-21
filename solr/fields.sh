@@ -1,8 +1,8 @@
 #!/bin/bash
 
 COLLECTION="documents"
-#SOLR_HOST="https://solr.dev.dgfisma.crosslang.com"
-SOLR_HOST="http://localhost:8983"
+SOLR_HOST="https://solr.cefat4cities.crosslang.com"
+# SOLR_HOST="http://localhost:8983"
 
 
 JSON='{
