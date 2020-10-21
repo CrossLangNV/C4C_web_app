@@ -44,6 +44,7 @@ JSON='{
 {"name":"section",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"tags",             "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"keywords",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"language",         "type":"text_general","stored":true,"indexed":true,"multiValued":false},
 
 {"name":"file_name",        "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"file_url",         "type":"text_general","stored":true,"indexed":true,"multiValued":true},

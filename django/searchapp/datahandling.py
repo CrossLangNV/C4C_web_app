@@ -2,12 +2,10 @@ import base64
 import json
 import logging
 import os
-import random
 
 import pysolr
 import requests
 from django.db.models import Q
-from tika import parser
 
 from searchapp.models import Document, Website, AcceptanceState, AcceptanceStateValue
 
@@ -15,7 +13,7 @@ logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
 
 
-def score_documents(website_name, solr_documents, use_pdf_files):
+def score_documents(website_name, solr_documents):
     # if the classifier returns this value as either accepted or rejected
     # probability, it means something went wrong decoding the content
     CLASSIFIER_ERROR_SCORE = -9999
@@ -30,27 +28,13 @@ def score_documents(website_name, solr_documents, use_pdf_files):
         content = ''
         accepted_probability = CLASSIFIER_ERROR_SCORE
         accepted_probability_index = 0
-        if use_pdf_files and solr_doc.get('pdf_docs'):
-            # download each pdf file, parse with tika, use highest score
-            pdf_urls = solr_doc['pdf_docs']
-            classifier_responses = []
-            if solr_doc.get('content') and len(solr_doc.get('content')) > 0:
-                content = solr_doc['content'][0]
-                classifier_response = classify(
-                    str(solr_doc["id"]), content, solr_doc["language"])
-                accepted_probability = classifier_response["accepted_probability"]
-            else:
-                for pdf_url in pdf_urls:
-                    logger.info("Going to parse PDF with url: %s", pdf_url)
-                    content = parse_pdf_from_url(pdf_url)
-                    classifier_responses.append(
-                        classify(str(solr_doc["id"]), content, solr_doc["language"]))
-                    # Take highest scoring
-                content = classifier_responses[accepted_probability_index]['content']
-                content_updates.append({"id": solr_doc["id"],
-                                        "content": {"set": content}})
-                accepted_probability, accepted_probability_index = max(
-                    [(r['accepted_probability'], i) for i, r in enumerate(classifier_responses)])
+
+        if solr_doc.get('content'):
+            # classifier uses base64 content
+            content = solr_doc['content'][0]
+            classifier_response = classify(
+                str(solr_doc["id"]), content, solr_doc["language"])
+            accepted_probability = classifier_response["accepted_probability"]
 
         # Check acceptance
         if accepted_probability != CLASSIFIER_ERROR_SCORE:
@@ -121,26 +105,6 @@ def score_documents(website_name, solr_documents, use_pdf_files):
     logger.info("Committing SOLR index...")
     core = 'documents'
     requests.get(os.environ['SOLR_URL'] + '/' + core + '/update?commit=true')
-
-
-def parse_pdf_from_url(url):
-    user_agent_list = [
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Safari/605.1.15',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:77.0) Gecko/20100101 Firefox/77.0',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36',
-    ]
-    user_agent = random.choice(user_agent_list)
-    headers = {'User-Agent': user_agent}
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        logging.info('PARSE PDF WITH TIKA...')
-        pdf_text = parser.from_buffer(response.content)
-        if pdf_text['content']:
-            return pdf_text['content']
-    logging.error(response.text)
-    return ''
 
 
 def classify(django_doc_id, content, language):
