@@ -5,13 +5,10 @@ import logging
 import os
 import re
 from datetime import date
-from urllib.parse import parse_qs
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import scrapy
 from bs4 import BeautifulSoup
-from langdetect import detect
-from lxml import html
 from lxml.html.clean import Cleaner
 from scrapy.exceptions import NotConfigured
 from scrapy.http import HtmlResponse
