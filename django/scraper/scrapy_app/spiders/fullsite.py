@@ -1,10 +1,9 @@
 # -*- coding: UTF-8 -*-
 
-import datetime
 import logging
 import os
 import re
-from datetime import date
+from datetime import date, datetime, timezone
 from urllib.parse import parse_qs, urlparse
 
 import scrapy
@@ -98,7 +97,7 @@ class FullSiteSpider(scrapy.Spider):
                 'title': title,
                 'website': self.website,
                 'content_html': cleaned_html.decode('utf-8'),
-                'date': datetime.datetime.now().isoformat(),
+                'date': datetime.now(timezone.utc).isoformat()[:-6] + 'Z',
                 'language': self.language,
                 'pdf_docs': pdf_docs
             }
@@ -114,7 +113,7 @@ class FullSiteSpider(scrapy.Spider):
                     try:
 
                         date_time_str = match.group()
-                        date_time_obj = datetime.datetime.strptime(date_time_str, '%Y-%m-%d').date()
+                        date_time_obj = datetime.strptime(date_time_str, '%Y-%m-%d').date()
                         if date_time_obj > today:
                             self.logger.warn(
                                 "Date %s appears to be set in the future. Stopping here!", url)
