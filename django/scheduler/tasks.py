@@ -583,7 +583,7 @@ def launch_fullsite_flanders(number_websites):
         line_count = 0
         for row in csv_reader:
             if line_count < number_websites:
-                launch_fullsite_crawler.delay(row[0], row[1], language='nl')
+                launch_fullsite_crawler.delay(row[0], row[1], 'nl')
                 line_count += 1
 
 
