@@ -266,7 +266,7 @@ def create_cas(sofa):
     return cas
 
 
-def get_cas_from_pdf(ts, content):
+def get_cas_from_pdf(content):
     logger.info("its a pdf")
     # Logic for documents without HTML, that have a "content" field which is a PDF to HTML done by Tika
     # Create a new cas here
@@ -325,6 +325,41 @@ def get_encoded_content_from_cas(r):
     return str(encoded_bytes, "utf-8")
 
 
+def get_cas_from_definitions_extract(input_cas_encoded):
+
+    input_for_term_defined = {
+        "cas_content": input_cas_encoded,
+        "content_type": "html",
+    }
+
+    start = time.time()
+    definitions_request = requests.post(DEFINITIONS_EXTRACT_URL,
+                                        json=input_for_term_defined)
+    end = time.time()
+    logger.info("Sent request to DefinitionExtract NLP (%s) Status code: %s", DEFINITIONS_EXTRACT_URL,
+                definitions_request.status_code)
+    logger.info(
+        "DefinitionExtract took %s seconds to succeed.", end - start)
+
+    return definitions_request
+
+
+def get_cas_from_text_extract(input_cas_encoded):
+    text_cas = {
+        "cas_content": input_cas_encoded,
+        "content_type": "html",
+        "extract_supergrams": "false"
+    }
+    start = time.time()
+    request_nlp = requests.post(TERM_EXTRACT_URL, json=text_cas)
+    end = time.time()
+    logger.info(
+        "Sent request to TextExtract NLP (%s). Status code: %s", TERM_EXTRACT_URL, request_nlp.status_code)
+    logger.info(
+        "TermExtract took %s seconds to succeed.", end - start)
+    return request_nlp
+
+
 @shared_task
 def extract_reporting_obligations(website_id):
     website = Website.objects.get(pk=website_id)
@@ -351,6 +386,7 @@ def extract_reporting_obligations(website_id):
         r = None
         paragraph_request = None
 
+        # Check if document is a html or pdf document
         if "content_html" in document:
             logger.info("Extracting terms from HTML document id: %s (%s chars)",
                         document['id'], len(document['content_html'][0]))
@@ -364,7 +400,6 @@ def extract_reporting_obligations(website_id):
             r = get_html2text_cas(document['content_html'][0])
 
         # Write tempfile for typesystem.xml
-        typesystem_file = None
         if is_html:
             generate_filesystem()
 
@@ -374,7 +409,7 @@ def extract_reporting_obligations(website_id):
 
         # Paragraph detection for PDF + fallback cas for not having a html2text request
         if is_pdf:
-            r = get_cas_from_pdf(ts, document['content'])
+            r = get_cas_from_pdf(document['content'])
             paragraph_request = r
 
         encoded_b64 = get_encoded_content_from_cas(r)
@@ -405,10 +440,9 @@ def extract_reporting_obligations(website_id):
         for vbtt in cas.get_view(sofa_id_html2text).select(VALUE_BETWEEN_TAG_TYPE_CLASS):
             if vbtt.tagName == "p":
                 logger.info("VBTT: %s", vbtt)
-
-
+                logger.info("VBTT: %s", vbtt.get_covered_text())
+        # TODO Remove break statement
         break
-
 
 
 @shared_task
@@ -445,124 +479,57 @@ def extract_terms(website_id):
                         document['id'], len(document['content'][0]))
             is_pdf = True
 
-        # Step 1: Html2Text - Get XMI from UIMA - Only when HTML not for PDFs
+        # Html2Text - Get XMI from UIMA - Only when HTML not for PDFs
         if is_html:
-            content_html_text = {
-                "text": document['content_html'][0]
-            }
-            start = time.time()
-            r = requests.post(
-                UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"], json=content_html_text)
+            r = get_html2text_cas(document['content_html'][0])
 
-            logger.info('Sent request to %s. Status code: %s', UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"],
-                        r.status_code)
-            end = time.time()
-            logger.info(
-                "UIMA Html2Text took %s seconds to succeed.", end - start)
-
-        # Write tempfile for typesystem.xml
-        typesystem_file = None
+        # Generate and write tempfile for typesystem.xml
         if is_html:
-            typesystem_req = requests.get(
-                UIMA_URL["BASE"] + UIMA_URL["TYPESYSTEM"])
-            typesystem_file = open("typesystem_tmp.xml", "w")
-            typesystem_file.write(typesystem_req.content.decode("utf-8"))
+            generate_filesystem()
 
-        # Write tempfile for cas.xml
+        # Load typesystem
         with open("typesystem_tmp.xml", 'rb') as f:
             ts = load_typesystem(f)
 
         # Paragraph detection for PDF + fallback cas for not having a html2text request
         if is_pdf:
-            logger.info("its a pdf")
-            # Logic for documents without HTML, that have a "content" field which is a PDF to HTML done by Tika
-            # Create a new cas here
-            tika_cas = Cas(typesystem=ts)
-            tika_cas.sofa_string = document['content']
-
-            sofa = tika_cas.sofa_string
-            logger.info("sofa: %s", sofa)
-
-            encoded_cas = base64.b64encode( bytes( tika_cas.to_xmi() , 'utf-8' ) ).decode()
-
-            # Then send this cas to NLP Paragraph detection
-            input_for_paragraph_detection = {
-                "cas_content": encoded_cas,
-                "content_type": "pdf",
-            }
-            r = requests.post(PARAGRAPH_DETECT_URL,
-                              json=input_for_paragraph_detection)
-
+            r = get_cas_from_pdf(document['content'])
             paragraph_request = r
 
-        content_decoded = r.content.decode('utf-8')
-        encoded_bytes = base64.b64encode(
-            content_decoded.encode("utf-8"))
-        encoded_b64 = str(encoded_bytes, "utf-8")
+        encoded_b64 = get_encoded_content_from_cas(r)
 
         # Paragraph Detection for HTML
         if is_html:
-            input_for_paragraph_detection = {
-                "cas_content": encoded_b64,
-                "content_type": "html",
-            }
-
-            paragraph_request = requests.post(PARAGRAPH_DETECT_URL,
-                                              json=input_for_paragraph_detection)
-            logger.info("Sent request to Paragraph Detection. Status code: %s",
-                        paragraph_request.status_code)
+            paragraph_request = get_cas_from_paragraph_detection(encoded_b64)
 
         # Term definition
-        input_for_term_defined = {
-            "cas_content": json.loads(paragraph_request.content)['cas_content'],
-            "content_type": "html",
-        }
+        input_content = json.loads(paragraph_request.content)['cas_content']
+        definitions_request = get_cas_from_definitions_extract(input_content)
 
-        start = time.time()
-        definitions_request = requests.post(DEFINITIONS_EXTRACT_URL,
-                                            json=input_for_term_defined)
-        end = time.time()
-        logger.info("Sent request to DefinitionExtract NLP (%s) Status code: %s", DEFINITIONS_EXTRACT_URL,
-                    definitions_request.status_code)
-        logger.info(
-            "DefinitionExtract took %s seconds to succeed.", end - start)
+        # Decoded cas from definitions extract
         definitions_decoded_cas = base64.b64decode(
             json.loads(definitions_request.content)['cas_content']).decode("utf-8")
 
         # Step 3: NLP TextExtract
-        text_cas = {
-            "cas_content": json.loads(definitions_request.content)['cas_content'],
-            "content_type": "html",
-            "extract_supergrams": "false"
-        }
-        start = time.time()
-        request_nlp = requests.post(TERM_EXTRACT_URL, json=text_cas)
-        end = time.time()
-        logger.info(
-            "Sent request to TextExtract NLP (%s). Status code: %s", TERM_EXTRACT_URL, request_nlp.status_code)
-        logger.info(
-            "TermExtract took %s seconds to succeed.", end - start)
-        decoded_cas_plus = base64.b64decode(json.loads(request_nlp.content)[
-                                                'cas_content']).decode("utf-8")
+        input_content = json.loads(definitions_request.content)['cas_content']
+        request_nlp = get_cas_from_text_extract(input_content)
 
+        # Decoded cas from termextract
         terms_decoded_cas = base64.b64decode(
             json.loads(request_nlp.content)['cas_content']).decode("utf-8")
 
-        # Load CAS from NLP
+        # Load CAS files from NLP
         cas = cassis.load_cas_from_xmi(
             definitions_decoded_cas, typesystem=ts)
         cas2 = cassis.load_cas_from_xmi(
             terms_decoded_cas, typesystem=ts)
-
-        html2text_sofastring = cas.get_view(
-            sofa_id_html2text).sofa_string
 
         atomic_update_defined = [
             {
                 "id": document['id'],
                 "concept_defined": {"set": {
                     "v": "1",
-                    "str": html2text_sofastring,
+                    "str": cas.get_view(sofa_id_html2text).sofa_string,
                     "tokens": [
 
                     ]
