@@ -17,8 +17,6 @@ import requests
 from celery import shared_task, chain
 from django.core.exceptions import ValidationError
 from jsonlines import jsonlines
-from langdetect import detect_langs
-from langdetect.lang_detect_exception import LangDetectException
 from minio import Minio, ResponseError
 from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
 from scrapy.crawler import CrawlerRunner
@@ -442,10 +440,7 @@ def score_documents_task(website_id):
     logger.info("Scoring documents with WEBSITE: " + website.name)
     solr_documents = solr_search_website_with_content(
         'documents', website.name)
-    use_pdf_files = True
-    if website.name.lower() == 'eurlex':
-        use_pdf_files = False
-    score_documents(website.name, solr_documents, use_pdf_files)
+    score_documents(website.name, solr_documents)
 
 
 @shared_task
@@ -466,6 +461,7 @@ def sync_documents_task(website_id):
         data = {
             "author": solr_doc.get('author', [''])[0][:20],
             "celex": solr_doc.get('celex', [''])[0][:20],
+            "language": solr_doc.get('language', ''),
             "consolidated_versions": ','.join(x.strip() for x in solr_doc.get('consolidated_versions', [''])),
             "date": solr_doc_date,
             "date_last_update": solr_doc_date_last_update,
@@ -484,24 +480,6 @@ def sync_documents_task(website_id):
         # whether or not the document was created
         current_doc, current_doc_created = Document.objects.update_or_create(
             id=solr_doc["id"], defaults=data)
-
-        # if document content is not english, add a FOREIGN Tag to the django document
-        solr_content = solr_doc.get('content', [''])[0]
-        if not is_document_english(solr_content):
-            try:
-                Tag.objects.create(value="FOREIGN", document=current_doc)
-            except ValidationError as e:
-                # tag exists, skip
-                logger.debug(str(e))
-        else:
-            # document is english, remove previous FOREIGN tag if it exists
-            try:
-                foreign_tag = Tag.objects.get(
-                    value="FOREIGN", document=current_doc)
-                foreign_tag.delete()
-            except Tag.DoesNotExist:
-                # FOREIGN tag not found, skip
-                pass
 
     # check for outdated documents based on last time a document was found during scraping
     how_many_days = 30
@@ -677,27 +655,6 @@ def parse_content_to_plaintext_task(website_id):
     client.add(items)
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + '/update?commit=true')
-
-
-def is_document_english(plain_text):
-    english = False
-    detect_threshold = 0.4
-    try:
-        langs = detect_langs(plain_text)
-        number_langs = len(langs)
-        # trivial case for 1 language detected
-        if number_langs == 1:
-            if langs[0].lang == 'en':
-                english = True
-        # if 2 or more languages are detected, consider detect probability
-        else:
-            for detected in langs:
-                if detected.lang == 'en' and detected.prob >= detect_threshold:
-                    english = True
-                    break
-    except LangDetectException:
-        pass
-    return english
 
 
 @shared_task

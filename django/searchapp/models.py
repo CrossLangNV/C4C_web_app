@@ -29,6 +29,7 @@ class Document(SafeDeleteModel):
     title = models.CharField(max_length=1000)
     title_prefix = models.CharField(max_length=500, default="", blank=True)
     author = models.CharField(max_length=500, default="", blank=True)
+    language = models.CharField(max_length=100, default="", blank=True)
 
     status = models.CharField(max_length=100, default="", blank=True)
     type = models.CharField(max_length=200, default="", blank=True)
