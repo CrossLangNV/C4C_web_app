@@ -20,7 +20,6 @@ from scrapy.http import HtmlResponse
 class FullSiteSpider(scrapy.Spider):
     pwd = os.getcwd()
     name = "fullsite"
-
     MAX_PATH_DEPTH = 15
     logger = logging.getLogger('FullSiteSpider')
 
@@ -33,7 +32,7 @@ class FullSiteSpider(scrapy.Spider):
     def __init__(self, *args, **kwargs):
 
         super(FullSiteSpider, self).__init__(*args, **kwargs)
-
+        self.language = kwargs.get('language')
         self.url = kwargs.get('url')
         if not self.url:
             raise NotConfigured(
@@ -84,8 +83,6 @@ class FullSiteSpider(scrapy.Spider):
         if isinstance(response, HtmlResponse):
 
             cleaned_html = self.cleaner.clean_html(response.body)
-            cleaned_html_object = html.fromstring(cleaned_html)
-            detected_language = detect(cleaned_html_object.text_content())
 
             title = response.xpath('//head/title/text()').get()
 
@@ -107,7 +104,7 @@ class FullSiteSpider(scrapy.Spider):
                 'website': self.website,
                 'content_html': cleaned_html.decode('utf-8'),
                 'date': datetime.datetime.now().isoformat(),
-                'language': detected_language,
+                'language': self.language,
                 'pdf_docs': pdf_docs
             }
 
