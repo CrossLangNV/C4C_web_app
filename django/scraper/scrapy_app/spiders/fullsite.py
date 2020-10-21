@@ -78,8 +78,6 @@ class FullSiteSpider(scrapy.Spider):
 
         detected_language = ""
         # indicates if it should be processed in items pipeline
-        skip = False
-
         if isinstance(response, HtmlResponse):
 
             cleaned_html = self.cleaner.clean_html(response.body)
