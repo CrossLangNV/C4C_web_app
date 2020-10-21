@@ -37,26 +37,20 @@ def score_documents(website_name, solr_documents, use_pdf_files):
             if solr_doc.get('content') and len(solr_doc.get('content')) > 0:
                 content = solr_doc['content'][0]
                 classifier_response = classify(
-                    str(solr_doc["id"]), content, 'pdf')
+                    str(solr_doc["id"]), content, solr_doc["language"])
                 accepted_probability = classifier_response["accepted_probability"]
             else:
                 for pdf_url in pdf_urls:
                     logger.info("Going to parse PDF with url: %s", pdf_url)
                     content = parse_pdf_from_url(pdf_url)
                     classifier_responses.append(
-                        classify(str(solr_doc["id"]), content, 'pdf'))
+                        classify(str(solr_doc["id"]), content, solr_doc["language"]))
                     # Take highest scoring
                 content = classifier_responses[accepted_probability_index]['content']
                 content_updates.append({"id": solr_doc["id"],
                                         "content": {"set": content}})
                 accepted_probability, accepted_probability_index = max(
                     [(r['accepted_probability'], i) for i, r in enumerate(classifier_responses)])
-        elif solr_doc.get('content_html'):
-            # classifier uses base64 content
-            content = solr_doc['content_html'][0]
-            classifier_response = classify(
-                str(solr_doc["id"]), content, 'html')
-            accepted_probability = classifier_response["accepted_probability"]
 
         # Check acceptance
         if accepted_probability != CLASSIFIER_ERROR_SCORE:
@@ -149,7 +143,7 @@ def parse_pdf_from_url(url):
     return ''
 
 
-def classify(django_doc_id, content, content_type):
+def classify(django_doc_id, content, language):
     classifier_url = os.environ['DOCUMENT_CLASSIFIER_URL'] + "/classify_doc"
     CLASSIFIER_ERROR_SCORE = -9999
     max_content_size_bytes = 50 * 1024 * 1024
@@ -159,7 +153,7 @@ def classify(django_doc_id, content, content_type):
         content_html_b64 = base64.b64encode(
             content_bytes).decode('utf-8')
         data = {'content': content_html_b64,
-                'content_type': content_type}
+                'language': language}
         logger.debug("Sending content for doc id: " + django_doc_id)
         response = requests.post(classifier_url, json=data)
         js = response.json()
