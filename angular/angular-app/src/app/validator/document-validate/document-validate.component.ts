@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute, ParamMap } from '@angular/router';
 import { ApiService } from 'src/app/core/services/api.service';
 import { switchMap } from 'rxjs/operators';
@@ -14,6 +14,8 @@ import { DjangoUser } from 'src/app/shared/models/django_user';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { Attachment } from 'src/app/shared/models/attachment';
 import { MessageService, ConfirmationService } from 'primeng/api';
+
+declare function  updateInput(): any;
 
 @Component({
   selector: 'app-document-validate',
@@ -37,6 +39,7 @@ export class DocumentValidateComponent implements OnInit {
   deleteIcon: IconDefinition;
   currentDjangoUser: DjangoUser;
   attachment: Attachment;
+  formexAct = 'Loading Formex...';
 
   constructor(
     private route: ActivatedRoute,
@@ -172,7 +175,22 @@ export class DocumentValidateComponent implements OnInit {
         }
         this.document = attachment;
       });
-    // }
+  }
+
+  openFormexModal(targetModal) {
+    this.modalService.open(targetModal, {
+      centered: true,
+      backdrop: 'static',
+      size: 'xl',
+      scrollable: true,
+    });
+    this.formexAct = 'Loading Formex...';
+    updateInput();
+    this.service.getFormexAct(this.document.celex).subscribe(formexAct => {
+      this.formexAct = formexAct;
+      this.document.content = this.formexAct;
+      updateInput();
+    });
   }
 
   onSubmit() {
