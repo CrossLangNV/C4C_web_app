@@ -1,6 +1,8 @@
 import logging
 import os
 
+import requests
+from bs4 import BeautifulSoup
 from celery.result import AsyncResult
 from django.db.models import Q, Count
 from django.db.models.functions import Length
@@ -314,6 +316,21 @@ class SimilarDocumentsAPIView(APIView):
         for id, title, website, coeff in similar_document_ids_with_coeff:
             formatted_response.append({'id': id, 'title': title, 'website': website, 'coefficient': coeff})
         return Response(formatted_response)
+
+
+class FormexAPIView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, celex):
+        cellar_api = 'http://publications.europa.eu/resource/celex/'
+        headers = {'Accept': 'application/list;mtype=fmx4', 'Accept-Language': 'eng'}
+        response = requests.get(cellar_api + celex, headers=headers)
+        formex_links = []
+        if response.status_code == 200:
+            html_content = response.content
+            soup = BeautifulSoup(html_content, 'html.parser')
+            formex_links = [link.get('href') for link in soup.findAll('a')]
+        return Response(formex_links)
 
 
 class ExportDocumentsLaunch(APIView):

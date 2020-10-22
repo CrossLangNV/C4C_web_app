@@ -1,3 +1,4 @@
+beautifulsoup4==4.9.1
 celery-slack==0.4.1
 celery==4.4.7
 django-celery-beat==2.0.0
