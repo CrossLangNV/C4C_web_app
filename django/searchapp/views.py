@@ -318,7 +318,7 @@ class SimilarDocumentsAPIView(APIView):
         return Response(formatted_response)
 
 
-class FormexAPIView(APIView):
+class FormexUrlsAPIView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, celex):
@@ -331,6 +331,25 @@ class FormexAPIView(APIView):
             soup = BeautifulSoup(html_content, 'html.parser')
             formex_links = [link.get('href') for link in soup.findAll('a')]
         return Response(formex_links)
+
+
+class FormexActAPIView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, celex):
+        cellar_api = 'http://publications.europa.eu/resource/celex/'
+        headers = {'Accept': 'application/list;mtype=fmx4', 'Accept-Language': 'eng'}
+        response = requests.get(cellar_api + celex, headers=headers)
+        formex_act = ""
+        if response.status_code == 200:
+            html_content = response.content
+            soup = BeautifulSoup(html_content, 'html.parser')
+            formex_links = [link.get('href') for link in soup.findAll('a')]
+            if len(formex_links) > 1:
+                act_response = requests.get(formex_links[1])
+                if act_response.status_code == 200:
+                    formex_act = act_response.content
+        return Response(formex_act)
 
 
 class ExportDocumentsLaunch(APIView):
