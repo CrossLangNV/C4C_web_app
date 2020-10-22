@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 import requests
 from bs4 import BeautifulSoup
@@ -322,34 +323,47 @@ class FormexUrlsAPIView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, celex):
-        cellar_api = 'http://publications.europa.eu/resource/celex/'
-        headers = {'Accept': 'application/list;mtype=fmx4', 'Accept-Language': 'eng'}
-        response = requests.get(cellar_api + celex, headers=headers)
-        formex_links = []
-        if response.status_code == 200:
-            html_content = response.content
-            soup = BeautifulSoup(html_content, 'html.parser')
-            formex_links = [link.get('href') for link in soup.findAll('a')]
-        return Response(formex_links)
+        return Response(get_formex_urls(celex))
 
 
 class FormexActAPIView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, celex):
-        cellar_api = 'http://publications.europa.eu/resource/celex/'
-        headers = {'Accept': 'application/list;mtype=fmx4', 'Accept-Language': 'eng'}
-        response = requests.get(cellar_api + celex, headers=headers)
-        formex_act = ""
-        if response.status_code == 200:
-            html_content = response.content
-            soup = BeautifulSoup(html_content, 'html.parser')
-            formex_links = [link.get('href') for link in soup.findAll('a')]
-            if len(formex_links) > 1:
-                act_response = requests.get(formex_links[1])
-                if act_response.status_code == 200:
-                    formex_act = act_response.content
+        formex_act = ''
+        formex_links = get_formex_urls(celex)
+        if len(formex_links) > 1:
+            act_response = requests.get(formex_links[1])
+            if act_response.status_code == 200:
+                formex_act = act_response.content
         return Response(formex_act)
+
+
+def get_formex_urls(celex):
+    cellar_api = 'http://publications.europa.eu/resource/celex/'
+    headers = {'Accept': 'application/list;mtype=fmx4', 'Accept-Language': 'eng'}
+    response = requests.get(cellar_api + celex, headers=headers)
+    formex_links = []
+    if response.status_code == 200:
+        html_content = response.content
+        soup = BeautifulSoup(html_content, 'html.parser')
+        formex_links = [link.get('href') for link in soup.findAll('a')]
+        # sort Formex link on DOC number
+        formex_links.sort(key=natural_keys)
+
+    return formex_links
+
+
+def atoi(text):
+    return int(text) if text.isdigit() else text
+
+
+def natural_keys(text):
+    """
+    alist.sort(key=natural_keys) sorts in human order
+    http://nedbatchelder.com/blog/200712/human_sorting.html
+    """
+    return [atoi(c) for c in re.split(r'(\d+)', text)]
 
 
 class ExportDocumentsLaunch(APIView):
