@@ -65,6 +65,10 @@ urlpatterns = [
     path('api/document/<uuid:pk>', views.DocumentDetailAPIView.as_view(),
          name='document_detail_api'),
 
+    # EurLex Formex
+    path('api/formex/<str:celex>', views.FormexAPIView.as_view(),
+         name='formex_api'),
+
     # Attachment
     path('api/attachments', views.AttachmentListAPIView.as_view(),
          name='attachment_list_api'),
