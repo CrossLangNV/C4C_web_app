@@ -587,7 +587,20 @@ def launch_fullsite_flanders(number_websites):
                 line_count += 1
 
 
-@shared_task()
+@shared_task
+def create_flanders_websites():
+    with open(workpath + '/websites/flanders_municipalities.csv') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            Website.objects.get_or_create(
+                name=row[1],
+                defaults={
+                    'url': row[0],
+                    'content': 'Flanders municipality'
+                }
+            )
+
+@shared_task
 def parse_content_to_plaintext_task(website_id):
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
