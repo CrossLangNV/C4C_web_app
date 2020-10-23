@@ -3,7 +3,7 @@ import os
 import re
 
 import requests
-from bs4 import BeautifulSoup
+from lxml import html
 from celery.result import AsyncResult
 from django.db.models import Q, Count
 from django.db.models.functions import Length
@@ -346,8 +346,9 @@ def get_formex_urls(celex):
     formex_links = []
     if response.status_code == 200:
         html_content = response.content
-        soup = BeautifulSoup(html_content, 'html.parser')
-        formex_links = [link.get('href') for link in soup.findAll('a')]
+        tree = html.fromstring(html_content)
+        # only links that point to an .xml document
+        formex_links = tree.xpath('//a/*[contains(text(),".xml")]/../@href')
         # sort Formex link on DOC number
         formex_links.sort(key=natural_keys)
 
