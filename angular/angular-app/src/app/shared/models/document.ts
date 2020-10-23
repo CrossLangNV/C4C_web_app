@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Adapter } from './adapter';
 import { Attachment } from './attachment';
+import { Concept } from './concept';
 
 export interface DocumentResults {
   count: number;
@@ -37,7 +38,9 @@ export class Document {
     public commentIds: string[],
     public tags: string[],
     public consolidatedVersions: string,
-    public file_url: string
+    public file_url: string,
+    public occurrance: Concept[],
+    public definition: Concept[]
   ) {}
 }
 
@@ -68,7 +71,9 @@ export class DocumentAdapter implements Adapter<Document> {
       item.comments,
       item.tags,
       item.consolidated_versions,
-      item.file_url
+      item.file_url,
+      item.occurrance,
+      item.definition
     );
   }
   encode(document: Document): any {
@@ -96,6 +101,8 @@ export class DocumentAdapter implements Adapter<Document> {
       tags: document.tags,
       consolidatedVersions: document.consolidatedVersions,
       file_url: document.file_url,
+      occurrance: document.occurrance,
+      definition: document.definition
     };
   }
 }

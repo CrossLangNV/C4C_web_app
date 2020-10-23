@@ -28,7 +28,7 @@ from scrapy.utils.project import get_project_settings
 from tika import parser
 from twisted.internet import reactor
 
-from glossary.models import Concept
+from glossary.models import Concept, ConceptOccurs, ConceptDefined
 from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
@@ -283,11 +283,13 @@ def get_cas_from_pdf(content):
                       json=input_for_paragraph_detection)
 
 
-def generate_filesystem():
+def fetch_typesystem():
     typesystem_req = requests.get(
         UIMA_URL["BASE"] + UIMA_URL["TYPESYSTEM"])
-    typesystem_file = open("typesystem_tmp.xml", "w")
+    typesystem_file = open("/tmp/typesystem.xml", "w")
     typesystem_file.write(typesystem_req.content.decode("utf-8"))
+    with open('/tmp/typesystem.xml', 'rb') as f:
+      return load_typesystem(f)
 
 
 def get_cas_from_paragraph_detection(content_encoded):
@@ -378,6 +380,9 @@ def extract_reporting_obligations(website_id):
                'cursorMark': cursor_mark, 'sort': 'id asc', 'fl': 'content_html,content,id'}
     documents = client.search(q, **options)
 
+    # Load typesystem
+    ts = fetch_typesystem()
+
     for document in documents:
         logger.info("Started RO extraction for document id: %s", document['id'])
 
@@ -398,14 +403,6 @@ def extract_reporting_obligations(website_id):
 
         if is_html:
             r = get_html2text_cas(document['content_html'][0])
-
-        # Write tempfile for typesystem.xml
-        if is_html:
-            generate_filesystem()
-
-        # Write tempfile for cas.xml
-        with open("typesystem_tmp.xml", 'rb') as f:
-            ts = load_typesystem(f)
 
         # Paragraph detection for PDF + fallback cas for not having a html2text request
         if is_pdf:
@@ -463,44 +460,30 @@ def extract_terms(website_id):
                'cursorMark': cursor_mark, 'sort': 'id asc', 'fl': 'content_html,content,id'}
     documents = client.search(q, **options)
 
+    # Generate and write tempfile for typesystem.xml
+    ts = fetch_typesystem()
+
     for document in documents:
         logger.info("Started term extraction for document id: %s", document['id'])
-        is_html = False
-        is_pdf = False
+        django_doc = Document.objects.get(id=document['id'])
         r = None
         paragraph_request = None
 
         if "content_html" in document:
             logger.info("Extracting terms from HTML document id: %s (%s chars)",
                         document['id'], len(document['content_html'][0]))
-            is_html = True
+            # Html2Text - Get XMI from UIMA - Only when HTML not for PDFs
+            r = get_html2text_cas(document['content_html'][0])
+            encoded_b64 = get_encoded_content_from_cas(r)
+            # Paragraph Detection for HTML
+            paragraph_request = get_cas_from_paragraph_detection(encoded_b64)
+
         elif "content_html" not in document and "content" in document:
             logger.info("Extracting terms from PDF document id: %s (%s chars)",
                         document['id'], len(document['content'][0]))
-            is_pdf = True
-
-        # Html2Text - Get XMI from UIMA - Only when HTML not for PDFs
-        if is_html:
-            r = get_html2text_cas(document['content_html'][0])
-
-        # Generate and write tempfile for typesystem.xml
-        if is_html:
-            generate_filesystem()
-
-        # Load typesystem
-        with open("typesystem_tmp.xml", 'rb') as f:
-            ts = load_typesystem(f)
-
-        # Paragraph detection for PDF + fallback cas for not having a html2text request
-        if is_pdf:
+            # Paragraph detection for PDF + fallback cas for not having a html2text request
             r = get_cas_from_pdf(document['content'])
             paragraph_request = r
-
-        encoded_b64 = get_encoded_content_from_cas(r)
-
-        # Paragraph Detection for HTML
-        if is_html:
-            paragraph_request = get_cas_from_paragraph_detection(encoded_b64)
 
         # Term definition
         input_content = json.loads(paragraph_request.content)['cas_content']
@@ -578,13 +561,11 @@ def extract_terms(website_id):
                 concept_defined_tokens.insert(j, token_to_add_defined)
                 j = j + 1
 
-                # logger.info(
-                # "[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
-                # token_defined, j, start_defined, end_defined)
-
                 # Save Term Definitions in Django
-                Concept.objects.update_or_create(
-                    name=term_name, definition=defi.get_covered_text(), lemma=lemma_name)
+                c = Concept.objects.update_or_create(
+                    name=term_name, definition=defi.get_covered_text().strip(), lemma=lemma_name)
+                ConceptDefined.objects.update_or_create(
+                       concept=c[0], document= django_doc)
                 # logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
 
         # Step 5: Send term extractions to Solr (term_occurs field)
@@ -640,14 +621,14 @@ def extract_terms(website_id):
             if not queryset.exists():
                 # Save Term Definitions in Django
                 if (len(term.get_covered_text()) <= 200):
-                    Concept.objects.update_or_create(
+                   c = Concept.objects.update_or_create(
                         name=term.get_covered_text(), lemma=lemma_name)
+                   ConceptOccurs.objects.update_or_create(
+                       concept=c[0], document= django_doc, probability=float(score.encode("utf-8")) )
+                     
                 else:
                     logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
                                 "Consider disabling supergrams or change the length in the database", token)
-
-            # logger.info("[concept_occurs] Added term '%s' to the PreAnalyzed payload (i=%d) (token pos: %s-%s)",
-            # token, i, start, end)
 
         # Step 6: Post term_occurs to Solr
         escaped_json = json.dumps(
