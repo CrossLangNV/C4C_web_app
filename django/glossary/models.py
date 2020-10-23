@@ -1,22 +1,56 @@
 from django.db import models
 
-from searchapp.models import Document
 from django.utils import timezone
 
+from searchapp.models import Document
 
 class Concept(models.Model):
     name = models.CharField(max_length=200)
     definition = models.TextField()
     lemma = models.CharField(max_length=200, default="")
-    documents = models.ManyToManyField(Document, blank=True, editable=False)
+    document_occurs = models.ManyToManyField(
+        Document,
+        through='ConceptOccurs',
+        through_fields=('concept', 'document'),
+        related_name='occurrance'
+    )
+    document_defined = models.ManyToManyField(
+        Document,
+        through='ConceptDefined',
+        through_fields=('concept', 'document'),
+        related_name='definition'
+    )
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+
 
     class Meta:
         ordering = ['name']
 
     def __str__(self):
         return self.name
+
+class ConceptOccurs(models.Model):
+    concept = models.ForeignKey(Concept, on_delete=models.CASCADE)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    probability = models.FloatField(default=0.0, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['concept_id', 'document_id'], name="unique_per_concept_occurs_and_document")
+        ]
+
+class ConceptDefined(models.Model):
+    concept = models.ForeignKey(Concept, on_delete=models.CASCADE)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    probability = models.FloatField(default=0.0, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['concept_id', 'document_id'], name="unique_per_concept_defined_and_document")
+        ]
 
 
 class AcceptanceStateValue(models.TextChoices):
