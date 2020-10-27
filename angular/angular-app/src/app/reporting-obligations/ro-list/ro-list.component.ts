@@ -22,6 +22,9 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import {Router} from "@angular/router";
+import {AuthenticationService} from "../../core/auth/authentication.service";
+import {DjangoUser} from "../../shared/models/django_user";
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -81,10 +84,24 @@ export class RoListComponent implements OnInit {
   nameSortIcon: IconDefinition = faSort;
   dateSortIcon: IconDefinition = faSortDown;
   statesSortIcon: IconDefinition = faSort;
+  currentDjangoUser: DjangoUser;
 
-  constructor(private service: ApiService) {}
+  constructor(
+    private service: ApiService,
+    private router: Router,
+    private authenticationService: AuthenticationService,
+  ) {}
 
   ngOnInit() {
+    this.authenticationService.currentDjangoUser.subscribe(
+      (x) => (this.currentDjangoUser = x)
+    );
+
+    // Force login page when not authenticated
+    if (this.currentDjangoUser == null) {
+      this.router.navigate(['/login']);
+    }
+
     this.fetchRos();
     this.searchTermChanged
       .pipe(debounceTime(600), distinctUntilChanged())

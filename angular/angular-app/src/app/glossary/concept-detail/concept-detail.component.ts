@@ -178,7 +178,7 @@ export class ConceptDetailComponent implements OnInit {
     });
   }
 
-  loadOccursInDocumentsPreAnalyzed() {
+  loadOccursInDocuments() {
     this.service
       .searchSolrPreAnalyzedDocuments(
         this.occursInPage,
@@ -191,45 +191,8 @@ export class ConceptDetailComponent implements OnInit {
       )
       .subscribe((data) => {
         this.occursInTotal = data[0];
-        const solrDocuments = data[1];
-        this.occursIn = [];
-        const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
-        this.getDocuments(solrDocumentIds).subscribe((doc) => {
-          doc.forEach((document, index) => {
-            document.content = solrDocuments[index].concept_occurs;
-            this.occursIn.push(document);
-          });
-        });
+        this.occursIn = data[1];
       });
-  }
-
-  loadOccursInDocuments() {
-    this.service
-      .searchSolrDocuments(
-        this.occursInPage,
-        this.occursInPageSize,
-        this.concept.name,
-        [],
-        this.occursInSortBy,
-        this.occursInSortDirection
-      )
-      .subscribe((data) => {
-        this.occursInTotal = data[0];
-        const solrDocuments = data[1];
-        this.occursIn = [];
-        const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
-        this.getDocuments(solrDocumentIds).subscribe((doc) => {
-          doc.forEach((document, index) => {
-            document.content = solrDocuments[index].content;
-            this.occursIn.push(document);
-          });
-        });
-      });
-  }
-
-  // highlightedContent contains html where concepts are enclosed by <span class="highlight">concept</span>
-  getOffsets(highlightedContent: string, concept: string) {
-
   }
 
   loadDefinedInDocuments() {
@@ -245,17 +208,7 @@ export class ConceptDetailComponent implements OnInit {
       )
       .subscribe((data) => {
         this.definedInTotal = data[0];
-        const solrDocuments = data[1];
-        this.definedIn = [];
-        const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
-        this.getDocuments(solrDocumentIds).subscribe((doc) => {
-          doc.forEach((document, index) => {
-            let solrContent = solrDocuments[index].concept_defined;
-            // solrContent = solrContent.map(text => text.replace('<span class=\"highlight\">means</span>', 'means'));
-            document.content = solrContent;
-            this.definedIn.push(document);
-          });
-        });
+        this.definedIn = data[1];
       });
   }
 

@@ -5,8 +5,9 @@ from django.utils import timezone
 
 
 class Concept(models.Model):
-    name = models.CharField(max_length=200, unique=True)
+    name = models.CharField(max_length=200)
     definition = models.TextField()
+    lemma = models.CharField(max_length=200, default="")
     documents = models.ManyToManyField(Document, blank=True, editable=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)

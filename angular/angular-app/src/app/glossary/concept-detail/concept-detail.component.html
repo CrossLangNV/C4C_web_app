@@ -111,7 +111,7 @@
 
           <tr *ngFor="let doc of occursIn">
             <td>
-              {{ doc.websiteName }}
+              {{ doc.website[0] | uppercase }}
             </td>
             <td>
               <a [routerLink]="['/document', concept.id, doc.id]">
@@ -121,7 +121,7 @@
             <td>
               {{ doc.date | date }}
             </td>
-            <td [innerHTML]="doc.content" class="annotatable"></td>
+            <td [innerHTML]="doc.concept_occurs"></td>
           </tr>
         </tbody>
       </table>
@@ -133,6 +133,7 @@
           [pageSize]="occursInPageSize"
           [maxSize]="10"
           [ellipses]="true"
+          [rotate]="true"
         >
         </ngb-pagination>
       </div>
@@ -181,7 +182,7 @@
 
           <tr *ngFor="let doc of definedIn">
             <td>
-              {{ doc.websiteName }}
+              {{ doc.website[0] | uppercase }}
             </td>
             <td>
               <a [routerLink]="['/document', concept.id, doc.id]">
@@ -191,7 +192,7 @@
             <td>
               {{ doc.date | date }}
             </td>
-            <td [innerHTML]="doc.content"></td>
+            <td [innerHTML]="doc.concept_defined"></td>
           </tr>
         </tbody>
       </table>
@@ -203,9 +204,12 @@
           [pageSize]="definedInPageSize"
           [maxSize]="10"
           [ellipses]="true"
+          [rotate]="true"
         >
         </ngb-pagination>
       </div>
     </div>
   </div>
 </div>
+
+<p-toast position="top-center"></p-toast>

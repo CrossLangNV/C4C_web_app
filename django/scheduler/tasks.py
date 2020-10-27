@@ -13,6 +13,8 @@ from io import BytesIO
 import cassis
 import pysolr
 import requests
+from cassis import Cas, load_cas_from_xmi
+from cassis.typesystem import load_typesystem
 from celery import shared_task, chain
 from django.core.exceptions import ValidationError
 from django.db.models.functions import Length
@@ -31,10 +33,12 @@ from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
 
+from SPARQLWrapper import SPARQLWrapper, JSON
+
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
 
-sofa_id = "html2textView"
+sofa_id_html2text = "html2textView"
 sofa_id_text2html = "text2htmlView"
 UIMA_URL = {"BASE": os.environ['GLOSSARY_UIMA_URL'],  # http://uima:8008
             "HTML2TEXT": "/html2text",
@@ -46,6 +50,21 @@ SOLR_URL = os.environ['SOLR_URL']
 # Don't remove the '/' at the end here
 TERM_EXTRACT_URL = os.environ['GLOSSARY_TERM_EXTRACT_URL']
 DEFINITIONS_EXTRACT_URL = os.environ['GLOSSARY_DEFINITIONS_EXTRACT_URL']
+PARAGRAPH_DETECT_URL = os.environ['GLOSSARY_PARAGRAPH_DETECT_URL']
+RO_EXTRACT_URL = os.environ['RO_EXTRACT_URL']
+
+SENTENCE_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
+TFIDF_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"
+LEMMA_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Lemma"
+PARAGRAPH_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Paragraph"
+VALUE_BETWEEN_TAG_TYPE_CLASS = "com.crosslang.uimahtmltotext.uima.type.ValueBetweenTagType"
+
+DEFAULT_TYPESYSTEM = "typesystem_tmp.xml"
+
+CONST_UPDATE_WITH_COMMIT = "/update?commit=true"
+CONST_EXPORT = '/export/'
+QUERY_ID_ASC = 'id asc'
+QUERY_WEBSITE = "website:"
 
 
 @shared_task()
@@ -76,12 +95,12 @@ def reset_pre_analyzed_fields(website_id):
     # Make sure solr index is updated
     core = 'documents'
     requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + '/update?commit=true')
+                 '/' + core + CONST_UPDATE_WITH_COMMIT)
     # select all records where content is empty and content_html is not
     q = "( concept_occurs: [* TO *] OR concept_defined: [* TO *] ) AND website:" + website_name
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
-               'cursorMark': cursor_mark, 'sort': 'id asc'}
+               'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC}
     results = client.search(q, **options)
     items = []
 
@@ -97,17 +116,17 @@ def reset_pre_analyzed_fields(website_id):
             logger.info("Got 1000 items, posting to solr")
             client.add(items)
             requests.get(os.environ['SOLR_URL'] +
-                         '/' + core + '/update?commit=true')
+                         '/' + core + CONST_UPDATE_WITH_COMMIT)
             items = []
 
     # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
     client.add(items)
     requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + '/update?commit=true')
+                 '/' + core + CONST_UPDATE_WITH_COMMIT)
 
 
 @shared_task
-def full_service_task(website_id):
+def full_service_task(website_id, **kwargs):
     website = Website.objects.get(pk=website_id)
     logger.info("Full service for WEBSITE: %s", website.name)
     # the following subtasks are linked together in order:
@@ -117,10 +136,12 @@ def full_service_task(website_id):
     # https://docs.celeryproject.org/en/stable/userguide/canvas.html
     chain(
         sync_scrapy_to_solr_task.si(website_id),
-        parse_content_to_plaintext_task.si(website_id),
-        sync_documents_task.si(website_id),
-        score_documents_task.si(website_id),
-        check_documents_unvalidated_task.si(website_id)
+        parse_content_to_plaintext_task.si(
+            website_id, date=kwargs.get('date', None)),
+        sync_documents_task.si(website_id, date=kwargs.get('date', None)),
+        score_documents_task.si(website_id, date=kwargs.get('date', None)),
+        check_documents_unvalidated_task.si(website_id),
+        extract_terms.si(website_id),
     )()
 
 
@@ -137,9 +158,9 @@ def export_documents(website_ids=None):
         # Make sure solr index is updated
         core = 'documents'
         requests.get(os.environ['SOLR_URL'] +
-                     '/' + core + '/update?commit=true')
-        workdir = workpath + '/export/' + \
-            export_documents.request.id + '/' + website.name.lower()
+                     '/' + core + CONST_UPDATE_WITH_COMMIT)
+        workdir = workpath + CONST_EXPORT + \
+                  export_documents.request.id + '/' + website.name.lower()
         os.makedirs(workdir)
         # select all records for website
         q = 'website:' + website.name
@@ -148,7 +169,7 @@ def export_documents(website_ids=None):
             q += ' AND content_html:*'
         client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
         options = {'rows': rows_per_page, 'start': page_number,
-                   'cursorMark': cursor_mark, 'sort': 'id asc'}
+                   'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC}
         documents = client.search(q, **options)
         for document in documents:
             with jsonlines.open(workdir + '/doc_' + document['id'] + '.jsonl',
@@ -167,9 +188,9 @@ def export_documents(website_ids=None):
                     f.write(classifier)
 
     # create zip file for all .jsonl files
-    zip_destination = workpath + '/export/' + export_documents.request.id
+    zip_destination = workpath + CONST_EXPORT + export_documents.request.id
     shutil.make_archive(zip_destination, 'zip', workpath +
-                        '/export/' + export_documents.request.id)
+                        CONST_EXPORT + export_documents.request.id)
 
     # upload zip to minio
     minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
@@ -185,7 +206,7 @@ def export_documents(website_ids=None):
     minio_client.fput_object(
         'export', export_documents.request.id + '.zip', zip_destination + '.zip')
 
-    shutil.rmtree(workpath + '/export/' + export_documents.request.id)
+    shutil.rmtree(workpath + CONST_EXPORT + export_documents.request.id)
     os.remove(zip_destination + '.zip')
     logging.info("Removed: %s", zip_destination + '.zip')
 
@@ -199,8 +220,258 @@ def post_pre_analyzed_to_solr(data):
 
 
 @shared_task
-def test_solr_preanalyzed_update():
-    logger.info("To be removed.")
+def get_stats_for_html_size(website_id):
+    core = 'documents'
+    page_number = 0
+    rows_per_page = 250
+    cursor_mark = "*"
+
+    website = Website.objects.get(pk=website_id)
+    website_name = website.name.lower()
+    q = QUERY_WEBSITE + website_name + " AND content_html:* AND acceptance_state:accepted"
+
+    # Load all documents from Solr
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    options = {'rows': rows_per_page, 'start': page_number,
+               'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC, 'fl': 'content_html,id'}
+    documents = client.search(q, **options)
+
+    size_1 = 0
+    size_2 = 0
+    for document in documents:
+        if document['content_html'] is not None:
+            if len(document['content_html'][0]) > 500000:
+                size_1 = size_1 + 1
+                logger.info("500K document id: %s", document['id'])
+            elif len(document['content_html'][0]) > 1000000:
+                size_2 = size_2 + 1
+                logger.info("1M document id: %s", document['id'])
+
+    logger.info("[Document stats]: Documents over 500k lines: %s", size_1)
+    logger.info("[Document stats]: Documents over 1M lines: %s", size_2)
+
+
+def get_html2text_cas(content_html):
+    content_html_text = {
+        "text": content_html
+    }
+    start = time.time()
+    r = requests.post(
+        UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"], json=content_html_text)
+
+    logger.info('Sent request to %s. Status code: %s', UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"],
+                r.status_code)
+    end = time.time()
+    logger.info(
+        "UIMA Html2Text took %s seconds to succeed.", end - start)
+    return r
+
+
+def create_cas(sofa):
+    with open(DEFAULT_TYPESYSTEM, 'rb') as f:
+        ts = load_typesystem(f)
+
+    cas = Cas(typesystem=ts)
+    cas.sofa_string = sofa
+    return cas
+
+
+def get_cas_from_pdf(content):
+    logger.info("its a pdf")
+    # Logic for documents without HTML, that have a "content" field which is a PDF to HTML done by Tika
+    # Create a new cas here
+    tika_cas = create_cas(content)
+
+    encoded_cas = base64.b64encode(bytes(tika_cas.to_xmi(), 'utf-8')).decode()
+
+    # Then send this cas to NLP Paragraph detection
+    input_for_paragraph_detection = {
+        "cas_content": encoded_cas,
+        "content_type": "pdf",
+    }
+    return requests.post(PARAGRAPH_DETECT_URL,
+                      json=input_for_paragraph_detection)
+
+
+def generate_filesystem():
+    typesystem_req = requests.get(
+        UIMA_URL["BASE"] + UIMA_URL["TYPESYSTEM"])
+    typesystem_file = open(DEFAULT_TYPESYSTEM, "w")
+    typesystem_file.write(typesystem_req.content.decode("utf-8"))
+
+
+def get_cas_from_paragraph_detection(content_encoded):
+    input_for_paragraph_detection = {
+        "cas_content": content_encoded,
+        "content_type": "html",
+    }
+
+    paragraph_request = requests.post(PARAGRAPH_DETECT_URL,
+                                      json=input_for_paragraph_detection)
+    logger.info("Sent request to Paragraph Detection. Status code: %s",
+                paragraph_request.status_code)
+
+    return paragraph_request
+
+
+def get_reporting_obligations(input_cas_encoded):
+    input_for_reporting_obligations = {
+        "cas_content": input_cas_encoded,
+        "content_type": "html",
+    }
+
+    ro_request = requests.post(RO_EXTRACT_URL,
+                               json=input_for_reporting_obligations)
+    logger.info("Sent request to RO Extraction. Status code: %s",
+                ro_request.status_code)
+
+    return ro_request
+
+
+def get_encoded_content_from_cas(r):
+    content_decoded = r.content.decode('utf-8')
+    encoded_bytes = base64.b64encode(
+        content_decoded.encode("utf-8"))
+    return str(encoded_bytes, "utf-8")
+
+
+def get_cas_from_definitions_extract(input_cas_encoded):
+
+    input_for_term_defined = {
+        "cas_content": input_cas_encoded,
+        "content_type": "html",
+    }
+
+    start = time.time()
+    definitions_request = requests.post(DEFINITIONS_EXTRACT_URL,
+                                        json=input_for_term_defined)
+    end = time.time()
+    logger.info("Sent request to DefinitionExtract NLP (%s) Status code: %s", DEFINITIONS_EXTRACT_URL,
+                definitions_request.status_code)
+    logger.info(
+        "DefinitionExtract took %s seconds to succeed.", end - start)
+
+    return definitions_request
+
+
+def get_cas_from_text_extract(input_cas_encoded):
+    text_cas = {
+        "cas_content": input_cas_encoded,
+        "content_type": "html",
+        "extract_supergrams": "false"
+    }
+    start = time.time()
+    request_nlp = requests.post(TERM_EXTRACT_URL, json=text_cas)
+    end = time.time()
+    logger.info(
+        "Sent request to TextExtract NLP (%s). Status code: %s", TERM_EXTRACT_URL, request_nlp.status_code)
+    logger.info(
+        "TermExtract took %s seconds to succeed.", end - start)
+    return request_nlp
+
+
+@shared_task
+def sync_eurovoc_terms(website_id):
+    website = Website.objects.get(pk=website_id)
+    website_name = website.name.lower()
+
+    url = "http://192.168.105.171:3030/eurovoc"
+
+    sparql = SPARQLWrapper(url)
+    sparql.setQuery("""
+        SELECT ?subject ?predicate ?object
+        WHERE {
+           ?subject ?predicate ?object
+        }
+        LIMIT 25
+    """)
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
+    logger.info(results)
+
+
+@shared_task
+def extract_reporting_obligations(website_id):
+    website = Website.objects.get(pk=website_id)
+    website_name = website.name.lower()
+    core = 'documents'
+    page_number = 0
+    rows_per_page = 250
+    cursor_mark = "*"
+
+    q = QUERY_WEBSITE + website_name + " AND acceptance_state:accepted"
+
+    # Load all documents from Solr
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    options = {'rows': rows_per_page, 'start': page_number,
+               'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC, 'fl': 'content_html,content,id'}
+    documents = client.search(q, **options)
+
+    for document in documents:
+        logger.info("Started RO extraction for document id: %s", document['id'])
+
+        is_html = False
+        is_pdf = False
+        r = None
+        paragraph_request = None
+
+        # Check if document is a html or pdf document
+        if "content_html" in document:
+            logger.info("Extracting terms from HTML document id: %s (%s chars)",
+                        document['id'], len(document['content_html'][0]))
+            is_html = True
+        elif "content_html" not in document and "content" in document:
+            logger.info("Extracting terms from PDF document id: %s (%s chars)",
+                        document['id'], len(document['content'][0]))
+            is_pdf = True
+
+        if is_html:
+            r = get_html2text_cas(document['content_html'][0])
+
+        # Write tempfile for typesystem.xml
+        if is_html:
+            generate_filesystem()
+
+        # Write tempfile for cas.xml
+        with open(DEFAULT_TYPESYSTEM, 'rb') as f:
+            ts = load_typesystem(f)
+
+        # Paragraph detection for PDF + fallback cas for not having a html2text request
+        if is_pdf:
+            r = get_cas_from_pdf(document['content'])
+            paragraph_request = r
+
+        encoded_b64 = get_encoded_content_from_cas(r)
+
+        # Paragraph Detection for HTML
+        if is_html:
+            paragraph_request = get_cas_from_paragraph_detection(encoded_b64)
+
+        # Send to RO API
+        res = json.loads(paragraph_request.content.decode('utf-8'))
+        ro_request = get_reporting_obligations(res['cas_content'])
+
+        # Create new cas with sofa from RO API
+        ro_cas = base64.b64decode( json.loads(ro_request.content)[ 'cas_content' ] ).decode( 'utf-8' )
+        logger.info("ro_cas: %s", ro_cas)
+
+        cas = load_cas_from_xmi(ro_cas, typesystem=ts)
+        sofa_reporting_obligations = cas.get_view("ReportingObligationsView").sofa_string
+        logger.info("sofa_reporting_obligations: %s", sofa_reporting_obligations)
+
+        # Now send the CAS to UIMA Html2Text for the VBTT annotations (paragraph_request)
+        r = get_html2text_cas(sofa_reporting_obligations)
+        cas_html2text = load_cas_from_xmi(r.content.decode("utf-8"), typesystem=ts)
+
+        logger.info("cas_html2text: %s", cas_html2text.to_xmi())
+
+        # Read out the VBTT annotations
+        for vbtt in cas.get_view(sofa_id_html2text).select(VALUE_BETWEEN_TAG_TYPE_CLASS):
+            if vbtt.tagName == "p":
+                logger.info("VBTT: %s", vbtt)
+                logger.info("VBTT: %s", vbtt.get_covered_text())
+        # TODO Remove break statement
+        break
 
 
 @shared_task
@@ -212,253 +483,228 @@ def extract_terms(website_id):
     rows_per_page = 250
     cursor_mark = "*"
 
-    # Query for Solr to find per website that has the content_html field (some do not)
-    q = "website:" + website_name + " AND content_html:* AND acceptance_state:accepted"
+    q = QUERY_WEBSITE + website_name + " AND acceptance_state:accepted"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
-               'cursorMark': cursor_mark, 'sort': 'id asc', 'fl': 'content_html,id'}
+               'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC, 'fl': 'content_html,content,id'}
     documents = client.search(q, **options)
 
     for document in documents:
-        if document['content_html'] is not None:
-            if len(document['content_html'][0]) > 100000:
-                logger.info("Skipping too big document id: %s", document['id'])
-                continue
+        logger.info("Started term extraction for document id: %s", document['id'])
+        is_html = False
+        is_pdf = False
+        r = None
+        paragraph_request = None
 
-            logger.info("Extracting terms from document id: %s",
-                        document['id'])
+        if "content_html" in document:
+            logger.info("Extracting terms from HTML document id: %s (%s chars)",
+                        document['id'], len(document['content_html'][0]))
+            is_html = True
+        elif "content_html" not in document and "content" in document:
+            logger.info("Extracting terms from PDF document id: %s (%s chars)",
+                        document['id'], len(document['content'][0]))
+            is_pdf = True
 
-            content_html_text = {
-                "text": document['content_html'][0]
+        # Html2Text - Get XMI from UIMA - Only when HTML not for PDFs
+        if is_html:
+            r = get_html2text_cas(document['content_html'][0])
+
+        # Generate and write tempfile for typesystem.xml
+        if is_html:
+            generate_filesystem()
+
+        # Load typesystem
+        with open(DEFAULT_TYPESYSTEM, 'rb') as f:
+            ts = load_typesystem(f)
+
+        # Paragraph detection for PDF + fallback cas for not having a html2text request
+        if is_pdf:
+            r = get_cas_from_pdf(document['content'])
+            paragraph_request = r
+
+        encoded_b64 = get_encoded_content_from_cas(r)
+
+        # Paragraph Detection for HTML
+        if is_html:
+            paragraph_request = get_cas_from_paragraph_detection(encoded_b64)
+
+        # Term definition
+        input_content = json.loads(paragraph_request.content)['cas_content']
+        definitions_request = get_cas_from_definitions_extract(input_content)
+
+        # Decoded cas from definitions extract
+        definitions_decoded_cas = base64.b64decode(
+            json.loads(definitions_request.content)['cas_content']).decode("utf-8")
+
+        # Step 3: NLP TextExtract
+        input_content = json.loads(definitions_request.content)['cas_content']
+        request_nlp = get_cas_from_text_extract(input_content)
+
+        # Decoded cas from termextract
+        terms_decoded_cas = base64.b64decode(
+            json.loads(request_nlp.content)['cas_content']).decode("utf-8")
+
+        # Load CAS files from NLP
+        cas = cassis.load_cas_from_xmi(
+            definitions_decoded_cas, typesystem=ts)
+        cas2 = cassis.load_cas_from_xmi(
+            terms_decoded_cas, typesystem=ts)
+
+        atomic_update_defined = [
+            {
+                "id": document['id'],
+                "concept_defined": {"set": {
+                    "v": "1",
+                    "str": cas.get_view(sofa_id_html2text).sofa_string,
+                    "tokens": [
+
+                    ]
+                }}
             }
+        ]
+        concept_defined_tokens = atomic_update_defined[0]['concept_defined']['set']['tokens']
+        j = 0
 
-            # Step 1: Html2Text - Get XMI from UIMA
-            start = time.time()
-            r = requests.post(
-                UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"], json=content_html_text)
-            if r.status_code == 200:
-                logger.info('Sent request to %s. Status code: %s', UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"],
-                            r.status_code)
-                end = time.time()
-                logger.info(
-                    "UIMA Html2Text took %s seconds to succeed.", end-start)
+        # Term defined, we check which terms are covered by definitions
+        for defi in cas2.get_view(sofa_id_html2text).select(SENTENCE_CLASS):
+            term_name = "Unknown"
+            lemma_name = ""
 
-                # Step 2: NLP Term Definitions
-                # Write tempfile for typesystem.xml
-                typesystem_req = requests.get(
-                    UIMA_URL["BASE"] + UIMA_URL["TYPESYSTEM"])
-                typesystem_file = open("typesystem_tmp.xml", "w")
-                typesystem_file.write(typesystem_req.content.decode("utf-8"))
+            for i, term in enumerate(cas2.get_view(sofa_id_html2text).select_covered(TFIDF_CLASS, defi)):
+                if i > 0:
+                    logger.info("Found multiple terms: %s",
+                                term.get_covered_text())
+                    break
 
-                # Write tempfile for cas.xml
-                with open(typesystem_file.name, 'rb') as f:
-                    ts = cassis.load_typesystem(f)
+                term_name = term.get_covered_text()
+                # Retrieve the lemma for the term
+                for lemma in cas2.get_view(sofa_id_html2text).select_covered(LEMMA_CLASS, term):
+                    if term.begin == lemma.begin and term.end == lemma.end:
+                        lemma_name = lemma.value
 
-                content_decoded = r.content.decode('utf-8')
-                encoded_bytes = base64.b64encode(
-                    content_decoded.encode("utf-8"))
-                encoded_b64 = str(encoded_bytes, "utf-8")
+            # Handle paragraphs
+            for par in cas.get_view(sofa_id_html2text).select_covering(PARAGRAPH_CLASS, defi):
 
-                input_for_term_defined = {
-                    "cas_content": encoded_b64,
-                    "content_type": "html"
+                if par.begin == defi.begin:  # if beginning of paragraph == beginning of a definition ==> this detected paragraph should replace the definition
+                    defi = par
+
+            token_defined = defi.get_covered_text()
+            start_defined = defi.begin
+            end_defined = defi.end
+
+            # Step 7: Send concept terms to Solr ('concept_defined' field)
+
+            if len(token_defined.encode('utf-8')) < 32000:
+                token_to_add_defined = {
+                    "t": token_defined,
+                    "s": start_defined,
+                    "e": end_defined,
+                    "y": "word"
                 }
+                concept_defined_tokens.insert(j, token_to_add_defined)
+                j = j + 1
 
-                start = time.time()
-                definitions_request = requests.post(DEFINITIONS_EXTRACT_URL,
-                                                    json=input_for_term_defined)
-                end = time.time()
-                logger.info("Sent request to DefinitionExtract NLP. Status code: %s",
-                            definitions_request.status_code)
-                logger.info(
-                    "DefinitionExtract took %s seconds to succeed.", end-start)
-                definitions_decoded_cas = base64.b64decode(
-                    json.loads(definitions_request.content)['cas_content']).decode("utf-8")
+                # logger.info(
+                # "[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
+                # token_defined, j, start_defined, end_defined)
 
-                # Step 3: NLP TextExtract
-                text_cas = {
-                    "cas_content": json.loads(definitions_request.content)['cas_content'],
-                    "content_type": "html"
-                }
-                start = time.time()
-                request_nlp = requests.post(TERM_EXTRACT_URL, json=text_cas)
-                end = time.time()
-                logger.info(
-                    "Sent request to TextExtract NLP. Status code: %s", request_nlp.status_code)
-                logger.info(
-                    "TermExtract took %s seconds to succeed.", end-start)
-                decoded_cas_plus = base64.b64decode(json.loads(request_nlp.content)[
-                                                    'cas_content']).decode("utf-8")
+                # Save Term Definitions in Django
+                Concept.objects.update_or_create(
+                    name=term_name, definition=defi.get_covered_text(), lemma=lemma_name)
+                # logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
 
-                # Step 4: Text2Html - Send CAS+ (XMI) to UIMA - TERM EXTRACT
-                cas_plus_content = json.loads(request_nlp.content)
-                decoded_cas_plus = base64.b64decode(
-                    cas_plus_content['cas_content']).decode("utf-8")
-                cas_plus_text_json = {
-                    "text": decoded_cas_plus[39:]
-                }
+        # Step 5: Send term extractions to Solr (term_occurs field)
 
-                start = time.time()
-                request_text_to_html = requests.post(UIMA_URL["BASE"] + UIMA_URL["TEXT2HTML"],
-                                                     json=cas_plus_text_json)
-                end = time.time()
-                logger.info("Sent request to %s. Status code: %s", UIMA_URL["BASE"] + UIMA_URL["TEXT2HTML"],
-                            request_text_to_html.status_code)
-                logger.info(
-                    "UIMA Text2Html took %s seconds to succeed.", end - start)
-                terms_decoded_cas = request_text_to_html.content.decode(
-                    "utf-8")
+        # Convert the output to a readable format for Solr
+        atomic_update = [
+            {
+                "id": document['id'],
+                "concept_occurs": {
+                    "set": {
+                        "v": "1",
+                        "str": cas2.get_view(sofa_id_html2text).sofa_string,
+                        "tokens": [
 
-                # Step 4: Text2Html - Send CAS+ (XMI) to UIMA - DEFINITION EXTRACT
-                cas_plus_content = json.loads(definitions_request.content)
-                decoded_cas_plus = base64.b64decode(
-                    cas_plus_content['cas_content']).decode("utf-8")
-                cas_plus_text_json = {
-                    "text": decoded_cas_plus[39:]
-                }
-                # logger.info("definitions json sent to %s: %s", UIMA_URL["BASE"] + UIMA_URL["TEXT2HTML"],
-                #             cas_plus_text_json)
-                request_text_to_html = requests.post(UIMA_URL["BASE"] + UIMA_URL["TEXT2HTML"],
-                                                     json=cas_plus_text_json)
-                logger.info("Sent request to /text2html. Status code: %s",
-                            request_text_to_html.status_code)
-                definitions_decoded_cas = request_text_to_html.content.decode(
-                    "utf-8")
-
-                # Load CAS from NLP
-                cas = cassis.load_cas_from_xmi(
-                    definitions_decoded_cas, typesystem=ts)
-                cas2 = cassis.load_cas_from_xmi(
-                    terms_decoded_cas, typesystem=ts)
-
-                atomic_update_defined = [
-                    {
-                        "id": document['id'],
-                        "concept_defined": {"set": {
-                            "v": "1",
-                            "str": cas.sofa_string,
-                            "tokens": [
-
-                            ]
-                        }}
+                        ]
                     }
-                ]
-                concept_defined_tokens = atomic_update_defined[0]['concept_defined']['set']['tokens']
-                j = 0
+                }
+            }
+        ]
+        concept_occurs_tokens = atomic_update[0]['concept_occurs']['set']['tokens']
 
-                # Term defined, we check which terms are covered by definitions
-                for defi in cas.get_view(sofa_id_text2html).select(
-                        "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"):
-                    for term in cas2.get_view(sofa_id_text2html).select_covered(
-                            "de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf",
-                            defi):
-                        # Save Term Definitions in Django
-                        Concept.objects.update_or_create(name=term.get_covered_text(), defaults={
-                                                         'definition': defi.get_covered_text()[:-4]})
+        # Select all Tfidfs from the CAS
+        i = 0
+        for term in cas2.get_view(sofa_id_html2text).select(TFIDF_CLASS):
+            # Save the token information
+            token = term.get_covered_text()
+            score = term.tfidfValue
+            start = term.begin
+            end = term.end
 
-                        # Step 7: Send concept terms to Solr ('concept_defined' field)
-                        token_defined = defi.get_covered_text()
-                        start_defined = defi.begin
+            # Encode score base64
+            encoded_bytes = base64.b64encode(score.encode("utf-8"))
+            encoded_score = str(encoded_bytes, "utf-8")
 
-                        # TODO change end to end-4 because of bug
-                        end_defined = defi.end
-                        if token_defined.endswith(" </p>"):
-                            end_defined = defi.end-4
-                            token_defined = token_defined[:-4]
+            token_to_add = {
+                "t": token,
+                "s": start,
+                "e": end,
+                "y": "word",
+                "p": encoded_score
+            }
+            concept_occurs_tokens.insert(i, token_to_add)
+            i = i + 1
 
-                        token_to_add_defined = {
-                            "t": token_defined,
-                            "s": start_defined,
-                            "e": end_defined,
-                            "y": "word"
-                        }
-                        concept_defined_tokens.insert(j, token_to_add_defined)
-                        j = j + 1
+            # Retrieve the lemma for the term
+            lemma_name = ""
+            for lemma in cas2.get_view(sofa_id_html2text).select_covered(LEMMA_CLASS, term):
+                if term.begin == lemma.begin and term.end == lemma.end:
+                    lemma_name = lemma.value
 
-                        logger.info(
-                            "[concept_defined] Added term '%s' to the PreAnalyzed payload (j=%d) (token pos: %s-%s)",
-                            token_defined, j, start_defined, end_defined)
-
-                # Step 5: Send term extractions to Solr (term_occurs field)
-
-                # Convert the output to a readable format for Solr
-                atomic_update = [
-                    {
-                        "id": document['id'],
-                        "concept_occurs": {
-                            "set": {
-                                "v": "1",
-                                "str": cas2.sofa_string,
-                                "tokens": [
-
-                                ]
-                            }
-                        }
-                    }
-                ]
-                concept_occurs_tokens = atomic_update[0]['concept_occurs']['set']['tokens']
-
-                # Select all Tfidfs from the CAS
-                i = 0
-                for term in cas2.get_view(sofa_id_text2html).select("de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"):
-                    # Save the token information
-                    token = term.get_covered_text()
-                    score = term.tfidfValue
-                    start = term.begin
-                    end = term.end
-
-                    # Encode score base64
-                    encoded_bytes = base64.b64encode(score.encode("utf-8"))
-                    encoded_score = str(encoded_bytes, "utf-8")
-
-                    token_to_add = {
-                        "t": token,
-                        "s": start,
-                        "e": end,
-                        "y": "word",
-                        "p": encoded_score
-                    }
-                    concept_occurs_tokens.insert(i, token_to_add)
-                    i = i + 1
-
-                    # Save Term Definitions in Django
+            queryset = Concept.objects.filter(
+                name=term.get_covered_text())
+            if not queryset.exists():
+                # Save Term Definitions in Django
+                if (len(term.get_covered_text()) <= 200):
                     Concept.objects.update_or_create(
-                        name=term.get_covered_text())
+                        name=term.get_covered_text(), lemma=lemma_name)
+                else:
+                    logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
+                                "Consider disabling supergrams or change the length in the database", token)
 
-                    logger.info("[concept_occurs] Added term '%s' to the PreAnalyzed payload (i=%d) (token pos: %s-%s)",
-                                token, i, start, end)
+            # logger.info("[concept_occurs] Added term '%s' to the PreAnalyzed payload (i=%d) (token pos: %s-%s)",
+            # token, i, start, end)
 
-                # Step 6: Post term_occurs to Solr
-                escaped_json = json.dumps(
-                    atomic_update[0]['concept_occurs']['set'])
-                atomic_update[0]['concept_occurs']['set'] = escaped_json
-                logger.info("Detected %s concepts", len(concept_occurs_tokens))
-                if len(concept_occurs_tokens) > 0:
-                    post_pre_analyzed_to_solr(atomic_update)
+        # Step 6: Post term_occurs to Solr
+        escaped_json = json.dumps(
+            atomic_update[0]['concept_occurs']['set'])
+        atomic_update[0]['concept_occurs']['set'] = escaped_json
+        logger.info("Detected %s concepts", len(concept_occurs_tokens))
+        if len(concept_occurs_tokens) > 0:
+            post_pre_analyzed_to_solr(atomic_update)
 
-                # Step 8: Post term_defined to Solr
-                escaped_json_def = json.dumps(
-                    atomic_update_defined[0]['concept_defined']['set'])
-                atomic_update_defined[0]['concept_defined']['set'] = escaped_json_def
-                logger.info("Detected %s concept definitions",
-                            len(concept_defined_tokens))
-                if len(concept_defined_tokens) > 0:
-                    post_pre_analyzed_to_solr(atomic_update_defined)
+        # Step 8: Post term_defined to Solr
+        escaped_json_def = json.dumps(
+            atomic_update_defined[0]['concept_defined']['set'])
+        atomic_update_defined[0]['concept_defined']['set'] = escaped_json_def
+        logger.info("Detected %s concept definitions",
+                    len(concept_defined_tokens))
+        if len(concept_defined_tokens) > 0:
+            post_pre_analyzed_to_solr(atomic_update_defined)
 
-                core = 'documents'
-                requests.get(os.environ['SOLR_URL'] +
-                             '/' + core + '/update?commit=true')
-
+        core = 'documents'
+        requests.get(os.environ['SOLR_URL'] +
+                     '/' + core + CONST_UPDATE_WITH_COMMIT)
 
 @shared_task
-def score_documents_task(website_id):
+def score_documents_task(website_id, **kwargs):
     # lookup documents for website and score them
     website = Website.objects.get(pk=website_id)
     logger.info("Scoring documents with WEBSITE: " + website.name)
     solr_documents = solr_search_website_with_content(
-        'documents', website.name)
+        'documents', website.name, date=kwargs.get('date', None))
     use_pdf_files = True
     if website.name.lower() == 'eurlex':
         use_pdf_files = False
@@ -466,13 +712,15 @@ def score_documents_task(website_id):
 
 
 @shared_task
-def sync_documents_task(website_id):
+def sync_documents_task(website_id, **kwargs):
     # lookup documents for website and sync them
     website = Website.objects.get(pk=website_id)
     logger.info("Syncing documents with WEBSITE: " + website.name)
     # query Solr for available documents and sync with Django
+
+    date = kwargs.get('date', None)
     solr_documents = solr_search_website_sorted(
-        core='documents', website=website.name.lower())
+        core='documents', website=website.name.lower(), date=date)
     for solr_doc in solr_documents:
         solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
         solr_doc_date_last_update = solr_doc.get(
@@ -502,46 +750,45 @@ def sync_documents_task(website_id):
         current_doc, current_doc_created = Document.objects.update_or_create(
             id=solr_doc["id"], defaults=data)
 
-        # if document content is not english, add a FOREIGN Tag to the django document
-        solr_content = solr_doc.get('content', [''])[0]
-        if not is_document_english(solr_content):
+    if not date:
+        # check for outdated documents based on last time a document was found during scraping
+        how_many_days = 30
+        outdated_docs = Document.objects.filter(
+            date_last_update__lte=datetime.now() - timedelta(days=how_many_days))
+        up_to_date_docs = Document.objects.filter(
+            date_last_update__gte=datetime.now() - timedelta(days=how_many_days))
+        # tag documents that have not been updated in a while
+        for doc in outdated_docs:
             try:
-                Tag.objects.create(value="FOREIGN", document=current_doc)
+                Tag.objects.create(value="OFFLINE", document=doc)
             except ValidationError as e:
                 # tag exists, skip
                 logger.debug(str(e))
-        else:
-            # document is english, remove previous FOREIGN tag if it exists
+        # untag if the documents are now up to date
+        for doc in up_to_date_docs:
+            # fetch OFFLINE tag for this document
             try:
-                foreign_tag = Tag.objects.get(
-                    value="FOREIGN", document=current_doc)
-                foreign_tag.delete()
+                offline_tag = Tag.objects.get(value="OFFLINE", document=doc)
+                offline_tag.delete()
             except Tag.DoesNotExist:
-                # FOREIGN tag not found, skip
+                # OFFLINE tag not found, skip
                 pass
 
-    # check for outdated documents based on last time a document was found during scraping
-    how_many_days = 30
-    outdated_docs = Document.objects.filter(
-        date_last_update__lte=datetime.now() - timedelta(days=how_many_days))
-    up_to_date_docs = Document.objects.filter(
-        date_last_update__gte=datetime.now() - timedelta(days=how_many_days))
-    # tag documents that have not been updated in a while
-    for doc in outdated_docs:
-        try:
-            Tag.objects.create(value="OFFLINE", document=doc)
-        except ValidationError as e:
-            # tag exists, skip
-            logger.debug(str(e))
-    # untag if the documents are now up to date
-    for doc in up_to_date_docs:
-        # fetch OFFLINE tag for this document
-        try:
-            offline_tag = Tag.objects.get(value="OFFLINE", document=doc)
-            offline_tag.delete()
-        except Tag.DoesNotExist:
-            # OFFLINE tag not found, skip
-            pass
+
+@shared_task
+def delete_documents_not_in_solr_task(website_id):
+    website = Website.objects.get(pk=website_id)
+    # query Solr for available documents
+    solr_documents = solr_search_website_sorted(
+        core='documents', website=website.name.lower())
+    # delete django Documents that no longer exist in Solr
+    django_documents = list(Document.objects.filter(website=website))
+    django_doc_ids = [str(django_doc.id) for django_doc in django_documents]
+    solr_doc_ids = [solr_doc["id"] for solr_doc in solr_documents]
+    to_delete_doc_ids = set(django_doc_ids) - set(solr_doc_ids)
+    to_delete_docs = Document.objects.filter(pk__in=to_delete_doc_ids)
+    logger.info('Deleting deprecated documents...')
+    to_delete_docs.delete()
 
 
 @shared_task
@@ -598,22 +845,27 @@ def launch_crawler(spider, spider_type, date_start, date_end):
 
 
 @shared_task()
-def parse_content_to_plaintext_task(website_id):
+def parse_content_to_plaintext_task(website_id, **kwargs):
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
     logger.info('Adding content to each %s document.', website_name)
     page_number = 0
     rows_per_page = 250
     cursor_mark = "*"
+    date = kwargs.get('date', None)
     # Make sure solr index is updated
     core = 'documents'
     requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + '/update?commit=true')
+                 '/' + core + CONST_UPDATE_WITH_COMMIT)
     # select all records where content is empty and content_html is not
+
     q = "-content: [\"\" TO *] AND ( content_html: [* TO *] OR file_name: [* TO *] ) AND website:" + website_name
+    if date:
+        q = q + " AND date:[" + date + " TO NOW]"  # eg. 2013-07-17T00:00:00Z
+
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
-               'cursorMark': cursor_mark, 'sort': 'id asc'}
+               'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC}
     results = client.search(q, **options)
     items = []
     minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
@@ -658,13 +910,13 @@ def parse_content_to_plaintext_task(website_id):
             logger.info("Got 1000 items, posting to solr")
             client.add(items)
             requests.get(os.environ['SOLR_URL'] +
-                         '/' + core + '/update?commit=true')
+                         '/' + core + CONST_UPDATE_WITH_COMMIT)
             items = []
 
     # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
     client.add(items)
     requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + '/update?commit=true')
+                 '/' + core + CONST_UPDATE_WITH_COMMIT)
 
 
 def is_document_english(plain_text):
@@ -726,7 +978,7 @@ def sync_scrapy_to_solr_task(website_id):
             minio_client.remove_object(bucket_name, obj.object_name)
         # Update solr index
         requests.get(os.environ['SOLR_URL'] + '/' +
-                     core + '/update?commit=true')
+                     core + CONST_UPDATE_WITH_COMMIT)
     except ResponseError as err:
         raise
 
