@@ -290,7 +290,7 @@ def get_cas_from_pdf(content):
         "content_type": "pdf",
     }
     return requests.post(PARAGRAPH_DETECT_URL,
-                      json=input_for_paragraph_detection)
+                         json=input_for_paragraph_detection)
 
 
 def fetch_typesystem():
@@ -299,7 +299,7 @@ def fetch_typesystem():
     typesystem_file = open(DEFAULT_TYPESYSTEM, "w")
     typesystem_file.write(typesystem_req.content.decode("utf-8"))
     with open(DEFAULT_TYPESYSTEM, 'rb') as f:
-      return load_typesystem(f)
+        return load_typesystem(f)
 
 
 def get_cas_from_paragraph_detection(content_encoded):
@@ -338,7 +338,6 @@ def get_encoded_content_from_cas(r):
 
 
 def get_cas_from_definitions_extract(input_cas_encoded):
-
     input_for_term_defined = {
         "cas_content": input_cas_encoded,
         "content_type": "html",
@@ -372,12 +371,12 @@ def get_cas_from_text_extract(input_cas_encoded):
     return request_nlp
 
 
-@shared_task
+@shared_task()
 def sync_eurovoc_terms(website_id):
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
 
-    url = "http://192.168.105.171:3030/eurovoc"
+    url = "http://192.168.105.173:3030/eurovoc"
 
     sparql = SPARQLWrapper(url)
     sparql.setQuery("""
@@ -449,7 +448,7 @@ def extract_reporting_obligations(website_id):
         ro_request = get_reporting_obligations(res['cas_content'])
 
         # Create new cas with sofa from RO API
-        ro_cas = base64.b64decode( json.loads(ro_request.content)[ 'cas_content' ] ).decode( 'utf-8' )
+        ro_cas = base64.b64decode(json.loads(ro_request.content)['cas_content']).decode('utf-8')
         logger.info("ro_cas: %s", ro_cas)
 
         cas = load_cas_from_xmi(ro_cas, typesystem=ts)
@@ -593,7 +592,7 @@ def extract_terms(website_id):
                 c = Concept.objects.update_or_create(
                     name=term_name, definition=defi.get_covered_text().strip(), lemma=lemma_name)
                 ConceptDefined.objects.update_or_create(
-                       concept=c[0], document= django_doc)
+                    concept=c[0], document=django_doc, begin=start_defined, end=end_defined)
                 # logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
 
         # Step 5: Send term extractions to Solr (term_occurs field)
@@ -648,12 +647,13 @@ def extract_terms(website_id):
                 name=term.get_covered_text())
             if not queryset.exists():
                 # Save Term Definitions in Django
-                if (len(term.get_covered_text()) <= 200):
-                   c = Concept.objects.update_or_create(
+                if len(term.get_covered_text()) <= 200:
+                    c = Concept.objects.update_or_create(
                         name=term.get_covered_text(), lemma=lemma_name)
-                   ConceptOccurs.objects.update_or_create(
-                       concept=c[0], document= django_doc, probability=float(score.encode("utf-8")) )
-                     
+                    ConceptOccurs.objects.update_or_create(
+                        concept=c[0], document=django_doc, probability=float(score.encode("utf-8")), begin=start,
+                        end=end)
+
                 else:
                     logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
                                 "Consider disabling supergrams or change the length in the database", token)
@@ -678,6 +678,7 @@ def extract_terms(website_id):
         core = 'documents'
         requests.get(os.environ['SOLR_URL'] +
                      '/' + core + CONST_UPDATE_WITH_COMMIT)
+
 
 @shared_task
 def score_documents_task(website_id, **kwargs):

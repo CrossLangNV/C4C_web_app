@@ -30,27 +30,50 @@ class Concept(models.Model):
     def __str__(self):
         return self.name
 
-class ConceptOccurs(models.Model):
+
+class ConceptOffsetBase(models.Model):
     concept = models.ForeignKey(Concept, on_delete=models.CASCADE)
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
     probability = models.FloatField(default=0.0, blank=True)
+    begin = models.IntegerField()
+    end = models.IntegerField()
 
     class Meta:
+        abstract = True,
         constraints = [
             models.UniqueConstraint(
-                fields=['concept_id', 'document_id'], name="unique_per_concept_occurs_and_document")
+                fields=['concept_id', 'document_id'], name="unique_per_%(class)s_and_document")
         ]
 
-class ConceptDefined(models.Model):
-    concept = models.ForeignKey(Concept, on_delete=models.CASCADE)
+
+class ConceptOccurs(ConceptOffsetBase):
+    class Meta(ConceptOffsetBase.Meta):
+        pass
+
+
+class ConceptDefined(ConceptOffsetBase):
+    class Meta(ConceptOffsetBase.Meta):
+        pass
+
+
+class AnnotationWorklog(models.Model):
+    concept_occurs = models.ForeignKey(ConceptOccurs, on_delete=models.CASCADE, null=True)
+    concept_defined = models.ForeignKey(ConceptDefined, on_delete=models.CASCADE, null=True)
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
-    probability = models.FloatField(default=0.0, blank=True)
+    user = models.ForeignKey(
+        'auth.User', related_name="user_worklog", on_delete=models.SET_NULL, null=True)
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['concept_id', 'document_id'], name="unique_per_concept_defined_and_document")
-        ]
+    class Action(models.TextChoices):
+        ADD = 'add', 'Add concept'
+        DELETE = 'del', 'Delete concept'
+
+    action = models.CharField(
+        max_length=3,
+        choices=Action.choices,
+    )
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class AcceptanceStateValue(models.TextChoices):
@@ -104,3 +127,5 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.value
+
+

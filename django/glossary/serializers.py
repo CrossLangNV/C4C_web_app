@@ -1,12 +1,18 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 
-from glossary.models import Concept, Comment, Tag, AcceptanceState
+from glossary.models import Concept, Comment, Tag, AcceptanceState, AnnotationWorklog
 
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
+        fields = '__all__'
+
+
+class AnnotationWorklogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnnotationWorklog
         fields = '__all__'
 
 
