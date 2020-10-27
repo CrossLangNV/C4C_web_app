@@ -4,15 +4,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 
-from glossary.models import AcceptanceState, AcceptanceStateValue, Comment, Concept, Tag
-from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer
+from glossary.models import AcceptanceState, AcceptanceStateValue, Comment, Concept, Tag, AnnotationWorklog
+from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer, \
+    AnnotationWorklogSerializer
 from searchapp.models import Document
 from searchapp.serializers import DocumentSerializer
 from glossary.serializers import CommentSerializer
 from searchapp.solr_call import solr_search_paginated
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 from django.db.models import Q
-
 
 class SmallResultsSetPagination(PageNumberPagination):
     page_size = 5
@@ -89,6 +89,18 @@ class TagDetailAPIView(RetrieveUpdateDestroyAPIView):
     # permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
+    
+
+class WorkLogAPIView(ListCreateAPIView):
+    # permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AnnotationWorklogSerializer
+    queryset = AnnotationWorklog.objects.all()
+
+
+class WorklogDetailAPIView(RetrieveUpdateDestroyAPIView):
+    # permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AnnotationWorklogSerializer
+    queryset = AnnotationWorklog.objects.all()
 
 
 class AcceptanceStateValueAPIView(APIView):
