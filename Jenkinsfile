@@ -47,6 +47,7 @@ pipeline {
         stage('Build and Test Java Code') {
             steps {
                 dir('uima-html-to-text'){
+                    sh "git submodule update --init"
                     sh "mvn compile jib:build -Denv.BRANCH_NAME=${env.BRANCH_NAME} -Dimage=docker.crosslang.com/ctlg-manager/uima-html-to-text:${env.BRANCH_NAME}-latest"
                 }
             }

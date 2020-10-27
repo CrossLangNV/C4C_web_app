@@ -47,7 +47,7 @@ class EsmaScraperSpider(scrapy.Spider):
             metadata = output.get('metadata')
             content_type = metadata.get('Content-Type')
             if content is not None and content_type is not None:
-                if is_document_english(content):
+                if self.is_document_english(content):
                     if isinstance(content_type, list):
                         if 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in content_type or 'application/vnd.ms-excel' in content_type:
                             newdict.update({
@@ -57,7 +57,7 @@ class EsmaScraperSpider(scrapy.Spider):
                                 "url": document_link
                             })
 
-                    if metadata.get('Content-Type') == 'application/pdf' and is_document_english(content):
+                    if metadata.get('Content-Type') == 'application/pdf' and self.is_document_english(content):
                         if not document_link.startswith("/databases-library"):
                             newdict.update({"pdf_docs": [document_link]})
                             # doc url == pdf url for esma
@@ -68,7 +68,8 @@ class EsmaScraperSpider(scrapy.Spider):
 
     def parse(self, response):
         soup = bs4.BeautifulSoup(response.text, features="html.parser")
-        all_publications_on_a_page = soup.findAll("tr")
+        publications_body = soup.find("tbody")
+        all_publications_on_a_page = publications_body.findAll("tr")
         for element in all_publications_on_a_page:
             yield self.parse_single(element)
         next_page_url = response.css(
@@ -80,22 +81,22 @@ class EsmaScraperSpider(scrapy.Spider):
         data = self.get_metadata(element)
         return data
 
-def is_document_english(plain_text):
-    english = False
-    detect_threshold = 0.4
-    try:
-        langs = detect_langs(plain_text)
-        number_langs = len(langs)
-        # trivial case for 1 language detected
-        if number_langs == 1:
-            if langs[0].lang == 'en':
-                english = True
-        # if 2 or more languages are detected, consider detect probability
-        else:
-            for detected in langs:
-                if detected.lang == 'en' and detected.prob >= detect_threshold:
+    def is_document_english(self, plain_text):
+        english = False
+        detect_threshold = 0.4
+        try:
+            langs = detect_langs(plain_text)
+            number_langs = len(langs)
+            # trivial case for 1 language detected
+            if number_langs == 1:
+                if langs[0].lang == 'en':
                     english = True
-                    break
-    except LangDetectException:
-        pass
-    return english
+            # if 2 or more languages are detected, consider detect probability
+            else:
+                for detected in langs:
+                    if detected.lang == 'en' and detected.prob >= detect_threshold:
+                        english = True
+                        break
+        except LangDetectException:
+            pass
+        return english

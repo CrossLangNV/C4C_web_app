@@ -47,6 +47,14 @@ The Solr service is started by docker-compose and will create a core named `docu
 
 Open browser at `http://localhost:8000`
 
+### Django Unit Tests
+
+Put your unit test in a file that matches "test\*py"
+
+To run tests from module scheduler:
+
+`docker-compose exec django python manage.py test scheduler`
+
 
 ### Scrapy app
 

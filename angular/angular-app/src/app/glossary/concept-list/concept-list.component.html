@@ -16,8 +16,18 @@
               class="form-control form-control-sm"
               [(ngModel)]="keyword"
               (ngModelChange)="onSearch($event)"
+              (keypress)="filterResetPage()"
             />
           </div>
+          <select
+            class="form-control form-control-sm m-1 col-2"
+            [(ngModel)]="filterType"
+            (change)="filterResetPage()"
+          >
+            <option *ngFor="let f of filters" [ngValue]="f.id">{{
+              f.name
+              }}</option>
+          </select>
         </div>
         <div class="row">
           <div class="col">
@@ -128,6 +138,8 @@
         [pageSize]="pageSize"
         [maxSize]="10"
         [ellipses]="true"
+        [rotate]="true"
+        (pageChange)="onPageChange()"
       >
       </ngb-pagination>
     </div>
