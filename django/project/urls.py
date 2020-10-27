@@ -31,6 +31,7 @@ urlpatterns = [
     path('social-auth/', include('social_django.urls', namespace="social-view")),
     path('auth/', include('rest_framework_social_oauth2.urls')),
     path('glossary/', include(('glossary.urls', 'glossary'), namespace="glossary")),
+    path('obligations/', include(('obligations.urls', 'obligations'), namespace="obligations")),
     path('ht/', include('health_check.urls')),
 ]
 
