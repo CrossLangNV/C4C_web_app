@@ -97,7 +97,7 @@ def extract_reporting_obligations(modeladmin, request, queryset):
         logger.info("Reporting Obligations extraction has finished!")
 
 
-def delete_from_solr(modeladmin, requerst, queryset):
+def delete_from_solr(modeladmin, request, queryset):
     for website in queryset:
         r = requests.post(os.environ['SOLR_URL'] + '/' +
                           'documents' + '/update?commit=true', headers={'Content-Type': 'application/json'},
@@ -106,12 +106,17 @@ def delete_from_solr(modeladmin, requerst, queryset):
                     website.name.lower(), r.json())
 
 
+def sync_eurovoc_terms(modeladmin, request, queryset):
+    for website in queryset:
+        tasks.sync_eurovoc_terms.delay(website.id)
+
+
 class WebsiteAdmin(admin.ModelAdmin):
     list_display = ['name', 'count_documents']
     ordering = ['name']
     actions = [full_service, scrape_website, sync_scrapy_to_solr, parse_content_to_plaintext,
                sync_documents, delete_documents_not_in_solr, score_documents, check_documents_unvalidated,
-               extract_terms, extract_reporting_obligations, export_documents,
+               extract_terms, extract_reporting_obligations, sync_eurovoc_terms, export_documents,
                delete_from_solr, reset_pre_analyzed_fields]
 
     def count_documents(self, doc):

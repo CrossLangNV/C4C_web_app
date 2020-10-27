@@ -33,6 +33,8 @@ from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
 
+from SPARQLWrapper import SPARQLWrapper, JSON
+
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
 
@@ -50,11 +52,19 @@ TERM_EXTRACT_URL = os.environ['GLOSSARY_TERM_EXTRACT_URL']
 DEFINITIONS_EXTRACT_URL = os.environ['GLOSSARY_DEFINITIONS_EXTRACT_URL']
 PARAGRAPH_DETECT_URL = os.environ['GLOSSARY_PARAGRAPH_DETECT_URL']
 RO_EXTRACT_URL = os.environ['RO_EXTRACT_URL']
+
 SENTENCE_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
 TFIDF_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"
 LEMMA_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Lemma"
 PARAGRAPH_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Paragraph"
 VALUE_BETWEEN_TAG_TYPE_CLASS = "com.crosslang.uimahtmltotext.uima.type.ValueBetweenTagType"
+
+DEFAULT_TYPESYSTEM = "typesystem_tmp.xml"
+
+CONST_UPDATE_WITH_COMMIT = "/update?commit=true"
+CONST_EXPORT = '/export/'
+QUERY_ID_ASC = 'id asc'
+QUERY_WEBSITE = "website:"
 
 
 @shared_task()
@@ -85,12 +95,12 @@ def reset_pre_analyzed_fields(website_id):
     # Make sure solr index is updated
     core = 'documents'
     requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + '/update?commit=true')
+                 '/' + core + CONST_UPDATE_WITH_COMMIT)
     # select all records where content is empty and content_html is not
     q = "( concept_occurs: [* TO *] OR concept_defined: [* TO *] ) AND website:" + website_name
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
-               'cursorMark': cursor_mark, 'sort': 'id asc'}
+               'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC}
     results = client.search(q, **options)
     items = []
 
@@ -106,13 +116,13 @@ def reset_pre_analyzed_fields(website_id):
             logger.info("Got 1000 items, posting to solr")
             client.add(items)
             requests.get(os.environ['SOLR_URL'] +
-                         '/' + core + '/update?commit=true')
+                         '/' + core + CONST_UPDATE_WITH_COMMIT)
             items = []
 
     # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
     client.add(items)
     requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + '/update?commit=true')
+                 '/' + core + CONST_UPDATE_WITH_COMMIT)
 
 
 @shared_task
@@ -148,8 +158,8 @@ def export_documents(website_ids=None):
         # Make sure solr index is updated
         core = 'documents'
         requests.get(os.environ['SOLR_URL'] +
-                     '/' + core + '/update?commit=true')
-        workdir = workpath + '/export/' + \
+                     '/' + core + CONST_UPDATE_WITH_COMMIT)
+        workdir = workpath + CONST_EXPORT + \
                   export_documents.request.id + '/' + website.name.lower()
         os.makedirs(workdir)
         # select all records for website
@@ -159,7 +169,7 @@ def export_documents(website_ids=None):
             q += ' AND content_html:*'
         client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
         options = {'rows': rows_per_page, 'start': page_number,
-                   'cursorMark': cursor_mark, 'sort': 'id asc'}
+                   'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC}
         documents = client.search(q, **options)
         for document in documents:
             with jsonlines.open(workdir + '/doc_' + document['id'] + '.jsonl',
@@ -178,9 +188,9 @@ def export_documents(website_ids=None):
                     f.write(classifier)
 
     # create zip file for all .jsonl files
-    zip_destination = workpath + '/export/' + export_documents.request.id
+    zip_destination = workpath + CONST_EXPORT + export_documents.request.id
     shutil.make_archive(zip_destination, 'zip', workpath +
-                        '/export/' + export_documents.request.id)
+                        CONST_EXPORT + export_documents.request.id)
 
     # upload zip to minio
     minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
@@ -196,7 +206,7 @@ def export_documents(website_ids=None):
     minio_client.fput_object(
         'export', export_documents.request.id + '.zip', zip_destination + '.zip')
 
-    shutil.rmtree(workpath + '/export/' + export_documents.request.id)
+    shutil.rmtree(workpath + CONST_EXPORT + export_documents.request.id)
     os.remove(zip_destination + '.zip')
     logging.info("Removed: %s", zip_destination + '.zip')
 
@@ -218,12 +228,12 @@ def get_stats_for_html_size(website_id):
 
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
-    q = "website:" + website_name + " AND content_html:* AND acceptance_state:accepted"
+    q = QUERY_WEBSITE + website_name + " AND content_html:* AND acceptance_state:accepted"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
-               'cursorMark': cursor_mark, 'sort': 'id asc', 'fl': 'content_html,id'}
+               'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC, 'fl': 'content_html,id'}
     documents = client.search(q, **options)
 
     size_1 = 0
@@ -258,7 +268,7 @@ def get_html2text_cas(content_html):
 
 
 def create_cas(sofa):
-    with open("typesystem_tmp.xml", 'rb') as f:
+    with open(DEFAULT_TYPESYSTEM, 'rb') as f:
         ts = load_typesystem(f)
 
     cas = Cas(typesystem=ts)
@@ -286,9 +296,9 @@ def get_cas_from_pdf(content):
 def fetch_typesystem():
     typesystem_req = requests.get(
         UIMA_URL["BASE"] + UIMA_URL["TYPESYSTEM"])
-    typesystem_file = open("/tmp/typesystem.xml", "w")
+    typesystem_file = open(DEFAULT_TYPESYSTEM, "w")
     typesystem_file.write(typesystem_req.content.decode("utf-8"))
-    with open('/tmp/typesystem.xml', 'rb') as f:
+    with open(DEFAULT_TYPESYSTEM, 'rb') as f:
       return load_typesystem(f)
 
 
@@ -363,6 +373,26 @@ def get_cas_from_text_extract(input_cas_encoded):
 
 
 @shared_task
+def sync_eurovoc_terms(website_id):
+    website = Website.objects.get(pk=website_id)
+    website_name = website.name.lower()
+
+    url = "http://192.168.105.171:3030/eurovoc"
+
+    sparql = SPARQLWrapper(url)
+    sparql.setQuery("""
+        SELECT ?subject ?predicate ?object
+        WHERE {
+           ?subject ?predicate ?object
+        }
+        LIMIT 25
+    """)
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
+    logger.info(results)
+
+
+@shared_task
 def extract_reporting_obligations(website_id):
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
@@ -371,13 +401,12 @@ def extract_reporting_obligations(website_id):
     rows_per_page = 250
     cursor_mark = "*"
 
-    q = "website:" + website_name + " AND acceptance_state:accepted"
-    # q = "website:" + website_name + " AND content:* AND -content_html:[* TO *]"
+    q = QUERY_WEBSITE + website_name + " AND acceptance_state:accepted"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
-               'cursorMark': cursor_mark, 'sort': 'id asc', 'fl': 'content_html,content,id'}
+               'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC, 'fl': 'content_html,content,id'}
     documents = client.search(q, **options)
 
     # Load typesystem
@@ -451,13 +480,12 @@ def extract_terms(website_id):
     rows_per_page = 250
     cursor_mark = "*"
 
-    q = "website:" + website_name + " AND acceptance_state:accepted"
-    # q = "website:" + website_name + " AND content:* AND -content_html:[* TO *]"
+    q = QUERY_WEBSITE + website_name + " AND acceptance_state:accepted"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
-               'cursorMark': cursor_mark, 'sort': 'id asc', 'fl': 'content_html,content,id'}
+               'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC, 'fl': 'content_html,content,id'}
     documents = client.search(q, **options)
 
     # Generate and write tempfile for typesystem.xml
@@ -649,7 +677,7 @@ def extract_terms(website_id):
 
         core = 'documents'
         requests.get(os.environ['SOLR_URL'] +
-                     '/' + core + '/update?commit=true')
+                     '/' + core + CONST_UPDATE_WITH_COMMIT)
 
 @shared_task
 def score_documents_task(website_id, **kwargs):
@@ -809,7 +837,7 @@ def parse_content_to_plaintext_task(website_id, **kwargs):
     # Make sure solr index is updated
     core = 'documents'
     requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + '/update?commit=true')
+                 '/' + core + CONST_UPDATE_WITH_COMMIT)
     # select all records where content is empty and content_html is not
 
     q = "-content: [\"\" TO *] AND ( content_html: [* TO *] OR file_name: [* TO *] ) AND website:" + website_name
@@ -818,7 +846,7 @@ def parse_content_to_plaintext_task(website_id, **kwargs):
 
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
-               'cursorMark': cursor_mark, 'sort': 'id asc'}
+               'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC}
     results = client.search(q, **options)
     items = []
     minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
@@ -863,13 +891,13 @@ def parse_content_to_plaintext_task(website_id, **kwargs):
             logger.info("Got 1000 items, posting to solr")
             client.add(items)
             requests.get(os.environ['SOLR_URL'] +
-                         '/' + core + '/update?commit=true')
+                         '/' + core + CONST_UPDATE_WITH_COMMIT)
             items = []
 
     # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
     client.add(items)
     requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + '/update?commit=true')
+                 '/' + core + CONST_UPDATE_WITH_COMMIT)
 
 
 def is_document_english(plain_text):
@@ -931,7 +959,7 @@ def sync_scrapy_to_solr_task(website_id):
             minio_client.remove_object(bucket_name, obj.object_name)
         # Update solr index
         requests.get(os.environ['SOLR_URL'] + '/' +
-                     core + '/update?commit=true')
+                     core + CONST_UPDATE_WITH_COMMIT)
     except ResponseError as err:
         raise
 
