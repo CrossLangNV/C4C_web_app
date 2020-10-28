@@ -521,4 +521,10 @@ export class ApiService {
       .pipe(map((item) => this.roAdapter.adapt(item)));
     //return of(this.ROS_MOCKED[Number(id)]);
   }
+
+  fetchReporters(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/reporters`
+    );
+  }
 }
