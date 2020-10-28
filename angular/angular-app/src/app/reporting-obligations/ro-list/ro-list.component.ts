@@ -26,6 +26,8 @@ import {Router} from "@angular/router";
 import {AuthenticationService} from "../../core/auth/authentication.service";
 import {DjangoUser} from "../../shared/models/django_user";
 
+import {SelectItem} from "primeng/api";
+
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
   asc: 'desc',

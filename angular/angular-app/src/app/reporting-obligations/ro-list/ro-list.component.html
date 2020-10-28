@@ -2,6 +2,18 @@
   <div class="form-group">
     <div class="row">
       <div class="col">
+
+
+        <div>
+          <p>Query for Reporting Obligations</p>
+          <p-dropdown [options]="cities2" [(ngModel)]="selectedCity2" optionLabel="name" placeholder="Reporter..."></p-dropdown>
+          <p-dropdown [options]="cities2" [(ngModel)]="selectedCity2" optionLabel="name" placeholder="Verb..."></p-dropdown>
+          <p-dropdown [options]="cities2" [(ngModel)]="selectedCity2" optionLabel="name" placeholder="Report..."></p-dropdown>
+          <p-dropdown [options]="cities2" [(ngModel)]="selectedCity2" optionLabel="name" placeholder="Entity..."></p-dropdown>
+          <p-dropdown [options]="cities2" [(ngModel)]="selectedCity2" optionLabel="name" placeholder="Frequency..."></p-dropdown>
+          <hr class="my-2" />
+        </div>
+
         <div class="d-flex justify-content-between p-0">
           <div class="input-group input-group-sm m-1">
             <div class="input-group-prepend">
