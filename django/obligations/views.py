@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 
-from .rdf_call import rdf_get_verbs, rdf_get_reporters
+from .rdf_call import rdf_get_verbs, rdf_get_reporters, rdf_get_reports, rdf_get_regulatory_body, rdf_get_propmod, rdf_get_entity, rdf_get_frequency
 
 
 class SmallResultsSetPagination(PageNumberPagination):
@@ -31,6 +31,12 @@ class ReportingObligationListAPIView(ListCreateAPIView):
             q = q.filter(name__icontains=keyword)
 
         return q.order_by("name")
+    
+
+class ReportingObligationDetailAPIView(RetrieveUpdateDestroyAPIView):
+    # permission_classes = [permissions.IsAuthenticated]
+    queryset = ReportingObligation.objects.all()
+    serializer_class = ReportingObligationSerializer
 
 
 # Reporters from RDF
@@ -43,13 +49,49 @@ class ReportingObligationReportersListAPIView(APIView):
 
 
 class ReportingObligationVerbsListAPIView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request, format=None):
         result = rdf_get_verbs()
         return Response(result)
 
 
-class ReportingObligationDetailAPIView(RetrieveUpdateDestroyAPIView):
+class ReportingObligationReportsListAPIView(APIView):
     # permission_classes = [permissions.IsAuthenticated]
-    queryset = ReportingObligation.objects.all()
-    serializer_class = ReportingObligationSerializer
+
+    def get(self, request, format=None):
+        result = rdf_get_reports()
+        return Response(result)
+
+
+class ReportingObligationRegulatoryBodyListAPIView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        result = rdf_get_regulatory_body()
+        return Response(result)
+
+
+class ReportingObligationPropModListAPIView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        result = rdf_get_propmod()
+        return Response(result)
+
+
+class ReportingObligationEntityListAPIView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        result = rdf_get_entity()
+        return Response(result)
+
+
+class ReportingObligationFrequencyListAPIView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        result = rdf_get_frequency()
+        return Response(result)
 

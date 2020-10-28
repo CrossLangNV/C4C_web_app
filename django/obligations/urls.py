@@ -46,4 +46,9 @@ urlpatterns = [
     # RO splits
     path('api/ros/reporters', views.ReportingObligationReportersListAPIView.as_view(), name='ro_reporters_api_list'),
     path('api/ros/verbs', views.ReportingObligationVerbsListAPIView.as_view(), name='ro_verbs_api_list'),
+    path('api/ros/reports', views.ReportingObligationReportsListAPIView.as_view(), name='ro_reports_api_list'),
+    path('api/ros/regulatorybody', views.ReportingObligationRegulatoryBodyListAPIView.as_view(), name='ro_regulatorybody_api_list'),
+    path('api/ros/propmod', views.ReportingObligationPropModListAPIView.as_view(), name='ro_propmod_api_list'),
+    path('api/ros/entity', views.ReportingObligationEntityListAPIView.as_view(), name='ro_entity_api_list'),
+    path('api/ros/frequency', views.ReportingObligationFrequencyListAPIView.as_view(), name='ro_frequency_api_list'),
 ]
