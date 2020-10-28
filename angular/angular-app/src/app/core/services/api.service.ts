@@ -533,4 +533,34 @@ export class ApiService {
       `${this.API_RO_URL}/ros/verbs`
     );
   }
+
+  fetchReports(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/reports`
+    );
+  }
+
+  fetchRegulatoryBody(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/regulatorybody`
+    );
+  }
+
+  fetchPropMod(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/propmod`
+    );
+  }
+
+  fetchEntity(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/entity`
+    );
+  }
+
+  fetchFrequency(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/frequency`
+    );
+  }
 }

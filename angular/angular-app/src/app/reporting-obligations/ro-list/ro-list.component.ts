@@ -75,10 +75,21 @@ export class RoListComponent implements OnInit {
   >;
   ros: ReportingObligation[];
 
+  // RO Splits
   reporters: SelectItem[] = [];
   selectedReporter: RoDetail;
   verbs: SelectItem[] = [];
   selectedVerb: RoDetail;
+  reports: SelectItem[] = [];
+  selectedReport: RoDetail
+  regulatoryBodies: SelectItem[] = [];
+  selectedRegulatoryBody: RoDetail
+  propMods: SelectItem[] = [];
+  selectedPropMod: RoDetail
+  entities: SelectItem[] = [];
+  selectedEntity: RoDetail
+  frequencies: SelectItem[] = [];
+  selectedFrequency: RoDetail
 
   selected: string;
   collectionSize = 0;
@@ -128,6 +139,11 @@ export class RoListComponent implements OnInit {
     // Fetch RDF for filters
     this.fetchReporters();
     this.fetchVerbs();
+    this.fetchReports();
+    this.fetchRegulatoryBodies();
+    this.fetchPropMods();
+    this.fetchEntities();
+    this.fetchFrequencies();
   }
 
   fetchReporters() {
@@ -148,6 +164,62 @@ export class RoListComponent implements OnInit {
       .subscribe((results) => {
         results.forEach((verb) => {
           this.verbs.push({ label: verb, value: verb });
+        });
+      })
+  }
+
+  // Fetch Reports
+  fetchReports() {
+    this.service
+      .fetchReports(
+      )
+      .subscribe((results) => {
+        results.forEach((report) => {
+          this.reports.push({ label: report, value: report });
+        });
+      })
+  }
+  // Fetch regulatoryBodies
+  fetchRegulatoryBodies() {
+    this.service
+      .fetchRegulatoryBody(
+      )
+      .subscribe((results) => {
+        results.forEach((regulatorybody) => {
+          this.regulatoryBodies.push({ label: regulatorybody, value: regulatorybody });
+        });
+      })
+  }
+  // Fetch propMods
+  fetchPropMods() {
+    this.service
+      .fetchPropMod(
+      )
+      .subscribe((results) => {
+        results.forEach((propmod) => {
+          this.propMods.push({ label: propmod, value: propmod });
+        });
+      })
+  }
+  // Fetch entities
+  fetchEntities() {
+    this.service
+      .fetchEntity(
+      )
+      .subscribe((results) => {
+        results.forEach((entity) => {
+          this.entities.push({ label: entity, value: entity });
+        });
+      })
+  }
+  // Fetch frequencies
+  fetchFrequencies() {
+    this.service
+      .fetchFrequency(
+      )
+      .subscribe((results) => {
+        results.forEach((frequency) => {
+          this.frequencies.push({ label: frequency, value: frequency });
         });
       })
   }
