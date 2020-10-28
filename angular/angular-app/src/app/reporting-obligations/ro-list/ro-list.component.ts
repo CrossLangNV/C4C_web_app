@@ -27,6 +27,7 @@ import {AuthenticationService} from "../../core/auth/authentication.service";
 import {DjangoUser} from "../../shared/models/django_user";
 
 import {SelectItem} from "primeng/api";
+import {logger} from "codelyzer/util/logger";
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -38,6 +39,10 @@ const rotate: { [key: string]: SortDirection } = {
 export interface SortEvent {
   column: string;
   direction: SortDirection;
+}
+
+export interface RoReporter {
+  name: string;
 }
 
 @Directive({
@@ -69,6 +74,9 @@ export class RoListComponent implements OnInit {
     NgbdSortableHeaderDirective
   >;
   ros: ReportingObligation[];
+  reporters: SelectItem[] = [];
+  selectedReporter: RoReporter;
+  selected: string;
   collectionSize = 0;
   selectedIndex: string = null;
   page = 1;
@@ -112,6 +120,18 @@ export class RoListComponent implements OnInit {
         this.page = 1;
         this.fetchRos();
       });
+    this.fetchReporters();
+  }
+
+  fetchReporters() {
+    this.service
+      .fetchReporters(
+      )
+      .subscribe((results) => {
+        results.forEach((reporter) => {
+          this.reporters.push({ label: reporter, value: reporter });
+        });
+    })
   }
 
   fetchRos() {

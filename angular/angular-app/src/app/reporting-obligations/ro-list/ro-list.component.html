@@ -6,8 +6,8 @@
 
         <div>
           <p>Query for Reporting Obligations</p>
-          <p-dropdown [options]="cities2" [(ngModel)]="selectedCity2" optionLabel="name" placeholder="Reporter..."></p-dropdown>
-          <p-dropdown [options]="cities2" [(ngModel)]="selectedCity2" optionLabel="name" placeholder="Verb..."></p-dropdown>
+          <p-dropdown [options]="reporters" [(ngModel)]="selectedReporter" placeholder="Reporter..." [virtualScroll]="true"></p-dropdown>
+          <p-dropdown [options]="test" [(ngModel)]="selectedCity2" optionLabel="name" placeholder="Verb..."></p-dropdown>
           <p-dropdown [options]="cities2" [(ngModel)]="selectedCity2" optionLabel="name" placeholder="Report..."></p-dropdown>
           <p-dropdown [options]="cities2" [(ngModel)]="selectedCity2" optionLabel="name" placeholder="Entity..."></p-dropdown>
           <p-dropdown [options]="cities2" [(ngModel)]="selectedCity2" optionLabel="name" placeholder="Frequency..."></p-dropdown>
