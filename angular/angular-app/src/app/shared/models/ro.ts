@@ -37,7 +37,7 @@ export class RoAdapter implements Adapter<ReportingObligation> {
     return new ReportingObligation(
       item.id,
       item.name,
-      item.obligation,
+      item.definition,
       item.documents,
       item.tags,
       item.comments,

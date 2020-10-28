@@ -516,6 +516,9 @@ export class ApiService {
   }
 
   public getRo(id: string): Observable<ReportingObligation> {
-    return of(this.ROS_MOCKED[Number(id)]);
+    return this.http
+      .get<ReportingObligation>(`${this.API_RO_URL}/ro/${id}`)
+      .pipe(map((item) => this.roAdapter.adapt(item)));
+    //return of(this.ROS_MOCKED[Number(id)]);
   }
 }
