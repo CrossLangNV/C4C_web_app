@@ -20,6 +20,8 @@ import {
   NgbDateAdapter,
   NgbDateNativeAdapter,
 } from '@ng-bootstrap/ng-bootstrap';
+import { DropdownModule } from 'primeng/dropdown';
+
 @NgModule({
   declarations: [
     RoListComponent,
@@ -37,6 +39,7 @@ import {
     ConfirmDialogModule,
     SharedModule,
     RoRoutingModule,
+    DropdownModule
   ],
   providers: [
     ConfirmationService,
