@@ -43,5 +43,7 @@ urlpatterns = [
 
     #path('api/ro/<ro>', views.ReportingObligationDocumentsAPIView.as_view(), name='ro_api_search'),
 
+    # RO splits
     path('api/ros/reporters', views.ReportingObligationReportersListAPIView.as_view(), name='ro_reporters_api_list'),
+    path('api/ros/verbs', views.ReportingObligationVerbsListAPIView.as_view(), name='ro_verbs_api_list'),
 ]

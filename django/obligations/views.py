@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 
-from .rdf_call import rdf_get_reporters_mock
+from .rdf_call import rdf_get_verbs, rdf_get_reporters
 
 
 class SmallResultsSetPagination(PageNumberPagination):
@@ -38,7 +38,13 @@ class ReportingObligationReportersListAPIView(APIView):
     #permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
-        result = rdf_get_reporters_mock()
+        result = rdf_get_reporters()
+        return Response(result)
+
+
+class ReportingObligationVerbsListAPIView(APIView):
+    def get(self, request, format=None):
+        result = rdf_get_verbs()
         return Response(result)
 
 

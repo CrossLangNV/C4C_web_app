@@ -41,7 +41,7 @@ export interface SortEvent {
   direction: SortDirection;
 }
 
-export interface RoReporter {
+export interface RoDetail {
   name: string;
 }
 
@@ -74,8 +74,12 @@ export class RoListComponent implements OnInit {
     NgbdSortableHeaderDirective
   >;
   ros: ReportingObligation[];
+
   reporters: SelectItem[] = [];
-  selectedReporter: RoReporter;
+  selectedReporter: RoDetail;
+  verbs: SelectItem[] = [];
+  selectedVerb: RoDetail;
+
   selected: string;
   collectionSize = 0;
   selectedIndex: string = null;
@@ -120,7 +124,10 @@ export class RoListComponent implements OnInit {
         this.page = 1;
         this.fetchRos();
       });
+
+    // Fetch RDF for filters
     this.fetchReporters();
+    this.fetchVerbs();
   }
 
   fetchReporters() {
@@ -132,6 +139,17 @@ export class RoListComponent implements OnInit {
           this.reporters.push({ label: reporter, value: reporter });
         });
     })
+  }
+
+  fetchVerbs() {
+    this.service
+      .fetchVerbs(
+      )
+      .subscribe((results) => {
+        results.forEach((verb) => {
+          this.verbs.push({ label: verb, value: verb });
+        });
+      })
   }
 
   fetchRos() {
