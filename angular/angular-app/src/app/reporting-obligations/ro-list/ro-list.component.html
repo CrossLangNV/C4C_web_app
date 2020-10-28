@@ -7,15 +7,15 @@
         <div>
           <p>Query for Reporting Obligations</p>
           <p-dropdown [options]="reporters" [(ngModel)]="selectedReporter" placeholder="Reporter..." [virtualScroll]="true" [showClear]="true"></p-dropdown>
-          <p-dropdown [options]="verbs" [(ngModel)]="selectedVerb" placeholder="Verb..." [showClear]="true"></p-dropdown>
-          <p-dropdown [options]="reports" [(ngModel)]="selectedReport" placeholder="Report..." [virtualScroll]="true" [showClear]="true"></p-dropdown>
+          <p-dropdown [options]="verbs" [(ngModel)]="selectedVerb" placeholder="Verb..." [virtualScroll]="false" [showClear]="true"></p-dropdown>
+          <p-dropdown [options]="reports" [(ngModel)]="selectedReport" placeholder="Report..." [virtualScroll]="false" [showClear]="true"></p-dropdown>
           <p-dropdown [options]="regulatoryBodies" [(ngModel)]="selectedRegulatoryBody" placeholder="Regulatory body..." [virtualScroll]="true" [showClear]="true"></p-dropdown>
           <p-dropdown [options]="propMods" [(ngModel)]="selectedPropMod" placeholder="Prop mod..." [virtualScroll]="true" [showClear]="true"></p-dropdown>
           <p-dropdown [options]="entities" [(ngModel)]="selectedEntity" placeholder="Entity..." [virtualScroll]="true" [showClear]="true"></p-dropdown>
           <p-dropdown [options]="frequencies" [(ngModel)]="selectedFrequency" placeholder="Frequency..." [virtualScroll]="true" [showClear]="true"></p-dropdown>
           <fa-icon (click)="resetFilters()" class="p-2" ngbTooltip="Reset filters" [icon]="resetIcon"></fa-icon>
 
-          <p>{{selectedReporter}} {{selectedVerb}}</p>
+          <p>{{selectedReporter}} {{selectedVerb}}  {{selectedReport}} {{selectedRegulatoryBody}} {{selectedPropMod}} {{selectedEntity}} {{selectedFrequency}}</p>
           <hr class="my-2" />
         </div>
 

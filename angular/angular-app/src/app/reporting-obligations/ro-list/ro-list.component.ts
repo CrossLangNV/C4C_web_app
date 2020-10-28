@@ -304,4 +304,14 @@ export class RoListComponent implements OnInit {
     this.filterTag = event.value.value;
     this.fetchRos();
   }
+
+  resetFilters() {
+    this.selectedReporter = null
+    this.selectedVerb = null
+    this.selectedReport = null
+    this.selectedRegulatoryBody = null
+    this.selectedPropMod = null
+    this.selectedEntity = null
+    this.selectedFrequency = null
+  }
 }

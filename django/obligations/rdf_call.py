@@ -42,7 +42,6 @@ def rdf_get_reporters():
     result = []
 
     for reporter in reporters:
-        logger.info(reporter.name)
         result.append(reporter.name)
 
     return result
@@ -51,7 +50,6 @@ def rdf_get_reporters():
 def rdf_get_verbs():
     # TODO Mock
     verbs = ["shall", "must"]
-
     return verbs
 
 
@@ -63,7 +61,7 @@ def rdf_get_reports():
 
 def rdf_get_regulatory_body():
     # TODO Mock
-    regulatory_body = ["to the Commission", "to the competent authorities"]
+    regulatory_body = ["to the Commission", "to the competent authorities", "to the board", "to the council", "to the president", "to the management"]
     return regulatory_body
 
 
@@ -81,5 +79,5 @@ def rdf_get_entity():
 
 def rdf_get_frequency():
     # TODO Mock
-    frequency = ["regularly", "by 1 January 2015", "daily", "monthly", "yearly"]
+    frequency = ["regularly", "by 1 January 2015", "daily", "monthly", "yearly", "upon request", "within a deadline set by the board", "in the previous financial year"]
     return frequency
