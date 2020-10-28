@@ -527,4 +527,10 @@ export class ApiService {
       `${this.API_RO_URL}/ros/reporters`
     );
   }
+
+  fetchVerbs(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/verbs`
+    );
+  }
 }

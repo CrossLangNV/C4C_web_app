@@ -5,24 +5,39 @@ import os
 
 from obligations.models import ReportingObligation
 
-def rdf_search(dataset="", subject="", predicate="", obj=""):
-    sparql = SPARQLWrapper(os.environ['RDF_URL']+"/"+dataset)
 
-    # TODO Change/update the query
-    sparql.setQuery("""
-        SELECT ?subject ?predicate ?object
-        WHERE {
-           ?subject ?predicate ?object
-        }
-        LIMIT 25
-    """)
+def rdf_search(dataset="", subject=None, predicate=None, obj=None):
+    if subject is None:
+        _subject = '?s'
+    else:
+        _subject = f'<{subject}>'
+
+    if predicate is None:
+        _predicate = '?s'
+    else:
+        _predicate = f'<{predicate}>'
+
+    if obj is None:
+        _obj = '?s'
+    else:
+        _obj = f'<{obj}>'
+
+    # same for pred and obj
+    sparql = SPARQLWrapper(os.environ['RDF_URL']+"/"+dataset)
+    q = f"""SELECT {_subject} {_predicate} {_obj}
+        WHERE {{
+           {_subject} {_predicate} {_obj}
+        }}
+        LIMIT 25"""
+    sparql.setQuery(q)
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
     logger.info(results)
     return results
 
 
-def rdf_get_reporters_mock():
+def rdf_get_reporters():
+    # TODO Mock
     reporters = ReportingObligation.objects.all()
     result = []
 
@@ -31,3 +46,10 @@ def rdf_get_reporters_mock():
         result.append(reporter.name)
 
     return result
+
+
+def rdf_get_verbs():
+    # TODO Mock
+    verbs = ["shall", "must"]
+
+    return verbs
