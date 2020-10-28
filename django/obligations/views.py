@@ -1,7 +1,7 @@
 from obligations.models import ReportingObligation
 from obligations.serializers import ReportingObligationSerializer
 from rest_framework import filters
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.pagination import PageNumberPagination
 
 
@@ -26,3 +26,10 @@ class ReportingObligationListAPIView(ListCreateAPIView):
             q = q.filter(name__icontains=keyword)
 
         return q.order_by("name")
+
+
+class ReportingObligationDetailAPIView(RetrieveUpdateDestroyAPIView):
+    # permission_classes = [permissions.IsAuthenticated]
+    queryset = ReportingObligation.objects.all()
+    serializer_class = ReportingObligationSerializer
+

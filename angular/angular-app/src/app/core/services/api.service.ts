@@ -42,6 +42,7 @@ import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/concept
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
   API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
+  API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
   ROS_MOCKED = rosData.ros.map(
     (ro, index) =>
       new ReportingObligation(
@@ -50,7 +51,8 @@ export class ApiService {
         ro.obligation,
         [],
         [],
-        []
+        [],
+        ''
       )
   );
 
@@ -494,20 +496,23 @@ export class ApiService {
     if (sortBy) {
       pageQuery = pageQuery + '&ordering=' + sortBy;
     }
-    return of(
-      new RoResults(
-        this.ROS_MOCKED.length,
-        this.ROS_MOCKED.length,
-        this.ROS_MOCKED.length,
-        0,
-        0,
-        0,
-        0,
-        '1',
-        '-1',
-        this.ROS_MOCKED.slice((page - 1) * 5, page * 5)
-      )
+    return this.http.get<RoResults>(
+      `${this.API_RO_URL}/ros${pageQuery}`
     );
+    // return of(
+    //   new RoResults(
+    //     this.ROS_MOCKED.length,
+    //     this.ROS_MOCKED.length,
+    //     this.ROS_MOCKED.length,
+    //     0,
+    //     0,
+    //     0,
+    //     0,
+    //     '1',
+    //     '-1',
+    //     this.ROS_MOCKED.slice((page - 1) * 5, page * 5)
+    //   )
+    // );
   }
 
   public getRo(id: string): Observable<ReportingObligation> {

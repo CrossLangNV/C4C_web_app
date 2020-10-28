@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Adapter } from './adapter';
+import {Concept} from "./concept";
 
 export class RoResults {
   constructor(
@@ -23,7 +24,8 @@ export class ReportingObligation {
     public obligation: string,
     public documentIds: string[],
     public tags: string[],
-    public commentIds: string[]
+    public commentIds: string[],
+    public concept: string,
   ) {}
 }
 
@@ -38,7 +40,8 @@ export class RoAdapter implements Adapter<ReportingObligation> {
       item.obligation,
       item.documents,
       item.tags,
-      item.comments
+      item.comments,
+      item.concept,
     );
   }
   encode(ro: ReportingObligation): any {
@@ -49,6 +52,7 @@ export class RoAdapter implements Adapter<ReportingObligation> {
       documents: ro.documentIds,
       tags: ro.tags,
       comments: ro.commentIds,
+      concept: ro.concept,
     };
   }
 }

@@ -14,6 +14,7 @@ from searchapp.solr_call import solr_search_paginated
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 from django.db.models import Q
 
+
 class SmallResultsSetPagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = 'page_size'
