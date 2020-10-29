@@ -310,7 +310,7 @@ def get_cas_from_paragraph_detection(content_encoded):
 
     paragraph_request = requests.post(PARAGRAPH_DETECT_URL,
                                       json=input_for_paragraph_detection)
-    logger.info("Sent request to Paragraph Detection. Status code: %s",
+    logger.info("Sent request to Paragraph Detection (%s). Status code: %s", PARAGRAPH_DETECT_URL,
                 paragraph_request.status_code)
 
     return paragraph_request
@@ -490,194 +490,204 @@ def extract_terms(website_id):
     # Generate and write tempfile for typesystem.xml
     ts = fetch_typesystem()
 
-    for document in documents:
-        logger.info("Started term extraction for document id: %s", document['id'])
-        django_doc = Document.objects.get(id=document['id'])
-        r = None
-        paragraph_request = None
+    for i, document in enumerate(documents):
+        extract_terms_for_document(document, ts)
+        if i  % 10:
+            logger.info("Got 10 items, posting to solr")
+            requests.get(os.environ['SOLR_URL'] +
+                         '/' + core + CONST_UPDATE_WITH_COMMIT)
 
-        if "content_html" in document:
-            logger.info("Extracting terms from HTML document id: %s (%s chars)",
-                        document['id'], len(document['content_html'][0]))
-            # Html2Text - Get XMI from UIMA - Only when HTML not for PDFs
-            r = get_html2text_cas(document['content_html'][0])
-            encoded_b64 = get_encoded_content_from_cas(r)
-            # Paragraph Detection for HTML
-            paragraph_request = get_cas_from_paragraph_detection(encoded_b64)
+    requests.get(os.environ['SOLR_URL'] +
+                    '/' + core + CONST_UPDATE_WITH_COMMIT)
 
-        elif "content_html" not in document and "content" in document:
-            logger.info("Extracting terms from PDF document id: %s (%s chars)",
-                        document['id'], len(document['content'][0]))
-            # Paragraph detection for PDF + fallback cas for not having a html2text request
-            r = get_cas_from_pdf(document['content'])
-            paragraph_request = r
+def extract_terms_for_document(document, ts):
 
-        # Term definition
-        input_content = json.loads(paragraph_request.content)['cas_content']
-        definitions_request = get_cas_from_definitions_extract(input_content)
+    logger.info("Started term extraction for document id: %s", document['id'])
+    django_doc = Document.objects.get(id=document['id'])
+    r = None
+    paragraph_request = None
 
-        # Decoded cas from definitions extract
-        definitions_decoded_cas = base64.b64decode(
-            json.loads(definitions_request.content)['cas_content']).decode("utf-8")
+    if "content_html" in document:
+        logger.info("Extracting terms from HTML document id: %s (%s chars)",
+                    document['id'], len(document['content_html'][0]))
+        # Html2Text - Get XMI from UIMA - Only when HTML not for PDFs
+        r = get_html2text_cas(document['content_html'][0])
+        encoded_b64 = get_encoded_content_from_cas(r)
+        # Paragraph Detection for HTML
+        paragraph_request = get_cas_from_paragraph_detection(encoded_b64)
 
-        # Step 3: NLP TextExtract
-        input_content = json.loads(definitions_request.content)['cas_content']
-        request_nlp = get_cas_from_text_extract(input_content)
+    elif "content_html" not in document and "content" in document:
+        logger.info("Extracting terms from PDF document id: %s (%s chars)",
+                    document['id'], len(document['content'][0]))
+        # Paragraph detection for PDF + fallback cas for not having a html2text request
+        r = get_cas_from_pdf(document['content'])
+        paragraph_request = r
 
-        # Decoded cas from termextract
-        terms_decoded_cas = base64.b64decode(
-            json.loads(request_nlp.content)['cas_content']).decode("utf-8")
+    # Term definition
+    input_content = json.loads(paragraph_request.content)['cas_content']
+    definitions_request = get_cas_from_definitions_extract(input_content)
 
-        # Load CAS files from NLP
-        cas = cassis.load_cas_from_xmi(
-            definitions_decoded_cas, typesystem=ts)
-        cas2 = cassis.load_cas_from_xmi(
-            terms_decoded_cas, typesystem=ts)
+    # Step 3: NLP TextExtract
+    input_content = json.loads(definitions_request.content)['cas_content']
+    request_nlp = get_cas_from_text_extract(input_content)
 
-        atomic_update_defined = [
-            {
-                "id": document['id'],
-                "concept_defined": {"set": {
+    # Decoded cas from termextract
+    terms_decoded_cas = base64.b64decode(
+        json.loads(request_nlp.content)['cas_content']).decode("utf-8")
+
+    # Load CAS files from NLP
+    cas2 = cassis.load_cas_from_xmi(
+        terms_decoded_cas, typesystem=ts)
+
+    atomic_update_defined = [
+        {
+            "id": document['id'],
+            "concept_defined": {"set": {
+                "v": "1",
+                "str": cas2.get_view(sofa_id_html2text).sofa_string,
+                "tokens": [
+
+                ]
+            }}
+        }
+    ]
+    concept_defined_tokens = atomic_update_defined[0]['concept_defined']['set']['tokens']
+    j = 0
+
+    # Term defined, we check which terms are covered by definitions
+    term_definition=[]
+    term_definition_uniq=[]
+    term_definition_uniq_idx=[]
+    for num_defi, sentence in enumerate(cas2.get_view('html2textView').select(SENTENCE_CLASS)):
+        has_term_defined = False
+        for num_token, token in enumerate(cas2.get_view( 'html2textView' ).select_covered( 'cassis.Token' , sentence  )):
+            #take those tfidf annotations with a cassis.token annotation covering them ==> the terms defined in the definition
+            for term_defined in cas2.get_view( 'html2textView' ).select_covering( TFIDF_CLASS  , token  ):
+                if (term_defined.begin == token.begin) and (term_defined.end == token.end):
+                    #instead of saving sentence, save sentence + context (i.e. paragraph annotation)
+                    for par in cas2.get_view(sofa_id_html2text).select_covering(PARAGRAPH_CLASS, sentence):
+                        if par.begin == sentence.begin:  # if beginning of paragraph == beginning of a definition ==> this detected paragraph should replace the definition
+                            sentence = par
+                    term_definition.append( (term_defined, sentence ) )
+                    has_term_defined = True
+        if has_term_defined:
+            if sentence.begin not in term_definition_uniq_idx:
+                term_definition_uniq.append(sentence)
+                term_definition_uniq_idx.append(sentence.begin)
+
+    # For solr
+    for definition in term_definition_uniq:
+        token_defined = definition.get_covered_text()
+        start_defined = definition.begin
+        end_defined = definition.end
+
+        # Step 7: Send concept terms to Solr ('concept_defined' field)
+        if len(token_defined.encode('utf-8')) < 32000:
+            token_to_add_defined = {
+                "t": token_defined,
+                "s": start_defined,
+                "e": end_defined,
+                "y": "word"
+            }
+            concept_defined_tokens.insert(j, token_to_add_defined)
+            j = j +1
+        
+    # For django
+    for term , definition in term_definition:
+        lemma_name = ""
+        token_defined = definition.get_covered_text()
+        start_defined = definition.begin
+        end_defined = definition.end
+
+        if len(token_defined.encode('utf-8')) < 32000 :
+            # Save Term Definitions in Django
+            c = Concept.objects.update_or_create(
+                name=term.get_covered_text(), definition=token_defined.strip(), lemma=lemma_name)
+            # logger.info("Saved concept to django. name = %s, defi = %s (%s:%s)", term.term, definition.get_covered_text(), start_defined, end_defined)
+            ConceptDefined.objects.update_or_create(
+                concept=c[0], document=django_doc, begin=start_defined, end=end_defined)
+
+    # Step 5: Send term extractions to Solr (term_occurs field)
+
+    # Convert the output to a readable format for Solr
+    atomic_update = [
+        {
+            "id": document['id'],
+            "concept_occurs": {
+                "set": {
                     "v": "1",
-                    "str": cas.get_view(sofa_id_html2text).sofa_string,
+                    "str": cas2.get_view(sofa_id_html2text).sofa_string,
                     "tokens": [
 
                     ]
-                }}
-            }
-        ]
-        concept_defined_tokens = atomic_update_defined[0]['concept_defined']['set']['tokens']
-        j = 0
-
-        # Term defined, we check which terms are covered by definitions
-        for defi in cas2.get_view(sofa_id_html2text).select(SENTENCE_CLASS):
-            term_name = "Unknown"
-            lemma_name = ""
-
-            for i, term in enumerate(cas2.get_view(sofa_id_html2text).select_covered(TFIDF_CLASS, defi)):
-                if i > 0:
-                    logger.info("Found multiple terms: %s",
-                                term.get_covered_text())
-                    break
-
-                term_name = term.get_covered_text()
-                # Retrieve the lemma for the term
-                for lemma in cas2.get_view(sofa_id_html2text).select_covered(LEMMA_CLASS, term):
-                    if term.begin == lemma.begin and term.end == lemma.end:
-                        lemma_name = lemma.value
-
-            # Handle paragraphs
-            for par in cas.get_view(sofa_id_html2text).select_covering(PARAGRAPH_CLASS, defi):
-
-                if par.begin == defi.begin:  # if beginning of paragraph == beginning of a definition ==> this detected paragraph should replace the definition
-                    defi = par
-
-            token_defined = defi.get_covered_text()
-            start_defined = defi.begin
-            end_defined = defi.end
-
-            # Step 7: Send concept terms to Solr ('concept_defined' field)
-
-            if len(token_defined.encode('utf-8')) < 32000:
-                token_to_add_defined = {
-                    "t": token_defined,
-                    "s": start_defined,
-                    "e": end_defined,
-                    "y": "word"
                 }
-                concept_defined_tokens.insert(j, token_to_add_defined)
-                j = j + 1
+            }
+        }
+    ]
+    concept_occurs_tokens = atomic_update[0]['concept_occurs']['set']['tokens']
 
-                # Save Term Definitions in Django
+    # Select all Tfidfs from the CAS
+    i = 0
+    for term in cas2.get_view(sofa_id_html2text).select(TFIDF_CLASS):
+        # Save the token information
+        token = term.get_covered_text()
+        score = term.tfidfValue
+        start = term.begin
+        end = term.end
+
+        # Encode score base64
+        encoded_bytes = base64.b64encode(score.encode("utf-8"))
+        encoded_score = str(encoded_bytes, "utf-8")
+
+        token_to_add = {
+            "t": token,
+            "s": start,
+            "e": end,
+            "y": "word",
+            "p": encoded_score
+        }
+        concept_occurs_tokens.insert(i, token_to_add)
+        i = i + 1
+
+        # Retrieve the lemma for the term
+        lemma_name = ""
+        for lemma in cas2.get_view(sofa_id_html2text).select_covered(LEMMA_CLASS, term):
+            if term.begin == lemma.begin and term.end == lemma.end:
+                lemma_name = lemma.value
+
+        queryset = Concept.objects.filter(
+            name=term.get_covered_text())
+        if not queryset.exists():
+            # Save Term Definitions in Django
+            if len(term.get_covered_text()) <= 200:
                 c = Concept.objects.update_or_create(
-                    name=term_name, definition=defi.get_covered_text().strip(), lemma=lemma_name)
-                ConceptDefined.objects.update_or_create(
-                    concept=c[0], document=django_doc, begin=start_defined, end=end_defined)
-                # logger.info("Saved concept to django. name = %s, defi = %s", term_name, defi.get_covered_text())
+                    name=term.get_covered_text(), lemma=lemma_name)
+                ConceptOccurs.objects.update_or_create(
+                    concept=c[0], document=django_doc, probability=float(score.encode("utf-8")), begin=start,
+                    end=end)
 
-        # Step 5: Send term extractions to Solr (term_occurs field)
+            else:
+                logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
+                            "Consider disabling supergrams or change the length in the database", token)
 
-        # Convert the output to a readable format for Solr
-        atomic_update = [
-            {
-                "id": document['id'],
-                "concept_occurs": {
-                    "set": {
-                        "v": "1",
-                        "str": cas2.get_view(sofa_id_html2text).sofa_string,
-                        "tokens": [
+    # Step 6: Post term_occurs to Solr
+    escaped_json = json.dumps(
+        atomic_update[0]['concept_occurs']['set'])
+    atomic_update[0]['concept_occurs']['set'] = escaped_json
+    logger.info("Detected %s concepts", len(concept_occurs_tokens))
+    if len(concept_occurs_tokens) > 0:
+        post_pre_analyzed_to_solr(atomic_update)
 
-                        ]
-                    }
-                }
-            }
-        ]
-        concept_occurs_tokens = atomic_update[0]['concept_occurs']['set']['tokens']
+    # Step 8: Post term_defined to Solr
+    escaped_json_def = json.dumps(
+        atomic_update_defined[0]['concept_defined']['set'])
+    atomic_update_defined[0]['concept_defined']['set'] = escaped_json_def
+    logger.info("Detected %s concept definitions",
+                len(concept_defined_tokens))
+    if len(concept_defined_tokens) > 0:
+        post_pre_analyzed_to_solr(atomic_update_defined)
 
-        # Select all Tfidfs from the CAS
-        i = 0
-        for term in cas2.get_view(sofa_id_html2text).select(TFIDF_CLASS):
-            # Save the token information
-            token = term.get_covered_text()
-            score = term.tfidfValue
-            start = term.begin
-            end = term.end
-
-            # Encode score base64
-            encoded_bytes = base64.b64encode(score.encode("utf-8"))
-            encoded_score = str(encoded_bytes, "utf-8")
-
-            token_to_add = {
-                "t": token,
-                "s": start,
-                "e": end,
-                "y": "word",
-                "p": encoded_score
-            }
-            concept_occurs_tokens.insert(i, token_to_add)
-            i = i + 1
-
-            # Retrieve the lemma for the term
-            lemma_name = ""
-            for lemma in cas2.get_view(sofa_id_html2text).select_covered(LEMMA_CLASS, term):
-                if term.begin == lemma.begin and term.end == lemma.end:
-                    lemma_name = lemma.value
-
-            queryset = Concept.objects.filter(
-                name=term.get_covered_text())
-            if not queryset.exists():
-                # Save Term Definitions in Django
-                if len(term.get_covered_text()) <= 200:
-                    c = Concept.objects.update_or_create(
-                        name=term.get_covered_text(), lemma=lemma_name)
-                    ConceptOccurs.objects.update_or_create(
-                        concept=c[0], document=django_doc, probability=float(score.encode("utf-8")), begin=start,
-                        end=end)
-
-                else:
-                    logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
-                                "Consider disabling supergrams or change the length in the database", token)
-
-        # Step 6: Post term_occurs to Solr
-        escaped_json = json.dumps(
-            atomic_update[0]['concept_occurs']['set'])
-        atomic_update[0]['concept_occurs']['set'] = escaped_json
-        logger.info("Detected %s concepts", len(concept_occurs_tokens))
-        if len(concept_occurs_tokens) > 0:
-            post_pre_analyzed_to_solr(atomic_update)
-
-        # Step 8: Post term_defined to Solr
-        escaped_json_def = json.dumps(
-            atomic_update_defined[0]['concept_defined']['set'])
-        atomic_update_defined[0]['concept_defined']['set'] = escaped_json_def
-        logger.info("Detected %s concept definitions",
-                    len(concept_defined_tokens))
-        if len(concept_defined_tokens) > 0:
-            post_pre_analyzed_to_solr(atomic_update_defined)
-
-        core = 'documents'
-        requests.get(os.environ['SOLR_URL'] +
-                     '/' + core + CONST_UPDATE_WITH_COMMIT)
+    
 
 
 @shared_task
