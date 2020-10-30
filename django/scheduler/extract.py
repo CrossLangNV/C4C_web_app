@@ -393,12 +393,16 @@ def extract_terms_for_document(document, ts):
             c = Concept.objects.update_or_create(
                 name=term.get_covered_text(), definition=token_defined.strip(), lemma=lemma_name)
             # logger.info("Saved concept to django. name = %s, defi = %s (%s:%s)", term.term, definition.get_covered_text(), start_defined, end_defined)
-            cd = ConceptDefined.objects.get(concept=c[0], document=django_doc)
-            cd.begin = start_defined
-            cd.end = end_defined
-            cd.save()
-            # ConceptDefined.objects.update_or_create(
-            #     concept=c[0], document=django_doc, begin=start_defined, end=end_defined)
+            defs = ConceptDefined.objects.filter(
+                concept=c[0], document=django_doc)
+            if len(defs) == 1:
+                cd = defs[0]
+                cd.begin = start_defined
+                cd.end = end_defined
+                cd.save()
+            else:
+                ConceptDefined.objects.create(
+                    concept=c[0], document=django_doc, begin=start_defined, end=end_defined)
 
     # Step 5: Send term extractions to Solr (term_occurs field)
 
