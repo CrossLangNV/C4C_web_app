@@ -219,7 +219,7 @@ def extract_reporting_obligations(website_id):
 
         # Paragraph detection for PDF + fallback cas for not having a html2text request
         if is_pdf:
-            r = get_cas_from_pdf(document['content'])
+            r = get_cas_from_pdf(document['content'][0])
             paragraph_request = r
 
         encoded_b64 = get_encoded_content_from_cas(r)
@@ -310,7 +310,7 @@ def extract_terms_for_document(document, ts):
         logger.info("Extracting terms from PDF document id: %s (%s chars)",
                     document['id'], len(document['content'][0]))
         # Paragraph detection for PDF + fallback cas for not having a html2text request
-        r = get_cas_from_pdf(document['content'])
+        r = get_cas_from_pdf(document['content'][0])
         paragraph_request = r
 
     # Term definition
