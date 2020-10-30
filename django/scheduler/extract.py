@@ -391,7 +391,7 @@ def extract_terms_for_document(document, ts):
         if len(token_defined.encode('utf-8')) < 32000:
             # Save Term Definitions in Django
             c = Concept.objects.update_or_create(
-                name=term.get_covered_text(), definition=token_defined.strip(), lemma=lemma_name)
+                name=term.get_covered_text(), definition=token_defined, lemma=lemma_name)
             # logger.info("Saved concept to django. name = %s, defi = %s (%s:%s)", term.term, definition.get_covered_text(), start_defined, end_defined)
             defs = ConceptDefined.objects.filter(
                 concept=c[0], document=django_doc)
