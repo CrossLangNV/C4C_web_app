@@ -293,17 +293,11 @@ def extract_terms(website_id):
     ts = fetch_typesystem()
 
     for i, document in enumerate(documents):
-         if document['content_html'] is not None:
-            if len(document['content_html'][0]) > 1000000:
-                logger.info("Skipping too big document id: %s", document['id'])
-                continue
-
-            extract_terms_for_document(document, ts)
-
-            if i % 10:
-                logger.info("Got 10 items, posting to solr")
-                requests.get(os.environ['SOLR_URL'] +
-                            '/' + core + CONST_UPDATE_WITH_COMMIT)
+        extract_terms_for_document(document, ts)
+        if i % 10:
+            logger.info("Got 10 items, posting to solr")
+            requests.get(os.environ['SOLR_URL'] +
+                         '/' + core + CONST_UPDATE_WITH_COMMIT)
 
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + CONST_UPDATE_WITH_COMMIT)
@@ -317,6 +311,10 @@ def extract_terms_for_document(document, ts):
     paragraph_request = None
 
     if "content_html" in document:
+        if document['content_html'] is not None:
+            if len(document['content_html'][0]) > 1000000:
+                logger.info("Skipping too big document id: %s", document['id'])
+                return
 
         logger.info("Extracting terms from HTML document id: %s (%s chars)",
                     document['id'], len(document['content_html'][0]))
