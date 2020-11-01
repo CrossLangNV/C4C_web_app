@@ -72,23 +72,6 @@ def create_cas(sofa):
     return cas
 
 
-def get_cas_from_pdf(content):
-    logger.info("its a pdf")
-    # Logic for documents without HTML, that have a "content" field which is a PDF to HTML done by Tika
-    # Create a new cas here
-    tika_cas = create_cas(content)
-
-    encoded_cas = base64.b64encode(bytes(tika_cas.to_xmi(), 'utf-8')).decode()
-
-    # Then send this cas to NLP Paragraph detection
-    input_for_paragraph_detection = {
-        "cas_content": encoded_cas,
-        "content_type": "pdf",
-    }
-    return requests.post(PARAGRAPH_DETECT_URL,
-                         json=input_for_paragraph_detection)
-
-
 def fetch_typesystem():
     typesystem_req = requests.get(
         UIMA_URL["BASE"] + UIMA_URL["TYPESYSTEM"])
@@ -98,17 +81,45 @@ def fetch_typesystem():
         return load_typesystem(f)
 
 
+def get_cas_from_pdf(content):
+    logger.info("its a pdf")
+    # Logic for documents without HTML, that have a "content" field which is a PDF to HTML done by Tika
+    # Create a new cas here
+    start = time.time()
+    tika_cas = create_cas(content)
+
+    encoded_cas = base64.b64encode(bytes(tika_cas.to_xmi(), 'utf-8')).decode()
+
+    # Then send this cas to NLP Paragraph detection
+    input_for_paragraph_detection = {
+        "cas_content": encoded_cas,
+        "content_type": "pdf",
+    }
+    r = requests.post(PARAGRAPH_DETECT_URL,
+                      json=input_for_paragraph_detection)
+    logger.info("Sent request to Paragraph Detection (%s). Status code: %s", PARAGRAPH_DETECT_URL,
+                r.status_code)
+    end = time.time()
+    logger.info(
+        "Paragraph Detect took %s seconds to succeed.", end - start)
+    return r
+
+
 def get_cas_from_paragraph_detection(content_encoded):
     input_for_paragraph_detection = {
         "cas_content": content_encoded,
         "content_type": "html",
     }
 
+    start = time.time()
     paragraph_request = requests.post(PARAGRAPH_DETECT_URL,
                                       json=input_for_paragraph_detection)
     logger.info("Sent request to Paragraph Detection (%s). Status code: %s", PARAGRAPH_DETECT_URL,
                 paragraph_request.status_code)
 
+    end = time.time()
+    logger.info(
+        "Paragraph Detect took %s seconds to succeed.", end - start)
     return paragraph_request
 
 
@@ -268,7 +279,9 @@ def extract_terms(website_id):
     rows_per_page = 250
     cursor_mark = "*"
 
-    q = QUERY_WEBSITE + website_name + " AND acceptance_state: accepted"
+    # select all accepted documents with empty concept_occurs field
+    q = QUERY_WEBSITE + website_name + \
+        " AND acceptance_state: accepted AND -concept_occurs: [\"\" TO *] "
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -280,11 +293,17 @@ def extract_terms(website_id):
     ts = fetch_typesystem()
 
     for i, document in enumerate(documents):
-        extract_terms_for_document(document, ts)
-        if i % 10:
-            logger.info("Got 10 items, posting to solr")
-            requests.get(os.environ['SOLR_URL'] +
-                         '/' + core + CONST_UPDATE_WITH_COMMIT)
+         if document['content_html'] is not None:
+            if len(document['content_html'][0]) > 1000000:
+                logger.info("Skipping too big document id: %s", document['id'])
+                continue
+
+            extract_terms_for_document(document, ts)
+
+            if i % 10:
+                logger.info("Got 10 items, posting to solr")
+                requests.get(os.environ['SOLR_URL'] +
+                            '/' + core + CONST_UPDATE_WITH_COMMIT)
 
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + CONST_UPDATE_WITH_COMMIT)
@@ -298,6 +317,7 @@ def extract_terms_for_document(document, ts):
     paragraph_request = None
 
     if "content_html" in document:
+
         logger.info("Extracting terms from HTML document id: %s (%s chars)",
                     document['id'], len(document['content_html'][0]))
         # Html2Text - Get XMI from UIMA - Only when HTML not for PDFs
