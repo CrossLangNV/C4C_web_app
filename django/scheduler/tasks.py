@@ -396,7 +396,6 @@ def parse_content_to_plaintext_task(website_id, **kwargs):
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + CONST_UPDATE_WITH_COMMIT)
     # select all records where content is empty and content_html is not
-
     q = "-content: [\"\" TO *] AND ( content_html: [* TO *] OR file_name: [* TO *] ) AND website:" + website_name
     if date:
         q = q + " AND date:[" + date + " TO NOW]"  # eg. 2013-07-17T00:00:00Z
