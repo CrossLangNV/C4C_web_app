@@ -10,6 +10,13 @@ from obligations.rdf_parser import SPARQLReportingObligationProvider, RDFLibGrap
 from obligations.rdf_mock import rdf_get_reporters_mock, rdf_get_verbs_mock, rdf_get_reports_mock,\
     rdf_get_regulatory_body_mock, rdf_get_propmod_mock, rdf_get_entity_mock, rdf_get_frequency_mock
 
+# You might have to change this
+URL_FUSEKI = os.environ['RDF_FUSEKI_URL']
+
+
+def rdf_get_entities():
+    pass
+
 
 def rdf_get_reporters():
     return rdf_get_reporters_mock()
@@ -37,4 +44,3 @@ def rdf_get_entity():
 
 def rdf_get_frequency():
     return rdf_get_frequency_mock()
-
