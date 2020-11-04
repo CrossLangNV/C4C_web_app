@@ -21,7 +21,7 @@ export class ReportingObligation {
   constructor(
     public id: string,
     public name: string,
-    public obligation: string,
+    public definition: string,
     public documentIds: string[],
     public tags: string[],
     public commentIds: string[],
@@ -48,7 +48,7 @@ export class RoAdapter implements Adapter<ReportingObligation> {
     return {
       id: ro.id,
       name: ro.name,
-      definition: ro.obligation,
+      definition: ro.definition,
       documents: ro.documentIds,
       tags: ro.tags,
       comments: ro.commentIds,

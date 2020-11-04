@@ -243,6 +243,20 @@ export class RoListComponent implements OnInit {
     this.searchTermChanged.next(keyword);
   }
 
+  getRoQueryString(): string {
+    let reporter = this.selectedReporter.name
+    let verb = this.selectedVerb.name
+    let report = this.selectedReport.name
+    let regBody = this.selectedRegulatoryBody.name
+    let propMod = this.selectedPropMod.name
+    let entity = this.selectedEntity.name
+    let frequency = this.selectedFrequency.name
+
+    let array = [reporter, verb, report, regBody, propMod, entity, frequency]
+
+    return array.join(" ")
+  }
+
   loadPage(page: number) {
     if (page !== this.previousPage) {
       this.page = page;
