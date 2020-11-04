@@ -6,13 +6,13 @@
 
         <div>
           <p>Query for Reporting Obligations</p>
-          <p-dropdown [options]="reporters" [(ngModel)]="selectedReporter" placeholder="Reporter..." [virtualScroll]="true" [showClear]="true"></p-dropdown>
-          <p-dropdown [options]="verbs" [(ngModel)]="selectedVerb" placeholder="Verb..." [virtualScroll]="false" [showClear]="true"></p-dropdown>
-          <p-dropdown [options]="reports" [(ngModel)]="selectedReport" placeholder="Report..." [virtualScroll]="false" [showClear]="true"></p-dropdown>
-          <p-dropdown [options]="regulatoryBodies" [(ngModel)]="selectedRegulatoryBody" placeholder="Regulatory body..." [virtualScroll]="true" [showClear]="true"></p-dropdown>
-          <p-dropdown [options]="propMods" [(ngModel)]="selectedPropMod" placeholder="Prop mod..." [virtualScroll]="true" [showClear]="true"></p-dropdown>
-          <p-dropdown [options]="entities" [(ngModel)]="selectedEntity" placeholder="Entity..." [virtualScroll]="true" [showClear]="true"></p-dropdown>
-          <p-dropdown [options]="frequencies" [(ngModel)]="selectedFrequency" placeholder="Frequency..." [virtualScroll]="true" [showClear]="true"></p-dropdown>
+          <p-dropdown [options]="reporters" [(ngModel)]="selectedReporter" placeholder="Reporter..." [virtualScroll]="true" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
+          <p-dropdown [options]="verbs" [(ngModel)]="selectedVerb" placeholder="Verb..." [virtualScroll]="false" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
+          <p-dropdown [options]="reports" [(ngModel)]="selectedReport" placeholder="Report..." [virtualScroll]="false" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
+          <p-dropdown [options]="regulatoryBodies" [(ngModel)]="selectedRegulatoryBody" placeholder="Regulatory body..." [virtualScroll]="true" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
+          <p-dropdown [options]="propMods" [(ngModel)]="selectedPropMod" placeholder="Prop mod..." [virtualScroll]="true" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
+          <p-dropdown [options]="entities" [(ngModel)]="selectedEntity" placeholder="Entity..." [virtualScroll]="true" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
+          <p-dropdown [options]="frequencies" [(ngModel)]="selectedFrequency" placeholder="Frequency..." [virtualScroll]="true" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
           <fa-icon (click)="resetFilters()" class="p-2" ngbTooltip="Reset filters" [icon]="resetIcon"></fa-icon>
 
           <p>{{selectedReporter}} {{selectedVerb}}  {{selectedReport}} {{selectedRegulatoryBody}} {{selectedPropMod}} {{selectedEntity}} {{selectedFrequency}}</p>
@@ -78,7 +78,7 @@
               (click)="setIndex(ro.id)"
               [class.font-weight-bold]="selectedIndex === ro.id"
               [routerLink]="[ro.id]"
-              >{{ ro.name || "(no label)" }}</a
+              >{{ ro.definition || "(no label)" }}</a
             >&nbsp;
             <!-- <span
               *ngIf="ro.comments.length > 0"
