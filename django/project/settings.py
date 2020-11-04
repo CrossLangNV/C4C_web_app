@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'searchapp',
     'glossary',
+    'obligations',
     'admin_rest',
     'django_celery_beat',
     'django_celery_results',

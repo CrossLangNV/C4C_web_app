@@ -42,6 +42,7 @@ import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/concept
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
   API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
+  API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
   ROS_MOCKED = rosData.ros.map(
     (ro, index) =>
       new ReportingObligation(
@@ -50,7 +51,8 @@ export class ApiService {
         ro.obligation,
         [],
         [],
-        []
+        [],
+        ''
       )
   );
 
@@ -494,23 +496,71 @@ export class ApiService {
     if (sortBy) {
       pageQuery = pageQuery + '&ordering=' + sortBy;
     }
-    return of(
-      new RoResults(
-        this.ROS_MOCKED.length,
-        this.ROS_MOCKED.length,
-        this.ROS_MOCKED.length,
-        0,
-        0,
-        0,
-        0,
-        '1',
-        '-1',
-        this.ROS_MOCKED.slice((page - 1) * 5, page * 5)
-      )
+    return this.http.get<RoResults>(
+      `${this.API_RO_URL}/ros${pageQuery}`
     );
+    // return of(
+    //   new RoResults(
+    //     this.ROS_MOCKED.length,
+    //     this.ROS_MOCKED.length,
+    //     this.ROS_MOCKED.length,
+    //     0,
+    //     0,
+    //     0,
+    //     0,
+    //     '1',
+    //     '-1',
+    //     this.ROS_MOCKED.slice((page - 1) * 5, page * 5)
+    //   )
+    // );
   }
 
   public getRo(id: string): Observable<ReportingObligation> {
-    return of(this.ROS_MOCKED[Number(id)]);
+    return this.http
+      .get<ReportingObligation>(`${this.API_RO_URL}/ro/${id}`)
+      .pipe(map((item) => this.roAdapter.adapt(item)));
+    //return of(this.ROS_MOCKED[Number(id)]);
+  }
+
+  fetchReporters(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/reporters`
+    );
+  }
+
+  fetchVerbs(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/verbs`
+    );
+  }
+
+  fetchReports(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/reports`
+    );
+  }
+
+  fetchRegulatoryBody(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/regulatorybody`
+    );
+  }
+
+  fetchPropMod(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/propmod`
+    );
+  }
+
+  fetchEntity(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/entity`
+    );
+  }
+
+  fetchFrequency(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/frequency`
+    );
   }
 }
