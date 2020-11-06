@@ -5,9 +5,10 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import logging as logger
 
-
-from .rdf_call import rdf_get_verbs, rdf_get_reporters, rdf_get_reports, rdf_get_regulatory_body, rdf_get_propmod, rdf_get_entity, rdf_get_frequency
+from .rdf_call import rdf_get_verbs, rdf_get_reporters, rdf_get_reports, rdf_get_regulatory_body, rdf_get_propmod,\
+    rdf_get_entity, rdf_get_frequency, rdf_get_available_entities, rdf_get_predicate, rdf_get_all_reporting_obligations
 
 
 class SmallResultsSetPagination(PageNumberPagination):
@@ -95,3 +96,27 @@ class ReportingObligationFrequencyListAPIView(APIView):
         result = rdf_get_frequency()
         return Response(result)
 
+
+# Entities
+class ReportingObligationAvailableEntitiesAPIView(APIView):
+
+    def get(self, request, format=None):
+        result = rdf_get_available_entities()
+        return Response(result)
+
+
+# Predicate
+class ReportingObligationGetByPredicate(APIView):
+
+    def get(self, request, predicate, format=None):
+        result = rdf_get_predicate(predicate)
+        return Response(result)
+
+
+# Get all RO's from RDF
+class ReportingObligationsRDFListAPIView(APIView):
+
+    def get(self, request, format=None):
+        result = rdf_get_all_reporting_obligations()
+        logger.info(result)
+        return Response(result)
