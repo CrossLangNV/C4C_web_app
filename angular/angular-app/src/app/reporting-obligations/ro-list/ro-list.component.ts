@@ -26,6 +26,9 @@ import {Router} from "@angular/router";
 import {AuthenticationService} from "../../core/auth/authentication.service";
 import {DjangoUser} from "../../shared/models/django_user";
 
+import {SelectItem} from "primeng/api";
+import {logger} from "codelyzer/util/logger";
+
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
   asc: 'desc',
@@ -36,6 +39,10 @@ const rotate: { [key: string]: SortDirection } = {
 export interface SortEvent {
   column: string;
   direction: SortDirection;
+}
+
+export interface RoDetail {
+  name: string;
 }
 
 @Directive({
@@ -67,6 +74,24 @@ export class RoListComponent implements OnInit {
     NgbdSortableHeaderDirective
   >;
   ros: ReportingObligation[];
+
+  // RO Splits
+  reporters: SelectItem[] = [];
+  selectedReporter: RoDetail;
+  verbs: SelectItem[] = [];
+  selectedVerb: RoDetail;
+  reports: SelectItem[] = [];
+  selectedReport: RoDetail
+  regulatoryBodies: SelectItem[] = [];
+  selectedRegulatoryBody: RoDetail
+  propMods: SelectItem[] = [];
+  selectedPropMod: RoDetail
+  entities: SelectItem[] = [];
+  selectedEntity: RoDetail
+  frequencies: SelectItem[] = [];
+  selectedFrequency: RoDetail
+
+  selected: string;
   collectionSize = 0;
   selectedIndex: string = null;
   page = 1;
@@ -110,6 +135,93 @@ export class RoListComponent implements OnInit {
         this.page = 1;
         this.fetchRos();
       });
+
+    // Fetch RDF for filters
+    this.fetchReporters();
+    this.fetchVerbs();
+    this.fetchReports();
+    this.fetchRegulatoryBodies();
+    this.fetchPropMods();
+    this.fetchEntities();
+    this.fetchFrequencies();
+  }
+
+  fetchReporters() {
+    this.service
+      .fetchReporters(
+      )
+      .subscribe((results) => {
+        results.forEach((reporter) => {
+          this.reporters.push({ label: reporter, value: reporter });
+        });
+    })
+  }
+
+  fetchVerbs() {
+    this.service
+      .fetchVerbs(
+      )
+      .subscribe((results) => {
+        results.forEach((verb) => {
+          this.verbs.push({ label: verb, value: verb });
+        });
+      })
+  }
+
+  // Fetch Reports
+  fetchReports() {
+    this.service
+      .fetchReports(
+      )
+      .subscribe((results) => {
+        results.forEach((report) => {
+          this.reports.push({ label: report, value: report });
+        });
+      })
+  }
+  // Fetch regulatoryBodies
+  fetchRegulatoryBodies() {
+    this.service
+      .fetchRegulatoryBody(
+      )
+      .subscribe((results) => {
+        results.forEach((regulatorybody) => {
+          this.regulatoryBodies.push({ label: regulatorybody, value: regulatorybody });
+        });
+      })
+  }
+  // Fetch propMods
+  fetchPropMods() {
+    this.service
+      .fetchPropMod(
+      )
+      .subscribe((results) => {
+        results.forEach((propmod) => {
+          this.propMods.push({ label: propmod, value: propmod });
+        });
+      })
+  }
+  // Fetch entities
+  fetchEntities() {
+    this.service
+      .fetchEntity(
+      )
+      .subscribe((results) => {
+        results.forEach((entity) => {
+          this.entities.push({ label: entity, value: entity });
+        });
+      })
+  }
+  // Fetch frequencies
+  fetchFrequencies() {
+    this.service
+      .fetchFrequency(
+      )
+      .subscribe((results) => {
+        results.forEach((frequency) => {
+          this.frequencies.push({ label: frequency, value: frequency });
+        });
+      })
   }
 
   fetchRos() {
@@ -129,6 +241,20 @@ export class RoListComponent implements OnInit {
 
   onSearch(keyword: string) {
     this.searchTermChanged.next(keyword);
+  }
+
+  getRoQueryString(): string {
+    let reporter = this.selectedReporter.name
+    let verb = this.selectedVerb.name
+    let report = this.selectedReport.name
+    let regBody = this.selectedRegulatoryBody.name
+    let propMod = this.selectedPropMod.name
+    let entity = this.selectedEntity.name
+    let frequency = this.selectedFrequency.name
+
+    let array = [reporter, verb, report, regBody, propMod, entity, frequency]
+
+    return array.join(" ")
   }
 
   loadPage(page: number) {
@@ -191,5 +317,15 @@ export class RoListComponent implements OnInit {
   onClickTag(event) {
     this.filterTag = event.value.value;
     this.fetchRos();
+  }
+
+  resetFilters() {
+    this.selectedReporter = null
+    this.selectedVerb = null
+    this.selectedReport = null
+    this.selectedRegulatoryBody = null
+    this.selectedPropMod = null
+    this.selectedEntity = null
+    this.selectedFrequency = null
   }
 }

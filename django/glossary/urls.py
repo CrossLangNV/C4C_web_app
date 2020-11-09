@@ -58,5 +58,11 @@ urlpatterns = [
     path('api/tag/<int:pk>', views.TagDetailAPIView.as_view(),
          name='tag_detail_api'),
 
+    # Worklog
+    path('api/worklogs', views.WorkLogAPIView.as_view(),
+         name='worklog_list_api'),
+    path('api/worklog/<int:pk>', views.WorklogDetailAPIView.as_view(),
+         name='worklog_detail_api'),
+
 ]
 
