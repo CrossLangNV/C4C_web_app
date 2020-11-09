@@ -1,22 +1,79 @@
 from django.db import models
 
-from searchapp.models import Document
 from django.utils import timezone
 
+from searchapp.models import Document
 
 class Concept(models.Model):
     name = models.CharField(max_length=200)
     definition = models.TextField()
     lemma = models.CharField(max_length=200, default="")
-    documents = models.ManyToManyField(Document, blank=True, editable=False)
+    document_occurs = models.ManyToManyField(
+        Document,
+        through='ConceptOccurs',
+        through_fields=('concept', 'document'),
+        related_name='occurrance'
+    )
+    document_defined = models.ManyToManyField(
+        Document,
+        through='ConceptDefined',
+        through_fields=('concept', 'document'),
+        related_name='definition'
+    )
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+
 
     class Meta:
         ordering = ['name']
 
     def __str__(self):
         return self.name
+
+
+class ConceptOffsetBase(models.Model):
+    concept = models.ForeignKey(Concept, on_delete=models.CASCADE)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    probability = models.FloatField(default=0.0, blank=True)
+    begin = models.IntegerField()
+    end = models.IntegerField()
+
+    class Meta:
+        abstract = True,
+        constraints = [
+            models.UniqueConstraint(
+                fields=['concept_id', 'document_id'], name="unique_per_%(class)s_and_document")
+        ]
+
+
+class ConceptOccurs(ConceptOffsetBase):
+    class Meta(ConceptOffsetBase.Meta):
+        pass
+
+
+class ConceptDefined(ConceptOffsetBase):
+    class Meta(ConceptOffsetBase.Meta):
+        pass
+
+
+class AnnotationWorklog(models.Model):
+    concept_occurs = models.ForeignKey(ConceptOccurs, on_delete=models.CASCADE, null=True)
+    concept_defined = models.ForeignKey(ConceptDefined, on_delete=models.CASCADE, null=True)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        'auth.User', related_name="user_worklog", on_delete=models.SET_NULL, null=True)
+
+    class Action(models.TextChoices):
+        ADD = 'add', 'Add concept'
+        DELETE = 'del', 'Delete concept'
+
+    action = models.CharField(
+        max_length=3,
+        choices=Action.choices,
+    )
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class AcceptanceStateValue(models.TextChoices):
@@ -70,3 +127,5 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.value
+
+
