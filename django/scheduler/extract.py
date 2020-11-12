@@ -195,7 +195,8 @@ def extract_reporting_obligations(website_id):
     rows_per_page = 250
     cursor_mark = "*"
 
-    q = QUERY_WEBSITE + website_name + " AND acceptance_state:accepted"
+    # q = QUERY_WEBSITE + website_name + " AND acceptance_state:accepted"
+    q = QUERY_WEBSITE + website_name
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -206,6 +207,7 @@ def extract_reporting_obligations(website_id):
     # Load typesystem
     ts = fetch_typesystem()
 
+    count_for_logs = 1
     for document in documents:
         logger.info("Started RO extraction for document id: %s",
                     document['id'])
@@ -246,7 +248,7 @@ def extract_reporting_obligations(website_id):
         # Create new cas with sofa from RO API
         ro_cas = base64.b64decode(json.loads(ro_request.content)[
                                   'cas_content']).decode('utf-8')
-        logger.info("ro_cas: %s", ro_cas)
+        #logger.info("ro_cas: %s", ro_cas)
 
         cas = load_cas_from_xmi(ro_cas, typesystem=ts)
         sofa_reporting_obligations = cas.get_view(
@@ -259,15 +261,22 @@ def extract_reporting_obligations(website_id):
         cas_html2text = load_cas_from_xmi(
             r.content.decode("utf-8"), typesystem=ts)
 
+
+        # This is the CAS with reporting obligations wrapped in VBTT's
         logger.info("cas_html2text: %s", cas_html2text.to_xmi())
+
+        f = open("cas_log_"+str(count_for_logs)+".txt", "w")
+        f.write(cas_html2text.to_xmi())
+        f.close()
+        logger.info("Wrote cas logs to file.")
+        count_for_logs = count_for_logs + 1
 
         # Read out the VBTT annotations
         for vbtt in cas.get_view(sofa_id_html2text).select(VALUE_BETWEEN_TAG_TYPE_CLASS):
             if vbtt.tagName == "p":
-                logger.info("VBTT: %s", vbtt)
-                logger.info("VBTT: %s", vbtt.get_covered_text())
-        # TODO Remove break statement
-        break
+                #logger.info("VBTT: %s", vbtt)
+                #logger.info("VBTT: %s", vbtt.get_covered_text())
+                pass
 
 
 @shared_task

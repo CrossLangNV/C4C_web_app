@@ -26,7 +26,7 @@ from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
 
-from scheduler.extract import extract_terms
+from scheduler.extract import extract_terms, extract_reporting_obligations
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
