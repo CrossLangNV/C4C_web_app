@@ -13,7 +13,7 @@ from obligations.rdf_mock import rdf_get_reporters_mock, rdf_get_verbs_mock, rdf
     rdf_get_regulatory_body_mock, rdf_get_propmod_mock, rdf_get_entity_mock, rdf_get_frequency_mock
 
 # You might have to change this
-URL_FUSEKI = os.environ['RDF_FUSEKI_URL'] + "/reporting_obligations"
+URL_FUSEKI = os.environ['RDF_FUSEKI_URL']
 graph_wrapper = SPARQLGraphWrapper(URL_FUSEKI)
 ro_provider = SPARQLReportingObligationProvider(graph_wrapper)
 

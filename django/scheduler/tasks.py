@@ -28,8 +28,6 @@ from searchapp.solr_call import solr_search_website_sorted, solr_search_website_
 
 from scheduler.extract import extract_terms
 
-from SPARQLWrapper import SPARQLWrapper, JSON
-
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
 
@@ -214,26 +212,6 @@ def get_stats_for_html_size(website_id):
 
     logger.info("[Document stats]: Documents over 500k lines: %s", size_1)
     logger.info("[Document stats]: Documents over 1M lines: %s", size_2)
-
-
-@shared_task()
-def sync_eurovoc_terms(website_id):
-    website = Website.objects.get(pk=website_id)
-    website_name = website.name.lower()
-
-    url = "http://192.168.105.173:3030/eurovoc"
-
-    sparql = SPARQLWrapper(url)
-    sparql.setQuery("""
-        SELECT ?subject ?predicate ?object
-        WHERE {
-           ?subject ?predicate ?object
-        }
-        LIMIT 25
-    """)
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
-    logger.info(results)
 
 
 @shared_task
