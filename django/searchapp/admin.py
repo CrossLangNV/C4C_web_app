@@ -94,7 +94,7 @@ def extract_terms(modeladmin, request, queryset):
 def extract_reporting_obligations(modeladmin, request, queryset):
     for website in queryset:
         tasks.extract_reporting_obligations.delay(website.id)
-        logger.info("Reporting Obligations extraction has finished!")
+    logger.info("Reporting Obligations extraction has finished!")
 
 
 def delete_from_solr(modeladmin, request, queryset):
