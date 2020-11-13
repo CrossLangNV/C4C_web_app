@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'searchapp',
     'glossary',
+    'obligations',
     'admin_rest',
     'django_celery_beat',
     'django_celery_results',
@@ -203,6 +204,7 @@ MINIO_STORAGE_SECRET_KEY = os.environ['MINIO_SECRET_KEY']
 MINIO_STORAGE_USE_HTTPS = os.environ.get('MINIO_HTTPS', False) == 'True'
 MINIO_STORAGE_MEDIA_BUCKET_NAME = 'local-media'
 MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
+MINIO_STORAGE_AUTO_CREATE_MEDIA_POLICY='WRITE_ONLY'
 MINIO_STORAGE_STATIC_BUCKET_NAME = 'local-static'
 MINIO_STORAGE_AUTO_CREATE_STATIC_BUCKET = True
 
