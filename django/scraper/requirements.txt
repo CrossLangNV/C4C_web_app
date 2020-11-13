@@ -30,3 +30,4 @@ urllib3==1.25.9
 user-agents==2.1
 w3lib==1.22.0
 zope.interface==5.1.0
+sparqlwrapper==1.8.5

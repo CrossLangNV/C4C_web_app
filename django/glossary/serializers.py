@@ -1,12 +1,18 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 
-from glossary.models import Concept, Comment, Tag, AcceptanceState
+from glossary.models import Concept, Comment, Tag, AcceptanceState, AnnotationWorklog
 
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
+        fields = '__all__'
+
+
+class AnnotationWorklogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnnotationWorklog
         fields = '__all__'
 
 
@@ -27,8 +33,6 @@ class AcceptanceStateSerializer(serializers.ModelSerializer):
 
 
 class ConceptSerializer(serializers.ModelSerializer):
-    documents = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-
     comments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     acceptance_states = AcceptanceStateSerializer(many=True, read_only=True)
@@ -63,6 +67,11 @@ class ConceptSerializer(serializers.ModelSerializer):
         model = Concept
         fields = '__all__'
 
+class ConceptDocumentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Concept
+        fields = ('id','name','definition')
 
 class CommentSerializer(serializers.ModelSerializer):
     Concept = serializers.PrimaryKeyRelatedField(

@@ -35,6 +35,15 @@
     <hr class="my-4" />
     <samp class="text-justify">{{ document.summary }}</samp>
   </div>
+  <div *ngIf="document.definition.length > 0">
+    <hr class="my-4" />
+    <p><b>Concept definitions ({{ document.definition.length }}):</b></p>
+    <ul  class="list-group">
+      <li *ngFor="let concept of document.definition" class="list-group-item">
+        <a [routerLink]="['/document', concept.id, document.id ]" >{{concept.definition}}</a>
+      </li>
+    </ul>
+  </div>
   <div *ngIf="similarDocuments">
     <hr class="my-4" />
     <p><b>Similar documents:</b></p>
