@@ -29,7 +29,8 @@ from searchapp.solr_call import solr_search_website_sorted, solr_search_website_
 from scheduler.extract import extract_terms, extract_reporting_obligations
 
 logger = logging.getLogger(__name__)
-workpath = os.path.dirname(os.path.abspath(__file__))
+workpath = os.path.dirname(os.path.abspath(__file__
+                                           ))
 
 CONST_UPDATE_WITH_COMMIT = "/update?commit=true"
 CONST_EXPORT = '/export/'
@@ -37,7 +38,7 @@ QUERY_ID_ASC = 'id asc'
 QUERY_WEBSITE = "website:"
 
 
-@shared_task()
+@shared_task
 def delete_deprecated_acceptance_states():
     acceptance_states = AcceptanceState.objects.all().order_by("document").distinct(
         "document_id").annotate(text_len=Length('document__title')).filter(text_len__gt=1).values()
