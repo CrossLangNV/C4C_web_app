@@ -42,9 +42,9 @@ import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/concept
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
   API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
-  API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
+  // API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
   // TODO: Change this! Fix Environment bug
-  // API_RO_URL = "http://localhost:8000/obligations/api";
+  API_RO_URL = "http://localhost:8000/obligations/api";
   ROS_MOCKED = rosData.ros.map(
     (ro, index) =>
       new ReportingObligation(
