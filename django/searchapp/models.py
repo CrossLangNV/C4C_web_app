@@ -55,7 +55,6 @@ class Document(SafeDeleteModel):
 
     acceptance_state_max_probability = models.FloatField(null=True)
     unvalidated = models.BooleanField(default=True, editable=False)
-    formex_available = models.BooleanField(default=False, editable=False)
 
     def __str__(self):
         return self.title
