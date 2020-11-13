@@ -1,4 +1,3 @@
-
 import time
 import base64
 import json
@@ -14,6 +13,7 @@ from cassis.typesystem import load_typesystem
 from celery import shared_task, chain
 from glossary.models import Concept, ConceptOccurs, ConceptDefined
 from searchapp.models import Website, Document
+from obligations.models import ReportingObligation
 
 logger = logging.getLogger(__name__)
 
@@ -195,8 +195,8 @@ def extract_reporting_obligations(website_id):
     rows_per_page = 250
     cursor_mark = "*"
 
-    # q = QUERY_WEBSITE + website_name + " AND acceptance_state:accepted"
-    q = QUERY_WEBSITE + website_name
+    q = QUERY_WEBSITE + website_name + " AND acceptance_state:accepted"
+    # q = QUERY_WEBSITE + website_name
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -265,18 +265,12 @@ def extract_reporting_obligations(website_id):
         # This is the CAS with reporting obligations wrapped in VBTT's
         logger.info("cas_html2text: %s", cas_html2text.to_xmi())
 
-        f = open("cas_log_"+str(count_for_logs)+".txt", "w")
-        f.write(cas_html2text.to_xmi())
-        f.close()
-        logger.info("Wrote cas logs to file.")
-        count_for_logs = count_for_logs + 1
-
         # Read out the VBTT annotations
         for vbtt in cas.get_view(sofa_id_html2text).select(VALUE_BETWEEN_TAG_TYPE_CLASS):
             if vbtt.tagName == "p":
-                #logger.info("VBTT: %s", vbtt)
-                #logger.info("VBTT: %s", vbtt.get_covered_text())
-                pass
+                ReportingObligation.objects.update_or_create(
+                    name=vbtt.get_covered_text(), definition=vbtt.get_covered_text())
+                logger.info("Saved Reporting Obligation to Django: %s", vbtt.get_covered_text())
 
 
 @shared_task
