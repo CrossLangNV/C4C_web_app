@@ -315,18 +315,6 @@ export class ApiService {
       .pipe(map((item) => this.documentAdapter.adapt(item)));
   }
 
-  public getFormexUrls(celex: string): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_URL}/formex/urls/${celex}`
-    );
-  }
-
-  public getFormexAct(celex: string): Observable<string> {
-    return this.http.get<string>(
-      `${this.API_URL}/formex/act/${celex}`
-    );
-  }
-
   public getAttachment(id: string): Observable<Attachment> {
     return this.http
       .get<Attachment>(`${this.API_URL}/attachment/${id}`)

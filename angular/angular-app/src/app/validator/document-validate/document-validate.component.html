@@ -106,15 +106,6 @@
             HTML
           </button>
         </td>
-        <td *ngIf="formexAct.length > 0">
-          <button
-            type="button"
-            class="btn btn-primary"
-            (click)="openFormexModal(formexModal)"
-          >
-            FORMEX
-          </button>
-        </td>
       </tr>
     </table>
   </div>
@@ -189,51 +180,6 @@
   </div>
 
   <div [innerHTML]="document.content" class="modal-body"></div>
-  <div class="modal-footer">
-    <a *ngIf="document.file_url" (click)="goToLink(document.file_url)" class="text-primary">
-      <button type="button" class="btn btn-primary">
-        See original
-      </button>
-    </a>
-    <a *ngIf="!document.file_url && document.celex" (click)="goToLink('https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:' + document.celex + '&from=EN')" class="text-primary">
-      <button type="button" class="btn btn-primary">
-        See original
-      </button>
-    </a>
-    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">
-      Close
-    </button>
-  </div>
-</ng-template>
-
-<!-- Formex modal -->
-<ng-template #formexModal let-modal>
-
-  <div class="modal-header">
-    <h5 class="modal-title" id="editProfileLabel">
-      Attachment: {{ document.file_url }}
-    </h5>
-    <button
-      type="button"
-      class="close"
-      (click)="modal.dismiss()"
-      aria-label="Close"
-    >
-      <span aria-hidden="true">&times;</span>
-    </button>
-  </div>
-
-  <div class="modal-body">
-    <p style="display:none"><textarea id="formex-input">{{ formexAct }}</textarea></p>
-    <h2 style="display:none"><div id="domview">DOM view</div> (<a href="#" onclick="toggleVisibility(this); return false;">hide</a>):</h2>
-    <ul id="dom"></ul>
-    <h2 style="display:none"><div id="link">Rendered view</div>: (<a href="#" onclick="toggleVisibility(this); return false;">hide</a>):</h2>
-    <p style="display:none"><iframe src="blank.html"></iframe></p> <!-- data:, -->
-    <h2 style="display:none">innerHTML view: (<a href="#" onclick="toggleVisibility(this); return false;">show</a>):</h2>
-    <pre style="display:none">&lt;!DOCTYPE HTML>&lt;html><samp></samp>&lt;/html></pre>
-    <h2 style="display:none">Log: (<a href="#" onclick="toggleVisibility(this); return false;">hide</a>):</h2>
-    <pre id="log" style="display:none">Script not loaded.</pre>
-  </div>
   <div class="modal-footer">
     <a *ngIf="document.file_url" (click)="goToLink(document.file_url)" class="text-primary">
       <button type="button" class="btn btn-primary">
