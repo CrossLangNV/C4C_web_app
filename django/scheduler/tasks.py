@@ -26,12 +26,11 @@ from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
 
-from scheduler.extract import extract_terms
-
-from SPARQLWrapper import SPARQLWrapper, JSON
+from scheduler.extract import extract_terms, extract_reporting_obligations
 
 logger = logging.getLogger(__name__)
-workpath = os.path.dirname(os.path.abspath(__file__))
+workpath = os.path.dirname(os.path.abspath(__file__
+                                           ))
 
 CONST_UPDATE_WITH_COMMIT = "/update?commit=true"
 CONST_EXPORT = '/export/'
@@ -39,7 +38,7 @@ QUERY_ID_ASC = 'id asc'
 QUERY_WEBSITE = "website:"
 
 
-@shared_task()
+@shared_task
 def delete_deprecated_acceptance_states():
     acceptance_states = AcceptanceState.objects.all().order_by("document").distinct(
         "document_id").annotate(text_len=Length('document__title')).filter(text_len__gt=1).values()
@@ -214,26 +213,6 @@ def get_stats_for_html_size(website_id):
 
     logger.info("[Document stats]: Documents over 500k lines: %s", size_1)
     logger.info("[Document stats]: Documents over 1M lines: %s", size_2)
-
-
-@shared_task()
-def sync_eurovoc_terms(website_id):
-    website = Website.objects.get(pk=website_id)
-    website_name = website.name.lower()
-
-    url = "http://192.168.105.173:3030/eurovoc"
-
-    sparql = SPARQLWrapper(url)
-    sparql.setQuery("""
-        SELECT ?subject ?predicate ?object
-        WHERE {
-           ?subject ?predicate ?object
-        }
-        LIMIT 25
-    """)
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
-    logger.info(results)
 
 
 @shared_task
