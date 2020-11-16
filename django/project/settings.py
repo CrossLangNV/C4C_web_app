@@ -60,7 +60,6 @@ INSTALLED_APPS = [
     'health_check.storage',
     'health_check.contrib.celery',
     'health_check.contrib.psutil',
-    'safedelete',
 ]
 
 MIDDLEWARE = [
