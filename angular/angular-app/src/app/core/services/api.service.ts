@@ -42,7 +42,8 @@ import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/concept
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
   API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
-  //API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
+  // API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
+  // TODO: Change this! Fix Environment bug
   API_RO_URL = "https://django.staging.dgfisma.crosslang.com/obligations/api";
   ROS_MOCKED = rosData.ros.map(
     (ro, index) =>
@@ -524,6 +525,7 @@ export class ApiService {
   }
 
   fetchReporters(): Observable<string[]> {
+    console.log(`Reporters API: ${this.API_RO_URL}/ros/reporters`)
     return this.http.get<string[]>(
       `${this.API_RO_URL}/ros/reporters`
     );

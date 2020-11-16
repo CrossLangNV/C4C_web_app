@@ -1,4 +1,3 @@
-
 import time
 import base64
 import json
@@ -14,6 +13,7 @@ from cassis.typesystem import load_typesystem
 from celery import shared_task, chain
 from glossary.models import Concept, ConceptOccurs, ConceptDefined
 from searchapp.models import Website, Document
+from obligations.models import ReportingObligation
 
 logger = logging.getLogger(__name__)
 
@@ -196,6 +196,7 @@ def extract_reporting_obligations(website_id):
     cursor_mark = "*"
 
     q = QUERY_WEBSITE + website_name + " AND acceptance_state:accepted"
+    # q = QUERY_WEBSITE + website_name
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -206,6 +207,7 @@ def extract_reporting_obligations(website_id):
     # Load typesystem
     ts = fetch_typesystem()
 
+    count_for_logs = 1
     for document in documents:
         logger.info("Started RO extraction for document id: %s",
                     document['id'])
@@ -246,7 +248,7 @@ def extract_reporting_obligations(website_id):
         # Create new cas with sofa from RO API
         ro_cas = base64.b64decode(json.loads(ro_request.content)[
                                   'cas_content']).decode('utf-8')
-        logger.info("ro_cas: %s", ro_cas)
+        #logger.info("ro_cas: %s", ro_cas)
 
         cas = load_cas_from_xmi(ro_cas, typesystem=ts)
         sofa_reporting_obligations = cas.get_view(
@@ -259,15 +261,16 @@ def extract_reporting_obligations(website_id):
         cas_html2text = load_cas_from_xmi(
             r.content.decode("utf-8"), typesystem=ts)
 
+
+        # This is the CAS with reporting obligations wrapped in VBTT's
         logger.info("cas_html2text: %s", cas_html2text.to_xmi())
 
         # Read out the VBTT annotations
         for vbtt in cas.get_view(sofa_id_html2text).select(VALUE_BETWEEN_TAG_TYPE_CLASS):
             if vbtt.tagName == "p":
-                logger.info("VBTT: %s", vbtt)
-                logger.info("VBTT: %s", vbtt.get_covered_text())
-        # TODO Remove break statement
-        break
+                ReportingObligation.objects.update_or_create(
+                    name=vbtt.get_covered_text(), definition=vbtt.get_covered_text())
+                logger.info("Saved Reporting Obligation to Django: %s", vbtt.get_covered_text())
 
 
 @shared_task
