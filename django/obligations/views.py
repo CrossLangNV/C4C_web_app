@@ -8,13 +8,46 @@ from rest_framework.views import APIView
 import logging as logger
 
 from .rdf_call import rdf_get_verbs, rdf_get_reporters, rdf_get_reports, rdf_get_regulatory_body, rdf_get_propmod,\
-    rdf_get_entity, rdf_get_frequency, rdf_get_available_entities, rdf_get_predicate, rdf_get_all_reporting_obligations
+    rdf_get_entity, rdf_get_frequency, rdf_get_available_entities, rdf_get_predicate, \
+    rdf_get_all_reporting_obligations, rdf_query_predicate_single, rdf_query_predicate_multiple
 
 
 class SmallResultsSetPagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = 'page_size'
     max_page_size = 1000
+
+# For single RDF queries
+class ReportingObligationQuerySingleAPIView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, format=None):
+        logger.info("body: %s", request.data)
+
+        predicate = request.data['predicate']
+        query = request.data['query']
+
+        result = rdf_query_predicate_single(predicate, query)
+        logger.info(result)
+        return Response(result)
+
+
+# For multiple RDF queries
+class ReportingObligationQueryMultipleAPIView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, format=None):
+        logger.info("body: %s", request.data)
+
+        filter_list = request.data['filters']
+
+        filter_list_tuple = [(f"http://dgfisma.com/reporting_obligation#{d['pred']}", d['value']) for d in filter_list]
+        logger.info(filter_list_tuple)
+
+        result = rdf_query_predicate_multiple(filter_list_tuple)
+
+        logger.info(result)
+        return Response(result)
 
 
 class ReportingObligationListAPIView(ListCreateAPIView):

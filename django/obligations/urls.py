@@ -58,4 +58,8 @@ urlpatterns = [
 
     # Replace the other one later
     path('api/rdf_ros', views.ReportingObligationsRDFListAPIView.as_view(), name='ro_rdf_api_list'),
+
+    # Query RDF
+    path('api/ros/query/single', views.ReportingObligationQuerySingleAPIView.as_view(), name='ro_rdf_api_query_single'),
+    path('api/ros/query', views.ReportingObligationQueryMultipleAPIView.as_view(), name='ro_rdf_api_query_multiple'),
 ]

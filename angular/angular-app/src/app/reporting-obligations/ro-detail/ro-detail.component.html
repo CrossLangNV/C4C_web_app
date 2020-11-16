@@ -1,8 +1,7 @@
 <div *ngIf="ro">
   <div class="jumbotron">
-    <h3 class="mb-4">{{ ro.name }}</h3>
-    <p>Reporting Obligation: {{ ro.obligation }}</p>
-    <p>Linked term: {{ apiService.getConcept( ro.concept)  }}</p>
+    <h3 class="mb-4">{{ ro.definition }}</h3>
+    <p>Reporting Obligation: {{ ro.definition }}</p>
     <div>
       <h4 class="my-2">Occurs in</h4>
       <table class="table table-striped table-bordered table-hover">
