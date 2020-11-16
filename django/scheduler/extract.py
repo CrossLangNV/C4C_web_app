@@ -244,32 +244,33 @@ def extract_reporting_obligations(website_id):
         ro_request = get_reporting_obligations(res['cas_content'])
 
         # Create new cas with sofa from RO API
-        ro_cas = base64.b64decode(json.loads(ro_request.content)[
-                                  'cas_content']).decode('utf-8')
-        #logger.info("ro_cas: %s", ro_cas)
+        if ro_request.status_code == 200:
+            ro_cas = base64.b64decode(json.loads(ro_request.content)[
+                                      'cas_content']).decode('utf-8')
+            #logger.info("ro_cas: %s", ro_cas)
 
-        cas = load_cas_from_xmi(ro_cas, typesystem=ts)
-        sofa_reporting_obligations = cas.get_view(
-            "ReportingObligationsView").sofa_string
-        logger.info("sofa_reporting_obligations: %s",
-                    sofa_reporting_obligations)
+            cas = load_cas_from_xmi(ro_cas, typesystem=ts)
+            sofa_reporting_obligations = cas.get_view(
+                "ReportingObligationsView").sofa_string
+            logger.info("sofa_reporting_obligations: %s",
+                        sofa_reporting_obligations)
 
-        # Now send the CAS to UIMA Html2Text for the VBTT annotations (paragraph_request)
-        r = get_html2text_cas(sofa_reporting_obligations)
-        cas_html2text = load_cas_from_xmi(
-            r.content.decode("utf-8"), typesystem=ts)
+            # Now send the CAS to UIMA Html2Text for the VBTT annotations (paragraph_request)
+            r = get_html2text_cas(sofa_reporting_obligations)
+            cas_html2text = load_cas_from_xmi(
+                r.content.decode("utf-8"), typesystem=ts)
 
 
-        # This is the CAS with reporting obligations wrapped in VBTT's
-        logger.info("cas_html2text: %s", cas_html2text.to_xmi())
+            # This is the CAS with reporting obligations wrapped in VBTT's
+            logger.info("cas_html2text: %s", cas_html2text.to_xmi())
 
-        # Read out the VBTT annotations
-        for vbtt in cas_html2text.get_view(sofa_id_html2text).select(VALUE_BETWEEN_TAG_TYPE_CLASS):
-            if vbtt.tagName == "p":
+            # Read out the VBTT annotations
+            for vbtt in cas_html2text.get_view(sofa_id_html2text).select(VALUE_BETWEEN_TAG_TYPE_CLASS):
+                if vbtt.tagName == "p":
 
-                ReportingObligation.objects.update_or_create(
-                    name=vbtt.get_covered_text(), definition=vbtt.get_covered_text())
-                logger.info("Saved Reporting Obligation to Django: %s", vbtt.get_covered_text())
+                    ReportingObligation.objects.update_or_create(
+                        name=vbtt.get_covered_text(), definition=vbtt.get_covered_text())
+                    logger.info("Saved Reporting Obligation to Django: %s", vbtt.get_covered_text())
 
 
 
