@@ -196,7 +196,6 @@ def extract_reporting_obligations(website_id):
     cursor_mark = "*"
 
     q = QUERY_WEBSITE + website_name + " AND acceptance_state:accepted"
-    # q = QUERY_WEBSITE + website_name
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -207,7 +206,6 @@ def extract_reporting_obligations(website_id):
     # Load typesystem
     ts = fetch_typesystem()
 
-    count_for_logs = 1
     for document in documents:
         logger.info("Started RO extraction for document id: %s",
                     document['id'])
@@ -266,11 +264,14 @@ def extract_reporting_obligations(website_id):
         logger.info("cas_html2text: %s", cas_html2text.to_xmi())
 
         # Read out the VBTT annotations
-        for vbtt in cas.get_view(sofa_id_html2text).select(VALUE_BETWEEN_TAG_TYPE_CLASS):
+        for vbtt in cas_html2text.get_view(sofa_id_html2text).select(VALUE_BETWEEN_TAG_TYPE_CLASS):
             if vbtt.tagName == "p":
+
                 ReportingObligation.objects.update_or_create(
                     name=vbtt.get_covered_text(), definition=vbtt.get_covered_text())
                 logger.info("Saved Reporting Obligation to Django: %s", vbtt.get_covered_text())
+
+
 
 
 @shared_task

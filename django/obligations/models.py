@@ -5,7 +5,7 @@ from django.utils import timezone
 # Create your models here.
 
 class ReportingObligation(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.TextField()
     definition = models.TextField()
 
     created_at = models.DateTimeField(default=timezone.now)

@@ -5,8 +5,6 @@ import pysolr
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from safedelete.models import SOFT_DELETE_CASCADE
-from safedelete.models import SafeDeleteModel
 
 from searchapp.solr_call import solr_update
 
@@ -20,8 +18,7 @@ class Website(models.Model):
         return self.name
 
 
-class Document(SafeDeleteModel):
-    _safedelete_policy = SOFT_DELETE_CASCADE
+class Document(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     celex = models.CharField(max_length=20, default="", blank=True)
