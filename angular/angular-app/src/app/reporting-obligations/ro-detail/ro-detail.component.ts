@@ -89,7 +89,7 @@ export class RoDetailComponent implements OnInit {
       .searchSolrDocuments(
         this.occursInPage,
         this.occursInPageSize,
-        this.ro.name,
+        this.ro.definition,
         [],
         this.occursInSortBy,
         this.occursInSortDirection

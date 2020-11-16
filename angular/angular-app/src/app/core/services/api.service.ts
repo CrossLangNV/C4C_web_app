@@ -44,19 +44,8 @@ export class ApiService {
   API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
   // API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
   // TODO: Change this! Fix Environment bug
-  API_RO_URL = "https://django.staging.dgfisma.crosslang.com/obligations/api";
-  ROS_MOCKED = rosData.ros.map(
-    (ro, index) =>
-      new ReportingObligation(
-        index.toString(),
-        ro.name,
-        ro.obligation,
-        [],
-        [],
-        [],
-        ''
-      )
-  );
+  API_RO_URL = 'https://django.staging.dgfisma.crosslang.com/obligations/api';
+  // API_RO_URL = "http://localhost:8000/obligations/api";
 
   messageSource: Subject<string>;
 
@@ -501,27 +490,13 @@ export class ApiService {
     return this.http.get<RoResults>(
       `${this.API_RO_URL}/ros${pageQuery}`
     );
-    // return of(
-    //   new RoResults(
-    //     this.ROS_MOCKED.length,
-    //     this.ROS_MOCKED.length,
-    //     this.ROS_MOCKED.length,
-    //     0,
-    //     0,
-    //     0,
-    //     0,
-    //     '1',
-    //     '-1',
-    //     this.ROS_MOCKED.slice((page - 1) * 5, page * 5)
-    //   )
-    // );
+
   }
 
   public getRo(id: string): Observable<ReportingObligation> {
     return this.http
       .get<ReportingObligation>(`${this.API_RO_URL}/ro/${id}`)
       .pipe(map((item) => this.roAdapter.adapt(item)));
-    //return of(this.ROS_MOCKED[Number(id)]);
   }
 
   fetchReporters(): Observable<string[]> {

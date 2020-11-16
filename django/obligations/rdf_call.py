@@ -32,13 +32,13 @@ def rdf_get_predicate(predicate):
 def rdf_get_all_reporting_obligations():
     return ro_provider.get_all_ro_str()
 
-
+# Single query
 def rdf_query_predicate_single(predicate, query):
     return ro_provider.get_filter_single(f"http://dgfisma.com/reporting_obligation#{predicate}", query)
 
 
 # Example: rdf_query_predicate([("http://dgfisma.com/reporting_obligation#hasReporter", "by the ECB")])
-def rdf_query_predicate(list_pred_value: List[Tuple[str]]):
+def rdf_query_predicate_multiple(list_pred_value: List[Tuple[str]]):
     return ro_provider.get_filter_multiple(list_pred_value)
 
 
