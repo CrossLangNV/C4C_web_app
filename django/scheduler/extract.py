@@ -24,6 +24,7 @@ TERM_EXTRACT_URL = os.environ['GLOSSARY_TERM_EXTRACT_URL']
 DEFINITIONS_EXTRACT_URL = os.environ['GLOSSARY_DEFINITIONS_EXTRACT_URL']
 PARAGRAPH_DETECT_URL = os.environ['GLOSSARY_PARAGRAPH_DETECT_URL']
 RO_EXTRACT_URL = os.environ['RO_EXTRACT_URL']
+RDF_API = os.environ['RDF_API']
 
 SENTENCE_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
 TFIDF_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"
@@ -60,6 +61,23 @@ def get_html2text_cas(content_html):
     end = time.time()
     logger.info(
         "UIMA Html2Text took %s seconds to succeed.", end - start)
+    return r
+
+
+def save_to_rdf(cas):
+    encoded_cas = base64.b64encode(bytes(cas.to_xmi(), 'utf-8')).decode()
+
+    json_content = {
+        "content": encoded_cas
+    }
+
+    logger.info("base64 cas (ROs): %s", encoded_cas)
+
+    start = time.time()
+    r = requests.post(RDF_API, json=json_content)
+    end = time.time()
+    logger.info('Sent request to %s. Status code: %s Took %s seconds', RDF_API,
+                r.status_code, end-start)
     return r
 
 
@@ -129,10 +147,12 @@ def get_reporting_obligations(input_cas_encoded):
         "content_type": "html",
     }
 
+    start = time.time()
     ro_request = requests.post(RO_EXTRACT_URL,
                                json=input_for_reporting_obligations)
-    logger.info("Sent request to RO Extraction. Status code: %s",
-                ro_request.status_code)
+    end = time.time()
+    logger.info("Sent request to RO Extraction. Status code: %s Took % seconds",
+                ro_request.status_code, end-start)
 
     return ro_request
 
@@ -252,8 +272,7 @@ def extract_reporting_obligations(website_id):
             cas = load_cas_from_xmi(ro_cas, typesystem=ts)
             sofa_reporting_obligations = cas.get_view(
                 "ReportingObligationsView").sofa_string
-            logger.info("sofa_reporting_obligations: %s",
-                        sofa_reporting_obligations)
+            # logger.info("sofa_reporting_obligations: %s",sofa_reporting_obligations)
 
             # Now send the CAS to UIMA Html2Text for the VBTT annotations (paragraph_request)
             r = get_html2text_cas(sofa_reporting_obligations)
@@ -264,15 +283,31 @@ def extract_reporting_obligations(website_id):
             # This is the CAS with reporting obligations wrapped in VBTT's
             logger.info("cas_html2text: %s", cas_html2text.to_xmi())
 
-            # Read out the VBTT annotations
+            # Save RO's to Django
             for vbtt in cas_html2text.get_view(sofa_id_html2text).select(VALUE_BETWEEN_TAG_TYPE_CLASS):
                 if vbtt.tagName == "p":
-
+                    # Save to DJango
                     ReportingObligation.objects.update_or_create(
                         name=vbtt.get_covered_text(), definition=vbtt.get_covered_text())
-                    logger.info("Saved Reporting Obligation to Django: %s", vbtt.get_covered_text())
+                    logger.info("[CAS] Saved Reporting Obligation to Django: %s", vbtt.get_covered_text())
 
+            # Send CAS to Laurens API
 
+            r = save_to_rdf(cas_html2text)
+            if r.status_code == 200:
+                rdf_json = r.json()
+
+                logger.info("rdf_json: %s", rdf_json)
+
+                for item in rdf_json['children']:
+                    rdf_value = item['value']
+                    rdf_id = item['id']
+
+                    ReportingObligation.objects.update_or_create(
+                        name=rdf_value, definition=rdf_value, defaults={'rdf_id': rdf_id})
+                    logger.info("[RDF] Saved Reporting Obligation to Django: %s", rdf_value)
+            else:
+                logger.info("[RDF]: Failed to save CAS to RDF. Response code: %s", r.status_code)
 
 
 @shared_task
