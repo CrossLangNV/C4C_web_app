@@ -5,6 +5,7 @@ from django.utils import timezone
 # Create your models here.
 
 class ReportingObligation(models.Model):
+    rdf_id = models.CharField(max_length=200, null=True)
     name = models.TextField()
     definition = models.TextField()
 
