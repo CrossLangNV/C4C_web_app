@@ -245,6 +245,10 @@ def extract_reporting_obligations(website_id):
                         document['id'], len(document['content'][0]))
             is_pdf = True
 
+            # TODO Remove this later when pdf works
+            logger.warning("PDF CURRENTLY NOT SUPPORTED, SKIPPED.")
+            continue
+
         if is_html:
             r = get_html2text_cas(document['content_html'][0])
 
@@ -252,6 +256,7 @@ def extract_reporting_obligations(website_id):
         if is_pdf:
             r = get_cas_from_pdf(document['content'][0])
             paragraph_request = r
+
 
         encoded_b64 = get_encoded_content_from_cas(r)
 
