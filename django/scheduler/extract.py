@@ -24,7 +24,7 @@ TERM_EXTRACT_URL = os.environ['GLOSSARY_TERM_EXTRACT_URL']
 DEFINITIONS_EXTRACT_URL = os.environ['GLOSSARY_DEFINITIONS_EXTRACT_URL']
 PARAGRAPH_DETECT_URL = os.environ['GLOSSARY_PARAGRAPH_DETECT_URL']
 RO_EXTRACT_URL = os.environ['RO_EXTRACT_URL']
-RDF_API = os.environ['RDF_FUSEKI_URL']
+CAS_TO_RDF_API = os.environ['CAS_TO_RDF_API']
 
 SENTENCE_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
 TFIDF_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"
@@ -286,7 +286,7 @@ def extract_reporting_obligations(website_id):
             # Save RO's to Django
             for vbtt in cas_html2text.get_view(sofa_id_html2text).select(VALUE_BETWEEN_TAG_TYPE_CLASS):
                 if vbtt.tagName == "p":
-                    # Save to DJango
+                    # Save to Django
                     ReportingObligation.objects.update_or_create(
                         name=vbtt.get_covered_text(), definition=vbtt.get_covered_text())
                     logger.info("[CAS] Saved Reporting Obligation to Django: %s", vbtt.get_covered_text())
