@@ -74,9 +74,9 @@ def save_to_rdf(cas):
     logger.info("base64 cas (ROs): %s", encoded_cas)
 
     start = time.time()
-    r = requests.post(RDF_API, json=json_content)
+    r = requests.post(CAS_TO_RDF_API, json=json_content)
     end = time.time()
-    logger.info('Sent request to %s. Status code: %s Took %s seconds', RDF_API,
+    logger.info('Sent request to %s. Status code: %s Took %s seconds', CAS_TO_RDF_API,
                 r.status_code, end-start)
     return r
 
