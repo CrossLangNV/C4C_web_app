@@ -49,11 +49,9 @@ class ReportingObligationQueryMultipleAPIView(APIView):
         filter_list = request.data['filters']
 
         filter_list_tuple = [(d['pred'], d['value']) for d in filter_list]
-        logger.info(filter_list_tuple)
 
         result = rdf_query_predicate_multiple_id(filter_list_tuple)
 
-        logger.info(result)
         return Response(result)
 
 
@@ -109,16 +107,11 @@ class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
     ordering_fields = ['name']
 
     def post(self, request, format=None, *args, **kwargs):
-
         q = ReportingObligation.objects.all()
-
         keyword = request.GET.get('keyword', "")
-
         rdf_filters = request.data['rdfFilters']
-        logger.info("rdf_filters: %s", rdf_filters)
 
         results = rdf_query_predicate_multiple_id(rdf_filters.items())
-        logger.info("results: %s", results)
 
         if results:
             q = q.filter(rdf_id__in=results)
@@ -131,10 +124,6 @@ class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
             serializer = self.get_paginated_response(self.serializer_class(page, many=True).data)
         else:
             serializer = self.serializer_class(q, many=True)
-        return Response(serializer.data)
-
-
-
         return Response(serializer.data)
 
 
@@ -166,7 +155,6 @@ class ReportingObligationsRDFListAPIView(APIView):
 
     def get(self, request, format=None):
         result = rdf_get_all_reporting_obligations()
-        logger.info(result)
         return Response(result)
 
 
