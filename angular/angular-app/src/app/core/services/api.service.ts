@@ -35,6 +35,8 @@ import {
 import * as rosData from './ros.json';
 import {ConceptAcceptanceState, ConceptAcceptanceStateAdapter} from "../../shared/models/conceptAcceptanceState";
 import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/conceptComment";
+import {RdfEntity} from "../../shared/models/rdfEntity";
+import {RdfFilter} from "../../shared/models/rdfFilter";
 
 @Injectable({
   providedIn: 'root',
@@ -44,8 +46,8 @@ export class ApiService {
   API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
   // API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
   // TODO: Change this! Fix Environment bug
-  API_RO_URL = 'https://django.staging.dgfisma.crosslang.com/obligations/api';
-  // API_RO_URL = "http://localhost:8000/obligations/api";
+  // API_RO_URL = 'https://django.staging.dgfisma.crosslang.com/obligations/api';
+  API_RO_URL = 'http://localhost:8000/obligations/api';
 
   messageSource: Subject<string>;
 
@@ -62,7 +64,7 @@ export class ApiService {
     private conceptAdapter: ConceptAdapter,
     private conceptAcceptanceStateAdapter: ConceptAcceptanceStateAdapter,
     private conceptCommentAdapter: ConceptCommentAdapter,
-    private roAdapter: RoAdapter
+    private roAdapter: RoAdapter,
   ) {
     this.messageSource = new Subject<string>();
   }
@@ -493,14 +495,65 @@ export class ApiService {
 
   }
 
+  public getRdfRos(
+    page: number,
+    searchTerm: string,
+    filterTag: string,
+    filterType: string,
+    sortBy: string,
+    rdfFilters: Map<string, string>
+  ): Observable<RoResults> {
+    var pageQuery = page ? '?page=' + page : '';
+    // Convert Map to an array as Typescript Maps cannot be used directly in a http post
+    let rdfFiltersMap = {};
+    rdfFilters.forEach((val: string, key: string) => {
+      rdfFiltersMap[key] = val;
+    });
+    if (searchTerm) {
+      pageQuery = pageQuery + '&keyword=' + searchTerm;
+    }
+    if (filterType) {
+      pageQuery = pageQuery + '&filterType=' + filterType;
+    }
+    if (filterTag) {
+      pageQuery = pageQuery + '&tag=' + filterTag;
+    }
+    if (sortBy) {
+      pageQuery = pageQuery + '&ordering=' + sortBy;
+    }
+    return this.http.post<RoResults>(
+      `${this.API_RO_URL}/rdf_ros${pageQuery}`, {"rdfFilters": rdfFiltersMap}
+    );
+
+  }
+
   public getRo(id: string): Observable<ReportingObligation> {
     return this.http
       .get<ReportingObligation>(`${this.API_RO_URL}/ro/${id}`)
       .pipe(map((item) => this.roAdapter.adapt(item)));
   }
 
+  public fetchDropdowns(): Observable<RdfFilter[]> {
+    return this.http.get<RdfFilter[]>(
+      `${this.API_RO_URL}/ros/entity_map`
+    )
+  }
+
+  // TODO remove below, might not be needed anymore
+  public fetchAvailableFilters(): Observable<string[]> {
+    return this.http.get<string[]>(
+      `${this.API_RO_URL}/ros/rdfentities`
+    )
+  }
+
+  fetchFilterOptions(predicate: string): Observable<string[]> {
+    return this.http.post<string[]>(
+      `${this.API_RO_URL}/ros/predicate`, {'predicate':predicate}
+    );
+  }
+
+  // TODO Remove all functions below
   fetchReporters(): Observable<string[]> {
-    console.log(`Reporters API: ${this.API_RO_URL}/ros/reporters`)
     return this.http.get<string[]>(
       `${this.API_RO_URL}/ros/reporters`
     );
