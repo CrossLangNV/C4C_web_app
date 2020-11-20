@@ -4,32 +4,17 @@
       <div class="col">
         <div>
           <p>Query for Reporting Obligations</p>
-          <fa-icon (click)="resetFilters()" class="p-2" ngbTooltip="Reset filters" [icon]="resetIcon"></fa-icon>
+
           <ul>
-            <p-dropdown *ngFor="let filter of availableItems" [options]="filter.options"
-                        optionLabel="name" optionValue="code" [ngModel]="availableItemsQuery.get(item)" (ngModelChange)="onQuery(filter, $event)" [virtualScroll]="true" [showClear]="true" [filter]="true"></p-dropdown>
+<!--            [showClear]="true"-->
+            <p-dropdown *ngFor="let filter of availableItems" [options]="filter.options" class="a-dropdown"
+                        optionLabel="name" optionValue="code" [ngModel]="availableItemsQuery.get(item)" (ngModelChange)="onQuery(filter, $event)" [virtualScroll]="true" [filter]="true"></p-dropdown>
           </ul>
+<!--          <fa-icon (click)="resetFilters()" class="p-2" ngbTooltip="Reset filters" [icon]="resetIcon"></fa-icon>-->
 
-          <hr class="my-2" />
         </div>
 
-        <div class="d-flex justify-content-between p-0">
-          <div class="input-group input-group-sm m-1">
-            <div class="input-group-prepend">
-              <span class="input-group-text" id="inputGroup-sizing-sm"
-                >Search for..</span
-              >
-            </div>
-            <input
-              id="content"
-              type="search"
-              name="content"
-              class="form-control form-control-sm"
-              [(ngModel)]="keyword"
-              (ngModelChange)="onSearch($event)"
-            />
-          </div>
-        </div>
+
         <div class="row">
           <div class="col">
             <hr class="my-2" />

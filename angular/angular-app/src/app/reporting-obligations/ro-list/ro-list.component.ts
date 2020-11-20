@@ -168,9 +168,9 @@ export class RoListComponent implements OnInit {
       });
   }
 
-  onSearch(filter, keyword: string) {
+  /*onSearch(filter, keyword: string) {
     this.searchTermChanged.next(keyword);
-  }
+  }*/
 
   onQuery(filter, keyword) {
     if (keyword.code == "") {
@@ -244,6 +244,7 @@ export class RoListComponent implements OnInit {
   }
 
   resetFilters() {
-
+    this.availableItemsQuery.clear();
+    this.fetchRos();
   }
 }

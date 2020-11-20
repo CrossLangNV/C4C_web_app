@@ -62,21 +62,23 @@ class ReportingObligationEntityMapAPIView(APIView):
     def get(self, request, format=None):
 
         all_entities = rdf_get_available_entities()
+
         # rdf_get_predicate(predicate)
         arr = []
 
         for entity in all_entities:
 
-            # TODO: Replace this by a dictionary, this way custom names can be made
-            # str.rsplit('/', 0)[-1].rsplit('#', 0)[-1]
-            # entity_name = entity.replace("http://dgfisma.com/reporting_obligations/", "")
-            entity_name = rdf_get_name_of_entity(entity)
-            options = [{"name": entity_name, "code": ""}]
-            for option in rdf_get_predicate(entity):
-                options.append({"name": option, "code": option})
-            item = {"entity": entity, "options": options}
-            arr.append(item)
+            # TODO: Currently not supporting "Entity" in RDF
+            if not "Entity" in rdf_get_name_of_entity(entity):
 
+                entity_name = rdf_get_name_of_entity(entity)
+                options = [{"name": entity_name, "code": ""}]
+                for option in sorted(rdf_get_predicate(entity)):
+                    options.append({"name": option, "code": option})
+                item = {"entity": entity, "options": options}
+                arr.append(item)
+                
+        arr.sort(key=lambda x: x['options'][0]['name'])
         return Response(arr)
 
 
