@@ -286,7 +286,7 @@ def extract_reporting_obligations(website_id):
 
 
             # This is the CAS with reporting obligations wrapped in VBTT's
-            logger.info("cas_html2text: %s", cas_html2text.to_xmi())
+            # logger.info("cas_html2text: %s", cas_html2text.to_xmi())
 
             # Save RO's to Django
             for vbtt in cas_html2text.get_view(sofa_id_html2text).select(VALUE_BETWEEN_TAG_TYPE_CLASS):

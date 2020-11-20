@@ -7,6 +7,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 import logging as logger
 
+from .rdf_call import rdf_get_available_entities, rdf_get_predicate, \
+    rdf_get_all_reporting_obligations, rdf_query_predicate_single, rdf_query_predicate_multiple, \
+    rdf_query_predicate_multiple_id, rdf_get_name_of_entity
+
+
 class PaginationHandlerMixin(object):
     @property
     def paginator(self):
@@ -27,11 +32,6 @@ class PaginationHandlerMixin(object):
     def get_paginated_response(self, data):
         assert self.paginator is not None
         return self.paginator.get_paginated_response(data)
-
-
-from .rdf_call import rdf_get_available_entities, rdf_get_predicate, \
-    rdf_get_all_reporting_obligations, rdf_query_predicate_single, rdf_query_predicate_multiple, \
-    rdf_query_predicate_multiple_id
 
 
 class SmallResultsSetPagination(PageNumberPagination):
@@ -69,8 +69,8 @@ class ReportingObligationEntityMapAPIView(APIView):
 
             # TODO: Replace this by a dictionary, this way custom names can be made
             # str.rsplit('/', 0)[-1].rsplit('#', 0)[-1]
-            entity_name = entity.replace("http://dgfisma.com/reporting_obligations/", "")
-
+            # entity_name = entity.replace("http://dgfisma.com/reporting_obligations/", "")
+            entity_name = rdf_get_name_of_entity(entity)
             options = [{"name": entity_name, "code": ""}]
             for option in rdf_get_predicate(entity):
                 options.append({"name": option, "code": option})
