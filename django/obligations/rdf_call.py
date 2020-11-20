@@ -18,32 +18,32 @@ ro_provider = SPARQLReportingObligationProvider(graph_wrapper)
 
 def rdf_get_name_of_entity(entity):
     entity_dict = {
-            "http://dgfisma.com/reporting_obligations/hasEntity": "Entity",
-            "http://dgfisma.com/reporting_obligations/hasPropExt": "Extent",
-            "http://dgfisma.com/reporting_obligations/hasReporter": "Reporter",
-            "http://dgfisma.com/reporting_obligations/hasRegulatoryBody": "Regulatory Body",
+            "http://dgfisma.com/reporting_obligations/hasPropAdv": "Adverbials",
             "http://dgfisma.com/reporting_obligations/hasPropCau": "Cause",
-            "http://dgfisma.com/reporting_obligations/hasPropMod": "Modal",
-            "http://dgfisma.com/reporting_obligations/hasPropPnc": "Purpose Not Cause",
-            "http://dgfisma.com/reporting_obligations/hasVerb": "Verb",
+            "http://dgfisma.com/reporting_obligations/hasPropCom": "Comitative",
             "http://dgfisma.com/reporting_obligations/hasDetails": "Details",
             "http://dgfisma.com/reporting_obligations/hasPropDir": "Directional",
-            "http://dgfisma.com/reporting_obligations/hasPropLoc": "Locative",
-            "http://dgfisma.com/reporting_obligations/hasPropAdv": "Adverbials",
-            "http://dgfisma.com/reporting_obligations/hasPropNeg": "Negation",
+            "http://dgfisma.com/reporting_obligations/hasPropDsp": "Direct Speech",
             "http://dgfisma.com/reporting_obligations/hasPropDis": "Discourse",
-            "http://dgfisma.com/reporting_obligations/hasReport": "Report",
-            "http://dgfisma.com/reporting_obligations/hasPropMnr": "Manner",
-            "http://dgfisma.com/reporting_obligations/hasPropTmp": "Temporal",
-            "http://dgfisma.com/reporting_obligations/hasPropCom": "Comitative",
+            "http://dgfisma.com/reporting_obligations/hasEntity": "Entity",
+            "http://dgfisma.com/reporting_obligations/hasPropExt": "Extent",
             "http://dgfisma.com/reporting_obligations/hasPropGol": "Goal",
             "http://dgfisma.com/reporting_obligations/hasPropLVB": "Light Verb",
-            "http://dgfisma.com/reporting_obligations/hasPropDsp": "Direct Speech",
+            "http://dgfisma.com/reporting_obligations/hasPropLoc": "Locative",
+            "http://dgfisma.com/reporting_obligations/hasPropMnr": "Manner",
+            "http://dgfisma.com/reporting_obligations/hasPropMod": "Modal",
+            "http://dgfisma.com/reporting_obligations/hasPropNeg": "Negation",
             "http://dgfisma.com/reporting_obligations/hasPropRec": "Reciprocals",
+            "http://dgfisma.com/reporting_obligations/hasReporter": "Reporter",
+            "http://dgfisma.com/reporting_obligations/hasPropPrp": "Purpose",
+            "http://dgfisma.com/reporting_obligations/hasPropPnc": "Purpose Not Cause",
+            "http://dgfisma.com/reporting_obligations/hasRegulatoryBody": "Regulatory Body",
+            "http://dgfisma.com/reporting_obligations/hasReport": "Report",
             "http://dgfisma.com/reporting_obligations/hasPropPrd": "Secondary Predication",
-            "http://dgfisma.com/reporting_obligations/hasPropPrp": "Purpose"
+            "http://dgfisma.com/reporting_obligations/hasPropTmp": "Temporal",
+            "http://dgfisma.com/reporting_obligations/hasVerb": "Verb"
     }
-    return entity_dict[entity]
+    return entity_dict.get(entity, entity)
 
 
 def rdf_get_available_entities():
