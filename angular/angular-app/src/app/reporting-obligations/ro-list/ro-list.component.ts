@@ -245,5 +245,6 @@ export class RoListComponent implements OnInit {
   resetFilters() {
     this.availableItems = [];
     this.fetchAvailableFilters();
+    this.fetchRos();
   }
 }
