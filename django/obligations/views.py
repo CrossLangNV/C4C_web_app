@@ -77,7 +77,7 @@ class ReportingObligationEntityMapAPIView(APIView):
                     options.append({"name": option, "code": option})
                 item = {"entity": entity, "options": options}
                 arr.append(item)
-                
+
         arr.sort(key=lambda x: x['options'][0]['name'])
         return Response(arr)
 
@@ -110,23 +110,23 @@ class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
 
     def post(self, request, format=None, *args, **kwargs):
         q = ReportingObligation.objects.all()
-        keyword = request.GET.get('keyword', "")
         rdf_filters = request.data['rdfFilters']
 
-        results = rdf_query_predicate_multiple_id(rdf_filters.items())
+        rdf_results = rdf_query_predicate_multiple_id(rdf_filters.items())
 
-        if results:
-            q = q.filter(rdf_id__in=results)
-
-        if keyword:
-            q = q.filter(name__icontains=keyword)
+        if rdf_results:
+            q = q.filter(rdf_id__in=rdf_results)
+        else:
+            q = ReportingObligation.objects.none()
 
         page = self.paginate_queryset(q)
         if page is not None:
             serializer = self.get_paginated_response(self.serializer_class(page, many=True).data)
         else:
             serializer = self.serializer_class(q, many=True)
+
         return Response(serializer.data)
+
 
 
 class ReportingObligationDetailAPIView(RetrieveUpdateDestroyAPIView):

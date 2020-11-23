@@ -119,6 +119,9 @@ export class RoListComponent implements OnInit {
       this.router.navigate(['/login']);
     }
 
+    // Fetch RDF for filters
+    this.fetchAvailableFilters();
+
     this.fetchRos();
     this.searchTermChanged
       .pipe(debounceTime(600), distinctUntilChanged())
@@ -127,11 +130,6 @@ export class RoListComponent implements OnInit {
         this.page = 1;
         this.fetchRos();
       });
-
-
-    // Fetch RDF for filters
-    this.fetchAvailableFilters();
-
   }
 
   fetchAvailableFilters() {

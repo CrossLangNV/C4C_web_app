@@ -8,7 +8,8 @@
           <ul>
 <!--            [showClear]="true"-->
             <p-dropdown *ngFor="let filter of availableItems" [options]="filter.options" class="a-dropdown"
-                        optionLabel="name" optionValue="code" [ngModel]="availableItemsQuery.get(item)" (ngModelChange)="onQuery(filter, $event)" [virtualScroll]="true" [filter]="true"></p-dropdown>
+                        optionLabel="name" optionValue="code" [ngModel]="availableItemsQuery.get(item)"
+                        (ngModelChange)="onQuery(filter, $event)" [virtualScroll]="true" [filter]="true"></p-dropdown>
           </ul>
 <!--          <fa-icon (click)="resetFilters()" class="p-2" ngbTooltip="Reset filters" [icon]="resetIcon"></fa-icon>-->
 
