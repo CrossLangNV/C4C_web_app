@@ -138,7 +138,6 @@ export class RoListComponent implements OnInit {
       .fetchDropdowns()
       .subscribe((results) => {
           this.availableItems = results
-
       })
   }
 
@@ -244,6 +243,7 @@ export class RoListComponent implements OnInit {
 
   resetFilters() {
     this.availableItems = [];
+    this.availableItemsQuery.clear();
     this.fetchAvailableFilters();
     this.fetchRos();
   }
