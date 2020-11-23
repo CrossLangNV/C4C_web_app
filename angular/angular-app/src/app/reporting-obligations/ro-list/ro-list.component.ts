@@ -6,7 +6,7 @@ import {
   Output,
   EventEmitter,
   ViewChildren,
-  QueryList,
+  QueryList, ViewChild,
 } from '@angular/core';
 import { ApiService } from 'src/app/core/services/api.service';
 import { ReportingObligation } from 'src/app/shared/models/ro';
@@ -30,6 +30,7 @@ import {SelectItem} from "primeng/api";
 import {logger} from "codelyzer/util/logger";
 import {RdfEntity} from "../../shared/models/rdfEntity";
 import {RdfFilter} from "../../shared/models/rdfFilter";
+import {Dropdown} from "primeng/dropdown";
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -242,7 +243,7 @@ export class RoListComponent implements OnInit {
   }
 
   resetFilters() {
-    this.availableItemsQuery.clear();
-    this.fetchRos();
+    this.availableItems = [];
+    this.fetchAvailableFilters();
   }
 }
