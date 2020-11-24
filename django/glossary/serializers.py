@@ -15,6 +15,9 @@ class AnnotationWorklogSerializer(serializers.ModelSerializer):
         model = AnnotationWorklog
         fields = '__all__'
 
+    def create(self, validated_data):
+        annotation_worklog = AnnotationWorklog.objects.create(**validated_data)
+        return annotation_worklog
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

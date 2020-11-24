@@ -64,5 +64,35 @@ urlpatterns = [
     path('api/worklog/<int:pk>', views.WorklogDetailAPIView.as_view(),
          name='worklog_detail_api'),
 
+     # Terms and Definitions Annotations API
+
+     # Occurence: API root
+     path('api/annotations/occurence/<str:document_id>', views.OccurenceRootAPIView.as_view(),
+         name='occurence_api_root'),
+
+     # Occurence: search
+     path('api/annotations/occurence/<str:document_id>/search', views.OccurenceSearchListAPIView.as_view(),
+         name='occurence_api_search'),
+
+     # Occurence: create
+     path('api/annotations/occurence/<str:document_id>/annotations', views.OccurenceCreateListAPIView.as_view(),
+         name='occurence_api_create'),
+
+     # Occurence: delete
+     path('api/annotations/occurence/<str:document_id>/annotations/<str:annotation_id>', views.OccurenceDeleteAPIView.as_view(),
+         name='occurence_api_delete'),
+
+     # Definition: API root
+     path('api/annotations/definition/<str:document_id>', views.OccurenceRootAPIView.as_view(),
+         name='occurence_api_root'),
+
+     # Definition: search
+     path('api/annotations/definition/<str:document_id>/search', views.OccurenceSearchListAPIView.as_view(),
+         name='occurence_api_search'),
+
+     # Definition: create
+     path('api/annotations/definition/<str:document_id>/annotations', views.OccurenceCreateListAPIView.as_view(),
+         name='occurence_api_create'),
+
 ]
 

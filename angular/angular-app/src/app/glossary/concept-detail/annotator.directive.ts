@@ -13,7 +13,7 @@ export class AnnotatorDirective {
 
   constructor(el: ElementRef) {
     this.callerElement = el;
-    this.documentId = +el.nativeElement.getAttribute("doc-id");
+    this.documentId = el.nativeElement.getAttribute("doc-id");
     this.annotationType = el.nativeElement.getAttribute("annotation-type");
   }
 
@@ -23,7 +23,7 @@ export class AnnotatorDirective {
       element: this.callerElement.nativeElement
     });
     app.include(annotator.storage.http, {
-      prefix: 'https://store.free.beeceptor.com/' + this.annotationType + "/" + this.documentId
+      prefix: 'http://localhost:8000/glossary/api/annotations/' + this.annotationType + "/" + this.documentId
     });
     app.start().then(function () {
       app.annotations.load();

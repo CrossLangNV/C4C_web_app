@@ -57,6 +57,8 @@ class ConceptDefined(ConceptOffsetBase):
 
 
 class AnnotationWorklog(models.Model):
+    # Each AnnotationWorklog will concern an occurence OR a definition. 
+    # So, one of the two fields below will always have null=True.
     concept_occurs = models.ForeignKey(ConceptOccurs, on_delete=models.CASCADE, null=True)
     concept_defined = models.ForeignKey(ConceptDefined, on_delete=models.CASCADE, null=True)
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
@@ -75,6 +77,11 @@ class AnnotationWorklog(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
+    quote = models.TextField(default="")
+    start = models.CharField(max_length=255, default="", blank=True, null=True)
+    startOffset = models.IntegerField(default=0)
+    end = models.CharField(max_length=255, default="", blank=True, null=True)
+    endOffset = models.IntegerField(default=0)
 
 class AcceptanceStateValue(models.TextChoices):
     UNVALIDATED = 'Unvalidated',

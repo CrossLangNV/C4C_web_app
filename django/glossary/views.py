@@ -14,6 +14,9 @@ from searchapp.solr_call import solr_search_paginated
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 from django.db.models import Q
 
+import status
+import datetime
+import json
 
 class SmallResultsSetPagination(PageNumberPagination):
     page_size = 5
@@ -156,3 +159,70 @@ class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
     def put(self, request, *args, **kwargs):
         request.data['user'] = request.user.id
         return self.update(request, *args, **kwargs)
+
+class OccurenceRootAPIView(APIView):
+    def get(self, request, document_id, format=None):
+        annotation_store_metadata = '{"message": "Annotator Store API","links": {}}'
+        return Response(annotation_store_metadata)
+
+class OccurenceSearchListAPIView(ListCreateAPIView):
+    serializer_class = AnnotationWorklogSerializer
+    queryset = AnnotationWorklog.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = AnnotationWorklog.objects.all()
+        serializer = AnnotationWorklogSerializer(queryset, many=True)
+        count = 0
+        rows_data = ''
+        for data_item in serializer.data:
+            if (str(data_item["document"]) == str(self.kwargs['document_id'])):
+                count += 1
+                if count != 1:
+                    rows_data += ','
+                rows_data += '{'
+                # double quotes are added around the id, because those are expected by annotator.js
+                rows_data += '"id":"' + str(data_item["id"]) + '",'
+                rows_data += '"quote":"' + str(data_item["quote"]) + '",'
+                rows_data += '"ranges":[{'
+                rows_data += '"start":"",'
+                rows_data += '"startOffset":' + str(data_item["startOffset"]) + ','
+                rows_data += '"end":"",'
+                rows_data += '"endOffset":' + str(data_item["endOffset"])
+                rows_data += '}],'
+                rows_data += '"text":""'
+                rows_data += '}'
+
+        response_string = '{"total":' + str(count) +',"rows":[' + rows_data + ']}'
+        print(response_string)
+        return Response(json.loads(response_string))
+
+class OccurenceCreateListAPIView(ListCreateAPIView):
+    serializer_class = AnnotationWorklogSerializer
+    queryset = AnnotationWorklog.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        # adjusting the data so that it can be processed by the serializer
+        adjusted_data = request.data
+        adjusted_data.update({'action': 'add'})
+        adjusted_data.update({'created_at': datetime.datetime.now()})
+        adjusted_data.update({'concept_occurs': None})
+        adjusted_data.update({'concept_defined': None})
+        adjusted_data.update({'document': str(self.kwargs['document_id'])})
+        adjusted_data.update({'user': None})
+        adjusted_data.update({'start': request.data['ranges'][0]['start']})
+        adjusted_data.update({'startOffset': request.data['ranges'][0]['startOffset']})
+        adjusted_data.update({'end': request.data['ranges'][0]['end']})
+        adjusted_data.update({'endOffset': request.data['ranges'][0]['endOffset']})
+        serializer = AnnotationWorklogSerializer(data=adjusted_data)
+        if serializer.is_valid():
+            annotation_worklog = serializer.save()
+            serializer = AnnotationWorklogSerializer(annotation_worklog)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class OccurenceDeleteAPIView(APIView):
+    def delete(self, request, document_id, annotation_id, format=None):
+        annotation = AnnotationWorklog.objects.get(id=annotation_id)
+        annotation.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
