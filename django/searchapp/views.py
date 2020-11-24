@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -22,7 +23,7 @@ from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
 from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt, \
-    solr_search_query_paginated_preanalyzed
+    solr_search_query_paginated_preanalyzed, solr_search
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -97,12 +98,27 @@ class DocumentListAPIView(ListCreateAPIView):
     ordering_fields = ['title', 'date', 'acceptance_state_max_probability']
 
     def get_queryset(self):
+        keyword = self.request.GET.get('keyword', "")
+        showonlyown = self.request.GET.get('showOnlyOwn', "")
+
+        if len(keyword) > 0:
+            solr_query = f"title:{keyword} OR content_html:{keyword} OR content:{keyword}"
+            solr_result = solr_search("documents", solr_query)
+            #logger.info("solr_result: %s", solr_result)
+
+            celex_list = []
+            for doc in solr_result:
+                celex_list.append(doc['celex'][0])
+
+            logger.info("celex_list: %s", celex_list)
+            logger.info("celex_list length: %s", len(celex_list))
+
+
+
         q = Document.objects.annotate(
             text_len=Length('title')).filter(text_len__gt=1)
-        keyword = self.request.GET.get('keyword', "")
         if keyword:
             q = q.filter(title__icontains=keyword)
-        showonlyown = self.request.GET.get('showOnlyOwn', "")
         if showonlyown == "true":
             email = self.request.GET.get('email', "")
             q = q.filter(Q(acceptance_states__user__email=email) & (Q(acceptance_states__value="Accepted") |
