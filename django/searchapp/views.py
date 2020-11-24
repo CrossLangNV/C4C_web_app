@@ -23,7 +23,7 @@ from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
 from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt, \
-    solr_search_query_paginated_preanalyzed, solr_search
+    solr_search_query_paginated_preanalyzed, solr_search_celex
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -103,7 +103,7 @@ class DocumentListAPIView(ListCreateAPIView):
 
         if len(keyword) > 0:
             solr_query = f"title:{keyword} OR content_html:{keyword} OR content:{keyword}"
-            solr_result = solr_search("documents", solr_query)
+            solr_result = solr_search_celex("documents", solr_query)
             #logger.info("solr_result: %s", solr_result)
 
             celex_list = []

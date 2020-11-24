@@ -27,6 +27,14 @@ def solr_search(core="", term=""):
     return search
 
 
+def solr_search_celex(core="", term=""):
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    search = get_results(client.search(term,
+                                                   **{'rows': ROW_LIMIT, 'hl': 'on',
+                                                        'fl': 'celex'}))
+    return search
+
+
 def solr_search_website_paginated(core="", q="", page_number=1, rows_per_page=10):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     # solr page starts at 0
