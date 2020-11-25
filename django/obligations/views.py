@@ -45,7 +45,7 @@ class SmallResultsSetPagination(PageNumberPagination):
 
 # For multiple RDF queries
 class ReportingObligationQueryMultipleAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
 
     def post(self, request, format=None):
@@ -60,6 +60,7 @@ class ReportingObligationQueryMultipleAPIView(APIView):
 
 # This one is used to fill the dropdowns in the UI
 class ReportingObligationEntityMapAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
 
     @method_decorator(cache_page(60 * 60 * 2))
@@ -88,7 +89,7 @@ class ReportingObligationEntityMapAPIView(APIView):
 
 
 class ReportingObligationListAPIView(ListCreateAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
     queryset = ReportingObligation.objects.all()
     serializer_class = ReportingObligationSerializer
@@ -106,7 +107,7 @@ class ReportingObligationListAPIView(ListCreateAPIView):
 
 # Query for RO+RDF ROS search
 class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
     queryset = ReportingObligation.objects.all()
     serializer_class = ReportingObligationSerializer
@@ -134,7 +135,7 @@ class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
 
 
 class ReportingObligationDetailAPIView(RetrieveUpdateDestroyAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     queryset = ReportingObligation.objects.all()
     serializer_class = ReportingObligationSerializer
 

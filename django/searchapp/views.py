@@ -267,7 +267,7 @@ class SolrDocument(APIView):
 
 
 class SolrDocumentSearch(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, search_term, format=None):
         result = solr_search_paginated(core="documents", term=search_term, page_number=request.GET.get('pageNumber', 1),
@@ -281,7 +281,7 @@ class SolrDocumentSearch(APIView):
 
 
 class SolrDocumentSearchQuery(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, search_term, format=None):
         result = solr_search_query_paginated(core="documents", term=search_term,
@@ -296,7 +296,7 @@ class SolrDocumentSearchQuery(APIView):
 
 
 class SolrDocumentsSearchQueryPreAnalyzed(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, format=None):
         result = solr_search_query_paginated_preanalyzed(core="documents", term=request.data['query'],
@@ -309,7 +309,7 @@ class SolrDocumentsSearchQueryPreAnalyzed(APIView):
 
 
 class SimilarDocumentsAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, id):
         similar_document_ids_with_coeff = solr_mlt('documents', str(id),
@@ -322,14 +322,14 @@ class SimilarDocumentsAPIView(APIView):
 
 
 class FormexUrlsAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, celex):
         return Response(get_formex_urls(celex))
 
 
 class FormexActAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, celex):
         formex_act = ''
