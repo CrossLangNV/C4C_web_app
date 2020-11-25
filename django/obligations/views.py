@@ -1,3 +1,6 @@
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie
 from obligations.models import ReportingObligation
 from obligations.serializers import ReportingObligationSerializer
 from rest_framework import permissions, filters
@@ -59,6 +62,8 @@ class ReportingObligationQueryMultipleAPIView(APIView):
 class ReportingObligationEntityMapAPIView(APIView):
     pagination_class = SmallResultsSetPagination
 
+    @method_decorator(cache_page(60 * 60 * 2))
+    @method_decorator(vary_on_cookie)
     def get(self, request, format=None):
 
         all_entities = rdf_get_available_entities()
@@ -126,7 +131,6 @@ class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
             serializer = self.serializer_class(q, many=True)
 
         return Response(serializer.data)
-
 
 
 class ReportingObligationDetailAPIView(RetrieveUpdateDestroyAPIView):
