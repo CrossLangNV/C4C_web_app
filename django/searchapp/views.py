@@ -108,7 +108,8 @@ class DocumentListAPIView(ListCreateAPIView):
 
             celex_list = []
             for doc in solr_result:
-                celex_list.append(doc['celex'][0])
+                if 'celex' in doc:
+                    celex_list.append(doc['celex'][0])
 
             logger.info("celex_list: %s", celex_list)
             logger.info("celex_list length: %s", len(celex_list))
