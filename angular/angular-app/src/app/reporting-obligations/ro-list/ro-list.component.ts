@@ -141,15 +141,6 @@ export class RoListComponent implements OnInit {
       })
   }
 
-  // SelectItem[]
-  fetchFilterOptions(predicate: string) {
-    this.service
-      .fetchFilterOptions(predicate)
-      .subscribe((results) => {
-        return results
-      })
-  }
-
   fetchRos() {
     this.service
       .getRdfRos(
@@ -176,7 +167,7 @@ export class RoListComponent implements OnInit {
     } else {
       this.availableItemsQuery.set(filter.entity, keyword.name)
     }
-    this.fetchRos()
+    this.filterResetPage();
   }
 
   loadPage(page: number) {

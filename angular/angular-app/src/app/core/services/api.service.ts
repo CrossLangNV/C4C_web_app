@@ -44,11 +44,7 @@ import {RdfFilter} from "../../shared/models/rdfFilter";
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
   API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
-  // API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
-  // TODO: Change this! Fix Environment bug
-  API_RO_URL = 'https://django.staging.dgfisma.crosslang.com/obligations/api';
-  // API_RO_URL = 'http://localhost:8000/obligations/api';
-
+  API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
   messageSource: Subject<string>;
 
   constructor(
@@ -537,61 +533,5 @@ export class ApiService {
     return this.http.get<RdfFilter[]>(
       `${this.API_RO_URL}/ros/entity_map`
     )
-  }
-
-  // TODO remove below, might not be needed anymore
-  public fetchAvailableFilters(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/rdfentities`
-    )
-  }
-
-  fetchFilterOptions(predicate: string): Observable<string[]> {
-    return this.http.post<string[]>(
-      `${this.API_RO_URL}/ros/predicate`, {'predicate':predicate}
-    );
-  }
-
-  // TODO Remove all functions below
-  fetchReporters(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/reporters`
-    );
-  }
-
-  fetchVerbs(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/verbs`
-    );
-  }
-
-  fetchReports(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/reports`
-    );
-  }
-
-  fetchRegulatoryBody(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/regulatorybody`
-    );
-  }
-
-  fetchPropMod(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/propmod`
-    );
-  }
-
-  fetchEntity(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/entity`
-    );
-  }
-
-  fetchFrequency(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/frequency`
-    );
   }
 }

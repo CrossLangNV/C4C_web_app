@@ -22,7 +22,7 @@ class SmallResultsSetPagination(PageNumberPagination):
 
 
 class ConceptListAPIView(ListCreateAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
     queryset = Concept.objects.all()
     serializer_class = ConceptSerializer
@@ -55,7 +55,7 @@ class ConceptListAPIView(ListCreateAPIView):
 
 
 class ConceptDetailAPIView(RetrieveUpdateDestroyAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     queryset = Concept.objects.all()
     serializer_class = ConceptSerializer
 
@@ -81,25 +81,25 @@ class ConceptDocumentsAPIView(APIView):
 
 
 class TagListAPIView(ListCreateAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
 
 
 class TagDetailAPIView(RetrieveUpdateDestroyAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
     
 
 class WorkLogAPIView(ListCreateAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = AnnotationWorklogSerializer
     queryset = AnnotationWorklog.objects.all()
 
 
 class WorklogDetailAPIView(RetrieveUpdateDestroyAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = AnnotationWorklogSerializer
     queryset = AnnotationWorklog.objects.all()
 
