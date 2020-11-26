@@ -27,6 +27,14 @@ def solr_search(core="", term=""):
     return search
 
 
+def solr_search_ids(core="", term=""):
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    search = get_results(client.search(term,
+                                                   **{'rows': ROW_LIMIT,
+                                                        'id': 'celex'}))
+    return search
+
+
 def solr_search_website_paginated(core="", q="", page_number=1, rows_per_page=10):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     # solr page starts at 0
@@ -239,19 +247,24 @@ def solr_mlt(core, id, mlt_field='title,content', number_candidates=5, threshold
                                                  'mlt.count': number_candidates,
                                                  'fl': 'id,website,' + mlt_field})
     # document to compare against
-    base_doc = search_result.docs[0]
-    base_tokens = base_doc['content'][0].split()
 
-    # list of similar documents with Jaccard coefficient
     similar_documents_with_coeff = []
-    for doc in search_result.raw_response['moreLikeThis'][id]['docs']:
-        candidate_tokens = doc['content'][0].split()
-        similarity = textdistance.jaccard(base_tokens, candidate_tokens)
-        if similarity > float(threshold):
-            similar_documents_with_coeff.append(
-                (doc['id'], doc['title'][0], doc['website'][0], similarity))
 
-    # sort descending on coefficient
-    similar_documents_with_coeff.sort(key=lambda x: x[-1], reverse=True)
+    if search_result:
+        base_doc = search_result.docs[0]
+
+        base_tokens = base_doc['content'][0].split()
+
+        # list of similar documents with Jaccard coefficient
+
+        for doc in search_result.raw_response['moreLikeThis'][id]['docs']:
+            candidate_tokens = doc['content'][0].split()
+            similarity = textdistance.jaccard(base_tokens, candidate_tokens)
+            if similarity > float(threshold):
+                similar_documents_with_coeff.append(
+                    (doc['id'], doc['title'][0], doc['website'][0], similarity))
+
+        # sort descending on coefficient
+        similar_documents_with_coeff.sort(key=lambda x: x[-1], reverse=True)
 
     return similar_documents_with_coeff

@@ -23,7 +23,7 @@ from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
 from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt, \
-    solr_search_query_paginated_preanalyzed, solr_search
+    solr_search_query_paginated_preanalyzed, solr_search_ids
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -36,8 +36,7 @@ class WebsiteListAPIView(ListCreateAPIView):
 
     def get_queryset(self):
         queryset = Website.objects.annotate(
-            total_documents=Count('documents', filter=Q(documents__deleted__isnull=True) &
-                                                      Q(documents__title__gt=''))
+            total_documents=Count('documents', filter=Q(documents__title__gt=''))
         )
         return queryset
 
@@ -49,8 +48,7 @@ class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         queryset = Website.objects.annotate(
-            total_documents=Count('documents', filter=Q(documents__deleted__isnull=True) &
-                                                      Q(documents__title__gt=''))
+            total_documents=Count('documents', filter= Q(documents__title__gt=''))
         )
         return queryset
 
@@ -101,24 +99,27 @@ class DocumentListAPIView(ListCreateAPIView):
         keyword = self.request.GET.get('keyword', "")
         showonlyown = self.request.GET.get('showOnlyOwn', "")
 
-        if len(keyword) > 0:
-            solr_query = f"title:{keyword} OR content_html:{keyword} OR content:{keyword}"
-            solr_result = solr_search("documents", solr_query)
-            #logger.info("solr_result: %s", solr_result)
-
-            celex_list = []
-            for doc in solr_result:
-                celex_list.append(doc['celex'][0])
-
-            logger.info("celex_list: %s", celex_list)
-            logger.info("celex_list length: %s", len(celex_list))
-
-
-
         q = Document.objects.annotate(
             text_len=Length('title')).filter(text_len__gt=1)
-        if keyword:
-            q = q.filter(title__icontains=keyword)
+
+        if len(keyword) > 0:
+            solr_query = f"title:\"{keyword}\" OR content_html:\"{keyword}\" OR content:\"{keyword}\""
+            solr_result = solr_search_ids("documents", solr_query)
+            logger.info("solr_result: %s", solr_result)
+
+            id_list = []
+            for doc in solr_result:
+                id_list.append(doc['id'])
+
+            logger.info("id_list: %s", id_list)
+            logger.info("id_list length: %s", len(id_list))
+
+            if id_list:
+                q = q.filter(id__in=id_list)
+            else:
+                if keyword:
+                    q = q.filter(title__icontains=keyword)
+
         if showonlyown == "true":
             email = self.request.GET.get('email', "")
             q = q.filter(Q(acceptance_states__user__email=email) & (Q(acceptance_states__value="Accepted") |
@@ -281,7 +282,7 @@ class SolrDocument(APIView):
 
 
 class SolrDocumentSearch(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, search_term, format=None):
         result = solr_search_paginated(core="documents", term=search_term, page_number=request.GET.get('pageNumber', 1),
@@ -295,7 +296,7 @@ class SolrDocumentSearch(APIView):
 
 
 class SolrDocumentSearchQuery(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, search_term, format=None):
         result = solr_search_query_paginated(core="documents", term=search_term,
@@ -310,7 +311,7 @@ class SolrDocumentSearchQuery(APIView):
 
 
 class SolrDocumentsSearchQueryPreAnalyzed(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, format=None):
         result = solr_search_query_paginated_preanalyzed(core="documents", term=request.data['query'],
@@ -323,7 +324,7 @@ class SolrDocumentsSearchQueryPreAnalyzed(APIView):
 
 
 class SimilarDocumentsAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, id):
         similar_document_ids_with_coeff = solr_mlt('documents', str(id),
@@ -336,14 +337,14 @@ class SimilarDocumentsAPIView(APIView):
 
 
 class FormexUrlsAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, celex):
         return Response(get_formex_urls(celex))
 
 
 class FormexActAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, celex):
         formex_act = ''

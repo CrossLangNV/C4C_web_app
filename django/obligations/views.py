@@ -1,3 +1,6 @@
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie
 from obligations.models import ReportingObligation
 from obligations.serializers import ReportingObligationSerializer
 from rest_framework import permissions, filters
@@ -42,7 +45,7 @@ class SmallResultsSetPagination(PageNumberPagination):
 
 # For multiple RDF queries
 class ReportingObligationQueryMultipleAPIView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
 
     def post(self, request, format=None):
@@ -57,8 +60,11 @@ class ReportingObligationQueryMultipleAPIView(APIView):
 
 # This one is used to fill the dropdowns in the UI
 class ReportingObligationEntityMapAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
 
+    @method_decorator(cache_page(60 * 60 * 2))
+    @method_decorator(vary_on_cookie)
     def get(self, request, format=None):
 
         all_entities = rdf_get_available_entities()
@@ -83,7 +89,7 @@ class ReportingObligationEntityMapAPIView(APIView):
 
 
 class ReportingObligationListAPIView(ListCreateAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
     queryset = ReportingObligation.objects.all()
     serializer_class = ReportingObligationSerializer
@@ -101,7 +107,7 @@ class ReportingObligationListAPIView(ListCreateAPIView):
 
 # Query for RO+RDF ROS search
 class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
     queryset = ReportingObligation.objects.all()
     serializer_class = ReportingObligationSerializer
@@ -128,9 +134,8 @@ class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
         return Response(serializer.data)
 
 
-
 class ReportingObligationDetailAPIView(RetrieveUpdateDestroyAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     queryset = ReportingObligation.objects.all()
     serializer_class = ReportingObligationSerializer
 
