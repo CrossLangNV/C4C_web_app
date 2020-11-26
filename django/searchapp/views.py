@@ -101,8 +101,11 @@ class DocumentListAPIView(ListCreateAPIView):
         keyword = self.request.GET.get('keyword', "")
         showonlyown = self.request.GET.get('showOnlyOwn', "")
 
+        q = Document.objects.annotate(
+            text_len=Length('title')).filter(text_len__gt=1)
+
         if len(keyword) > 0:
-            solr_query = f"title:{keyword} OR content_html:{keyword} OR content:{keyword}"
+            solr_query = f"title:\"{keyword}\" OR content_html:\"{keyword}\" OR content:\"{keyword}\""
             solr_result = solr_search_celex("documents", solr_query)
             logger.info("solr_result: %s", solr_result)
 
@@ -114,10 +117,12 @@ class DocumentListAPIView(ListCreateAPIView):
             logger.info("celex_list: %s", celex_list)
             logger.info("celex_list length: %s", len(celex_list))
 
-        q = Document.objects.annotate(
-            text_len=Length('title')).filter(text_len__gt=1)
-        if keyword:
-            q = q.filter(title__icontains=keyword)
+            if celex_list:
+                q = q.filter(celex__in=celex_list)
+            else:
+                if keyword:
+                    q = q.filter(title__icontains=keyword)
+
         if showonlyown == "true":
             email = self.request.GET.get('email', "")
             q = q.filter(Q(acceptance_states__user__email=email) & (Q(acceptance_states__value="Accepted") |
