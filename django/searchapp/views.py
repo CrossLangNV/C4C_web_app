@@ -113,8 +113,6 @@ class DocumentListAPIView(ListCreateAPIView):
             logger.info("celex_list: %s", celex_list)
             logger.info("celex_list length: %s", len(celex_list))
 
-
-
         q = Document.objects.annotate(
             text_len=Length('title')).filter(text_len__gt=1)
         if keyword:

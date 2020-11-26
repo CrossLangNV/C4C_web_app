@@ -30,7 +30,7 @@ def solr_search(core="", term=""):
 def solr_search_celex(core="", term=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search = get_results(client.search(term,
-                                                   **{'rows': ROW_LIMIT, 'hl': 'on',
+                                                   **{'rows': ROW_LIMIT,
                                                         'fl': 'celex'}))
     return search
 
