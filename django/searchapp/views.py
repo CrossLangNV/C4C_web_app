@@ -23,7 +23,7 @@ from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
 from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt, \
-    solr_search_query_paginated_preanalyzed, solr_search_celex
+    solr_search_query_paginated_preanalyzed, solr_search_ids
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -36,8 +36,7 @@ class WebsiteListAPIView(ListCreateAPIView):
 
     def get_queryset(self):
         queryset = Website.objects.annotate(
-            total_documents=Count('documents', filter=Q(documents__deleted__isnull=True) &
-                                                      Q(documents__title__gt=''))
+            total_documents=Count('documents', filter=Q(documents__title__gt=''))
         )
         return queryset
 
@@ -49,8 +48,7 @@ class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         queryset = Website.objects.annotate(
-            total_documents=Count('documents', filter=Q(documents__deleted__isnull=True) &
-                                                      Q(documents__title__gt=''))
+            total_documents=Count('documents', filter= Q(documents__title__gt=''))
         )
         return queryset
 
@@ -106,19 +104,18 @@ class DocumentListAPIView(ListCreateAPIView):
 
         if len(keyword) > 0:
             solr_query = f"title:\"{keyword}\" OR content_html:\"{keyword}\" OR content:\"{keyword}\""
-            solr_result = solr_search_celex("documents", solr_query)
+            solr_result = solr_search_ids("documents", solr_query)
             logger.info("solr_result: %s", solr_result)
 
-            celex_list = []
+            id_list = []
             for doc in solr_result:
-                if 'celex' in doc:
-                    celex_list.append(doc['celex'][0])
+                id_list.append(doc['id'])
 
-            logger.info("celex_list: %s", celex_list)
-            logger.info("celex_list length: %s", len(celex_list))
+            logger.info("id_list: %s", id_list)
+            logger.info("id_list length: %s", len(id_list))
 
-            if celex_list:
-                q = q.filter(celex__in=celex_list)
+            if id_list:
+                q = q.filter(id__in=id_list)
             else:
                 if keyword:
                     q = q.filter(title__icontains=keyword)
