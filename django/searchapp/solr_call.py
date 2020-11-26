@@ -27,11 +27,11 @@ def solr_search(core="", term=""):
     return search
 
 
-def solr_search_celex(core="", term=""):
+def solr_search_ids(core="", term=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search = get_results(client.search(term,
                                                    **{'rows': ROW_LIMIT,
-                                                        'fl': 'celex'}))
+                                                        'id': 'celex'}))
     return search
 
 
