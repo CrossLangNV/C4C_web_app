@@ -44,9 +44,9 @@ import {RdfFilter} from "../../shared/models/rdfFilter";
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
   API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
-  // API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
+  API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
   // TODO: Change this! Fix Environment bug
-  API_RO_URL = 'https://django.staging.dgfisma.crosslang.com/obligations/api';
+  // API_RO_URL = 'https://django.staging.dgfisma.crosslang.com/obligations/api';
   // API_RO_URL = 'http://localhost:8000/obligations/api';
 
   messageSource: Subject<string>;
