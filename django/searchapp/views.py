@@ -105,14 +105,10 @@ class DocumentListAPIView(ListCreateAPIView):
         if len(keyword) > 0:
             solr_query = f"title:\"{keyword}\" OR content_html:\"{keyword}\" OR content:\"{keyword}\""
             solr_result = solr_search_ids("documents", solr_query)
-            logger.info("solr_result: %s", solr_result)
 
             id_list = []
             for doc in solr_result:
                 id_list.append(doc['id'])
-
-            logger.info("id_list: %s", id_list)
-            logger.info("id_list length: %s", len(id_list))
 
             if id_list:
                 q = q.filter(id__in=id_list)
