@@ -100,7 +100,7 @@ def fetch_typesystem():
 
 
 def get_cas_from_pdf(content):
-    logger.info("its a pdf")
+    logger.info("PDF: get_cas_from_pdf() called: content is: %s", content)
     # Logic for documents without HTML, that have a "content" field which is a PDF to HTML done by Tika
     # Create a new cas here
     start = time.time()
@@ -108,11 +108,16 @@ def get_cas_from_pdf(content):
 
     encoded_cas = base64.b64encode(bytes(tika_cas.to_xmi(), 'utf-8')).decode()
 
+    logger.info("PDF: encoded_cas: %s", encoded_cas)
+
     # Then send this cas to NLP Paragraph detection
     input_for_paragraph_detection = {
         "cas_content": encoded_cas,
         "content_type": "pdf",
     }
+
+    logger.info("PDF: input_for_paragraph_detection: %s", input_for_paragraph_detection)
+
     r = requests.post(PARAGRAPH_DETECT_URL,
                       json=input_for_paragraph_detection)
     logger.info("Sent request to Paragraph Detection (%s). Status code: %s", PARAGRAPH_DETECT_URL,
@@ -240,14 +245,17 @@ def extract_reporting_obligations(website_id):
             logger.info("Extracting terms from HTML document id: %s (%s chars)",
                         document['id'], len(document['content_html'][0]))
             is_html = True
+
+            logger.warning("SKIPPING HTML TO TEST PDFS")
+            continue
         elif "content_html" not in document and "content" in document:
             logger.info("Extracting terms from PDF document id: %s (%s chars)",
                         document['id'], len(document['content'][0]))
             is_pdf = True
 
             # TODO Remove this later when pdf works
-            logger.warning("PDF CURRENTLY NOT SUPPORTED, SKIPPED.")
-            continue
+            #logger.warning("PDF CURRENTLY NOT SUPPORTED, SKIPPED.")
+            #continue
 
         if is_html:
             r = get_html2text_cas(document['content_html'][0])
