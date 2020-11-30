@@ -154,6 +154,7 @@ def export_documents():
                 with jsonl_file.open(mode='w') as f:
                     # DOCUMENT
                     f.write(json.dumps(document))
+                    f.write('\n')
 
                     # Get acceptance state AUTO CLASSIFIER from django model
                     acceptance_state_qs = AcceptanceState.objects.filter(document__id=document['id'],
@@ -166,6 +167,7 @@ def export_documents():
                         classifier = {'classifier_status': classifier_status, 'classifier_score': classifier_score,
                                       'classifier_index': classifier_index}
                         f.write(json.dumps(classifier))
+                        f.write('\n')
 
                     # HUMAN validation
                     f.write(json.dumps(human_validation))
