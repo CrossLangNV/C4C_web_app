@@ -95,7 +95,7 @@ services:
     command: solr-precreate documents
 
   postgres:
-    image: postgres:alpine
+    image: postgres:12
     ports:
       - "5432:5432"
     env_file:
