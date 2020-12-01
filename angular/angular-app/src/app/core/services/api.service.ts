@@ -277,12 +277,9 @@ export class ApiService {
       .pipe(map((item) => this.documentAdapter.adapt(item)));
   }
 
-  public createDocument(document: Document): Observable<Document> {
+  public createDocument(formData: FormData): Observable<Document> {
     return this.http
-      .post<Document>(
-        `${this.API_URL}/documents`,
-        this.documentAdapter.encode(document)
-      )
+      .post<Document>( `${this.API_URL}/documents`, formData)
       .pipe(map((item) => this.documentAdapter.adapt(item)));
   }
 
