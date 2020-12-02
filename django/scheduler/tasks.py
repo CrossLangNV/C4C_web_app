@@ -1,15 +1,16 @@
 from __future__ import absolute_import, unicode_literals
 
-from datetime import datetime, timedelta
-from io import BytesIO
-
 import logging
 import os
 import shutil
-import requests
-import pysolr
+from datetime import datetime, timedelta
+from io import BytesIO
 
+import pysolr
+import requests
 from celery import shared_task, chain
+from django.core.exceptions import ValidationError
+from django.db.models.functions import Length
 from jsonlines import jsonlines
 from langdetect import detect_langs
 from langdetect.lang_detect_exception import LangDetectException
@@ -19,14 +20,11 @@ from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
 from tika import parser
 from twisted.internet import reactor
-from django.core.exceptions import ValidationError
-from django.db.models.functions import Length
 
+from scheduler.extract import extract_terms
 from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
-
-from scheduler.extract import extract_terms, extract_reporting_obligations
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__
@@ -361,7 +359,7 @@ def launch_crawler(spider, spider_type, date_start, date_end):
     reactor.run()  # the script will block here until the crawling is finished
 
 
-@shared_task()
+@shared_task
 def parse_content_to_plaintext_task(website_id, **kwargs):
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
