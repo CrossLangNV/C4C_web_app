@@ -1,14 +1,14 @@
-import json
+import logging
 import logging
 import os
 import re
 
 import requests
-from lxml import html
 from celery.result import AsyncResult
 from django.db.models import Q, Count
 from django.db.models.functions import Length
 from django.http import FileResponse
+from lxml import html
 from minio import Minio
 from rest_framework import permissions, filters, status
 from rest_framework.decorators import api_view
@@ -18,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from scheduler.tasks import export_documents, sync_documents_task, score_documents_task
+from scheduler.tasks_single import full_service_single
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
 from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
@@ -134,6 +135,11 @@ class DocumentListAPIView(ListCreateAPIView):
         elif filtertype == "rejected":
             q = q.filter(acceptance_states__value="Rejected").distinct()
         return q
+
+    def create(self, request, *args, **kwargs):
+        response = super(DocumentListAPIView, self).create(request, *args, **kwargs)
+        full_service_single.delay(response.data['id'])
+        return response
 
 
 class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
