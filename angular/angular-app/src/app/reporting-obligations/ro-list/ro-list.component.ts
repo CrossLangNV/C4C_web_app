@@ -26,11 +26,7 @@ import {Router} from "@angular/router";
 import {AuthenticationService} from "../../core/auth/authentication.service";
 import {DjangoUser} from "../../shared/models/django_user";
 
-import {SelectItem} from "primeng/api";
-import {logger} from "codelyzer/util/logger";
-import {RdfEntity} from "../../shared/models/rdfEntity";
 import {RdfFilter} from "../../shared/models/rdfFilter";
-import {Dropdown} from "primeng/dropdown";
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -101,6 +97,8 @@ export class RoListComponent implements OnInit {
   dateSortIcon: IconDefinition = faSortDown;
   statesSortIcon: IconDefinition = faSort;
   currentDjangoUser: DjangoUser;
+
+  collapsed: boolean = true;
 
   constructor(
     private service: ApiService,
@@ -237,5 +235,13 @@ export class RoListComponent implements OnInit {
     this.availableItemsQuery.clear();
     this.fetchAvailableFilters();
     this.fetchRos();
+  }
+
+  collapsePanel() {
+    if (this.collapsed == true) {
+      this.collapsed = false;
+    } else {
+      this.collapsed = true;
+    }
   }
 }
