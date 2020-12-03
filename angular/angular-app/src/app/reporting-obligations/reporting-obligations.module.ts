@@ -21,6 +21,9 @@ import {
   NgbDateNativeAdapter,
 } from '@ng-bootstrap/ng-bootstrap';
 import { DropdownModule } from 'primeng/dropdown';
+import { FieldsetModule } from 'primeng/fieldset';
+import {PanelModule} from 'primeng/panel';
+import {MenuModule} from 'primeng/menu';
 
 @NgModule({
   declarations: [
@@ -39,7 +42,10 @@ import { DropdownModule } from 'primeng/dropdown';
     ConfirmDialogModule,
     SharedModule,
     RoRoutingModule,
-    DropdownModule
+    DropdownModule,
+    FieldsetModule,
+    PanelModule,
+    MenuModule
   ],
   providers: [
     ConfirmationService,
