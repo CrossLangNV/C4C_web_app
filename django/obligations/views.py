@@ -68,8 +68,6 @@ class ReportingObligationEntityMapAPIView(APIView):
     def get(self, request, format=None):
 
         all_entities = rdf_get_available_entities()
-
-        # rdf_get_predicate(predicate)
         arr = []
 
         for entity in all_entities:
@@ -85,6 +83,26 @@ class ReportingObligationEntityMapAPIView(APIView):
                 arr.append(item)
 
         arr.sort(key=lambda x: x['options'][0]['name'])
+
+        arr_whowhatwhen = [None for _ in range(5)]
+
+        l_entities = ["http://dgfisma.com/reporting_obligations/hasReporter",
+                      "http://dgfisma.com/reporting_obligations/hasPropMod",
+                      "http://dgfisma.com/reporting_obligations/hasVerb",
+                      "http://dgfisma.com/reporting_obligations/hasReport",
+                      "http://dgfisma.com/reporting_obligations/hasRegulatoryBody",
+                      "http://dgfisma.com/reporting_obligations/hasPropTmp"
+                      ]
+
+        arr_whowhatwhen = []
+        for s_ent in l_entities:
+            for filter in arr:
+                if filter['entity'] == s_ent:
+                    arr_whowhatwhen.append(arr.pop(arr.index(filter)))
+                    break
+
+        arr = arr_whowhatwhen + arr
+
         return Response(arr)
 
 
