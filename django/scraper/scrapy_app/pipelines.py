@@ -10,6 +10,7 @@ from scrapy import signals
 from scrapy.pipelines.files import FilesPipeline
 
 from scraper.scrapy_app.minio_call import S3ItemExporter
+from scraper.scrapy_app.json_sem_hash import get_json_sem_hash
 
 LOG = logging.getLogger("pysolr")
 LOG.setLevel(logging.WARNING)
@@ -88,6 +89,7 @@ class ScrapyAppPipeline(FilesPipeline):
         return item
 
     def handle_document(self, item, info, file_results):
+        item["content_hash"] = get_json_sem_hash(item)
         item['task'] = self.task_id
         item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url']))
         self.logger.debug("HANDLING_DOC: %s, %s", item['id'], item['url'])
@@ -97,7 +99,7 @@ class ScrapyAppPipeline(FilesPipeline):
         for file_result in file_results:
             file_name = file_result['path']
             file_path = os.environ['SCRAPY_FILES_FOLDER'] + \
-                        'files/' + info.spider.name + "/" + file_name
+                'files/' + info.spider.name + "/" + file_name
             # There will be only 1 file_result from cellar, so we store that as the content_html
             if file_result['url'].startswith('http://publications.europa.eu/resource/cellar/'):
                 f = open(file_path, "r")

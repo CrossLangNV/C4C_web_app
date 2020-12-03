@@ -14,6 +14,10 @@ Provide a `secrets/django-docker.env` and run with `docker-compose up -d` (see s
 
 Data for both PostgreSQL and Solr is persisted through named volumes.
 
+Create solr collection: 
+
+`docker-compose exec solr bin/solr create -c archive`
+
 Configure Solr to have all the fields, run the following command in the solr directory:
 
 `./fields.sh`
