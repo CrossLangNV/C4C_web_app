@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from admin_rest.models import site as rest_site
 from scheduler import tasks
 from scheduler.tasks import full_service_task, sync_documents_task, delete_documents_not_in_solr_task, \
-    score_documents_task, \
+    score_documents_task, handle_document_updates_task, \
     scrape_website_task, parse_content_to_plaintext_task, sync_scrapy_to_solr_task, check_documents_unvalidated_task
 from .models import Website, Attachment, Document, AcceptanceState, Comment, Tag
 
@@ -97,6 +97,11 @@ def extract_reporting_obligations(modeladmin, request, queryset):
     logger.info("Reporting Obligations extraction has finished!")
 
 
+def handle_document_updates(modeladmin, request, queryset):
+    for website in queryset:
+        handle_document_updates_task.delay(website.id)
+
+
 def delete_from_solr(modeladmin, request, queryset):
     for website in queryset:
         r = requests.post(os.environ['SOLR_URL'] + '/' +
@@ -109,7 +114,7 @@ def delete_from_solr(modeladmin, request, queryset):
 class WebsiteAdmin(admin.ModelAdmin):
     list_display = ['name', 'count_documents']
     ordering = ['name']
-    actions = [full_service, scrape_website, sync_scrapy_to_solr, parse_content_to_plaintext,
+    actions = [full_service, scrape_website, handle_document_updates, sync_scrapy_to_solr, parse_content_to_plaintext,
                sync_documents, delete_documents_not_in_solr, score_documents, check_documents_unvalidated,
                extract_terms, extract_reporting_obligations, export_documents,
                delete_from_solr, reset_pre_analyzed_fields]
