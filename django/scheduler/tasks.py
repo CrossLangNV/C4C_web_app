@@ -203,7 +203,8 @@ def handle_document_updates_task(website_id):
     results = client.search("*:*", **options)
     content_hashes = {}
     for result in results:
-        content_hashes[result['id']] = result['content_hash']
+        if 'content_hash' in result:
+            content_hashes[result['id']] = result['content_hash']
     logger.info("Found " + str(len(content_hashes))+" hashes")
 
     try:
