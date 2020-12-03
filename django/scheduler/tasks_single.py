@@ -11,6 +11,7 @@ from minio import Minio, ResponseError
 from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists
 from tika import parser
 
+from scheduler.extract import extract_terms_for_document, fetch_typesystem
 from searchapp.datahandling import classify
 from searchapp.models import Website, Document, AcceptanceState, AcceptanceStateValue
 
@@ -26,7 +27,8 @@ def full_service_single(document_id):
         minio_upload.s(document_id),
         solr_upload.si(document_id),
         parse_content_to_plaintext.si(document_id),
-        score_document.s(document_id)
+        score_document.s(),
+        extract_terms_for_document.s()
     )()
 
 
@@ -148,18 +150,17 @@ def parse_content_to_plaintext(document_id):
         solr_client.add(document)
         requests.get(os.environ['SOLR_URL'] +
                      '/' + core + CONST_UPDATE_WITH_COMMIT)
-    return content_text
+    return document_json
 
 
 @shared_task
-def score_document(document_content, document_id):
-    document_json = document_to_json(document_id)
+def score_document(document_json):
     CLASSIFIER_ERROR_SCORE = -9999
     DJANGO_ERROR_SCORE = -1
     ACCEPTED_THRESHOLD = 0.5
     core = 'documents'
     solr_client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    classifier_response = classify(document_json['id'], document_content, 'pdf')
+    classifier_response = classify(document_json['id'], document_json['content'], 'pdf')
     accepted_probability = classifier_response["accepted_probability"]
     # Check acceptance
     if accepted_probability != CLASSIFIER_ERROR_SCORE:
@@ -191,6 +192,8 @@ def score_document(document_content, document_id):
     # Store score in solr
     logger.info("Posting score to SOLR")
     solr_client.add(score_update)
-    requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + '/update?commit=true')
-    return document_id
+    requests.get(os.environ['SOLR_URL'] + '/' + core + '/update?commit=true')
+
+    # store document content in array, so it mimics a solr document
+    document_json['content'] = [document_json['content']]
+    return document_json
