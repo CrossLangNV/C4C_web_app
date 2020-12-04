@@ -24,6 +24,7 @@ import { DropdownModule } from 'primeng/dropdown';
 import { FieldsetModule } from 'primeng/fieldset';
 import {PanelModule} from 'primeng/panel';
 import {MenuModule} from 'primeng/menu';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 @NgModule({
   declarations: [
@@ -45,7 +46,9 @@ import {MenuModule} from 'primeng/menu';
     DropdownModule,
     FieldsetModule,
     PanelModule,
-    MenuModule
+    MenuModule,
+    SelectButtonModule
+
   ],
   providers: [
     ConfirmationService,

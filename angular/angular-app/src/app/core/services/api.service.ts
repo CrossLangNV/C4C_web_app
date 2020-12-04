@@ -38,6 +38,7 @@ import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/concept
 import {RdfEntity} from "../../shared/models/rdfEntity";
 import {RdfFilter} from "../../shared/models/rdfFilter";
 import {RoTag, RoTagAdapter} from "../../shared/models/RoTag";
+import {RoAcceptanceState, RoAcceptanceStateAdapter} from "../../shared/models/roAcceptanceState";
 
 @Injectable({
   providedIn: 'root',
@@ -63,6 +64,7 @@ export class ApiService {
     private conceptCommentAdapter: ConceptCommentAdapter,
     private roAdapter: RoAdapter,
     private roTagAdapter: RoTagAdapter,
+    private roAcceptanceStateAdapter: RoAcceptanceStateAdapter,
   ) {
     this.messageSource = new Subject<string>();
   }
@@ -537,6 +539,7 @@ export class ApiService {
     )
   }
 
+  // RO States/comments/tags
   public addRoTag(tag: RoTag): Observable<RoTag> {
     return this.http
       .post<RoTag>(
@@ -547,6 +550,25 @@ export class ApiService {
   }
 
   public deleteRoTag(id: string): Observable<any> {
-    return this.http.delete(`${this.API_GLOSSARY_URL}/tag/${id}`);
+    return this.http.delete(`${this.API_RO_URL}/tag/${id}`);
   }
+
+  public getRoStateValues(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.API_RO_URL}/state/value`);
+  }
+
+  public getRoState(id: string): Observable<RoAcceptanceState> {
+    return this.http
+      .get<RoAcceptanceState>(`${this.API_RO_URL}/state/${id}`)
+      .pipe(map((item) => this.roAcceptanceStateAdapter.adapt(item)));
+  }
+
+  public updateRoState(state: RoAcceptanceState): Observable<RoAcceptanceState> {
+    return this.http.put<RoAcceptanceState>(
+      `${this.API_RO_URL}/state/${state.id}`,
+      this.roAcceptanceStateAdapter.encode(state)
+    );
+  }
+
+
 }
