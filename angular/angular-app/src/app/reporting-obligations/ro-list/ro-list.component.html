@@ -78,13 +78,13 @@
               [routerLink]="[ro.id]"
               >{{ ro.definition || "(no label)" }}</a
             >&nbsp;
-            <!-- <span
+             <span
               *ngIf="ro.comments.length > 0"
               class="badge badge-secondary"
               >{{ ro.comments.length }}</span
-            > -->
+            >
           </td>
-          <!-- <td>
+           <td>
             <p-chips
               [(ngModel)]="ro.tags"
               allowDuplicate="false"
@@ -93,7 +93,7 @@
               (onRemove)="onRemoveTag($event)"
               (onChipClick)="onClickTag($event)"
             ></p-chips>
-          </td> -->
+          </td>
           <!-- <td>
             <p-chips
               [(ngModel)]="ro.acceptance_states"
