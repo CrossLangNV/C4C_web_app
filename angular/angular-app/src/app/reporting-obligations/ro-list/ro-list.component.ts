@@ -122,6 +122,12 @@ export class RoListComponent implements OnInit {
     // Fetch RDF for filters
     this.fetchAvailableFilters();
 
+    this.service.messageSource.asObservable().subscribe((value: string) => {
+      if (value === 'refresh') {
+        this.fetchRos();
+      }
+    });
+
     this.fetchRos();
     this.searchTermChanged
       .pipe(debounceTime(600), distinctUntilChanged())
