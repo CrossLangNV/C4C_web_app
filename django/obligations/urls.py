@@ -1,7 +1,7 @@
 from django.urls import path
 
 import os
-from . import views
+
 
 from django.urls import path, re_path, include
 
@@ -9,6 +9,7 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 
 from rest_framework import permissions
+from obligations import views
 
 
 schema_view = get_schema_view(
@@ -41,7 +42,25 @@ urlpatterns = [
     path('api/ros', views.ReportingObligationListAPIView.as_view(), name='ro_api_list'),
     path('api/ro/<int:pk>', views.ReportingObligationDetailAPIView.as_view(), name='ro_api_detail'),
 
-    #path('api/ro/<ro>', views.ReportingObligationDocumentsAPIView.as_view(), name='ro_api_search'),
+    # State
+    path('api/states', views.AcceptanceStateListAPIView.as_view(),
+         name='state_list_api'),
+    path('api/state/<int:pk>',
+         views.AcceptanceStateDetailAPIView.as_view(), name='state_detail_api'),
+    path('api/state/value', views.AcceptanceStateValueAPIView.as_view(),
+         name='state_value_api'),
+
+    # Comment
+    path('api/comments', views.CommentListAPIView.as_view(),
+         name='comment_list_api'),
+    path('api/comment/<int:pk>', views.CommentDetailAPIView.as_view(),
+         name='comment_detail_api'),
+
+    # Tag
+    path('api/tags', views.TagListAPIView.as_view(),
+         name='tag_list_api'),
+    path('api/tag/<int:pk>', views.TagDetailAPIView.as_view(),
+         name='tag_detail_api'),
 
     # Get list of all entities
     path('api/ros/rdfentities', views.ReportingObligationAvailableEntitiesAPIView.as_view(),
