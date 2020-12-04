@@ -59,6 +59,7 @@ export class RoDetailComponent implements OnInit {
   occursInSortBy = 'date';
   occursInSortDirection = 'desc';
   occursInDateSortIcon: IconDefinition = faSortDown;
+  collectionSize = 0;
 
   definedIn: Document[] = [];
   definedInPage = 1;
@@ -80,7 +81,6 @@ export class RoDetailComponent implements OnInit {
       .subscribe((concept) => {
         this.ro = concept;
         this.loadOccursInDocuments();
-        this.loadDefinedInDocuments();
       });
   }
 
@@ -103,32 +103,7 @@ export class RoDetailComponent implements OnInit {
           doc.forEach((document, index) => {
             document.content = solrDocuments[index].content;
             this.occursIn.push(document);
-          });
-        });
-      });
-  }
-
-  loadDefinedInDocuments() {
-    this.apiService
-      .searchSolrDocuments(
-        this.definedInPage,
-        this.definedInPageSize,
-        this.ro.name + ' shall',
-        [],
-        this.definedInSortBy,
-        this.definedInSortDirection
-      )
-      .subscribe((data) => {
-        this.definedInTotal = data[0];
-        const solrDocuments = data[1];
-        this.definedIn = [];
-        const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
-        this.getDocuments(solrDocumentIds).subscribe((doc) => {
-          doc.forEach((document, index) => {
-            let solrContent = solrDocuments[index].content;
-            solrContent = solrContent.map(text => text.replace('<span class=\"highlight\">shall</span>', 'shall'));
-            document.content = solrContent;
-            this.definedIn.push(document);
+            this.collectionSize = solrDocumentIds.count;
           });
         });
       });
@@ -145,11 +120,6 @@ export class RoDetailComponent implements OnInit {
   loadOccursInPage(page: number) {
     this.occursInPage = page;
     this.loadOccursInDocuments();
-  }
-
-  loadDefinedInPage(page: number) {
-    this.definedInPage = page;
-    this.loadDefinedInDocuments();
   }
 
   onSortOccursIn({ column, direction }: SortEvent) {
@@ -179,30 +149,5 @@ export class RoDetailComponent implements OnInit {
     }
   }
 
-  onSortDefinedIn({ column, direction }: SortEvent) {
-    // resetting other headers
-    this.headers.forEach((header) => {
-      if (header.sortable !== column) {
-        header.direction = '';
-      }
-    });
 
-    // sorting definedIn, default date descending
-    if (direction === '') {
-      this.definedInSortBy = 'date';
-      this.definedInSortDirection = 'desc';
-      this.definedInDateSortIcon = faSortDown;
-      this.loadDefinedInDocuments();
-    } else {
-      this.definedInSortDirection = direction;
-      this.definedInSortBy = column;
-      const sortIcon = direction === 'asc' ? faSortUp : faSortDown;
-      if (column === 'date') {
-        this.definedInDateSortIcon = sortIcon;
-      } else {
-        this.definedInDateSortIcon = faSort;
-      }
-      this.loadDefinedInDocuments();
-    }
-  }
 }
