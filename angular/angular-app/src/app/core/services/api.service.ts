@@ -37,6 +37,7 @@ import {ConceptAcceptanceState, ConceptAcceptanceStateAdapter} from "../../share
 import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/conceptComment";
 import {RdfEntity} from "../../shared/models/rdfEntity";
 import {RdfFilter} from "../../shared/models/rdfFilter";
+import {RoTag, RoTagAdapter} from "../../shared/models/RoTag";
 
 @Injectable({
   providedIn: 'root',
@@ -61,6 +62,7 @@ export class ApiService {
     private conceptAcceptanceStateAdapter: ConceptAcceptanceStateAdapter,
     private conceptCommentAdapter: ConceptCommentAdapter,
     private roAdapter: RoAdapter,
+    private roTagAdapter: RoTagAdapter,
   ) {
     this.messageSource = new Subject<string>();
   }
@@ -533,5 +535,18 @@ export class ApiService {
     return this.http.get<RdfFilter[]>(
       `${this.API_RO_URL}/ros/entity_map`
     )
+  }
+
+  public addRoTag(tag: RoTag): Observable<RoTag> {
+    return this.http
+      .post<RoTag>(
+        `${this.API_RO_URL}/tags`,
+        this.roTagAdapter.encode(tag)
+      )
+      .pipe(map((item) => this.roTagAdapter.adapt(item)));
+  }
+
+  public deleteRoTag(id: string): Observable<any> {
+    return this.http.delete(`${this.API_GLOSSARY_URL}/tag/${id}`);
   }
 }
