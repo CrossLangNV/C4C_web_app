@@ -27,7 +27,6 @@ import {AuthenticationService} from "../../core/auth/authentication.service";
 import {DjangoUser} from "../../shared/models/django_user";
 
 import {RdfFilter} from "../../shared/models/rdfFilter";
-import {ConceptTag} from "../../shared/models/ConceptTag";
 import {RoTag} from "../../shared/models/RoTag";
 
 export type SortDirection = 'asc' | 'desc' | '';
