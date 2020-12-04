@@ -15,7 +15,9 @@ import {ConceptComment} from "../../shared/models/conceptComment";
 import {DjangoUser} from "../../shared/models/django_user";
 import {AuthenticationService} from "../../core/auth/authentication.service";
 import {RoAcceptanceState} from "../../shared/models/roAcceptanceState";
-import {MessageService} from "primeng/api";
+import {MessageService, ConfirmationService} from "primeng/api";
+import {RoComment} from "../../shared/models/roComment";
+import {ApiAdminService} from "../../core/services/api.admin.service";
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -80,8 +82,8 @@ export class RoDetailComponent implements OnInit {
   // AcceptanceState and comments
   stateValues: SelectItem[] = [];
   acceptanceState: RoAcceptanceState;
-  comments: ConceptComment[] = [];
-  newComment: ConceptComment; // TODO CHANGE
+  comments: RoComment[] = [];
+  newComment: RoComment;
   deleteIcon: IconDefinition;
   currentDjangoUser: DjangoUser;
 
@@ -91,6 +93,8 @@ export class RoDetailComponent implements OnInit {
     private authenticationService: AuthenticationService,
     private service: ApiService,
     private messageService: MessageService,
+    private confirmationService: ConfirmationService,
+    private adminService: ApiAdminService,
   ) {}
 
   ngOnInit() {
@@ -98,7 +102,7 @@ export class RoDetailComponent implements OnInit {
       (x) => (this.currentDjangoUser = x)
     );
     this.acceptanceState = new RoAcceptanceState('', '', '', '')
-    this.newComment = new ConceptComment('', '', '', '', new Date()); // TODO Change
+    this.newComment = new RoComment('', '', '', '', new Date());
 
     this.service.getRoStateValues().subscribe((states) => {
       states.forEach((state) => {
@@ -114,6 +118,21 @@ export class RoDetailComponent implements OnInit {
       )
       .subscribe((concept) => {
         this.ro = concept;
+
+        this.newComment.roId = concept.id;
+        this.comments = [];
+
+        if (concept.commentIds) {
+          concept.commentIds.forEach((commentId) => {
+            this.service.getRoComment(commentId).subscribe((comment) => {
+              this.adminService.getUser(comment.userId).subscribe((user) => {
+                comment.username = user.username;
+              });
+              this.comments.push(comment);
+            });
+          });
+        }
+
         this.loadOccursInDocuments();
       });
   }
@@ -201,6 +220,29 @@ export class RoDetailComponent implements OnInit {
         summary: 'Acceptance State',
         detail: 'Set to "' + event.value + '"',
       });
+    });
+  }
+
+  onAddComment() {
+    this.service.addRoComment(this.newComment).subscribe((comment) => {
+      comment.username = this.currentDjangoUser.username;
+      this.comments.push(comment);
+      this.newComment.value = '';
+      this.service.messageSource.next('refresh');
+    });
+  }
+
+  onDeleteComment(comment: RoComment) {
+    this.confirmationService.confirm({
+      message: 'Do you want to delete this comment?',
+      accept: () => {
+        this.service.deleteRoComment(comment.id).subscribe((response) => {
+          this.comments = this.comments.filter(
+            (item) => item.id !== comment.id
+          );
+          this.service.messageSource.next('refresh');
+        });
+      },
     });
   }
 
