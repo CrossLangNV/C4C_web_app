@@ -1,10 +1,11 @@
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_cookie
-from obligations.models import ReportingObligation
-from obligations.serializers import ReportingObligationSerializer
+from obligations.models import ReportingObligation, AcceptanceState, AcceptanceStateValue, Comment, Tag
+from obligations.serializers import ReportingObligationSerializer, AcceptanceStateSerializer, CommentSerializer,\
+    TagSerializer
 from rest_framework import permissions, filters
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, RetrieveUpdateAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,6 +14,7 @@ import logging as logger
 from .rdf_call import rdf_get_available_entities, rdf_get_predicate, \
     rdf_get_all_reporting_obligations, rdf_query_predicate_single, rdf_query_predicate_multiple, \
     rdf_query_predicate_multiple_id, rdf_get_name_of_entity
+from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 
 
 class PaginationHandlerMixin(object):
@@ -133,9 +135,10 @@ class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
     ordering_fields = ['name']
 
     def post(self, request, format=None, *args, **kwargs):
+        request.data['user'] = request.user.id
+
         q = ReportingObligation.objects.all()
         rdf_filters = request.data['rdfFilters']
-
         rdf_results = rdf_query_predicate_multiple_id(rdf_filters.items())
 
         if rdf_results:
@@ -144,12 +147,12 @@ class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
             q = ReportingObligation.objects.none()
 
         page = self.paginate_queryset(q)
-        if page is not None:
-            serializer = self.get_paginated_response(self.serializer_class(page, many=True).data)
-        else:
-            serializer = self.serializer_class(q, many=True)
+
+        serializer = self.get_paginated_response(self.serializer_class(page, many=True, context={'request': request}).data)
 
         return Response(serializer.data)
+
+
 
 
 class ReportingObligationDetailAPIView(RetrieveUpdateDestroyAPIView):
@@ -183,3 +186,67 @@ class ReportingObligationsRDFListAPIView(APIView):
         return Response(result)
 
 
+class TagListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
+
+
+class TagDetailAPIView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
+
+
+class AcceptanceStateValueAPIView(APIView):
+
+    def get(self, request, format=None):
+        return Response([state.value for state in AcceptanceStateValue])
+
+
+class AcceptanceStateListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AcceptanceStateSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = AcceptanceState.objects.filter(user=request.user)
+        serializer = AcceptanceStateSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
+        return self.create(request, *args, **kwargs)
+
+
+class AcceptanceStateDetailAPIView(RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsOwner]
+    serializer_class = AcceptanceStateSerializer
+    queryset = AcceptanceState.objects.all()
+
+    def put(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
+        return self.update(request, *args, **kwargs)
+
+
+class CommentListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CommentSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = Comment.objects.filter(user=request.user)
+        serializer = CommentSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
+        return self.create(request, *args, **kwargs)
+
+
+class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrSuperUser]
+    serializer_class = CommentSerializer
+    queryset = Comment.objects.all()
+
+    def put(self, request, *args, **kwargs):
+        request.data['user'] = request.user.id
+        return self.update(request, *args, **kwargs)

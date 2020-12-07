@@ -37,6 +37,9 @@ import {ConceptAcceptanceState, ConceptAcceptanceStateAdapter} from "../../share
 import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/conceptComment";
 import {RdfEntity} from "../../shared/models/rdfEntity";
 import {RdfFilter} from "../../shared/models/rdfFilter";
+import {RoTag, RoTagAdapter} from "../../shared/models/RoTag";
+import {RoAcceptanceState, RoAcceptanceStateAdapter} from "../../shared/models/roAcceptanceState";
+import {RoComment, RoCommentAdapter} from "../../shared/models/roComment";
 
 @Injectable({
   providedIn: 'root',
@@ -61,6 +64,9 @@ export class ApiService {
     private conceptAcceptanceStateAdapter: ConceptAcceptanceStateAdapter,
     private conceptCommentAdapter: ConceptCommentAdapter,
     private roAdapter: RoAdapter,
+    private roTagAdapter: RoTagAdapter,
+    private roAcceptanceStateAdapter: RoAcceptanceStateAdapter,
+    private roCommentAdapter: RoCommentAdapter,
   ) {
     this.messageSource = new Subject<string>();
   }
@@ -534,4 +540,56 @@ export class ApiService {
       `${this.API_RO_URL}/ros/entity_map`
     )
   }
+
+  // RO States/comments/tags
+  public addRoTag(tag: RoTag): Observable<RoTag> {
+    return this.http
+      .post<RoTag>(
+        `${this.API_RO_URL}/tags`,
+        this.roTagAdapter.encode(tag)
+      )
+      .pipe(map((item) => this.roTagAdapter.adapt(item)));
+  }
+
+  public deleteRoTag(id: string): Observable<any> {
+    return this.http.delete(`${this.API_RO_URL}/tag/${id}`);
+  }
+
+  public getRoStateValues(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.API_RO_URL}/state/value`);
+  }
+
+  public getRoState(id: string): Observable<RoAcceptanceState> {
+    return this.http
+      .get<RoAcceptanceState>(`${this.API_RO_URL}/state/${id}`)
+      .pipe(map((item) => this.roAcceptanceStateAdapter.adapt(item)));
+  }
+
+  public updateRoState(state: RoAcceptanceState): Observable<RoAcceptanceState> {
+    return this.http.put<RoAcceptanceState>(
+      `${this.API_RO_URL}/state/${state.id}`,
+      this.roAcceptanceStateAdapter.encode(state)
+    );
+  }
+
+  public getRoComment(id: string): Observable<RoComment> {
+    return this.http
+      .get<RoComment>(`${this.API_RO_URL}/comment/${id}`)
+      .pipe(map((item) => this.roCommentAdapter.adapt(item)));
+  }
+
+  public addRoComment(comment: RoComment): Observable<RoComment> {
+    return this.http
+      .post<RoComment>(
+        `${this.API_RO_URL}/comments`,
+        this.roCommentAdapter.encode(comment)
+      )
+      .pipe(map((item) => this.roCommentAdapter.adapt(item)));
+  }
+
+  public deleteRoComment(id: string): Observable<any> {
+    return this.http.delete(`${this.API_RO_URL}/comment/${id}`);
+  }
+
+
 }
