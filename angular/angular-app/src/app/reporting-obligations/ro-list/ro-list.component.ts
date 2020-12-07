@@ -27,6 +27,7 @@ import {AuthenticationService} from "../../core/auth/authentication.service";
 import {DjangoUser} from "../../shared/models/django_user";
 
 import {RdfFilter} from "../../shared/models/rdfFilter";
+import {RoTag} from "../../shared/models/RoTag";
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -120,6 +121,12 @@ export class RoListComponent implements OnInit {
 
     // Fetch RDF for filters
     this.fetchAvailableFilters();
+
+    this.service.messageSource.asObservable().subscribe((value: string) => {
+      if (value === 'refresh') {
+        this.fetchRos();
+      }
+    });
 
     this.fetchRos();
     this.searchTermChanged
@@ -223,6 +230,21 @@ export class RoListComponent implements OnInit {
       }
       this.fetchRos();
     }
+  }
+
+  onAddTag(event, tags, roId) {
+    const newTag = new RoTag('', event.value, roId);
+    this.service.addRoTag(newTag).subscribe((addedTag) => {
+      // primeng automatically adds the string value first, delete this as workaround
+      // see: https://github.com/primefaces/primeng/issues/3419
+      tags.splice(-1, 1);
+      // now add the tag object
+      tags.push(addedTag);
+    });
+  }
+
+  onRemoveTag(event) {
+    this.service.deleteRoTag(event.value.id).subscribe();
   }
 
   onClickTag(event) {
