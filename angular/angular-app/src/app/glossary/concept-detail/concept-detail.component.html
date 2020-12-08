@@ -135,7 +135,7 @@
         <tbody>
           <tr *ngFor="let doc of definedIn">
             <td>
-              {{ doc.website[0] | uppercase }}
+              {{ doc.website | uppercase }}
             </td>
             <td>
               <a [routerLink]="['/document', concept.id, doc.id]">
@@ -143,7 +143,7 @@
               </a>
             </td>
             <td>
-              {{ doc.date | date }}
+              {{ doc.date }}
             </td>
             <td [innerHTML]="doc.concept_defined"></td>
           </tr>

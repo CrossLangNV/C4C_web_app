@@ -116,8 +116,16 @@ urlpatterns = [
     path('api/solrdocument/search/<search_term>', views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
     path('api/solrdocument/search/query/<search_term>', views.SolrDocumentSearchQuery.as_view(),
          name='solr_document_search_query_api'),
+
+    # Django + SOLR
+    path('api/solrdocument/search/query/django/', views.SolrDocumentsSearchQueryDjango.as_view(),
+         name='solr_document_search_query_django_api'),
+    # SOLR ONLY
     path('api/solrdocument/search/query/preanalyzed/', views.SolrDocumentsSearchQueryPreAnalyzed.as_view(),
          name='solr_document_search_query_preanalyzed_api'),
+
+
+    # solr_get_preanalyzed_for_doc
     path('api/solrdocuments/like/<id>', views.SimilarDocumentsAPIView.as_view(),
          name='similar_documents_api'),
 
