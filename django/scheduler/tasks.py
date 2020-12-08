@@ -101,8 +101,7 @@ def full_service_task(website_id):
     chain(
         sync_scrapy_to_solr_task.si(website_id),
         parse_content_to_plaintext_task.si(website_id),
-        sync_documents_task.si(website_id),
-        score_documents_task.si(website_id)
+        sync_documents_task.si(website_id)
     )()
 
 
@@ -435,12 +434,12 @@ def extract_terms(website_id):
 
 
 @shared_task
-def score_documents_task(website_id):
+def score_documents_task(website_id, language):
     # lookup documents for website and score them
     website = Website.objects.get(pk=website_id)
     logger.info("Scoring documents with WEBSITE: " + website.name)
     solr_documents = solr_search_website_with_content(
-        'documents', website.name)
+        'documents', website.name, language)
     score_documents(website.name, solr_documents)
 
 

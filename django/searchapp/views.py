@@ -13,7 +13,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from scheduler.tasks import export_documents, sync_documents_task, score_documents_task
+from scheduler.tasks import export_documents, sync_documents_task
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
 from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
@@ -56,12 +56,6 @@ class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
             sync_documents_task(website.id)
         else:
             self.logger.info("Not syncing")
-        score = self.request.GET.get('score', False)
-        if score:
-            # get confidence score
-            score_documents_task(website.id)
-        else:
-            self.logger.info("Not scoring")
 
         return website
 

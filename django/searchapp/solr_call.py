@@ -107,10 +107,10 @@ def solr_search_id_sorted(core="", id=""):
     return search
 
 
-def solr_search_website_with_content(core="", website=""):
+def solr_search_website_with_content(core="", website="", language=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search = client.search(
-        'website:' + website, **{'rows': 250, 'start': 0, 'cursorMark': "*", 'sort': 'id asc'})
+        'website:' + website + ' AND language:' + language, **{'rows': 250, 'start': 0, 'cursorMark': "*", 'sort': 'id asc'})
     return search
 
 
