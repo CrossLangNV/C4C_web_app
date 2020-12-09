@@ -25,6 +25,7 @@ import { FieldsetModule } from 'primeng/fieldset';
 import {PanelModule} from 'primeng/panel';
 import {MenuModule} from 'primeng/menu';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import {NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
 
 @NgModule({
   declarations: [
@@ -47,8 +48,8 @@ import { SelectButtonModule } from 'primeng/selectbutton';
     FieldsetModule,
     PanelModule,
     MenuModule,
-    SelectButtonModule
-
+    SelectButtonModule,
+    NgxSkeletonLoaderModule.forRoot(),
   ],
   providers: [
     ConfirmationService,

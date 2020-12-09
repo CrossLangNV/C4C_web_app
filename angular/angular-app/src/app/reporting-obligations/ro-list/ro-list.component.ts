@@ -99,6 +99,8 @@ export class RoListComponent implements OnInit {
   statesSortIcon: IconDefinition = faSort;
   currentDjangoUser: DjangoUser;
 
+  contentLoaded = false;
+
   collapsed: boolean = true;
 
   constructor(
@@ -159,6 +161,7 @@ export class RoListComponent implements OnInit {
       .subscribe((results) => {
         this.ros = results.results;
         this.collectionSize = results.count;
+        this.contentLoaded = true;
       });
   }
 
@@ -265,5 +268,9 @@ export class RoListComponent implements OnInit {
     } else {
       this.collapsed = true;
     }
+  }
+
+  numSequence(n: number): Array<number> {
+    return Array(n);
   }
 }
