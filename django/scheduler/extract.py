@@ -334,7 +334,8 @@ def extract_terms(website_id):
     cursor_mark = "*"
 
     # select all accepted documents with empty concept_occurs field
-    q = QUERY_WEBSITE + website_name
+    q = QUERY_WEBSITE + website_name + \
+        " AND acceptance_state: accepted AND -concept_occurs: [\"\" TO *] "
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
