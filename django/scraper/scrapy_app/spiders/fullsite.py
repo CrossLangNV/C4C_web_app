@@ -64,5 +64,6 @@ class FullSiteSpider(CrawlSpider):
             'website': self.website,
             'content_html': cleaned_html.decode('utf-8'),
             'date': datetime.now(timezone.utc).isoformat()[:-6] + 'Z',
-            'language': detected_lang
+            'language': detected_lang,
+            'pdf_docs': []
         }
