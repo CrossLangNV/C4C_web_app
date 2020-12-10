@@ -70,51 +70,12 @@
           </tr>
         </thead>
         <tbody>
-
-
-
-        <!-- MOCK -->
-
-        <tr>
-          <td>
-            EURLEX
-          </td>
-          <td>
-            <a href="/">
-              Regulation (EU) 2019/2088 of the European Parliament and of the Council of 27 November 2019 on sustainability‐related disclosures in the financial services sector (Text with EEA relevance)
-            </a>
-          </td>
-          <td>
-            Nov 27, 2019
-          </td>
-          <td appAnnotator doc-id="dfe707e0-707e-5b0c-8bf5-ec80d553938d" annotation-type="occurence">Evidence that each of the Exporter or any Ancillary Service Provider has received the Cash Payment required under Section 3.01 of the Agreement.</td>
-        </tr>
-
-        <tr>
-          <td>
-            EURLEX
-          </td>
-          <td>
-            <a href="/">
-              Decision (EU) 2020/1331 of the European Central Bank of 15 September 2020 nominating heads of work units to adopt delegated fit and proper decisions and repealing Decision (EU) 2017/936 (ECB/2020/39)
-            </a>
-          </td>
-          <td>
-            Oct 2, 2019
-          </td>
-          <td appAnnotator doc-id="dfe707e0-707e-5b0c-8bf5-ec80d553938d" annotation-type="occurence">If an Exporter or Ancillary Service Provider delivers to the Lender an Amended Exporter’s Certificate changing any of the certifications included in paragraphs 1, 4, 5 or 6 of the Initial Exporter’s Certificate, ( A) in the case of changes to paragraph 1, a copy of the completed Disbursement Percentage Calculator page and (B) in the case of changes to paragraphs 4 and 5, a document signed by Ex-Im Bank consenting to such change.</td>
-        </tr>
-
-        <!-- END OF MOCK -->
-
-
-
           <tr *ngFor="let doc of occursIn">
             <td>
               {{ doc.website[0] | uppercase }}
             </td>
             <td>
-              <a [routerLink]="['/document', concept.id, doc.id]">
+              <a [routerLink]="['/document', 'occurence', concept.id, doc.id]">
                 {{ doc.title }}
               </a>
             </td>
@@ -158,34 +119,12 @@
           </tr>
         </thead>
         <tbody>
-
-
-          <!-- MOCK -->
-
-          <tr>
-            <td>
-              EURLEX
-            </td>
-            <td>
-              <a [routerLink]="">
-                Article by SRB Vice Chair, Timo Löyttyniemi - The Common Backstop: how it will strengthen the Single Resolution Fund
-              </a>
-            </td>
-            <td>
-              Dec 22, 1982
-            </td>
-            <td appAnnotator doc-id="8" annotation-type="definition">Ancillary Services means any of the services identified by a Transmission Provider in its transmission tariff as “ancillary services” including, but not limited to, regulation and frequency response, energy imbalance, operating reserve-spinning and operating reserve- supplemental, as may be specified in the Transaction.</td>
-          </tr>
-
-          <!-- END OF MOCK -->
-
-
           <tr *ngFor="let doc of definedIn">
             <td>
               {{ doc.website[0] | uppercase }}
             </td>
             <td>
-              <a [routerLink]="['/document', concept.id, doc.id]">
+              <a [routerLink]="['/document', 'definition', concept.id, doc.id]">
                 {{ doc.title }}
               </a>
             </td>

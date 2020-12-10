@@ -13,6 +13,8 @@ import { Concept } from 'src/app/shared/models/concept';
 export class ConceptDocumentDetailsComponent implements OnInit {
   document: Document;
   concept: Concept;
+  annotationType: String;
+  instanceType: string = "unknown";
   consolidatedVersions = new Map();
   content_html: String;
   constructor(
@@ -32,30 +34,64 @@ export class ConceptDocumentDetailsComponent implements OnInit {
         this.concept = concept;
         this.route.paramMap
           .pipe(
-            switchMap((params: ParamMap) =>
-              this.service.getDocument(params.get('documentId'))
+            switchMap((params: ParamMap) => 
+                this.service.getDocument(params.get('documentId'))
             )
           )
           .subscribe((document) => {
             this.document = document;
-            this.service
+
+            this.route.paramMap.subscribe((params: ParamMap) => {
+              this.annotationType = params.get('annotationType');
+              if (this.annotationType == "occurence")
+                this.instanceType = "concept_occurs";
+              if (this.annotationType == "definition")
+                this.instanceType = "concept_defined";
+              this.service
               .getDocumentWithContent(document.id)
               .subscribe((doc) => {
-                this.content_html = this.highlight(doc.content, concept);
+                // this.content_html = doc.content;
+
                 // this.service
                 //   .getSolrDocument(this.document.id)
                 //   .subscribe((solrDocument) => {
                 //     this.consolidatedVersions = new Map();
                 //   });
+
+                this.service
+                  .searchSolrPreAnalyzedDocument(
+                    this.document.id,
+                    1,
+                    1,
+                    this.concept.definition,
+                    this.instanceType,
+                    [],
+                    "id",
+                    "asc"
+                  )
+                  .subscribe((data) => {
+                    this.content_html = data[1]["highlighting"][this.document.id][this.instanceType];
+                  });
+              
+                // loadDefinedInDocuments() {
+                //   this.service
+                //     .searchSolrPreAnalyzedDocuments(
+                //       this.definedInPage,
+                //       this.definedInPageSize,
+                //       this.concept.definition,
+                //       "concept_defined",
+                //       [],
+                //       this.definedInSortBy,
+                //       this.definedInSortDirection
+                //     )
+                //     .subscribe((data) => {
+                //       this.definedInTotal = data[0];
+                //       this.definedIn = data[1];
+                //     });
+                // }
               });
+            });
           });
       });
-  }
-
-  highlight(xhtml, concept): String {
-    var searchMask = concept.name;
-    var regEx = new RegExp(searchMask, 'ig');
-    var replaceMask = '<span class="highlight">' + concept.name + '</span>';
-    return xhtml.replace(regEx, replaceMask);
   }
 }

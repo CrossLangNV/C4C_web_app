@@ -57,10 +57,13 @@ class ConceptDefined(ConceptOffsetBase):
 
 
 class AnnotationWorklog(models.Model):
-    # Each AnnotationWorklog will concern an occurence OR a definition. 
-    # So, one of the two fields below will always have null=True.
+   # Each AnnotationWorklog will concern an occurence OR a definition.
+   # So, one of the two fields below will always have null=True.
     concept_occurs = models.ForeignKey(ConceptOccurs, on_delete=models.CASCADE, null=True)
     concept_defined = models.ForeignKey(ConceptDefined, on_delete=models.CASCADE, null=True)
+
+    annotation_type = models.TextField(default="", null=True)
+    concept = models.ForeignKey(Concept, on_delete=models.CASCADE, null=True)
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
     user = models.ForeignKey(
         'auth.User', related_name="user_worklog", on_delete=models.SET_NULL, null=True)
