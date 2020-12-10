@@ -19,7 +19,7 @@ from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
 from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt, \
-    solr_search_query_paginated_preanalyzed
+    solr_search_query_paginated_preanalyzed, solr_search_query_with_doc_id_preanalyzed
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -302,6 +302,17 @@ class SolrDocumentsSearchQueryPreAnalyzed(APIView):
                                                          sort_direction=request.GET.get('sortDirection'))
         return Response(result)
 
+class SolrDocumentSearchQueryPreAnalyzed(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, doc_id, format=None):
+        result = solr_search_query_with_doc_id_preanalyzed(doc_id=doc_id, core="documents", term=request.data['query'],
+                                                         page_number=request.GET.get('pageNumber', 1),
+                                                         rows_per_page=request.GET.get(
+                                                             'pageSize', 1),
+                                                         sort_by=request.GET.get('sortBy'),
+                                                         sort_direction=request.GET.get('sortDirection'))
+        return Response(result)
 
 class SimilarDocumentsAPIView(APIView):
     # permission_classes = [permissions.IsAuthenticated]

@@ -30,6 +30,6 @@
 <div *ngIf="content_html">
   <hr class="my-4" />
   <div class="container-fluid w-50">
-    <div [innerHTML]="content_html"></div>
+    <div attr.concept-id="{{ concept.id }}" attr.doc-id="{{ document.id }}" attr.annotation-type="{{ annotationType }}" appAnnotator [innerHTML]="content_html"></div>
   </div>
 </div>

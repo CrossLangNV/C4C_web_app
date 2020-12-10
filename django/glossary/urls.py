@@ -66,33 +66,21 @@ urlpatterns = [
 
      # Terms and Definitions Annotations API
 
-     # Occurence: API root
-     path('api/annotations/occurence/<str:document_id>', views.OccurenceRootAPIView.as_view(),
-         name='occurence_api_root'),
+     # API root
+     path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>', views.RootAPIView.as_view(),
+         name='api_root'),
 
-     # Occurence: search
-     path('api/annotations/occurence/<str:document_id>/search', views.OccurenceSearchListAPIView.as_view(),
-         name='occurence_api_search'),
+     # Search
+     path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>/search', views.SearchListAPIView.as_view(),
+         name='api_search'),
 
-     # Occurence: create
-     path('api/annotations/occurence/<str:document_id>/annotations', views.OccurenceCreateListAPIView.as_view(),
-         name='occurence_api_create'),
+     # Create
+     path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>/annotations', views.CreateListAPIView.as_view(),
+         name='api_create'),
 
-     # Occurence: delete
-     path('api/annotations/occurence/<str:document_id>/annotations/<str:annotation_id>', views.OccurenceDeleteAPIView.as_view(),
-         name='occurence_api_delete'),
-
-     # Definition: API root
-     path('api/annotations/definition/<str:document_id>', views.OccurenceRootAPIView.as_view(),
-         name='occurence_api_root'),
-
-     # Definition: search
-     path('api/annotations/definition/<str:document_id>/search', views.OccurenceSearchListAPIView.as_view(),
-         name='occurence_api_search'),
-
-     # Definition: create
-     path('api/annotations/definition/<str:document_id>/annotations', views.OccurenceCreateListAPIView.as_view(),
-         name='occurence_api_create'),
+     # Delete
+     path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>/annotations/<str:annotation_id>', views.DeleteAPIView.as_view(),
+         name='api_delete'),
 
 ]
 

@@ -173,6 +173,44 @@ export class ApiService {
     );
   }
 
+  public searchSolrPreAnalyzedDocument(
+    docId: string,
+    pageNumber: number,
+    pageSize: number,
+    term: string,
+    field: string,
+    idsFilter: string[],
+    sortBy: string,
+    sortDirection: string
+  ): Observable<any[]> {
+    let requestUrl = `${this.API_URL}/solrdocument/search/query/preanalyzed/` + docId;
+    // let requestUrl = `http://localhost:8983/solr/documents/select?hl.fl=${field}&hl=on&q={!term f=${field}}${term}` + docId;
+
+    if (sortBy) {
+      requestUrl += `?sortBy=${sortBy}`;
+      if (sortDirection) {
+        requestUrl += `&sortDirection=${sortDirection}`;
+      }
+      if (pageNumber) {
+        requestUrl += `&pageNumber=${pageNumber}`;
+      }
+      if (pageSize) {
+        requestUrl += `&pageSize=${pageSize}`;
+      }
+    }
+
+    let formData = new FormData();
+    formData.append('query', `{!term f=${field}}${term}`);
+
+    return this.http.post<any[]>(requestUrl, formData).pipe(
+      map((data: any[]) => {
+        const result = [data[0]];
+        result.push(data[1]);
+        return result;
+      })
+    );
+  }
+
   public getWebsites(): Observable<Website[]> {
     // return of([
     //   new Website("1", "Staatsblad", "htp://staatsblad.be", "Belgisch Staatsblad Het Belgisch Staatsblad (BS) produceert en verspreidt een brede waaier officiële en overheidspublicaties. Het doet dat zowel via traditionele (papier) als elektronische (internet) kanalen. Voor de belangrijkste officiële publicaties gebeurt de distributie enkel via elektronische weg. Het BS biedt een aantal databanken aan waarvan het Belgisch Staatsblad(externe link) zelf, de bijlage van de rechtspersonen(externe link), de openbare aanbestedingen(externe link) (tot 31 december 2010) en de Justel-databanken(externe link) (geconsolideerde wetgeving en wetgevingsindex) de meest bekende zijn. Daarnaast geven de diensten van het BS beknopte informatie over gegevens die in de publicaties zijn verschenen. Het BS helpt ook bij de distributie van een breed gamma informatiebrochures uitgegeven door de FOD Justitie.", ["1", "2"]),
