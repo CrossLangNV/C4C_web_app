@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 
-from glossary.models import Concept, Comment, Tag, AcceptanceState, AnnotationWorklog
+from glossary.models import Concept, Comment, Tag, AcceptanceState, AnnotationWorklog, ConceptOccurs, ConceptDefined
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -16,7 +16,19 @@ class AnnotationWorklogSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
+        concept_offsets_json_dict = {"concept_id":validated_data["concept"].id, "document_id":validated_data["document"].id, "probability":"1", "begin":validated_data["startOffset"], "end":validated_data["endOffset"]}
+        if (validated_data["annotation_type"] == "occurence"):
+            concept_occurs = ConceptOccurs.objects.create(**concept_offsets_json_dict)
+            validated_data["concept_occurs"] = concept_occurs
+            validated_data["concept_defined"] = None
+        elif (validated_data["annotation_type"] == "definition"):
+            concept_defined = ConceptDefined.objects.create(**concept_offsets_json_dict)
+            validated_data["concept_defined"] = concept_defined
+            validated_data["concept_occurs"] = None
+        
         annotation_worklog = AnnotationWorklog.objects.create(**validated_data)
+        print(annotation_worklog.concept_occurs)
+        print(annotation_worklog.concept_defined)
         return annotation_worklog
 
 class UserSerializer(serializers.ModelSerializer):

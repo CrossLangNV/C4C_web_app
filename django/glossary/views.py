@@ -206,7 +206,6 @@ class CreateListAPIView(ListCreateAPIView):
     def post(self, request, *args, **kwargs):
         # adjusting the data so that it can be processed by the serializer
         adjusted_data = request.data
-        adjusted_data.update({'action': 'add'})
         adjusted_data.update({'created_at': datetime.datetime.now()})
         adjusted_data.update({'concept_occurs': None})
         adjusted_data.update({'concept_defined': None})
