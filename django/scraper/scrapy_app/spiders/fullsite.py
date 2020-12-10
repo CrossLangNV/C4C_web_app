@@ -44,7 +44,7 @@ class FullSiteSpider(CrawlSpider):
                     attrs='href',
                     unique=True
                 ),
-                callback='parse',
+                callback=self.parse,
                 follow=True
             ),
         )
@@ -64,6 +64,5 @@ class FullSiteSpider(CrawlSpider):
             'website': self.website,
             'content_html': cleaned_html.decode('utf-8'),
             'date': datetime.now(timezone.utc).isoformat()[:-6] + 'Z',
-            'language': detected_lang,
-            'pdf_docs': []
+            'language': detected_lang
         }
