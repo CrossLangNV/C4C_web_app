@@ -7,6 +7,7 @@ import urllib
 import pysolr
 import cassis
 import requests
+import math
 
 from cassis import Cas, load_cas_from_xmi
 from cassis.typesystem import load_typesystem
@@ -333,8 +334,7 @@ def extract_terms(website_id):
     cursor_mark = "*"
 
     # select all accepted documents with empty concept_occurs field
-    q = QUERY_WEBSITE + website_name + \
-        " AND acceptance_state: accepted AND -concept_occurs: [\"\" TO *] "
+    q = QUERY_WEBSITE + website_name
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -342,21 +342,39 @@ def extract_terms(website_id):
                'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC, 'fl': 'content_html,content,id'}
     documents = client.search(q, **options)
 
+    total_docs = len(documents)
+    docs_per_worker = 1000
+    workers = math.ceil(total_docs / docs_per_worker)
+    logger.info("workers: %s", workers)
+
     # Generate and write tempfile for typesystem.xml
     ts = fetch_typesystem()
 
-    for i, document in enumerate(documents):
-        extract_terms_for_document(document, ts)
-        if i % 10:
-            logger.info("Got 10 items, posting to solr")
-            requests.get(os.environ['SOLR_URL'] +
-                         '/' + core + CONST_UPDATE_WITH_COMMIT)
+    count = 0
+    for worker in range(workers):
+        options = {'rows': rows_per_page, 'start': count*docs_per_worker,
+                   'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC, 'fl': 'content_html,content,id'}
+        documents = client.search(q, **options)
+        count = count + 1
 
-    requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + CONST_UPDATE_WITH_COMMIT)
+        document_processed = 0
+        for i, document in enumerate(documents):
+            if document_processed < docs_per_worker:
+                extract_terms_for_document.delay(document)
+                document_processed = document_processed + 1
+                if i % 10:
+                    logger.info("Got 10 items, posting to solr")
+                    requests.get(os.environ['SOLR_URL'] +
+                                 '/' + core + CONST_UPDATE_WITH_COMMIT)
 
+        requests.get(os.environ['SOLR_URL'] +
+                     '/' + core + CONST_UPDATE_WITH_COMMIT)
 
-def extract_terms_for_document(document, ts):
+@shared_task
+def extract_terms_for_document(document):
+
+    with open(DEFAULT_TYPESYSTEM, 'rb') as f:
+        ts = load_typesystem(f)
 
     logger.info("Started term extraction for document id: %s", document['id'])
     django_doc = Document.objects.get(id=document['id'])
