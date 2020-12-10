@@ -4,10 +4,11 @@ from django.utils import timezone
 
 from searchapp.models import Document
 
+
 class Concept(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, db_index=True)
     definition = models.TextField()
-    lemma = models.CharField(max_length=200, default="")
+    lemma = models.CharField(max_length=200, db_index=True, default="")
     document_occurs = models.ManyToManyField(
         Document,
         through='ConceptOccurs',
@@ -22,7 +23,6 @@ class Concept(models.Model):
     )
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-
 
     class Meta:
         ordering = ['name']
@@ -57,8 +57,10 @@ class ConceptDefined(ConceptOffsetBase):
 
 
 class AnnotationWorklog(models.Model):
-    concept_occurs = models.ForeignKey(ConceptOccurs, on_delete=models.CASCADE, null=True)
-    concept_defined = models.ForeignKey(ConceptDefined, on_delete=models.CASCADE, null=True)
+    concept_occurs = models.ForeignKey(
+        ConceptOccurs, on_delete=models.CASCADE, null=True)
+    concept_defined = models.ForeignKey(
+        ConceptDefined, on_delete=models.CASCADE, null=True)
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
     user = models.ForeignKey(
         'auth.User', related_name="user_worklog", on_delete=models.SET_NULL, null=True)
@@ -127,5 +129,3 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.value
-
-
