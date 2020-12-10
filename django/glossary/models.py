@@ -39,12 +39,7 @@ class ConceptOffsetBase(models.Model):
     end = models.IntegerField()
 
     class Meta:
-        abstract = True,
-        constraints = [
-            models.UniqueConstraint(
-                fields=['concept_id', 'document_id'], name="unique_per_%(class)s_and_document")
-        ]
-
+        abstract = True
 
 class ConceptOccurs(ConceptOffsetBase):
     class Meta(ConceptOffsetBase.Meta):
@@ -68,15 +63,6 @@ class AnnotationWorklog(models.Model):
     user = models.ForeignKey(
         'auth.User', related_name="user_worklog", on_delete=models.SET_NULL, null=True)
 
-    class Action(models.TextChoices):
-        ADD = 'add', 'Add concept'
-        DELETE = 'del', 'Delete concept'
-
-    action = models.CharField(
-        max_length=3,
-        choices=Action.choices,
-    )
-
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -86,6 +72,7 @@ class AnnotationWorklog(models.Model):
     end = models.CharField(max_length=255, default="", blank=True, null=True)
     endOffset = models.IntegerField(default=0)
 
+    
 class AcceptanceStateValue(models.TextChoices):
     UNVALIDATED = 'Unvalidated',
     ACCEPTED = 'Accepted',
