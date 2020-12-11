@@ -25,7 +25,8 @@ class FullSiteSpider(CrawlSpider):
             raise NotConfigured(
                 "Expecting a 'url' property to be configured, pointing to the first page on the site")
         parsed_uri = urlparse(self.url)
-        self.allowed_domains = ['{uri.netloc}/'.format(uri=parsed_uri)]
+        parsed_netloc = '{uri.netloc}'.format(uri=parsed_uri)
+        self.allowed_domains = ['.'.join(parsed_netloc.split('.')[-2:])]
         self.start_urls = ['{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)]
 
         self.website = kwargs.get('website')
@@ -37,7 +38,7 @@ class FullSiteSpider(CrawlSpider):
         self.cleaner = Cleaner(style=True, links=True, add_nofollow=True,
                                page_structure=False, safe_attrs_only=False)
 
-        self.rules = (
+        self.rules = [
             Rule(
                 LinkExtractor(
                     tags='a',
@@ -47,7 +48,7 @@ class FullSiteSpider(CrawlSpider):
                 callback='parse_item',
                 follow=True
             ),
-        )
+        ]
 
     def parse_item(self, response):
         title = response.xpath('//head/title/text()').get()
