@@ -15,6 +15,7 @@ export class ConceptDocumentDetailsComponent implements OnInit {
   concept: Concept;
   annotationType: String;
   instanceType: string = "unknown";
+  term: string = "unknown";
   consolidatedVersions = new Map();
   content_html: String;
   constructor(
@@ -43,10 +44,14 @@ export class ConceptDocumentDetailsComponent implements OnInit {
 
             this.route.paramMap.subscribe((params: ParamMap) => {
               this.annotationType = params.get('annotationType');
-              if (this.annotationType == "occurence")
+              if (this.annotationType == "occurence") {
                 this.instanceType = "concept_occurs";
-              if (this.annotationType == "definition")
+                this.term = this.concept.name;
+              }
+              if (this.annotationType == "definition") {
                 this.instanceType = "concept_defined";
+                this.term = this.concept.definition;
+              }
               this.service
               .getDocumentWithContent(document.id)
               .subscribe((doc) => {
@@ -63,7 +68,7 @@ export class ConceptDocumentDetailsComponent implements OnInit {
                     this.document.id,
                     1,
                     1,
-                    this.concept.definition,
+                    this.term,
                     this.instanceType,
                     [],
                     "id",
