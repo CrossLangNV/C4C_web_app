@@ -17,9 +17,17 @@ class FullSiteSpider(CrawlSpider):
     pwd = os.getcwd()
     name = "fullsite"
     logger = logging.getLogger('FullSiteSpider')
-    custom_settings = {
-        'LOG_LEVEL': 'DEBUG'
-    }
+    rules = [
+        Rule(
+            LinkExtractor(
+                tags='a',
+                attrs='href',
+                unique=True
+            ),
+            callback='parse_item',
+            follow=True
+        ),
+    ]
 
     def __init__(self, *args, **kwargs):
         super(FullSiteSpider, self).__init__(*args, **kwargs)
@@ -28,8 +36,8 @@ class FullSiteSpider(CrawlSpider):
             raise NotConfigured(
                 "Expecting a 'url' property to be configured, pointing to the first page on the site")
         parsed_uri = urlparse(self.url)
-        parsed_netloc = '{uri.netloc}'.format(uri=parsed_uri)
-        self.allowed_domains = ['.'.join(parsed_netloc.split('.')[-2:])]
+        netloc = '{uri.netloc}'.format(uri=parsed_uri)
+        self.allowed_domains = ['.'.join(netloc.split('.')[-2:])]
         self.start_urls = ['{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)]
 
         self.website = kwargs.get('website')
@@ -40,18 +48,6 @@ class FullSiteSpider(CrawlSpider):
 
         self.cleaner = Cleaner(style=True, links=True, add_nofollow=True,
                                page_structure=False, safe_attrs_only=False)
-
-        self.rules = [
-            Rule(
-                LinkExtractor(
-                    tags='a',
-                    attrs='href',
-                    unique=True
-                ),
-                callback='parse_item',
-                follow=True
-            ),
-        ]
 
     def parse_item(self, response):
         title = response.xpath('//head/title/text()').get()
