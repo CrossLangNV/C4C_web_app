@@ -17,6 +17,9 @@ class FullSiteSpider(CrawlSpider):
     pwd = os.getcwd()
     name = "fullsite"
     logger = logging.getLogger('FullSiteSpider')
+    custom_settings = {
+        'LOG_LEVEL': 'DEBUG'
+    }
 
     def __init__(self, *args, **kwargs):
         super(FullSiteSpider, self).__init__(*args, **kwargs)
