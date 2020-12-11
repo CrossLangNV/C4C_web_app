@@ -44,12 +44,12 @@ class FullSiteSpider(CrawlSpider):
                     attrs='href',
                     unique=True
                 ),
-                callback=self.parse,
+                callback='parse_item',
                 follow=True
             ),
         )
 
-    def parse(self, response):
+    def parse_item(self, response):
         title = response.xpath('//head/title/text()').get()
         cleaned_html = self.cleaner.clean_html(response.body)
         document = lxml.html.document_fromstring(cleaned_html)
