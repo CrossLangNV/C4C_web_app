@@ -170,7 +170,6 @@ class RootAPIView(APIView):
 class SearchListAPIView(ListCreateAPIView):
     serializer_class = AnnotationWorklogSerializer
     queryset = AnnotationWorklog.objects.all()
-
     def list(self, request, *args, **kwargs):
         queryset = AnnotationWorklog.objects.all()
         serializer = AnnotationWorklogSerializer(queryset, many=True)
@@ -196,7 +195,6 @@ class SearchListAPIView(ListCreateAPIView):
                         rows_data += '}'
 
         response_string = '{"total":' + str(count) +',"rows":[' + rows_data + ']}'
-        print(response_string)
         return Response(json.loads(response_string))
 
 class CreateListAPIView(ListCreateAPIView):

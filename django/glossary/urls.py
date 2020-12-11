@@ -64,23 +64,23 @@ urlpatterns = [
     path('api/worklog/<int:pk>', views.WorklogDetailAPIView.as_view(),
          name='worklog_detail_api'),
 
-     # Terms and Definitions Annotations API
+    ### Terms and Definitions Annotations API
 
-     # API root
-     path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>', views.RootAPIView.as_view(),
-         name='api_root'),
+    # API root
+    path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>', views.RootAPIView.as_view(),
+        name='api_root'),
 
-     # Search
-     path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>/search', views.SearchListAPIView.as_view(),
-         name='api_search'),
+    # Search
+    path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>/search', views.SearchListAPIView.as_view(),
+        name='api_search'),
 
-     # Create
-     path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>/annotations', views.CreateListAPIView.as_view(),
-         name='api_create'),
+    # Create
+    path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>/annotations', views.CreateListAPIView.as_view(),
+        name='api_create'),
 
-     # Delete
-     path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>/annotations/<str:annotation_id>', views.DeleteAPIView.as_view(),
-         name='api_delete'),
+    # Delete
+    path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>/annotations/<str:annotation_id>', views.DeleteAPIView.as_view(),
+        name='api_delete'),
 
 ]
 

@@ -27,8 +27,6 @@ class AnnotationWorklogSerializer(serializers.ModelSerializer):
             validated_data["concept_occurs"] = None
         
         annotation_worklog = AnnotationWorklog.objects.create(**validated_data)
-        print(annotation_worklog.concept_occurs)
-        print(annotation_worklog.concept_defined)
         return annotation_worklog
 
 class UserSerializer(serializers.ModelSerializer):
