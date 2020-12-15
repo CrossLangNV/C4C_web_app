@@ -55,14 +55,6 @@ export class ConceptDocumentDetailsComponent implements OnInit {
               this.service
               .getDocumentWithContent(document.id)
               .subscribe((doc) => {
-                // this.content_html = doc.content;
-
-                // this.service
-                //   .getSolrDocument(this.document.id)
-                //   .subscribe((solrDocument) => {
-                //     this.consolidatedVersions = new Map();
-                //   });
-
                 this.service
                   .searchSolrPreAnalyzedDocument(
                     this.document.id,
@@ -77,23 +69,6 @@ export class ConceptDocumentDetailsComponent implements OnInit {
                   .subscribe((data) => {
                     this.content_html = data[1]["highlighting"][this.document.id][this.instanceType];
                   });
-              
-                // loadDefinedInDocuments() {
-                //   this.service
-                //     .searchSolrPreAnalyzedDocuments(
-                //       this.definedInPage,
-                //       this.definedInPageSize,
-                //       this.concept.definition,
-                //       "concept_defined",
-                //       [],
-                //       this.definedInSortBy,
-                //       this.definedInSortDirection
-                //     )
-                //     .subscribe((data) => {
-                //       this.definedInTotal = data[0];
-                //       this.definedIn = data[1];
-                //     });
-                // }
               });
             });
           });
