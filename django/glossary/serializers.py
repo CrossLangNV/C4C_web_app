@@ -16,18 +16,26 @@ class AnnotationWorklogSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def create(self, validated_data):
-        concept_offsets_json_dict = {"concept_id":validated_data["concept"].id, "document_id":validated_data["document"].id, "probability":"1", "begin":validated_data["startOffset"], "end":validated_data["endOffset"]}
-        if (validated_data["annotation_type"] == "occurence"):
-            concept_occurs = ConceptOccurs.objects.create(**concept_offsets_json_dict)
-            validated_data["concept_occurs"] = concept_occurs
-            validated_data["concept_defined"] = None
-        elif (validated_data["annotation_type"] == "definition"):
-            concept_defined = ConceptDefined.objects.create(**concept_offsets_json_dict)
-            validated_data["concept_defined"] = concept_defined
-            validated_data["concept_occurs"] = None
-        
         annotation_worklog = AnnotationWorklog.objects.create(**validated_data)
         return annotation_worklog
+
+class ConceptOccursSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConceptOccurs
+        fields = '__all__'
+
+    def create(self, validated_data):
+        concept_occurs = ConceptOccurs.objects.create(**validated_data)
+        return concept_occurs
+
+class ConceptDefinedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConceptDefined
+        fields = '__all__'
+
+    def create(self, validated_data):
+        concept_defined = ConceptDefined.objects.create(**validated_data)
+        return concept_defined
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
