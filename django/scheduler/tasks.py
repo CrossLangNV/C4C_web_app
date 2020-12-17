@@ -1,16 +1,19 @@
 from __future__ import absolute_import, unicode_literals
 
-from datetime import datetime, timedelta
-from io import BytesIO
-
+import json
 import logging
 import os
 import shutil
-import requests
-import pysolr
+from datetime import datetime, timedelta
+from io import BytesIO
+from pathlib import Path
 
+import pysolr
+import requests
 from celery import shared_task, chain
-from jsonlines import jsonlines
+from django.core.exceptions import ValidationError
+from django.db.models import Q
+from django.db.models.functions import Length
 from langdetect import detect_langs
 from langdetect.lang_detect_exception import LangDetectException
 from minio import Minio, ResponseError
@@ -19,14 +22,11 @@ from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
 from tika import parser
 from twisted.internet import reactor
-from django.core.exceptions import ValidationError
-from django.db.models.functions import Length
 
+from scheduler.extract import extract_terms
 from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
-
-from scheduler.extract import extract_terms, extract_reporting_obligations
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__
@@ -117,46 +117,81 @@ def reset_pre_analyzed_fields(website_id):
 
 
 @shared_task
-def export_documents(website_ids=None):
-    websites = Website.objects.all()
-    logger.info("Export for websites: %s", website_ids)
-    if website_ids:
-        websites = Website.objects.filter(pk__in=website_ids)
-    for website in websites:
-        page_number = 0
-        rows_per_page = 250
-        cursor_mark = "*"
-        # Make sure solr index is updated
-        core = 'documents'
-        requests.get(os.environ['SOLR_URL'] +
-                     '/' + core + CONST_UPDATE_WITH_COMMIT)
-        workdir = workpath + CONST_EXPORT + \
-            export_documents.request.id + '/' + website.name.lower()
-        os.makedirs(workdir)
-        # select all records for website
-        q = 'website:' + website.name
-        if website.name.lower() == 'eurlex':
-            # only documents with content_html for eurlex
-            q += ' AND content_html:*'
+def full_service_task(website_id, **kwargs):
+    website = Website.objects.get(pk=website_id)
+    logger.info("Full service for WEBSITE: %s", website.name)
+    # the following subtasks are linked together in order:
+    # sync_scrapy_to_solr -> parse_content -> sync (solr to django) -> score
+    # a task only starts after the previous finished, immutable signatures (si)
+    # are used since a task doesn't need the result of the previous task: see
+    # https://docs.celeryproject.org/en/stable/userguide/canvas.html
+    chain(
+        sync_scrapy_to_solr_task.si(website_id),
+        parse_content_to_plaintext_task.si(
+            website_id, date=kwargs.get('date', None)),
+        sync_documents_task.si(website_id, date=kwargs.get('date', None)),
+        score_documents_task.si(website_id, date=kwargs.get('date', None)),
+        check_documents_unvalidated_task.si(website_id),
+        extract_terms.si(website_id),
+    )()
+
+
+@shared_task
+def export_documents():
+    logger.info("Export all human validated documents...")
+    # Find all human validated documents:
+    # - no probability model
+    # - ACCEPTED or REJECTED
+    # - group by document
+    human_states = AcceptanceState.objects.filter(
+        (Q(value=AcceptanceStateValue.ACCEPTED) | Q(value=AcceptanceStateValue.REJECTED)) & Q(probability_model=None))\
+        .order_by("document")
+
+    # Make sure solr index is updated
+    core = 'documents'
+    requests.get(os.environ['SOLR_URL'] +
+                 '/' + core + CONST_UPDATE_WITH_COMMIT)
+    workdir = workpath + CONST_EXPORT + export_documents.request.id
+    os.makedirs(workdir)
+
+    # Find documents for all document ids found in human validated acceptance states
+    for human_state in human_states:
+        human_validation = {
+            'human_validation': human_state.value, 'username': human_state.user.username}
+        doc_id = human_state.document.id
+        q = 'id:' + str(doc_id)
         client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-        options = {'rows': rows_per_page, 'start': page_number,
-                   'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC}
-        documents = client.search(q, **options)
+        documents = client.search(q, **{})
         for document in documents:
-            with jsonlines.open(workdir + '/doc_' + document['id'] + '.jsonl',
-                                mode='w') as f:
-                f.write(document)
-                # get acceptance state from django model
-                acceptance_state_qs = AcceptanceState.objects.filter(document__id=document['id'],
-                                                                     probability_model='auto classifier')
-                if acceptance_state_qs:
-                    acceptance_state = acceptance_state_qs[0]
-                    classifier_score = acceptance_state.accepted_probability
-                    classifier_status = acceptance_state.value
-                    classifier_index = acceptance_state.accepted_probability_index
-                    classifier = {'classifier_status': classifier_status, 'classifier_score': classifier_score,
-                                  'classifier_index': classifier_index}
-                    f.write(classifier)
+            # Each .jsonl file contains min 3 lines: document, auto classifier, human validation
+            jsonl_file = Path(workdir + '/doc_' + document['id'] + '.jsonl')
+            if jsonl_file.is_file():
+                # if the file for a document id already exists, append human validation
+                with jsonl_file.open(mode='a') as f:
+                    f.write(json.dumps(human_validation))
+                    f.write('\n')
+            else:
+                # file for document id doesn't exist, write document, auto classifier and human validation
+                with jsonl_file.open(mode='w') as f:
+                    # DOCUMENT
+                    f.write(json.dumps(document))
+                    f.write('\n')
+
+                    # Get acceptance state AUTO CLASSIFIER from django model
+                    acceptance_state_qs = AcceptanceState.objects.filter(document__id=document['id'],
+                                                                         probability_model='auto classifier')
+                    if acceptance_state_qs:
+                        acceptance_state = acceptance_state_qs[0]
+                        classifier_score = acceptance_state.accepted_probability
+                        classifier_status = acceptance_state.value
+                        classifier_index = acceptance_state.accepted_probability_index
+                        classifier = {'classifier_status': classifier_status, 'classifier_score': classifier_score,
+                                      'classifier_index': classifier_index}
+                        f.write(json.dumps(classifier))
+                        f.write('\n')
+
+                    # HUMAN validation
+                    f.write(json.dumps(human_validation))
 
     # create zip file for all .jsonl files
     zip_destination = workpath + CONST_EXPORT + export_documents.request.id
