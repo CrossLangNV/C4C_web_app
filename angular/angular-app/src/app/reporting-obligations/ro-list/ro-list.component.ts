@@ -26,11 +26,8 @@ import {Router} from "@angular/router";
 import {AuthenticationService} from "../../core/auth/authentication.service";
 import {DjangoUser} from "../../shared/models/django_user";
 
-import {SelectItem} from "primeng/api";
-import {logger} from "codelyzer/util/logger";
-import {RdfEntity} from "../../shared/models/rdfEntity";
 import {RdfFilter} from "../../shared/models/rdfFilter";
-import {Dropdown} from "primeng/dropdown";
+import {RoTag} from "../../shared/models/RoTag";
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -102,6 +99,8 @@ export class RoListComponent implements OnInit {
   statesSortIcon: IconDefinition = faSort;
   currentDjangoUser: DjangoUser;
 
+  collapsed: boolean = true;
+
   constructor(
     private service: ApiService,
     private router: Router,
@@ -122,6 +121,12 @@ export class RoListComponent implements OnInit {
 
     // Fetch RDF for filters
     this.fetchAvailableFilters();
+
+    this.service.messageSource.asObservable().subscribe((value: string) => {
+      if (value === 'refresh') {
+        this.fetchRos();
+      }
+    });
 
     this.fetchRos();
     this.searchTermChanged
@@ -227,6 +232,21 @@ export class RoListComponent implements OnInit {
     }
   }
 
+  onAddTag(event, tags, roId) {
+    const newTag = new RoTag('', event.value, roId);
+    this.service.addRoTag(newTag).subscribe((addedTag) => {
+      // primeng automatically adds the string value first, delete this as workaround
+      // see: https://github.com/primefaces/primeng/issues/3419
+      tags.splice(-1, 1);
+      // now add the tag object
+      tags.push(addedTag);
+    });
+  }
+
+  onRemoveTag(event) {
+    this.service.deleteRoTag(event.value.id).subscribe();
+  }
+
   onClickTag(event) {
     this.filterTag = event.value.value;
     this.fetchRos();
@@ -237,5 +257,13 @@ export class RoListComponent implements OnInit {
     this.availableItemsQuery.clear();
     this.fetchAvailableFilters();
     this.fetchRos();
+  }
+
+  collapsePanel() {
+    if (this.collapsed == true) {
+      this.collapsed = false;
+    } else {
+      this.collapsed = true;
+    }
   }
 }
