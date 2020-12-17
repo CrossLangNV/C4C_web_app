@@ -460,20 +460,24 @@ def extract_terms_for_document(document):
         end_defined = definition.end
 
         if len(token_defined.encode('utf-8')) < 32000:
-            # Save Term Definitions in Django
-            c = Concept.objects.update_or_create(
-                name=term.get_covered_text(), definition=token_defined, lemma=lemma_name)
-            # logger.info("Saved concept to django. name = %s, defi = %s (%s:%s)", term.term, definition.get_covered_text(), start_defined, end_defined)
-            defs = ConceptDefined.objects.filter(
-                concept=c[0], document=django_doc)
-            if len(defs) == 1:
-                cd = defs[0]
-                cd.begin = start_defined
-                cd.end = end_defined
-                cd.save()
+            if len(term.get_covered_text()) <= 200:
+                # Save Term Definitions in Django
+                c = Concept.objects.update_or_create(
+                    name=term.get_covered_text(), definition=token_defined, lemma=lemma_name)
+                # logger.info("Saved concept to django. name = %s, defi = %s (%s:%s)", term.term, definition.get_covered_text(), start_defined, end_defined)
+                defs = ConceptDefined.objects.filter(
+                    concept=c[0], document=django_doc)
+                if len(defs) == 1:
+                    cd = defs[0]
+                    cd.begin = start_defined
+                    cd.end = end_defined
+                    cd.save()
+                else:
+                    ConceptDefined.objects.create(
+                        concept=c[0], document=django_doc, begin=start_defined, end=end_defined)
             else:
-                ConceptDefined.objects.create(
-                    concept=c[0], document=django_doc, begin=start_defined, end=end_defined)
+                logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
+                            "Consider disabling supergrams or change the length in the database", token)
 
     # Step 5: Send term extractions to Solr (term_occurs field)
 
