@@ -39,6 +39,26 @@ QUERY_WEBSITE = "website:"
 
 
 @shared_task
+def full_service_task(website_id, **kwargs):
+    website = Website.objects.get(pk=website_id)
+    logger.info("Full service for WEBSITE: %s", website.name)
+    # the following subtasks are linked together in order:
+    # sync_scrapy_to_solr -> parse_content -> sync (solr to django) -> score
+    # a task only starts after the previous finished, immutable signatures (si)
+    # are used since a task doesn't need the result of the previous task: see
+    # https://docs.celeryproject.org/en/stable/userguide/canvas.html
+    chain(
+        sync_scrapy_to_solr_task.si(website_id),
+        parse_content_to_plaintext_task.si(
+            website_id, date=kwargs.get('date', None)),
+        sync_documents_task.si(website_id, date=kwargs.get('date', None)),
+        score_documents_task.si(website_id, date=kwargs.get('date', None)),
+        check_documents_unvalidated_task.si(website_id),
+        extract_terms.si(website_id),
+    )()
+
+
+@shared_task
 def delete_deprecated_acceptance_states():
     acceptance_states = AcceptanceState.objects.all().order_by("document").distinct(
         "document_id").annotate(text_len=Length('document__title')).filter(text_len__gt=1).values()
@@ -136,7 +156,8 @@ def export_documents():
 
     # Find documents for all document ids found in human validated acceptance states
     for human_state in human_states:
-        human_validation = {'human_validation': human_state.value, 'username': human_state.user.username}
+        human_validation = {
+            'human_validation': human_state.value, 'username': human_state.user.username}
         doc_id = human_state.document.id
         q = 'id:' + str(doc_id)
         client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -194,6 +215,66 @@ def export_documents():
     shutil.rmtree(workpath + CONST_EXPORT + export_documents.request.id)
     os.remove(zip_destination + '.zip')
     logging.info("Removed: %s", zip_destination + '.zip')
+
+
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
+@shared_task
+def handle_document_updates_task(website_id):
+    website = Website.objects.get(pk=website_id)
+    logger.info("Handle updates for WEBSITE: %s", str(website))
+    # process files from minio
+    minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                         secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+    bucket_name = website.name.lower()
+    # get all content_hashes
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + 'documents')
+    client_archive = pysolr.Solr(os.environ['SOLR_URL'] + '/' + 'archive')
+    options = {'rows': 250000, 'fl': 'id,content_hash'}
+    results = client.search("*:*", **options)
+    content_hashes = {}
+    for result in results:
+        if 'content_hash' in result:
+            content_hashes[result['id']] = result['content_hash']
+    logger.info("Found " + str(len(content_hashes))+" hashes")
+
+    try:
+        # retrieve jsonlines files from minio
+        objects = minio_client.list_objects(bucket_name)
+        archive_items = []
+        for obj in objects:
+            logger.info("Working on %s", obj.object_name)
+            file_data = minio_client.get_object(bucket_name, obj.object_name)
+            with jsonlines.Reader(BytesIO(file_data.data)) as reader:
+                for obj in reader:
+                    # check if updated (see if we can find the hash from the jsonl object in the list of known content_hashes)
+                    if obj['id'] in content_hashes and obj['content_hash'] != content_hashes[obj['id']]:
+                        archive_items.append(obj['id'])
+
+            logger.info("Going to archive " +
+                        str(len(archive_items)) + " items")
+            # archive_items is the list of all solr document ids that need to be copied to the archive
+            for chunk in chunks(archive_items, 100):
+                solr_ids = ("AND id: ").join(chunk)
+                options = {'rows': 100}
+                results = client.search("id:" + solr_ids, **options)
+                # update ids in results
+                updates = []
+                for result in results:
+                    result['document_id'] = result['id']
+                    result['id'] = result['id'] + result['content_hash']
+                    del result['_version_']
+                    updates.append(result)
+                # send results to archive
+                client_archive.add(updates, commit=True)
+                updates = []
+
+    except ResponseError as err:
+        raise
 
 
 @shared_task
