@@ -561,38 +561,63 @@ def sync_scrapy_to_solr_task(website_id):
                          secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
     bucket_name = website.name.lower()
     bucket_archive_name = bucket_name + "-archive"
-    bucket_failed_name = bucket_name + "-failed"
     create_bucket(minio_client, bucket_name)
     create_bucket(minio_client, bucket_archive_name)
-    create_bucket(minio_client, bucket_failed_name)
     core = "documents"
+
+    # Fetch existing id's
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    options = {'rows': 250000, 'fl': 'id,content_hash'}
+    results = client.search("*:*", **options)
+    content_ids = []
+    for result in results:
+        content_ids.append(result['id'])
+    logger.info("Found " + str(len(content_ids)) + " ids")
+
     try:
         objects = minio_client.list_objects(bucket_name)
         for obj in objects:
+            # Fetch jsonlines file
             logger.info("Working on %s", obj.object_name)
             file_data = minio_client.get_object(bucket_name, obj.object_name)
-            url = os.environ['SOLR_URL'] + '/' + core + "/update/json/docs"
-            output = BytesIO()
-            for d in file_data.stream(32 * 1024):
-                output.write(d)
-            r = requests.post(url, output.getvalue())
-            json_r = r.json()
-            logger.info("SOLR RESPONSE: %s", json_r)
-            if json_r['responseHeader']['status'] == 0:
-                logger.info("ALL good, MOVE to '%s'", bucket_archive_name)
-                copy_result = minio_client.copy_object(
-                    bucket_archive_name, obj.object_name, bucket_name + "/" + obj.object_name)
-            else:
-                logger.info("NOT so good, MOVE to '%s'", bucket_failed_name)
-                copy_result = minio_client.copy_object(
-                    bucket_failed_name, obj.object_name, bucket_name + "/" + obj.object_name)
+            updated_items = 0
+            new_items = 0
+            results = []
+            # a json-line file may contain up to 1000 json documents (memory issue ?)
+            with jsonlines.Reader(BytesIO(file_data.data)) as reader:
+                for json in reader:
+                    if json['id'] in content_ids:
+                        updated_items = updated_items + 1
+                        results.append(rewrite_json_doc_to_update(json))
+                    else:
+                        new_items = updated_items + 1
+                        results.append(json)
+                    if len(results) == 1000:
+                        # Update solr index
+                        client.add(results, commit=True)
+                        results = []
 
+            logger.info("Found " + str(updated_items) + " updated items")
+            logger.info("Found " + str(new_items) + " new items")
+
+            # Update solr index one last time
+            client.add(results, commit=True)
+
+            # move jsonlines file to archive
+            logger.info("ALL good, MOVE to '%s'", bucket_archive_name)
+            minio_client.copy_object(
+                bucket_archive_name, obj.object_name, bucket_name + "/" + obj.object_name)
             minio_client.remove_object(bucket_name, obj.object_name)
-        # Update solr index
-        requests.get(os.environ['SOLR_URL'] + '/' +
-                     core + CONST_UPDATE_WITH_COMMIT)
+
     except ResponseError as err:
         raise
+
+
+def rewrite_json_doc_to_update(doc):
+    for field in doc:
+        if field != "id":
+            doc[field] = {"set": doc[field]}
+    return doc
 
 
 @shared_task
