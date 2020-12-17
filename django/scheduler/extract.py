@@ -342,11 +342,8 @@ def extract_terms(website_id):
                'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC, 'fl': 'content_html,content,id'}
     documents = client.search(q, **options)
 
-    # Generate and write tempfile for typesystem.xml
-    ts = fetch_typesystem()
-
     for i, document in enumerate(documents):
-        extract_terms_for_document(document, ts)
+        extract_terms_for_document(document)
         if i % 10:
             logger.info("Got 10 items, posting to solr")
             requests.get(os.environ['SOLR_URL'] +
@@ -356,9 +353,12 @@ def extract_terms(website_id):
                  '/' + core + CONST_UPDATE_WITH_COMMIT)
 
 
-def extract_terms_for_document(document, ts):
+@shared_task
+def extract_terms_for_document(document):
 
     logger.info("Started term extraction for document id: %s", document['id'])
+    # Generate and write tempfile for typesystem.xml
+    ts = fetch_typesystem()
     django_doc = Document.objects.get(id=document['id'])
     r = None
     paragraph_request = None

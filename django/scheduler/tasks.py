@@ -12,8 +12,9 @@ import pysolr
 import requests
 from celery import shared_task, chain
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 from django.db.models.functions import Length
+from jsonlines import jsonlines
+from django.db.models import Q
 from langdetect import detect_langs
 from langdetect.lang_detect_exception import LangDetectException
 from minio import Minio, ResponseError
@@ -456,7 +457,7 @@ def launch_crawler(spider, spider_type, date_start, date_end):
     reactor.run()  # the script will block here until the crawling is finished
 
 
-@shared_task()
+@shared_task
 def parse_content_to_plaintext_task(website_id, **kwargs):
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()

@@ -57,15 +57,13 @@ class Document(models.Model):
         return self.title
 
     def update_solr(self):
-        # add and index data to Solr when it wasn't pulled from Solr first
         solr_doc = {}
         for field, value in self.__dict__.items():
             if field == 'website_id':
                 solr_doc['website'] = self.website.name
-            elif field == 'date' or field == 'created_at' or field == 'updated_at':
+            elif field.startswith('date') or field == 'created_at' or field == 'updated_at':
                 solr_doc[field] = value.strftime("%Y-%m-%dT%H:%M:%SZ")
-            elif not field.startswith('_') and field != 'extract_text' and not field.startswith(
-                    'content') and field != 'file' and field != 'pull':
+            elif not field.startswith('_') and field != 'file':
                 solr_doc[field] = value
 
         # Work around "Object of type UUID is not JSON serializable"
