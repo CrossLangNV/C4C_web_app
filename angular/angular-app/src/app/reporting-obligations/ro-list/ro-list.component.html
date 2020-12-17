@@ -1,22 +1,35 @@
 <div class="jumbotron p-1 m-2">
   <div class="form-group">
     <div class="row">
-      <div class="col">
+      <div class="col" style="padding: 32px !important;">
         <div>
-          <p>Query for Reporting Obligations</p>
+          <h4>Query for Reporting Obligations</h4>
+          <br/>
 
-          <ul>
-<!--            [showClear]="true"-->
-            <p-dropdown *ngFor="let filter of availableItems" [options]="filter.options" class="a-dropdown"
+          <p-dropdown *ngFor="let filter of availableItems.slice(0, 6)" [options]="filter.options" class="a-dropdown"
+                      optionLabel="name" optionValue="code" [ngModel]="availableItemsQuery.get(item)"
+                      (ngModelChange)="onQuery(filter, $event)" [virtualScroll]="true" [filter]="true">
+
+          </p-dropdown>
+
+        </div>
+
+        <br/>
+
+        <div>
+          <p-fieldset [toggleable]="true" collapsed="false">
+            <p-header class="smaller-text">Advanced filters</p-header>
+            <p-dropdown *ngFor="let filter of availableItems.slice(7)" [options]="filter.options" class="a-dropdown"
                         optionLabel="name" optionValue="code" [ngModel]="availableItemsQuery.get(item)"
                         (ngModelChange)="onQuery(filter, $event)" [virtualScroll]="true" [filter]="true">
 
             </p-dropdown>
-          </ul>
-          <fa-icon (click)="resetFilters()" class="p-2" ngbTooltip="Reset filters" [icon]="resetIcon"></fa-icon>
-
+          </p-fieldset>
         </div>
 
+        <br/>
+
+        <button (click)="resetFilters()" label="Reset filters" pButton pRipple type="button" icon="pi pi-times" class="p-button-rounded p-button-danger p-button-outlined"></button>
 
         <div class="row">
           <div class="col">
@@ -34,6 +47,7 @@
             </div>
           </div>
         </div>
+
       </div>
     </div>
 
@@ -64,13 +78,13 @@
               [routerLink]="[ro.id]"
               >{{ ro.definition || "(no label)" }}</a
             >&nbsp;
-            <!-- <span
+             <span
               *ngIf="ro.comments.length > 0"
               class="badge badge-secondary"
               >{{ ro.comments.length }}</span
-            > -->
+            >
           </td>
-          <!-- <td>
+           <td>
             <p-chips
               [(ngModel)]="ro.tags"
               allowDuplicate="false"
@@ -79,8 +93,8 @@
               (onRemove)="onRemoveTag($event)"
               (onChipClick)="onClickTag($event)"
             ></p-chips>
-          </td> -->
-          <!-- <td>
+          </td>
+           <td>
             <p-chips
               [(ngModel)]="ro.acceptance_states"
               disabled="true"
@@ -117,7 +131,7 @@
                 </div>
               </ng-template>
             </p-chips>
-          </td> -->
+          </td>
         </tr>
       </tbody>
     </table>

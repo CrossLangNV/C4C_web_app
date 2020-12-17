@@ -197,11 +197,12 @@ export class ConceptDetailComponent implements OnInit {
 
   loadDefinedInDocuments() {
     this.service
-      .searchSolrPreAnalyzedDocuments(
+      .getDjangoAndSolrPrAnalyzedDocuments(
         this.definedInPage,
         this.definedInPageSize,
         this.concept.definition,
         "concept_defined",
+        this.concept.id,
         [],
         this.definedInSortBy,
         this.definedInSortDirection

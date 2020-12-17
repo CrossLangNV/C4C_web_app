@@ -37,6 +37,9 @@ import {ConceptAcceptanceState, ConceptAcceptanceStateAdapter} from "../../share
 import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/conceptComment";
 import {RdfEntity} from "../../shared/models/rdfEntity";
 import {RdfFilter} from "../../shared/models/rdfFilter";
+import {RoTag, RoTagAdapter} from "../../shared/models/RoTag";
+import {RoAcceptanceState, RoAcceptanceStateAdapter} from "../../shared/models/roAcceptanceState";
+import {RoComment, RoCommentAdapter} from "../../shared/models/roComment";
 
 @Injectable({
   providedIn: 'root',
@@ -61,6 +64,9 @@ export class ApiService {
     private conceptAcceptanceStateAdapter: ConceptAcceptanceStateAdapter,
     private conceptCommentAdapter: ConceptCommentAdapter,
     private roAdapter: RoAdapter,
+    private roTagAdapter: RoTagAdapter,
+    private roAcceptanceStateAdapter: RoAcceptanceStateAdapter,
+    private roCommentAdapter: RoCommentAdapter,
   ) {
     this.messageSource = new Subject<string>();
   }
@@ -153,6 +159,45 @@ export class ApiService {
     formData.append('query', `{!term f=${field}}${term}`);
 
     return this.http.post<any[]>(requestUrl, formData).pipe(
+      map((data: any[]) => {
+        const result = [data[0]];
+        result.push(data[1]);
+        return result;
+      })
+    );
+  }
+
+  public getDjangoAndSolrPrAnalyzedDocuments(
+    pageNumber: number,
+    pageSize: number,
+    term: string,
+    field: string,
+    conceptId: string,
+    idsFilter: string[],
+    sortBy: string,
+    sortDirection: string
+  ): Observable<any[]> {
+    let requestUrl = `${this.API_URL}/solrdocument/search/query/django/`;
+    // let requestUrl = `http://localhost:8983/solr/documents/select?hl.fl=${field}&hl=on&q={!term f=${field}}${term}`;
+
+    if (sortBy) {
+      requestUrl += `?sortBy=${sortBy}`;
+      if (sortDirection) {
+        requestUrl += `&sortDirection=${sortDirection}`;
+      }
+      if (pageNumber) {
+        requestUrl += `&pageNumber=${pageNumber}`;
+      }
+      if (pageSize) {
+        requestUrl += `&pageSize=${pageSize}`;
+      }
+    }
+
+    // let formData = new FormData();
+    // formData.append('field', field);
+    // formData.append('term', term);
+
+    return this.http.post<any[]>(requestUrl, {'field': field, 'term': term, 'id': conceptId}).pipe(
       map((data: any[]) => {
         const result = [data[0]];
         result.push(data[1]);
@@ -531,4 +576,56 @@ export class ApiService {
       `${this.API_RO_URL}/ros/entity_map`
     )
   }
+
+  // RO States/comments/tags
+  public addRoTag(tag: RoTag): Observable<RoTag> {
+    return this.http
+      .post<RoTag>(
+        `${this.API_RO_URL}/tags`,
+        this.roTagAdapter.encode(tag)
+      )
+      .pipe(map((item) => this.roTagAdapter.adapt(item)));
+  }
+
+  public deleteRoTag(id: string): Observable<any> {
+    return this.http.delete(`${this.API_RO_URL}/tag/${id}`);
+  }
+
+  public getRoStateValues(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.API_RO_URL}/state/value`);
+  }
+
+  public getRoState(id: string): Observable<RoAcceptanceState> {
+    return this.http
+      .get<RoAcceptanceState>(`${this.API_RO_URL}/state/${id}`)
+      .pipe(map((item) => this.roAcceptanceStateAdapter.adapt(item)));
+  }
+
+  public updateRoState(state: RoAcceptanceState): Observable<RoAcceptanceState> {
+    return this.http.put<RoAcceptanceState>(
+      `${this.API_RO_URL}/state/${state.id}`,
+      this.roAcceptanceStateAdapter.encode(state)
+    );
+  }
+
+  public getRoComment(id: string): Observable<RoComment> {
+    return this.http
+      .get<RoComment>(`${this.API_RO_URL}/comment/${id}`)
+      .pipe(map((item) => this.roCommentAdapter.adapt(item)));
+  }
+
+  public addRoComment(comment: RoComment): Observable<RoComment> {
+    return this.http
+      .post<RoComment>(
+        `${this.API_RO_URL}/comments`,
+        this.roCommentAdapter.encode(comment)
+      )
+      .pipe(map((item) => this.roCommentAdapter.adapt(item)));
+  }
+
+  public deleteRoComment(id: string): Observable<any> {
+    return this.http.delete(`${this.API_RO_URL}/comment/${id}`);
+  }
+
+
 }

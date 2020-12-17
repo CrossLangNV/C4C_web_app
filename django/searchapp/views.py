@@ -24,7 +24,9 @@ from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer
 from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt, \
-    solr_search_query_paginated_preanalyzed, solr_search_ids
+    solr_search_query_paginated_preanalyzed, solr_search_ids, solr_get_preanalyzed_for_doc
+
+from glossary.models import Concept, ConceptOccurs, ConceptDefined
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -323,6 +325,39 @@ class SolrDocumentsSearchQueryPreAnalyzed(APIView):
                                                          sort_by=request.GET.get('sortBy'),
                                                          sort_direction=request.GET.get('sortDirection'))
         return Response(result)
+
+
+class SolrDocumentsSearchQueryDjango(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, format=None):
+
+        concept = Concept.objects.get(pk=request.data['id'])
+
+        concept_defined_or_occurs = None
+        if request.data['field'] == "concept_defined":
+            concept_defined_or_occurs = ConceptDefined.objects.filter(concept=concept)
+        else:
+            concept_defined_or_occurs = ConceptOccurs.objects.filter(concept=concept)
+
+        definitions = []
+        for defi_or_occ in concept_defined_or_occurs:
+
+            highlighting = solr_get_preanalyzed_for_doc(core="documents",
+                                                        id=defi_or_occ.document.id,
+                                                             field=request.data['field'],
+                                                             term=request.data['term'],
+                                                             page_number=request.GET.get('pageNumber', 1),
+                                                             rows_per_page=request.GET.get(
+                                                                 'pageSize', 1),
+                                                             sort_by=request.GET.get('sortBy'),
+                                                             sort_direction=request.GET.get('sortDirection'))
+            definitions.append({"title": defi_or_occ.document.title, "date": str(defi_or_occ.document.date), "id": str(defi_or_occ.document.id),
+                                "website": str(defi_or_occ.document.website), request.data['field']: highlighting})
+
+        response = [len(definitions), definitions]
+
+        return Response(response)
 
 
 class SimilarDocumentsAPIView(APIView):
