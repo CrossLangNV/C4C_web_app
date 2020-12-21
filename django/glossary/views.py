@@ -3,6 +3,7 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import api_view
 
 from glossary.models import AcceptanceState, AcceptanceStateValue, Comment, Concept, Tag, AnnotationWorklog
 from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer, \
@@ -31,7 +32,8 @@ class ConceptListAPIView(ListCreateAPIView):
 
     def get_queryset(self):
         # TODO Remove the Unknown term and empty definition exclude filter
-        q = Concept.objects.all().exclude(name__exact='Unknown').exclude(definition__exact='')
+        q = Concept.objects.all().exclude(
+            name__exact='Unknown').exclude(definition__exact='')
         keyword = self.request.GET.get('keyword', "")
         if keyword:
             q = q.filter(name__icontains=keyword)
@@ -51,6 +53,10 @@ class ConceptListAPIView(ListCreateAPIView):
         tag = self.request.GET.get('tag', "")
         if tag:
             q = q.filter(tags__value=tag)
+        version = self.request.GET.get('version', "")
+        if len(version):
+            q = q.filter(version=version)
+
         return q.order_by("name")
 
 
@@ -90,7 +96,7 @@ class TagDetailAPIView(RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
-    
+
 
 class WorkLogAPIView(ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -156,3 +162,10 @@ class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
     def put(self, request, *args, **kwargs):
         request.data['user'] = request.user.id
         return self.update(request, *args, **kwargs)
+
+
+@api_view(['GET'])
+def get_distinct_versions(request):
+    if request.method == 'GET':
+        q = set(Concept.objects.values_list('version', flat=True))
+        return Response(q)
