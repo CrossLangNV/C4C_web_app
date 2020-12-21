@@ -365,6 +365,8 @@ typesystem = fetch_typesystem()
 def extract_terms_for_document(document):
 
     logger.info("Started term extraction for document id: %s", document['id'])
+    # Generate and write tempfile for typesystem.xml
+    ts = fetch_typesystem()
     django_doc = Document.objects.get(id=document['id'])
     r = None
     paragraph_request = None

@@ -45,6 +45,12 @@
           #summary="ngModel"></textarea>
       </div>
 
+      <p class="mt-4"><b>Add file</b></p>
+      <div class="add-file">
+        <p-fileUpload name="file" customUpload="true" accept=".pdf" [auto]="true" fileLimit=1 (uploadHandler)="onAddFile($event)">
+        </p-fileUpload>
+      </div>
+
       <button type="submit" class="btn btn-success mt-3" [disabled]="!addDocumentForm.form.valid">Add</button>
 
     </form>
