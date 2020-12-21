@@ -1,4 +1,4 @@
-FROM python:3.8-buster
+FROM python:3.9-buster
 
 # The enviroment variable ensures that the python output is set straight
 # to the terminal without buffering it first
@@ -21,6 +21,3 @@ WORKDIR /django
 ADD ./requirements.txt .
 RUN pip install -r requirements.txt
 
-# Install needed packages for SCRAPY specified in requirements.txt
-ADD ./scraper/requirements.txt ./scraper
-RUN pip install -r scraper/requirements.txt
