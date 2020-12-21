@@ -10,6 +10,7 @@ import { BrowseModule } from './browse/browse.module';
 import { AppRoutingModule } from './app-routing.module';
 import { GlossaryModule } from './glossary/glossary.module';
 import { ReportingObligationsModule } from './reporting-obligations/reporting-obligations.module';
+import {NgxSkeletonLoaderComponent, NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
 
 @NgModule({
   declarations: [AppComponent],
@@ -23,6 +24,7 @@ import { ReportingObligationsModule } from './reporting-obligations/reporting-ob
     ReportingObligationsModule,
     SearchModule,
     BrowseModule,
+    NgxSkeletonLoaderModule,
   ],
   bootstrap: [AppComponent],
 })

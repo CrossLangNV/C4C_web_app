@@ -38,7 +38,8 @@ export class Document {
     public commentIds: string[],
     public tags: string[],
     public consolidatedVersions: string,
-    public file_url: string,
+    public file: File,
+    public fileUrl: string,
     public occurrance: Concept[],
     public definition: Concept[]
   ) {}
@@ -71,6 +72,7 @@ export class DocumentAdapter implements Adapter<Document> {
       item.comments,
       item.tags,
       item.consolidated_versions,
+      item.file,
       item.file_url,
       item.occurrance,
       item.definition
@@ -100,7 +102,8 @@ export class DocumentAdapter implements Adapter<Document> {
       comments: document.commentIds,
       tags: document.tags,
       consolidatedVersions: document.consolidatedVersions,
-      file_url: document.file_url,
+      file: document.file,
+      file_url: document.fileUrl,
       occurrance: document.occurrance,
       definition: document.definition
     };

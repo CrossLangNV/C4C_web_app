@@ -1,7 +1,28 @@
 <div class="jumbotron p-1 m-2">
   <div class="form-group">
     <div class="row">
-      <div class="col" style="padding: 32px !important;">
+      <div *ngIf="!contentLoaded" class="col" style="padding: 32px !important;">
+        <ngx-skeleton-loader
+                             *ngIf="!contentLoaded"
+                             [theme]="{width: '332px', height: '32px'}">
+        </ngx-skeleton-loader>
+        <br/>
+        <ngx-skeleton-loader
+          [theme]="{width: '180px', height: '32px', 'margin-top': '16px', 'margin-right': '20px'}"
+          count="6">
+        </ngx-skeleton-loader>
+        <ngx-skeleton-loader
+          [theme]="{width: '100%', height: '64px', 'margin-top': '32px'}">
+        </ngx-skeleton-loader>
+        <br/>
+        <ngx-skeleton-loader
+          [theme]="{width: '120px', height: '32px', 'margin-top': '10px'}">
+        </ngx-skeleton-loader>
+      </div>
+
+
+
+      <div *ngIf="contentLoaded" class="col" style="padding: 32px !important;">
         <div>
           <h4>Query for Reporting Obligations</h4>
           <br/>
@@ -51,10 +72,31 @@
       </div>
     </div>
 
+    <table *ngIf="!contentLoaded" class="table table-striped table-bordered table-hover">
+      <thead class="thead-dark">
+      <tr>
+        <th scope="col" sortable="name">
+          <fa-icon [icon]="nameSortIcon"></fa-icon> Label
+        </th>
+        <th scope="col">Tags</th>
+        <th scope="col" sortable="states">
+          <fa-icon [icon]="statesSortIcon"></fa-icon> States
+        </th>
+      </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let n of numSequence(3); let i = index;">
+          <td *ngFor="let n of numSequence(3); let i = index;">
+            <ngx-skeleton-loader
+              [theme]="{width: '100%', height: '64px'}">
+            </ngx-skeleton-loader>
+          </td>
+      </tbody>
+    </table>
 
 
     <hr class="my-2" />
-    <table class="table table-striped table-bordered table-hover">
+    <table *ngIf="contentLoaded" class="table table-striped table-bordered table-hover">
       <thead class="thead-dark">
         <tr>
           <th scope="col" sortable="name" (sort)="onSort($event)">
