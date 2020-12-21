@@ -79,6 +79,7 @@ export class ConceptListComponent implements OnInit {
   filterTag = '';
   sortBy = 'name';
   filterType = '';
+  version = '';
   searchTermChanged: Subject<string> = new Subject<string>();
   userIcon: IconDefinition = faUserAlt;
   chipIcon: IconDefinition = faMicrochip;
@@ -94,6 +95,7 @@ export class ConceptListComponent implements OnInit {
     { id: 'accepted', name: '..Accepted' },
     { id: 'rejected', name: '..Rejected' },
   ];
+  versions = [ 'Version...'];
 
   constructor(
     private service: ApiService,
@@ -124,6 +126,7 @@ export class ConceptListComponent implements OnInit {
         this.page = 1;
         this.fetchConcepts();
       });
+      this.fetchVersions();
   }
 
   ngAfterViewInit() {
@@ -133,17 +136,29 @@ export class ConceptListComponent implements OnInit {
   }
 
   fetchConcepts() {
+    if(this.version == 'Version...') {
+     this.version = '';
+    }
     this.service
       .getConcepts(
         this.page,
         this.keyword,
         this.filterTag,
         this.filterType,
+        this.version,
         this.sortBy
       )
       .subscribe((results) => {
         this.concepts = results.results;
         this.collectionSize = results.count;
+      });
+  }
+
+  fetchVersions() {
+    this.service
+      .getConceptVersions()
+      .subscribe((results) => {
+        this.versions = this.versions.concat(results);
       });
   }
 

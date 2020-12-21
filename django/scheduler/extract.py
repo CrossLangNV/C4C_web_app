@@ -7,6 +7,7 @@ import urllib
 import pysolr
 import cassis
 import requests
+import math
 
 from cassis import Cas, load_cas_from_xmi
 from cassis.typesystem import load_typesystem
@@ -25,6 +26,9 @@ DEFINITIONS_EXTRACT_URL = os.environ['GLOSSARY_DEFINITIONS_EXTRACT_URL']
 PARAGRAPH_DETECT_URL = os.environ['GLOSSARY_PARAGRAPH_DETECT_URL']
 RO_EXTRACT_URL = os.environ['RO_EXTRACT_URL']
 CAS_TO_RDF_API = os.environ['CAS_TO_RDF_API']
+CELERY_EXTRACT_TERMS_CHUNKS = os.environ.get('CELERY_EXTRACT_TERMS_CHUNKS', 8)
+EXTRACT_TERMS_NLP_VERSION = os.environ.get(
+    'EXTRACT_TERMS_NLP_VERSION', '8a4f1d58')
 
 SENTENCE_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
 TFIDF_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"
@@ -116,7 +120,8 @@ def get_cas_from_pdf(content):
         "content_type": "pdf",
     }
 
-    logger.info("PDF: input_for_paragraph_detection: %s", input_for_paragraph_detection)
+    logger.info("PDF: input_for_paragraph_detection: %s",
+                input_for_paragraph_detection)
 
     r = requests.post(PARAGRAPH_DETECT_URL,
                       json=input_for_paragraph_detection)
@@ -255,7 +260,7 @@ def extract_reporting_obligations(website_id):
 
             # TODO Remove this later when pdf works
             #logger.warning("PDF CURRENTLY NOT SUPPORTED, SKIPPED.")
-            #continue
+            # continue
 
         if is_html:
             r = get_html2text_cas(document['content_html'][0])
@@ -264,7 +269,6 @@ def extract_reporting_obligations(website_id):
         if is_pdf:
             r = get_cas_from_pdf(document['content'][0])
             paragraph_request = r
-
 
         encoded_b64 = get_encoded_content_from_cas(r)
 
@@ -292,7 +296,6 @@ def extract_reporting_obligations(website_id):
             cas_html2text = load_cas_from_xmi(
                 r.content.decode("utf-8"), typesystem=ts)
 
-
             # This is the CAS with reporting obligations wrapped in VBTT's
             # logger.info("cas_html2text: %s", cas_html2text.to_xmi())
 
@@ -302,7 +305,8 @@ def extract_reporting_obligations(website_id):
                     # Save to Django
                     ReportingObligation.objects.update_or_create(
                         name=vbtt.get_covered_text(), definition=vbtt.get_covered_text())
-                    logger.info("[CAS] Saved Reporting Obligation to Django: %s", vbtt.get_covered_text())
+                    logger.info(
+                        "[CAS] Saved Reporting Obligation to Django: %s", vbtt.get_covered_text())
 
             # Send CAS to Laurens API
 
@@ -318,9 +322,11 @@ def extract_reporting_obligations(website_id):
 
                     ReportingObligation.objects.update_or_create(
                         name=rdf_value, definition=rdf_value, defaults={'rdf_id': rdf_id})
-                    logger.info("[RDF] Saved Reporting Obligation to Django: %s", rdf_value)
+                    logger.info(
+                        "[RDF] Saved Reporting Obligation to Django: %s", rdf_value)
             else:
-                logger.info("[RDF]: Failed to save CAS to RDF. Response code: %s", r.status_code)
+                logger.info(
+                    "[RDF]: Failed to save CAS to RDF. Response code: %s", r.status_code)
 
 
 @shared_task
@@ -342,15 +348,17 @@ def extract_terms(website_id):
                'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC, 'fl': 'content_html,content,id'}
     documents = client.search(q, **options)
 
-    for i, document in enumerate(documents):
-        extract_terms_for_document(document)
-        if i % 10:
-            logger.info("Got 10 items, posting to solr")
-            requests.get(os.environ['SOLR_URL'] +
-                         '/' + core + CONST_UPDATE_WITH_COMMIT)
+    # Divide the document in chunks
+    extract_terms_for_document.chunks(
+        zip(documents), CELERY_EXTRACT_TERMS_CHUNKS).delay()
 
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + CONST_UPDATE_WITH_COMMIT)
+
+
+# Generate and write tempfile for typesystem.xml
+# FIXME: find a way of passing this to the extract_terms_for_document() method ?
+typesystem = fetch_typesystem()
 
 
 @shared_task
@@ -398,7 +406,7 @@ def extract_terms_for_document(document):
 
     # Load CAS files from NLP
     cas2 = cassis.load_cas_from_xmi(
-        terms_decoded_cas, typesystem=ts)
+        terms_decoded_cas, typesystem=typesystem)
 
     atomic_update_defined = [
         {
@@ -463,7 +471,7 @@ def extract_terms_for_document(document):
             if len(term.get_covered_text()) <= 200:
                 # Save Term Definitions in Django
                 c = Concept.objects.update_or_create(
-                    name=term.get_covered_text(), definition=token_defined, lemma=lemma_name)
+                    name=term.get_covered_text(), definition=token_defined, lemma=lemma_name, version=EXTRACT_TERMS_NLP_VERSION)
                 # logger.info("Saved concept to django. name = %s, defi = %s (%s:%s)", term.term, definition.get_covered_text(), start_defined, end_defined)
                 defs = ConceptDefined.objects.filter(
                     concept=c[0], document=django_doc)
@@ -533,7 +541,7 @@ def extract_terms_for_document(document):
             # Save Term Definitions in Django
             if len(term.get_covered_text()) <= 200:
                 c = Concept.objects.update_or_create(
-                    name=term.get_covered_text(), lemma=lemma_name)
+                    name=term.get_covered_text(), lemma=lemma_name, version=EXTRACT_TERMS_NLP_VERSION)
                 ConceptOccurs.objects.update_or_create(
                     concept=c[0], document=django_doc, probability=float(score.encode("utf-8")), begin=start,
                     end=end)

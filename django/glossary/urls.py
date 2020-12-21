@@ -17,7 +17,8 @@ schema_view = get_schema_view(
         license=openapi.License(name="BSD License"),
     ),
     url=os.environ['DJANGO_BASE_URL'],
-    patterns=[path('glossary/', include(('glossary.urls', 'glossary'), namespace="glossary"))],
+    patterns=[path('glossary/', include(('glossary.urls',
+                                         'glossary'), namespace="glossary"))],
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
@@ -34,9 +35,14 @@ urlpatterns = [
         'redoc', cache_timeout=0), name='schema-redoc'),
 
     # Concept
-    path('api/concepts', views.ConceptListAPIView.as_view(), name='concept_api_list'),
-    path('api/concept/<int:pk>', views.ConceptDetailAPIView.as_view(), name='concept_api_detail'),
-    path('api/concept/<concept>', views.ConceptDocumentsAPIView.as_view(), name='concept_api_search'),
+    path('api/concepts', views.ConceptListAPIView.as_view(),
+         name='concept_api_list'),
+    path('api/concepts/versions', views.get_distinct_versions,
+         name='concept_distinct_versions'),
+    path('api/concept/<int:pk>', views.ConceptDetailAPIView.as_view(),
+         name='concept_api_detail'),
+    path('api/concept/<concept>', views.ConceptDocumentsAPIView.as_view(),
+         name='concept_api_search'),
 
     # State
     path('api/states', views.AcceptanceStateListAPIView.as_view(),
@@ -65,4 +71,3 @@ urlpatterns = [
          name='worklog_detail_api'),
 
 ]
-

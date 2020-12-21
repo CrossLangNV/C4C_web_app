@@ -423,11 +423,18 @@ export class ApiService {
   // GLOSSARY //
   //
 
+  public getConceptVersions(): Observable<any[]> {
+    return this.http.get<any[]>(
+      `${this.API_GLOSSARY_URL}/concepts/versions`
+    );
+  }
+
   public getConcepts(
     page: number,
     searchTerm: string,
     filterTag: string,
     filterType: string,
+    version: string,
     sortBy: string
   ): Observable<ConceptResults> {
     var pageQuery = page ? '?page=' + page : '';
@@ -436,6 +443,9 @@ export class ApiService {
     }
     if (filterType) {
       pageQuery = pageQuery + '&filterType=' + filterType;
+    }
+    if (version) {
+      pageQuery = pageQuery + '&version=' + version;
     }
     if (filterTag) {
       pageQuery = pageQuery + '&tag=' + filterTag;
