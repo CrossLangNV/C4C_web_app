@@ -9,6 +9,7 @@ class Concept(models.Model):
     name = models.CharField(max_length=200, db_index=True)
     definition = models.TextField()
     lemma = models.CharField(max_length=200, db_index=True, default="")
+    version = models.CharField(max_length=50, db_index=True, default="initial")
     document_occurs = models.ManyToManyField(
         Document,
         through='ConceptOccurs',

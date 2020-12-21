@@ -27,6 +27,8 @@ PARAGRAPH_DETECT_URL = os.environ['GLOSSARY_PARAGRAPH_DETECT_URL']
 RO_EXTRACT_URL = os.environ['RO_EXTRACT_URL']
 CAS_TO_RDF_API = os.environ['CAS_TO_RDF_API']
 CELERY_EXTRACT_TERMS_CHUNKS = os.environ.get('CELERY_EXTRACT_TERMS_CHUNKS', 8)
+EXTRACT_TERMS_NLP_VERSION = os.environ.get(
+    'EXTRACT_TERMS_NLP_VERSION', '8a4f1d58')
 
 SENTENCE_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
 TFIDF_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"
@@ -467,7 +469,7 @@ def extract_terms_for_document(document):
             if len(term.get_covered_text()) <= 200:
                 # Save Term Definitions in Django
                 c = Concept.objects.update_or_create(
-                    name=term.get_covered_text(), definition=token_defined, lemma=lemma_name)
+                    name=term.get_covered_text(), definition=token_defined, lemma=lemma_name, version=EXTRACT_TERMS_NLP_VERSION)
                 # logger.info("Saved concept to django. name = %s, defi = %s (%s:%s)", term.term, definition.get_covered_text(), start_defined, end_defined)
                 defs = ConceptDefined.objects.filter(
                     concept=c[0], document=django_doc)
@@ -537,7 +539,7 @@ def extract_terms_for_document(document):
             # Save Term Definitions in Django
             if len(term.get_covered_text()) <= 200:
                 c = Concept.objects.update_or_create(
-                    name=term.get_covered_text(), lemma=lemma_name)
+                    name=term.get_covered_text(), lemma=lemma_name, version=EXTRACT_TERMS_NLP_VERSION)
                 ConceptOccurs.objects.update_or_create(
                     concept=c[0], document=django_doc, probability=float(score.encode("utf-8")), begin=start,
                     end=end)
