@@ -555,6 +555,7 @@ def is_document_english(plain_text):
 @shared_task
 def sync_scrapy_to_solr_task(website_id):
     website = Website.objects.get(pk=website_id)
+    website_name = website.name.lower()
     logger.info("Scrapy to Solr WEBSITE: %s", str(website))
     # process files from minio
     minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
@@ -568,7 +569,7 @@ def sync_scrapy_to_solr_task(website_id):
     # Fetch existing id's
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': 250000, 'fl': 'id,content_hash'}
-    results = client.search("*:*", **options)
+    results = client.search("website: " + website_name, **options)
     content_ids = []
     for result in results:
         content_ids.append(result['id'])
