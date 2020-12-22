@@ -52,19 +52,19 @@ QUERY_ID_ASC = 'id asc'
 QUERY_WEBSITE = "website:"
 
 
-def get_html2text_cas(content_html):
+def get_html2text_cas(content_html, docid):
     content_html_text = {
         "text": content_html
     }
+    logger.info('Sending request to %s',
+                UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"])
     start = time.time()
     r = requests.post(
         UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"], json=content_html_text)
 
-    logger.info('Sent request to %s. Status code: %s', UIMA_URL["BASE"] + UIMA_URL["HTML2TEXT"],
-                r.status_code)
     end = time.time()
     logger.info(
-        "UIMA Html2Text took %s seconds to succeed.", end - start)
+        "UIMA Html2Text took %s seconds to succeed (code %s ) (id: %s ).", end - start, r.status_code, docid)
     return r
 
 
@@ -112,7 +112,7 @@ def fetch_typesystem():
         return load_typesystem(f)
 
 
-def get_cas_from_pdf(content):
+def get_cas_from_pdf(content, docid):
     # Logic for documents without HTML, that have a "content" field which is a PDF to HTML done by Tika
     # Create a new cas here
     start = time.time()
@@ -126,31 +126,30 @@ def get_cas_from_pdf(content):
         "content_type": "pdf",
     }
 
+    logger.info("Sending request to Paragraph Detection (PDF) (%s)",
+                PARAGRAPH_DETECT_URL)
     r = requests.post(PARAGRAPH_DETECT_URL,
                       json=input_for_paragraph_detection)
-    logger.info("Sent request to Paragraph Detection (%s). Status code: %s", PARAGRAPH_DETECT_URL,
-                r.status_code)
     end = time.time()
     logger.info(
-        "Paragraph Detect took %s seconds to succeed.", end - start)
+        "Paragraph Detect took %s seconds to succeed (code: %s) (id: %s).", end - start, r.status_code, docid)
     return r
 
 
-def get_cas_from_paragraph_detection(content_encoded):
+def get_cas_from_paragraph_detection(content_encoded, docid):
     input_for_paragraph_detection = {
         "cas_content": content_encoded,
         "content_type": "html",
     }
 
+    logger.info("Sending request to Paragraph Detection (HTML) (%s)",
+                PARAGRAPH_DETECT_URL)
     start = time.time()
     paragraph_request = requests.post(PARAGRAPH_DETECT_URL,
                                       json=input_for_paragraph_detection)
-    logger.info("Sent request to Paragraph Detection (%s). Status code: %s", PARAGRAPH_DETECT_URL,
-                paragraph_request.status_code)
-
     end = time.time()
     logger.info(
-        "Paragraph Detect took %s seconds to succeed.", end - start)
+        "Paragraph Detect took %s seconds to succeed (code: %s) (id: %s).", end - start, paragraph_request.status_code, docid)
     return paragraph_request
 
 
@@ -177,37 +176,37 @@ def get_encoded_content_from_cas(r):
     return str(encoded_bytes, "utf-8")
 
 
-def get_cas_from_definitions_extract(input_cas_encoded):
+def get_cas_from_definitions_extract(input_cas_encoded, docid):
     input_for_term_defined = {
         "cas_content": input_cas_encoded,
         "content_type": "html",
     }
 
+    logger.info("Sending request to DefinitionExtract NLP (%s)",
+                DEFINITIONS_EXTRACT_URL)
     start = time.time()
     definitions_request = requests.post(DEFINITIONS_EXTRACT_URL,
                                         json=input_for_term_defined)
     end = time.time()
-    logger.info("Sent request to DefinitionExtract NLP (%s) Status code: %s", DEFINITIONS_EXTRACT_URL,
-                definitions_request.status_code)
     logger.info(
-        "DefinitionExtract took %s seconds to succeed.", end - start)
+        "DefinitionExtract took %s seconds to succeed (code: %s) (id: %s).", end - start, definitions_request.status_code, docid)
 
     return definitions_request
 
 
-def get_cas_from_text_extract(input_cas_encoded):
+def get_cas_from_text_extract(input_cas_encoded, docid):
     text_cas = {
         "cas_content": input_cas_encoded,
         "content_type": "html",
         "extract_supergrams": "false"
     }
+    logger.info(
+        "Sending request to TextExtract NLP (%s)", TERM_EXTRACT_URL)
     start = time.time()
     request_nlp = requests.post(TERM_EXTRACT_URL, json=text_cas)
     end = time.time()
     logger.info(
-        "Sent request to TextExtract NLP (%s). Status code: %s", TERM_EXTRACT_URL, request_nlp.status_code)
-    logger.info(
-        "TermExtract took %s seconds to succeed.", end - start)
+        "TermExtract took %s seconds to succeed (code: %s) (id: %s).", end - start, request_nlp.status_code, docid)
     return request_nlp
 
 
@@ -382,25 +381,27 @@ def extract_terms_for_document(document):
         logger.info("Extracting terms from HTML document id: %s (%s chars)",
                     document['id'], len(document['content_html'][0]))
         # Html2Text - Get XMI from UIMA - Only when HTML not for PDFs
-        r = get_html2text_cas(document['content_html'][0])
+        r = get_html2text_cas(document['content_html'][0], django_doc.id)
         encoded_b64 = get_encoded_content_from_cas(r)
         # Paragraph Detection for HTML
-        paragraph_request = get_cas_from_paragraph_detection(encoded_b64)
+        paragraph_request = get_cas_from_paragraph_detection(
+            encoded_b64, django_doc.id)
 
     elif "content_html" not in document and "content" in document:
         logger.info("Extracting terms from PDF document id: %s (%s chars)",
                     document['id'], len(document['content'][0]))
         # Paragraph detection for PDF + fallback cas for not having a html2text request
-        r = get_cas_from_pdf(document['content'][0])
+        r = get_cas_from_pdf(document['content'][0], django_doc.id)
         paragraph_request = r
 
     # Term definition
     input_content = json.loads(paragraph_request.content)['cas_content']
-    definitions_request = get_cas_from_definitions_extract(input_content)
+    definitions_request = get_cas_from_definitions_extract(
+        input_content, django_doc.id)
 
     # Step 3: NLP TextExtract
     input_content = json.loads(definitions_request.content)['cas_content']
-    request_nlp = get_cas_from_text_extract(input_content)
+    request_nlp = get_cas_from_text_extract(input_content, django_doc.id)
 
     # Decoded cas from termextract
     terms_decoded_cas = base64.b64decode(
@@ -556,7 +557,8 @@ def extract_terms_for_document(document):
     escaped_json = json.dumps(
         atomic_update[0]['concept_occurs']['set'])
     atomic_update[0]['concept_occurs']['set'] = escaped_json
-    logger.info("Detected %s concepts", len(concept_occurs_tokens))
+    logger.info("Detected %s concepts in document: %s",
+                len(concept_occurs_tokens), document['id'])
     if len(concept_occurs_tokens) > 0:
         post_pre_analyzed_to_solr(atomic_update)
 
@@ -564,7 +566,7 @@ def extract_terms_for_document(document):
     escaped_json_def = json.dumps(
         atomic_update_defined[0]['concept_defined']['set'])
     atomic_update_defined[0]['concept_defined']['set'] = escaped_json_def
-    logger.info("Detected %s concept definitions",
-                len(concept_defined_tokens))
+    logger.info("Detected %s concept definitions in document: %s",
+                len(concept_defined_tokens), document['id'])
     if len(concept_defined_tokens) > 0:
         post_pre_analyzed_to_solr(atomic_update_defined)
