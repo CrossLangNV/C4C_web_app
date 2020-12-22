@@ -121,16 +121,11 @@ def get_cas_from_pdf(content):
 
     encoded_cas = base64.b64encode(bytes(tika_cas.to_xmi(), 'utf-8')).decode()
 
-    logger.info("PDF: encoded_cas: %s", encoded_cas)
-
     # Then send this cas to NLP Paragraph detection
     input_for_paragraph_detection = {
         "cas_content": encoded_cas,
         "content_type": "pdf",
     }
-
-    logger.info("PDF: input_for_paragraph_detection: %s",
-                input_for_paragraph_detection)
 
     r = requests.post(PARAGRAPH_DETECT_URL,
                       json=input_for_paragraph_detection)
