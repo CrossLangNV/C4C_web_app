@@ -95,10 +95,19 @@ def create_cas(sofa):
 
 
 def fetch_typesystem():
-    typesystem_req = requests.get(
-        UIMA_URL["BASE"] + UIMA_URL["TYPESYSTEM"])
-    typesystem_file = open(DEFAULT_TYPESYSTEM, "w")
-    typesystem_file.write(typesystem_req.content.decode("utf-8"))
+    try:
+        # Check if file exits
+        f = open(DEFAULT_TYPESYSTEM)
+    except IOError:
+        # Fetch from UIMA
+        typesystem_req = requests.get(
+            UIMA_URL["BASE"] + UIMA_URL["TYPESYSTEM"])
+        typesystem_file = open(DEFAULT_TYPESYSTEM, "w")
+        typesystem_file.write(typesystem_req.content.decode("utf-8"))
+    finally:
+        f.close()
+
+    # FIXME: load only once ?
     with open(DEFAULT_TYPESYSTEM, 'rb') as f:
         return load_typesystem(f)
 
@@ -340,13 +349,16 @@ def extract_terms(website_id):
 
     # select all accepted documents with empty concept_occurs field
     q = QUERY_WEBSITE + website_name + \
-        " AND acceptance_state: accepted AND -concept_occurs: [\"\" TO *] "
+        " AND acceptance_state:accepted AND -concept_occurs: [\"\" TO *]"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
                'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC, 'fl': 'content_html,content,id'}
     documents = client.search(q, **options)
+
+    # Fetch typesystem
+    typesystem = fetch_typesystem()
 
     # Divide the document in chunks
     extract_terms_for_document.chunks(
@@ -356,17 +368,13 @@ def extract_terms(website_id):
                  '/' + core + CONST_UPDATE_WITH_COMMIT)
 
 
-# Generate and write tempfile for typesystem.xml
-# FIXME: find a way of passing this to the extract_terms_for_document() method ?
-typesystem = fetch_typesystem()
-
-
 @shared_task
 def extract_terms_for_document(document):
 
     logger.info("Started term extraction for document id: %s", document['id'])
     # Generate and write tempfile for typesystem.xml
-    ts = fetch_typesystem()
+    typesystem = fetch_typesystem()
+
     django_doc = Document.objects.get(id=document['id'])
     r = None
     paragraph_request = None
