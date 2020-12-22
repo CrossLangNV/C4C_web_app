@@ -268,7 +268,7 @@ def extract_reporting_obligations(website_id):
             is_pdf = True
 
             # TODO Remove this later when pdf works
-            #logger.warning("PDF CURRENTLY NOT SUPPORTED, SKIPPED.")
+            # logger.warning("PDF CURRENTLY NOT SUPPORTED, SKIPPED.")
             # continue
 
         if is_html:
@@ -293,7 +293,7 @@ def extract_reporting_obligations(website_id):
         if ro_request.status_code == 200:
             ro_cas = base64.b64decode(json.loads(ro_request.content)[
                                       'cas_content']).decode('utf-8')
-            #logger.info("ro_cas: %s", ro_cas)
+            # logger.info("ro_cas: %s", ro_cas)
 
             cas = load_cas_from_xmi(ro_cas, typesystem=ts)
             sofa_reporting_obligations = cas.get_view(
@@ -362,7 +362,7 @@ def extract_terms(website_id):
 
     # Divide the document in chunks
     extract_terms_for_document.chunks(
-        zip(documents), CELERY_EXTRACT_TERMS_CHUNKS).delay()
+        zip(documents), int(CELERY_EXTRACT_TERMS_CHUNKS)).delay()
 
     requests.get(os.environ['SOLR_URL'] +
                  '/' + core + CONST_UPDATE_WITH_COMMIT)
