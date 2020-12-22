@@ -113,7 +113,6 @@ def fetch_typesystem():
 
 
 def get_cas_from_pdf(content):
-    logger.info("PDF: get_cas_from_pdf() called: content is: %s", content)
     # Logic for documents without HTML, that have a "content" field which is a PDF to HTML done by Tika
     # Create a new cas here
     start = time.time()
