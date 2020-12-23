@@ -46,7 +46,6 @@ UIMA_URL = {"BASE": os.environ['GLOSSARY_UIMA_URL'],  # http://uima:8008
             "TYPESYSTEM": "/html2text/typesystem",
             }
 
-CONST_UPDATE_WITH_COMMIT = "/update?commit=true"
 CONST_EXPORT = '/export/'
 QUERY_ID_ASC = 'id asc'
 QUERY_WEBSITE = "website:"
@@ -212,7 +211,8 @@ def get_cas_from_text_extract(input_cas_encoded, docid):
 
 def post_pre_analyzed_to_solr(data):
     params = json.dumps(data).encode('utf8')
-    req = urllib.request.Request(os.environ['SOLR_URL'] + "/documents/update", data=params,
+    # FIXME: find a way to commit when all the work is done, commits after 15s now
+    req = urllib.request.Request(os.environ['SOLR_URL'] + "/documents/update?commitWithin=15000", data=params,
                                  headers={'content-type': 'application/json'})
     response = urllib.request.urlopen(req)
     logger.info(response.read().decode('utf8'))
@@ -332,7 +332,7 @@ def extract_reporting_obligations(website_id):
 
 
 @shared_task
-def extract_terms(website_id):
+def extract_terms(website_id, document_id=None):
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
     core = 'documents'
@@ -340,10 +340,14 @@ def extract_terms(website_id):
     rows_per_page = 250
     cursor_mark = "*"
 
-    logger.info("Extract terms task, WEBSITE: %s", str(website))
-    # select all accepted documents with empty concept_occurs field
-    q = QUERY_WEBSITE + website_name + \
-        " AND acceptance_state:accepted AND -concept_occurs: [\"\" TO *]"
+    if document_id:
+        q = "id:" + document_id
+        logger.info("Extract terms task, DOCUMENT: %s", document_id)
+    else:
+        logger.info("Extract terms task, WEBSITE: %s", website)
+        # select all accepted documents with empty concept_occurs field
+        q = QUERY_WEBSITE + website_name + \
+            " AND acceptance_state:accepted AND -concept_occurs: [\"\" TO *]"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -357,9 +361,6 @@ def extract_terms(website_id):
     # Divide the document in chunks
     extract_terms_for_document.chunks(
         zip(documents), int(CELERY_EXTRACT_TERMS_CHUNKS)).delay()
-
-    requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + CONST_UPDATE_WITH_COMMIT)
 
 
 @shared_task
@@ -475,7 +476,7 @@ def extract_terms_for_document(document):
             if len(term.get_covered_text()) <= 200:
                 # Save Term Definitions in Django
                 c = Concept.objects.update_or_create(
-                    name=term.get_covered_text(), definition=token_defined, lemma=lemma_name, version=EXTRACT_TERMS_NLP_VERSION)
+                    name=term.get_covered_text(), definition=token_defined, lemma=lemma_name, version=EXTRACT_TERMS_NLP_VERSION,  defaults={'website_id': django_doc.website.id})
                 # logger.info("Saved concept to django. name = %s, defi = %s (%s:%s)", term.term, definition.get_covered_text(), start_defined, end_defined)
                 defs = ConceptDefined.objects.filter(
                     concept=c[0], document=django_doc)
@@ -545,7 +546,7 @@ def extract_terms_for_document(document):
             # Save Term Definitions in Django
             if len(term.get_covered_text()) <= 200:
                 c = Concept.objects.update_or_create(
-                    name=term.get_covered_text(), lemma=lemma_name, version=EXTRACT_TERMS_NLP_VERSION)
+                    name=term.get_covered_text(), lemma=lemma_name, version=EXTRACT_TERMS_NLP_VERSION, defaults={'website_id': django_doc.website.id})
                 ConceptOccurs.objects.update_or_create(
                     concept=c[0], document=django_doc, probability=float(score.encode("utf-8")), begin=start,
                     end=end)

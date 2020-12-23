@@ -33,7 +33,6 @@ logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__
                                            ))
 
-CONST_UPDATE_WITH_COMMIT = "/update?commit=true"
 CONST_EXPORT = '/export/'
 QUERY_ID_ASC = 'id asc'
 QUERY_WEBSITE = "website:"
@@ -75,6 +74,17 @@ def delete_deprecated_acceptance_states():
     logger.info("Deleted %s deprecated acceptance states", count)
 
 
+def reset_pre_analyzed_fields_document(document_id):
+    logger.info("Resetting all PreAnalyzed fields for DOCUMENT: %s", document_id)
+    core = 'documents'
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    document = {"id": document_id,
+                "concept_occurs": {"set": ""},
+                "concept_defined": {"set": ""}
+                }
+    client.add(document, commit=True)
+
+
 @shared_task
 def reset_pre_analyzed_fields(website_id):
     website = Website.objects.get(pk=website_id)
@@ -84,10 +94,7 @@ def reset_pre_analyzed_fields(website_id):
     page_number = 0
     rows_per_page = 250
     cursor_mark = "*"
-    # Make sure solr index is updated
     core = 'documents'
-    requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + CONST_UPDATE_WITH_COMMIT)
     # select all records where content is empty and content_html is not
     q = "( concept_occurs: [* TO *] OR concept_defined: [* TO *] ) AND website:" + website_name
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -99,42 +106,18 @@ def reset_pre_analyzed_fields(website_id):
     for result in results:
         # add to document model and save
         document = {"id": result['id'],
-                    "concept_occurs": {"set": "null"},
-                    "concept_defined": {"set": "null"}
+                    "concept_occurs": {"set": ""},
+                    "concept_defined": {"set": ""}
                     }
         items.append(document)
 
         if len(items) == 1000:
             logger.info("Got 1000 items, posting to solr")
-            client.add(items)
-            requests.get(os.environ['SOLR_URL'] +
-                         '/' + core + CONST_UPDATE_WITH_COMMIT)
+            client.add(items, commit=True)
             items = []
 
-    # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
-    client.add(items)
-    requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + CONST_UPDATE_WITH_COMMIT)
-
-
-@shared_task
-def full_service_task(website_id, **kwargs):
-    website = Website.objects.get(pk=website_id)
-    logger.info("Full service for WEBSITE: %s", website.name)
-    # the following subtasks are linked together in order:
-    # sync_scrapy_to_solr -> parse_content -> sync (solr to django) -> score
-    # a task only starts after the previous finished, immutable signatures (si)
-    # are used since a task doesn't need the result of the previous task: see
-    # https://docs.celeryproject.org/en/stable/userguide/canvas.html
-    chain(
-        sync_scrapy_to_solr_task.si(website_id),
-        parse_content_to_plaintext_task.si(
-            website_id, date=kwargs.get('date', None)),
-        sync_documents_task.si(website_id, date=kwargs.get('date', None)),
-        score_documents_task.si(website_id, date=kwargs.get('date', None)),
-        check_documents_unvalidated_task.si(website_id),
-        extract_terms.si(website_id),
-    )()
+    # Send to solr
+    client.add(items, commit=True)
 
 
 @shared_task
@@ -148,10 +131,8 @@ def export_documents():
         (Q(value=AcceptanceStateValue.ACCEPTED) | Q(value=AcceptanceStateValue.REJECTED)) & Q(probability_model=None))\
         .order_by("document")
 
-    # Make sure solr index is updated
     core = 'documents'
-    requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + CONST_UPDATE_WITH_COMMIT)
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     workdir = workpath + CONST_EXPORT + export_documents.request.id
     os.makedirs(workdir)
 
@@ -161,7 +142,6 @@ def export_documents():
             'human_validation': human_state.value, 'username': human_state.user.username}
         doc_id = human_state.document.id
         q = 'id:' + str(doc_id)
-        client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
         documents = client.search(q, **{})
         for document in documents:
             # Each .jsonl file contains min 3 lines: document, auto classifier, human validation
@@ -466,15 +446,12 @@ def parse_content_to_plaintext_task(website_id, **kwargs):
     rows_per_page = 250
     cursor_mark = "*"
     date = kwargs.get('date', None)
-    # Make sure solr index is updated
-    core = 'documents'
-    requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + CONST_UPDATE_WITH_COMMIT)
     # select all records where content is empty and content_html is not
     q = "-content: [\"\" TO *] AND ( content_html: [* TO *] OR file_name: [* TO *] ) AND website:" + website_name
     if date:
         q = q + " AND date:[" + date + " TO NOW]"  # eg. 2013-07-17T00:00:00Z
 
+    core = 'documents'
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
                'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC}
@@ -520,15 +497,11 @@ def parse_content_to_plaintext_task(website_id, **kwargs):
 
         if len(items) == 1000:
             logger.info("Got 1000 items, posting to solr")
-            client.add(items)
-            requests.get(os.environ['SOLR_URL'] +
-                         '/' + core + CONST_UPDATE_WITH_COMMIT)
+            client.add(items, commit=True)
             items = []
 
-    # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
-    client.add(items)
-    requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + CONST_UPDATE_WITH_COMMIT)
+    # Send to solr
+    client.add(items, commit=True)
 
 
 def is_document_english(plain_text):

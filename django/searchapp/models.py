@@ -5,6 +5,7 @@ import pysolr
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from django.db.models import Q
 
 from searchapp.solr_call import solr_update
 
@@ -107,8 +108,12 @@ class AcceptanceState(models.Model):
             models.UniqueConstraint(
                 fields=['document_id', 'user_id'], name="unique_per_doc_and_user"),
             models.UniqueConstraint(
-                fields=['document_id', 'probability_model'], name="unique_per_doc_and_model")
-
+                fields=['document_id', 'probability_model'], name="unique_per_doc_and_model"),
+            models.CheckConstraint(
+                check=Q(user__isnull=False) | Q(
+                    probability_model__isnull=False),
+                name='searchapp_not_both_null'
+            )
         ]
         ordering = ['user']
 

@@ -58,4 +58,8 @@ export class ConceptDocumentDetailsComponent implements OnInit {
     var replaceMask = '<span class="highlight">' + concept.name + '</span>';
     return xhtml.replace(regEx, replaceMask);
   }
+  
+  goToLink(url: string) {
+    window.open(url, '_blank');
+  }
 }
