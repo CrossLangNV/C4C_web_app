@@ -72,12 +72,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         state_id = None
         if len(serializer.data) > 0:
             state_id = serializer.data[0]['id']
-        else:
-            new_unvalidated_state = AcceptanceState.objects.create(
-                document=document,
-                user=user
-            )
-            state_id = new_unvalidated_state.id
         return state_id
 
     def get_acceptance_state_value(self, document):

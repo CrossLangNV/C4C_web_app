@@ -409,8 +409,8 @@ export class ApiService {
   }
 
   public updateState(state: AcceptanceState): Observable<AcceptanceState> {
-    return this.http.put<AcceptanceState>(
-      `${this.API_URL}/state/${state.id}`,
+    return this.http.post<AcceptanceState>(
+      `${this.API_URL}/states`,
       this.stateAdapter.encode(state)
     );
   }
