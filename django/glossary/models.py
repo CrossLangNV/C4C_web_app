@@ -1,8 +1,8 @@
 from django.db import models
-
+from django.db.models import Q
 from django.utils import timezone
 
-from searchapp.models import Document
+from searchapp.models import Document, Website
 
 
 class Concept(models.Model):
@@ -10,6 +10,8 @@ class Concept(models.Model):
     definition = models.TextField()
     lemma = models.CharField(max_length=200, db_index=True, default="")
     version = models.CharField(max_length=50, db_index=True, default="initial")
+    website = models.ForeignKey(
+        Website, related_name='website', on_delete=models.CASCADE, null=True)
     document_occurs = models.ManyToManyField(
         Document,
         through='ConceptOccurs',
@@ -105,8 +107,12 @@ class AcceptanceState(models.Model):
             models.UniqueConstraint(
                 fields=['concept_id', 'user_id'], name="unique_per_concepts_and_user"),
             models.UniqueConstraint(
-                fields=['concept_id', 'probability_model'], name="unique_per_concept_and_model")
-
+                fields=['concept_id', 'probability_model'], name="unique_per_concept_and_model"),
+            models.CheckConstraint(
+                check=Q(user__isnull=False) | Q(
+                    probability_model__isnull=False),
+                name='glossary_not_both_null'
+            )
         ]
         ordering = ['user']
 

@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.db.models import Q
 
 
 # Create your models here.
@@ -46,8 +47,12 @@ class AcceptanceState(models.Model):
                 fields=['reporting_obligation_id', 'user_id'], name="unique_per_reporting_obligation_and_user"),
             models.UniqueConstraint(
                 fields=['reporting_obligation_id', 'probability_model'],
-                name="unique_per_reporting_obligation_and_model")
-
+                name="unique_per_reporting_obligation_and_model"),
+            models.CheckConstraint(
+                check=Q(user__isnull=False) | Q(
+                    probability_model__isnull=False),
+                name='obligations_not_both_null'
+            )
         ]
         ordering = ['user']
 

@@ -7,14 +7,10 @@ from django.contrib.auth.models import User
 
 from admin_rest.models import site as rest_site
 from scheduler import tasks
-from scheduler.tasks import full_service_task, sync_documents_task, delete_documents_not_in_solr_task, \
-    score_documents_task, handle_document_updates_task, \
-    scrape_website_task, parse_content_to_plaintext_task, sync_scrapy_to_solr_task, check_documents_unvalidated_task
 from .models import Website, Attachment, Document, AcceptanceState, Comment, Tag
 
 logger = logging.getLogger(__name__)
 
-admin.site.register(Document)
 admin.site.register(Attachment)
 admin.site.register(AcceptanceState)
 admin.site.register(Comment)
@@ -37,46 +33,42 @@ def reset_pre_analyzed_fields(modeladmin, request, queryset):
 
 def full_service(modeladmin, request, queryset):
     for website in queryset:
-        full_service_task.delay(website.id)
+        tasks.full_service_task.delay(website.id)
 
 
 def scrape_website(modeladmin, request, queryset):
     for website in queryset:
-        scrape_website_task.delay(website.id)
+        tasks.scrape_website_task.delay(website.id)
 
 
 def parse_content_to_plaintext(modeladmin, request, queryset):
     for website in queryset:
-        parse_content_to_plaintext_task.delay(website.id)
+        tasks.parse_content_to_plaintext_task.delay(website.id)
 
 
 def sync_scrapy_to_solr(modeladmin, request, queryset):
     for website in queryset:
-        sync_scrapy_to_solr_task.delay(website.id)
+        tasks.sync_scrapy_to_solr_task.delay(website.id)
 
 
 def sync_documents(modeladmin, request, queryset):
     for website in queryset:
-        logger.info(website)
-        logger.info(website.id)
-        sync_documents_task.delay(website.id)
+        tasks.sync_documents_task.delay(website.id)
 
 
 def delete_documents_not_in_solr(modeladmin, request, queryset):
     for website in queryset:
-        logger.info(website)
-        logger.info(website.id)
-        delete_documents_not_in_solr_task.delay(website.id)
+        tasks.delete_documents_not_in_solr_task.delay(website.id)
 
 
 def score_documents(modeladmin, request, queryset):
     for website in queryset:
-        score_documents_task.delay(website.id)
+        tasks.score_documents_task.delay(website.id)
 
 
 def check_documents_unvalidated(modeladmin, request, queryset):
     for website in queryset:
-        check_documents_unvalidated_task.delay(website.id)
+        tasks.check_documents_unvalidated_task.delay(website.id)
 
 
 def export_documents(modeladmin, request, queryset):
@@ -99,7 +91,7 @@ def extract_reporting_obligations(modeladmin, request, queryset):
 
 def handle_document_updates(modeladmin, request, queryset):
     for website in queryset:
-        handle_document_updates_task.delay(website.id)
+        tasks.handle_document_updates_task.delay(website.id)
 
 
 def delete_from_solr(modeladmin, request, queryset):
@@ -125,4 +117,22 @@ class WebsiteAdmin(admin.ModelAdmin):
     count_documents.short_description = "Documents"
 
 
+def extract_terms_document(modeladmin, request, queryset):
+    for document in queryset:
+        tasks.extract_terms(document.website.id, str(document.id))
+
+
+def reset_pre_analyzed_fields_document(modeladmin, request, queryset):
+    for document in queryset:
+        tasks.reset_pre_analyzed_fields_document(str(document.id))
+
+
+class DocumentAdmin(admin.ModelAdmin):
+    search_fields = ['id', 'title', 'celex']
+    list_filter = ('website__name',)
+    actions = [extract_terms_document, reset_pre_analyzed_fields_document]
+
+
 admin.site.register(Website, WebsiteAdmin)
+
+admin.site.register(Document, DocumentAdmin)

@@ -1,5 +1,4 @@
 import { AppComponent } from './app.component';
-import { Environment } from 'src/environments/environment-variables';
 import { CoreModule } from './core/core.module';
 import { NgModule } from '@angular/core';
 import { SearchModule } from './search/search.module';
@@ -10,7 +9,7 @@ import { BrowseModule } from './browse/browse.module';
 import { AppRoutingModule } from './app-routing.module';
 import { GlossaryModule } from './glossary/glossary.module';
 import { ReportingObligationsModule } from './reporting-obligations/reporting-obligations.module';
-import {NgxSkeletonLoaderComponent, NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
+import { NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
 
 @NgModule({
   declarations: [AppComponent],

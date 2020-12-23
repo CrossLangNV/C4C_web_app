@@ -80,6 +80,7 @@ export class ConceptListComponent implements OnInit {
   sortBy = 'name';
   filterType = '';
   version = '';
+  website = '';
   searchTermChanged: Subject<string> = new Subject<string>();
   userIcon: IconDefinition = faUserAlt;
   chipIcon: IconDefinition = faMicrochip;
@@ -95,7 +96,8 @@ export class ConceptListComponent implements OnInit {
     { id: 'accepted', name: '..Accepted' },
     { id: 'rejected', name: '..Rejected' },
   ];
-  versions = [ 'Version...'];
+  versions = [{ id: '', name: 'Version...'}]
+  websites = [ { id: '', name: 'Website..' } ];
 
   constructor(
     private service: ApiService,
@@ -127,18 +129,10 @@ export class ConceptListComponent implements OnInit {
         this.fetchConcepts();
       });
       this.fetchVersions();
-  }
-
-  ngAfterViewInit() {
-    // var app = new annotator.App();
-    // app.include(annotator.ui.main, {element: document.body});
-    // app.start();
+      this.fetchWebsites();
   }
 
   fetchConcepts() {
-    if(this.version == 'Version...') {
-     this.version = '';
-    }
     this.service
       .getConcepts(
         this.page,
@@ -146,6 +140,7 @@ export class ConceptListComponent implements OnInit {
         this.filterTag,
         this.filterType,
         this.version,
+        this.website,
         this.sortBy
       )
       .subscribe((results) => {
@@ -157,9 +152,21 @@ export class ConceptListComponent implements OnInit {
   fetchVersions() {
     this.service
       .getConceptVersions()
-      .subscribe((results) => {
-        this.versions = this.versions.concat(results);
+      .subscribe((versions) => {
+        versions.forEach((version) =>{
+          this.versions.push({id: version, name: '..' + version })
+        })
       });
+  }
+  fetchWebsites() {
+    this.service.getWebsites().subscribe((websites) => {
+      websites.forEach((website) => {
+        this.websites.push({
+          id: website.name.toLowerCase(),
+          name: '..' + website.name.toUpperCase(),
+        });
+      });
+    });
   }
 
   onSearch(keyword: string) {

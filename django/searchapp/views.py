@@ -107,7 +107,7 @@ class DocumentListAPIView(ListCreateAPIView):
             text_len=Length('title')).filter(text_len__gt=1)
 
         if len(keyword) > 0:
-            solr_query = f"title:\"{keyword}\" OR content_html:\"{keyword}\" OR content:\"{keyword}\""
+            solr_query = f"title:\"{keyword}\" OR content:\"{keyword}\" OR celex:\"{keyword}\""
             solr_result = solr_search_ids("documents", solr_query)
 
             id_list = []

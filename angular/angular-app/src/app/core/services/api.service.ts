@@ -435,6 +435,7 @@ export class ApiService {
     filterTag: string,
     filterType: string,
     version: string,
+    website: string,
     sortBy: string
   ): Observable<ConceptResults> {
     var pageQuery = page ? '?page=' + page : '';
@@ -446,6 +447,9 @@ export class ApiService {
     }
     if (version) {
       pageQuery = pageQuery + '&version=' + version;
+    }
+    if (website) {
+      pageQuery = pageQuery + '&website=' + website;
     }
     if (filterTag) {
       pageQuery = pageQuery + '&tag=' + filterTag;

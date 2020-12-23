@@ -54,7 +54,6 @@ class DocumentSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     acceptance_states = AcceptanceStateSerializer(many=True, read_only=True)
     acceptance_state = serializers.SerializerMethodField()
-    # occurrance = ConceptDocumentSerializer(many=True, read_only=True)
     definition = ConceptDocumentSerializer(many=True, read_only=True)
     acceptance_state_value = serializers.SerializerMethodField()
     content = serializers.SerializerMethodField()
