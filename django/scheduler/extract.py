@@ -340,6 +340,7 @@ def extract_terms(website_id):
     rows_per_page = 250
     cursor_mark = "*"
 
+    logger.info("Extract terms task, WEBSITE: %s", str(website))
     # select all accepted documents with empty concept_occurs field
     q = QUERY_WEBSITE + website_name + \
         " AND acceptance_state:accepted AND -concept_occurs: [\"\" TO *]"

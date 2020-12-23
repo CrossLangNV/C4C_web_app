@@ -1,5 +1,4 @@
 import logging
-import logging
 import os
 import re
 
@@ -39,7 +38,8 @@ class WebsiteListAPIView(ListCreateAPIView):
 
     def get_queryset(self):
         queryset = Website.objects.annotate(
-            total_documents=Count('documents', filter=Q(documents__title__gt=''))
+            total_documents=Count(
+                'documents', filter=Q(documents__title__gt=''))
         )
         return queryset
 
@@ -51,7 +51,8 @@ class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         queryset = Website.objects.annotate(
-            total_documents=Count('documents', filter= Q(documents__title__gt=''))
+            total_documents=Count(
+                'documents', filter=Q(documents__title__gt=''))
         )
         return queryset
 
@@ -113,7 +114,7 @@ class DocumentListAPIView(ListCreateAPIView):
             for doc in solr_result:
                 id_list.append(doc['id'])
 
-            if id_list:
+            if len(id_list) > 0:
                 q = q.filter(id__in=id_list)
             else:
                 if keyword:
@@ -139,7 +140,8 @@ class DocumentListAPIView(ListCreateAPIView):
         return q
 
     def create(self, request, *args, **kwargs):
-        response = super(DocumentListAPIView, self).create(request, *args, **kwargs)
+        response = super(DocumentListAPIView, self).create(
+            request, *args, **kwargs)
         full_service_single.delay(response.data['id'])
         return response
 
@@ -193,6 +195,7 @@ class AcceptanceStateValueAPIView(APIView):
 class AcceptanceStateListAPIView(ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = AcceptanceStateSerializer
+    logger = logging.getLogger(__name__)
 
     def list(self, request, *args, **kwargs):
         queryset = AcceptanceState.objects.filter(user=request.user)
@@ -200,8 +203,10 @@ class AcceptanceStateListAPIView(ListCreateAPIView):
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
-        request.data['user'] = request.user.id
-        return self.create(request, *args, **kwargs)
+        document = Document.objects.get(pk=request.data['document'])
+        AcceptanceState.objects.update_or_create(
+            document=document, user=request.user, defaults={'value': request.data['value']})
+        return Response("ok")
 
 
 class AcceptanceStateDetailAPIView(RetrieveUpdateAPIView):
@@ -304,7 +309,8 @@ class SolrDocumentSearchQuery(APIView):
 
     def get(self, request, search_term, format=None):
         result = solr_search_query_paginated(core="documents", term=search_term,
-                                             page_number=request.GET.get('pageNumber', 1),
+                                             page_number=request.GET.get(
+                                                 'pageNumber', 1),
                                              rows_per_page=request.GET.get(
                                                  'pageSize', 1),
                                              ids_to_filter_on=request.GET.getlist(
@@ -319,10 +325,12 @@ class SolrDocumentsSearchQueryPreAnalyzed(APIView):
 
     def post(self, request, format=None):
         result = solr_search_query_paginated_preanalyzed(core="documents", term=request.data['query'],
-                                                         page_number=request.GET.get('pageNumber', 1),
+                                                         page_number=request.GET.get(
+                                                             'pageNumber', 1),
                                                          rows_per_page=request.GET.get(
                                                              'pageSize', 1),
-                                                         sort_by=request.GET.get('sortBy'),
+                                                         sort_by=request.GET.get(
+                                                             'sortBy'),
                                                          sort_direction=request.GET.get('sortDirection'))
         return Response(result)
 
@@ -336,9 +344,11 @@ class SolrDocumentsSearchQueryDjango(APIView):
 
         concept_defined_or_occurs = None
         if request.data['field'] == "concept_defined":
-            concept_defined_or_occurs = ConceptDefined.objects.filter(concept=concept)
+            concept_defined_or_occurs = ConceptDefined.objects.filter(
+                concept=concept)
         else:
-            concept_defined_or_occurs = ConceptOccurs.objects.filter(concept=concept)
+            concept_defined_or_occurs = ConceptOccurs.objects.filter(
+                concept=concept)
 
         definitions = []
         for defi_or_occ in concept_defined_or_occurs:
@@ -347,10 +357,12 @@ class SolrDocumentsSearchQueryDjango(APIView):
                                                         id=defi_or_occ.document.id,
                                                              field=request.data['field'],
                                                              term=request.data['term'],
-                                                             page_number=request.GET.get('pageNumber', 1),
+                                                             page_number=request.GET.get(
+                                                                 'pageNumber', 1),
                                                              rows_per_page=request.GET.get(
                                                                  'pageSize', 1),
-                                                             sort_by=request.GET.get('sortBy'),
+                                                             sort_by=request.GET.get(
+                                                                 'sortBy'),
                                                              sort_direction=request.GET.get('sortDirection'))
             definitions.append({"title": defi_or_occ.document.title, "date": str(defi_or_occ.document.date), "id": str(defi_or_occ.document.id),
                                 "website": str(defi_or_occ.document.website), request.data['field']: highlighting})
@@ -365,11 +377,13 @@ class SimilarDocumentsAPIView(APIView):
 
     def get(self, request, id):
         similar_document_ids_with_coeff = solr_mlt('documents', str(id),
-                                                   number_candidates=request.GET.get('numberCandidates', 5),
+                                                   number_candidates=request.GET.get(
+                                                       'numberCandidates', 5),
                                                    threshold=request.GET.get('threshold', 0.0))
         formatted_response = []
         for id, title, website, coeff in similar_document_ids_with_coeff:
-            formatted_response.append({'id': id, 'title': title, 'website': website, 'coefficient': coeff})
+            formatted_response.append(
+                {'id': id, 'title': title, 'website': website, 'coefficient': coeff})
         return Response(formatted_response)
 
 
@@ -395,7 +409,8 @@ class FormexActAPIView(APIView):
 
 def get_formex_urls(celex):
     cellar_api = 'http://publications.europa.eu/resource/celex/'
-    headers = {'Accept': 'application/list;mtype=fmx4', 'Accept-Language': 'eng'}
+    headers = {'Accept': 'application/list;mtype=fmx4',
+               'Accept-Language': 'eng'}
     response = requests.get(cellar_api + celex, headers=headers)
     formex_links = []
     if response.status_code == 200:
