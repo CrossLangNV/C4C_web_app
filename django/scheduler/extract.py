@@ -428,23 +428,29 @@ def extract_terms_for_document(document):
     concept_defined_tokens = atomic_update_defined[0]['concept_defined']['set']['tokens']
     j = 0
 
+    start_cas = time.time()
     # Term defined, we check which terms are covered by definitions
-    term_definition = []
+    definitions = []
     term_definition_uniq = []
     term_definition_uniq_idx = []
+    # Each sentence is a definiton
     for sentence in cas2.get_view('html2textView').select(SENTENCE_CLASS):
-        has_term_defined = False
+        term_definitions = []
+        # Instead of saving sentence, save sentence + context (i.e. paragraph annotation)
+        for par in cas2.get_view(sofa_id_html2text).select_covering(PARAGRAPH_CLASS, sentence):
+            if par.begin == sentence.begin:  # if beginning of paragraph == beginning of a definition ==> this detected paragraph should replace the definition
+                sentence = par
+        # Find terms in definitions
         for token in cas2.get_view('html2textView').select_covered('cassis.Token', sentence):
             # take those tfidf annotations with a cassis.token annotation covering them ==> the terms defined in the definition
             for term_defined in cas2.get_view('html2textView').select_covering(TFIDF_CLASS, token):
                 if (term_defined.begin == token.begin) and (term_defined.end == token.end):
-                    # instead of saving sentence, save sentence + context (i.e. paragraph annotation)
-                    for par in cas2.get_view(sofa_id_html2text).select_covering(PARAGRAPH_CLASS, sentence):
-                        if par.begin == sentence.begin:  # if beginning of paragraph == beginning of a definition ==> this detected paragraph should replace the definition
-                            sentence = par
-                    term_definition.append((term_defined, sentence))
-                    has_term_defined = True
-        if has_term_defined and sentence.begin not in term_definition_uniq_idx:
+                    term_definitions.append((term_defined, sentence))
+        # store terms + definitions in a list of definitions
+        definitions.append(term_definitions)
+
+        # Keep track of definitions alone
+        if len(term_definitions) and sentence.begin not in term_definition_uniq_idx:
             term_definition_uniq.append(sentence)
             term_definition_uniq_idx.append(sentence.begin)
 
@@ -466,31 +472,40 @@ def extract_terms_for_document(document):
             j = j + 1
 
     # For django
-    for term, definition in term_definition:
-        lemma_name = ""
-        token_defined = definition.get_covered_text()
-        start_defined = definition.begin
-        end_defined = definition.end
+    for group in definitions:
+        concept_group = []
+        for term, definition in group:
+            lemma_name = ""
+            token_defined = definition.get_covered_text()
+            start_defined = definition.begin
+            end_defined = definition.end
 
-        if len(token_defined.encode('utf-8')) < 32000:
-            if len(term.get_covered_text()) <= 200:
-                # Save Term Definitions in Django
-                c = Concept.objects.update_or_create(
-                    name=term.get_covered_text(), definition=token_defined, lemma=lemma_name, version=EXTRACT_TERMS_NLP_VERSION,  defaults={'website_id': django_doc.website.id})
-                # logger.info("Saved concept to django. name = %s, defi = %s (%s:%s)", term.term, definition.get_covered_text(), start_defined, end_defined)
-                defs = ConceptDefined.objects.filter(
-                    concept=c[0], document=django_doc)
-                if len(defs) == 1:
-                    cd = defs[0]
-                    cd.begin = start_defined
-                    cd.end = end_defined
-                    cd.save()
+            if len(token_defined.encode('utf-8')) < 32000:
+                if len(term.get_covered_text()) <= 200:
+                    # Save Term Definitions in Django
+                    c = Concept.objects.update_or_create(
+                        name=term.get_covered_text(), definition=token_defined, lemma=lemma_name, version=EXTRACT_TERMS_NLP_VERSION,  defaults={'website_id': django_doc.website.id})
+                    concept_group.append(c[0])
+                    defs = ConceptDefined.objects.filter(
+                        concept=c[0], document=django_doc)
+                    if len(defs) == 1:
+                        cd = defs[0]
+                        cd.begin = start_defined
+                        cd.end = end_defined
+                        cd.save()
+                    else:
+                        ConceptDefined.objects.create(
+                            concept=c[0], document=django_doc, begin=start_defined, end=end_defined)
                 else:
-                    ConceptDefined.objects.create(
-                        concept=c[0], document=django_doc, begin=start_defined, end=end_defined)
-            else:
-                logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
-                            "Consider disabling supergrams or change the length in the database", token)
+                    logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
+                                "Consider disabling supergrams or change the length in the database", token)
+        # Link definitions
+        if len(concept_group) > 1:
+            i = 0
+            for from_concept in concept_group[i:]:
+                for to_concept in concept_group[i+1:]:
+                    from_concept.other.add(to_concept)
+                i = i + 1
 
     # Step 5: Send term extractions to Solr (term_occurs field)
 
@@ -554,6 +569,8 @@ def extract_terms_for_document(document):
             else:
                 logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
                             "Consider disabling supergrams or change the length in the database", token)
+    logger.info("Complete CAS handling took  %s seconds to succeed .",
+                time.time() - start_cas)
 
     # Step 6: Post term_occurs to Solr
     escaped_json = json.dumps(

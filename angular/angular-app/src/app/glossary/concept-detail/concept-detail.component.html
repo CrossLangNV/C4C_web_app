@@ -1,7 +1,17 @@
 <div *ngIf="concept">
   <div class="jumbotron">
     <h3 class="mb-4">{{ concept.name }}</h3>
-    <p>Definition: {{ concept.definition }}</p>
+    <div [innerHTML]="definitionHtml"></div>
+    <hr class="my-4" />
+    <div *ngIf="concept.other.length > 0">
+      <p><b>Other terms ({{ concept.other.length }}):</b></p>
+      <ul  class="list-group">
+        <li *ngFor="let other_concept of concept.other" class="list-group-item">
+            <a [routerLink]="['/glossary', other_concept.id ]" ><u>{{other_concept.name}}</u></a> <br>
+        </li>
+      </ul>
+    </div>
+    <hr class="my-4" />
     <div>
       <p><b>Choose Acceptance State:</b></p>
       <p-selectButton

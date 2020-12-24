@@ -66,6 +66,7 @@ export class ConceptDetailComponent implements OnInit {
   newComment: ConceptComment;
   deleteIcon: IconDefinition;
   currentDjangoUser: DjangoUser;
+  definitionHtml: String;
 
   occursIn: Document[] = [];
   occursInPage = 1;
@@ -114,6 +115,9 @@ export class ConceptDetailComponent implements OnInit {
       .subscribe((concept) => {
         this.concept = concept;
 
+        this.definitionHtml = this.replaceTerms(concept.definition, [concept]);
+        this.definitionHtml = this.replaceTerms(this.definitionHtml, concept.other);
+        
         this.newComment.conceptId = concept.id;
         this.comments = [];
 
@@ -283,5 +287,19 @@ export class ConceptDetailComponent implements OnInit {
       }
       this.loadDefinedInDocuments();
     }
+  }
+
+  replaceTerms(definition, terms) {
+    terms.forEach(term => {
+      definition = this.highlight(definition, term)
+    });
+    return definition;
+  }
+
+  highlight(definition, concept): String {
+    var searchMask = concept.name;
+    var regEx = new RegExp(searchMask, 'ig');
+    var replaceMask = '<span class="highlight">' + concept.name + '</span>';
+    return definition.replace(regEx, replaceMask);
   }
 }
