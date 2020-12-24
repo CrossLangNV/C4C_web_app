@@ -12,6 +12,7 @@ class Concept(models.Model):
     version = models.CharField(max_length=50, db_index=True, default="initial")
     website = models.ForeignKey(
         Website, related_name='website', on_delete=models.CASCADE, null=True)
+    other = models.ManyToManyField("self")
     document_occurs = models.ManyToManyField(
         Document,
         through='ConceptOccurs',
