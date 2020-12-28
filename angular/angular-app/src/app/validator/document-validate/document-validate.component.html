@@ -158,6 +158,17 @@
       <button type="submit" class="btn btn-success">Add</button>
     </form>
   </div>
+  <hr class="my-4" />
+  <div *ngIf="document.bookmark == true" >
+      <form (ngSubmit)="onRemoveBookmark()">
+        <button type="submit" class="btn btn-success">Remove from bookmarks</button>
+      </form>
+  </div>
+  <div *ngIf="document.bookmark == false" >
+      <form (ngSubmit)="onAddBookmark()" >
+        <button type="submit" class="btn btn-success">Add to my bookmarks</button>
+      </form>
+  </div>
   <ng-template #elseBlock>
     <p>Select a document above.</p>
   </ng-template>

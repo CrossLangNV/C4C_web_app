@@ -9,9 +9,10 @@ interface State {
   page: number;
   searchTerm: string;
   filterType: string;
-  email: string;
+  username: string;
   website: string;
   showOnlyOwn: boolean;
+  bookmarks: boolean;
   filterTag: string;
   sortBy: string;
 }
@@ -31,9 +32,10 @@ export class DocumentService {
     page: 1,
     searchTerm: '',
     filterType: '',
-    email: '',
+    username: '',
     website: '',
     showOnlyOwn: false,
+    bookmarks: false,
     filterTag: '',
     sortBy: '-date',
   };
@@ -81,11 +83,11 @@ export class DocumentService {
   set filterType(filterType: string) {
     this._set({ filterType });
   }
-  get email() {
-    return this._state.email;
+  get username() {
+    return this._state.username;
   }
-  set email(email: string) {
-    this._set({ email });
+  set username(username: string) {
+    this._set({ username });
   }
   get website() {
     return this._state.website;
@@ -98,6 +100,12 @@ export class DocumentService {
   }
   set showOnlyOwn(showOnlyOwn: boolean) {
     this._set({ showOnlyOwn });
+  }
+  get bookmarks() {
+    return this._state.bookmarks;
+  }
+  set bookmarks(bookmarks: boolean) {
+    this._set({ bookmarks });
   }
   get filterTag() {
     return this._state.searchTerm;
@@ -120,9 +128,10 @@ export class DocumentService {
       page,
       searchTerm,
       filterType,
-      email,
+      username,
       website,
       showOnlyOwn,
+      bookmarks,
       filterTag,
       sortBy,
     } = this._state;
@@ -133,12 +142,14 @@ export class DocumentService {
       searchTerm +
       '&filterType=' +
       filterType +
-      '&email=' +
-      email +
+      '&username=' +
+      username +
       '&website=' +
       website +
       '&showOnlyOwn=' +
       showOnlyOwn +
+      '&bookmarks=' +
+      bookmarks +
       '&tag=' +
       filterTag +
       '&ordering=' +

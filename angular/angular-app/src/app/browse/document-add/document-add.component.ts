@@ -59,6 +59,7 @@ export class DocumentAddComponent implements OnInit {
       [],
       [],
       [],
+      false,
       '',
       null,
       '',

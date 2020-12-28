@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from searchapp.models import Attachment, Document, Website, AcceptanceState, Comment, Tag
+from searchapp.models import Attachment, Document, Website, AcceptanceState, Comment, Tag, Bookmark
 from glossary.serializers import ConceptDocumentSerializer
 
 import logging
@@ -57,12 +57,20 @@ class DocumentSerializer(serializers.ModelSerializer):
     definition = ConceptDocumentSerializer(many=True, read_only=True)
     acceptance_state_value = serializers.SerializerMethodField()
     content = serializers.SerializerMethodField()
+    bookmark = serializers.SerializerMethodField()
 
     def get_content(self, document):
         try:
             return document.content.strip()
         except AttributeError:
             return ""
+
+    def get_bookmark(self, document):
+        user = self.context['request'].user
+        if len(document.bookmarks.filter(user=user)) > 0:
+            return True
+        else:
+            return False
 
     def get_acceptance_state(self, document):
         user = self.context['request'].user
@@ -107,3 +115,9 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = '__all__'
+
+
+class BookmarkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bookmark
+        fields = ['document']

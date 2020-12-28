@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -15,13 +16,14 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIV
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import status
 
 from scheduler.tasks import export_documents, sync_documents_task, score_documents_task
 from scheduler.tasks_single import full_service_single
-from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag
+from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag, Bookmark
 from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
-    CommentSerializer, TagSerializer
+    CommentSerializer, TagSerializer, BookmarkSerializer
 from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt, \
     solr_search_query_paginated_preanalyzed, solr_search_ids, solr_get_preanalyzed_for_doc
 
@@ -102,6 +104,11 @@ class DocumentListAPIView(ListCreateAPIView):
     def get_queryset(self):
         keyword = self.request.GET.get('keyword', "")
         showonlyown = self.request.GET.get('showOnlyOwn', "")
+        bookmarks = self.request.GET.get('bookmarks', "")
+        username = self.request.GET.get('username', "")
+        website = self.request.GET.get('website', "")
+        tag = self.request.GET.get('tag', "")
+        filtertype = self.request.GET.get('filterType', "")
 
         q = Document.objects.annotate(
             text_len=Length('title')).filter(text_len__gt=1)
@@ -121,16 +128,17 @@ class DocumentListAPIView(ListCreateAPIView):
                     q = q.filter(title__icontains=keyword)
 
         if showonlyown == "true":
-            email = self.request.GET.get('email', "")
-            q = q.filter(Q(acceptance_states__user__email=email) & (Q(acceptance_states__value="Accepted") |
-                                                                    Q(acceptance_states__value="Rejected")))
-        website = self.request.GET.get('website', "")
+            q = q.filter(Q(acceptance_states__user__username=username) & (Q(acceptance_states__value="Accepted") |
+                                                                          Q(acceptance_states__value="Rejected")))
+        if bookmarks == "true":
+            q = q.filter(bookmarks__user__username=username)
+
         if website:
             q = q.filter(website__name__iexact=website)
-        tag = self.request.GET.get('tag', "")
+
         if tag:
             q = q.filter(tags__value=tag)
-        filtertype = self.request.GET.get('filterType', "")
+
         if filtertype == "unvalidated":
             q = q.filter(unvalidated=True)
         elif filtertype == "accepted":
@@ -264,32 +272,6 @@ class IsSuperUserAPIView(APIView):
         return Response(is_superuser)
 
 
-class SolrFileList(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, format=None):
-        result = solr_search_paginated(core="files", term='*', page_number=request.GET.get('pageNumber', 1),
-                                       rows_per_page=request.GET.get('pageSize', 1))
-        return Response(result)
-
-
-class SolrFile(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, search_term, format=None):
-        result = solr_search_paginated(core="files", term=search_term, page_number=request.GET.get('pageNumber', 1),
-                                       rows_per_page=request.GET.get('pageSize', 1))
-        return Response(result)
-
-
-class SolrDocument(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, id, format=None):
-        solr_document = solr_search_id(core='documents', id=id)
-        return Response(solr_document)
-
-
 class SolrDocumentSearch(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -301,22 +283,6 @@ class SolrDocumentSearch(APIView):
                                            'id'),
                                        sort_by=request.GET.get('sortBy'),
                                        sort_direction=request.GET.get('sortDirection'))
-        return Response(result)
-
-
-class SolrDocumentSearchQuery(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, search_term, format=None):
-        result = solr_search_query_paginated(core="documents", term=search_term,
-                                             page_number=request.GET.get(
-                                                 'pageNumber', 1),
-                                             rows_per_page=request.GET.get(
-                                                 'pageSize', 1),
-                                             ids_to_filter_on=request.GET.getlist(
-                                                 'id'),
-                                             sort_by=request.GET.get('sortBy'),
-                                             sort_direction=request.GET.get('sortDirection'))
         return Response(result)
 
 
@@ -499,3 +465,27 @@ def count_total_documents(request):
         q = Document.objects.annotate(
             text_len=Length('title')).filter(text_len__gt=1).count()
         return Response(q)
+
+
+class BookmarkListAPIView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = BookmarkSerializer
+
+    def post(self, request):
+        user = request.user
+        document = Document.objects.get(pk=request.data['document'])
+        bookmark = Bookmark.objects.create(user=user, document=document)
+        serializer = BookmarkSerializer(bookmark)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class BookmarkDetailAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    logger = logging.getLogger(__name__)
+
+    def delete(self, request, document_id):
+        user = request.user
+        document = Document.objects.get(pk=document_id)
+        bookmark = Bookmark.objects.filter(user=user, document=document)
+        bookmark.delete()
+        return Response(None, status=status.HTTP_204_NO_CONTENT)

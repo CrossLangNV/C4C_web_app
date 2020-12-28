@@ -150,6 +150,17 @@ export class DocumentValidateComponent implements OnInit {
     });
   }
 
+  onAddBookmark() {
+    this.service.addBookmark(this.currentDjangoUser, this.document).subscribe((document) => {
+      this.document.bookmark = true;
+    });
+  }
+
+  onRemoveBookmark() {
+    this.service.removeBookmark(this.document).subscribe((document) => {
+      this.document.bookmark = false;
+    });
+  }
   openModal(targetModal, attachmentId: string) {
     this.attachment = new Attachment('', '', '', '', '');
     this.modalService.open(targetModal, {
