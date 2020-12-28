@@ -108,14 +108,8 @@ urlpatterns = [
     path('api/super', views.IsSuperUserAPIView.as_view(), name='super_api'),
 
     # Solr
-    path('api/solrfiles/', views.SolrFileList.as_view(), name='solr_file_list_api'),
-    path('api/solrfiles/<search_term>',
-         views.SolrFile.as_view(), name='solr_file_search_api'),
-    path('api/solrdocument/<id>', views.SolrDocument.as_view(),
-         name='solr_document_api'),
-    path('api/solrdocument/search/<search_term>', views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
-    path('api/solrdocument/search/query/<search_term>', views.SolrDocumentSearchQuery.as_view(),
-         name='solr_document_search_query_api'),
+    path('api/solrdocument/search/<search_term>',
+         views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
 
     # Django + SOLR
     path('api/solrdocument/search/query/django/', views.SolrDocumentsSearchQueryDjango.as_view(),
@@ -136,4 +130,11 @@ urlpatterns = [
          views.ExportDocumentsStatus.as_view(), name='export_status_api'),
     path('api/export/download/<task_id>',
          views.ExportDocumentsDownload.as_view(), name='export_download_api'),
+
+    # Bookmarks
+    path('api/bookmarks', views.BookmarkListAPIView.as_view(),
+         name='bookmark_list_api'),
+    path('api/bookmarks/<document_id>', views.BookmarkDetailAPIView.as_view(),
+         name='bookmark_detail_api'),
+
 ]

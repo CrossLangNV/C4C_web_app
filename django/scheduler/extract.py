@@ -36,7 +36,7 @@ LEMMA_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Lemma"
 PARAGRAPH_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Paragraph"
 VALUE_BETWEEN_TAG_TYPE_CLASS = "com.crosslang.uimahtmltotext.uima.type.ValueBetweenTagType"
 
-DEFAULT_TYPESYSTEM = "typesystem_tmp.xml"
+DEFAULT_TYPESYSTEM = "/tmp/typesystem.xml"
 
 sofa_id_html2text = "html2textView"
 sofa_id_text2html = "text2htmlView"

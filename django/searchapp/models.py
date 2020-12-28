@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.db.models import Q
+from django.contrib.auth.models import User
 
 from searchapp.solr_call import solr_update
 
@@ -179,3 +180,13 @@ class Tag(models.Model):
                 message='Tag with this (document, value) already exists.',
                 code='unique_together',
             )
+
+
+class Bookmark(models.Model):
+    user = models.ForeignKey(
+        User, related_name='bookmarks', on_delete=models.CASCADE)
+    document = models.ForeignKey(
+        Document, related_name='bookmarks', on_delete=models.CASCADE)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)

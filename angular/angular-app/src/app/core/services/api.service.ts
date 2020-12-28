@@ -18,6 +18,7 @@ import {
 } from 'src/app/shared/models/acceptanceState';
 import { Comment, CommentAdapter } from 'src/app/shared/models/comment';
 import { Tag, TagAdapter } from 'src/app/shared/models/tag';
+import { Bookmark, BookmarkAdapter } from 'src/app/shared/models/Bookmark';
 import {
   Concept,
   ConceptAdapter,
@@ -40,6 +41,7 @@ import {RdfFilter} from "../../shared/models/rdfFilter";
 import {RoTag, RoTagAdapter} from "../../shared/models/RoTag";
 import {RoAcceptanceState, RoAcceptanceStateAdapter} from "../../shared/models/roAcceptanceState";
 import {RoComment, RoCommentAdapter} from "../../shared/models/roComment";
+import { DjangoUser } from 'src/app/shared/models/django_user';
 
 @Injectable({
   providedIn: 'root',
@@ -67,40 +69,9 @@ export class ApiService {
     private roTagAdapter: RoTagAdapter,
     private roAcceptanceStateAdapter: RoAcceptanceStateAdapter,
     private roCommentAdapter: RoCommentAdapter,
+    private bookmarkAdapter: BookmarkAdapter,
   ) {
     this.messageSource = new Subject<string>();
-  }
-
-  public getSolrFiles(pageNumber: number, pageSize: number): Observable<any[]> {
-    return this.http
-      .get<any[]>(
-        `${this.API_URL}/solrfiles/?pageNumber=${pageNumber}&pageSize=${pageSize}`
-      )
-      .pipe(
-        map((data: any[]) => {
-          const result = [data[0]];
-          result.push(data[1].map((item) => this.solrFileAdapter.adapt(item)));
-          return result;
-        })
-      );
-  }
-
-  public searchSolrFiles(
-    pageNumber: number,
-    pageSize: number,
-    term: string
-  ): Observable<any[]> {
-    return this.http
-      .get<any[]>(
-        `${this.API_URL}/solrfiles/${term}?pageNumber=${pageNumber}&pageSize=${pageSize}`
-      )
-      .pipe(
-        map((data: any[]) => {
-          const result = [data[0]];
-          result.push(data[1].map((item) => this.solrFileAdapter.adapt(item)));
-          return result;
-        })
-      );
   }
 
   public searchSolrDocuments(
@@ -396,6 +367,21 @@ export class ApiService {
 
   public deleteComment(id: string): Observable<any> {
     return this.http.delete(`${this.API_URL}/comment/${id}`);
+  }
+
+  public addBookmark(user: DjangoUser, document: Document): Observable<Comment> {
+    document.bookmark=false;
+    let b = new Bookmark(user.username,document);
+    return this.http
+      .post<Document>(
+        `${this.API_URL}/bookmarks`,
+        this.bookmarkAdapter.encode(b)
+      )
+      .pipe(map((item) => this.commentAdapter.adapt(item)));
+  }
+
+  public removeBookmark(document: Document): Observable<any> {
+    return this.http.delete(`${this.API_URL}/bookmarks/${document.id}`);
   }
 
   public addTag(tag: Tag): Observable<Tag> {
