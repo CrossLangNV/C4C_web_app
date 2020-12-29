@@ -9,7 +9,6 @@ import { AppRoutingModule } from './app-routing.module';
 import { GlossaryModule } from './glossary/glossary.module';
 import { ReportingObligationsModule } from './reporting-obligations/reporting-obligations.module';
 import { NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
-import { BookmarkModule } from './bookmark/bookmark.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -23,7 +22,6 @@ import { BookmarkModule } from './bookmark/bookmark.module';
     ReportingObligationsModule,
     BrowseModule,
     NgxSkeletonLoaderModule,
-    BookmarkModule,
   ],
   bootstrap: [AppComponent],
 })
