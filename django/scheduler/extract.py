@@ -97,14 +97,13 @@ def fetch_typesystem():
     try:
         # Check if file exits
         f = open(DEFAULT_TYPESYSTEM)
+        f.close()
     except IOError:
         # Fetch from UIMA
         typesystem_req = requests.get(
             UIMA_URL["BASE"] + UIMA_URL["TYPESYSTEM"])
         typesystem_file = open(DEFAULT_TYPESYSTEM, "w")
         typesystem_file.write(typesystem_req.content.decode("utf-8"))
-    finally:
-        f.close()
 
     # FIXME: load only once ?
     with open(DEFAULT_TYPESYSTEM, 'rb') as f:
