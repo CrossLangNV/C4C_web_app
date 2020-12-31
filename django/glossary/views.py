@@ -4,16 +4,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view
-
 from glossary.models import AcceptanceState, AcceptanceStateValue, Comment, Concept, Tag, AnnotationWorklog
 from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer, \
     AnnotationWorklogSerializer
+from scheduler.extract import send_document_to_webanno
 from searchapp.models import Document
 from searchapp.serializers import DocumentSerializer
 from glossary.serializers import CommentSerializer
 from searchapp.solr_call import solr_search_paginated
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 from django.db.models import Q
+import os
 
 
 class SmallResultsSetPagination(PageNumberPagination):
@@ -173,3 +174,21 @@ def get_distinct_versions(request):
     if request.method == 'GET':
         q = set(Concept.objects.values_list('version', flat=True))
         return Response(q)
+
+
+@api_view(['GET'])
+def get_webanno_link(request, document_id):
+    doc = Document.objects.get(pk=document_id)
+    if doc.webanno_document_id is None:
+        webanno_doc = send_document_to_webanno(document_id)
+        if webanno_doc is None:
+            doc.webanno_document_id = None
+            doc.webanno_project_id = None
+            doc.save()
+            return Response("404")
+
+        doc.webanno_document_id = webanno_doc.document_id
+        doc.webanno_project_id = webanno_doc.project_id
+        doc.save()
+
+    return Response(os.environ['WEBANNO_URL'] + "/annotation.html?50#!p="+str(doc.webanno_project_id) + "&d="+str(doc.webanno_document_id)+"&f=1")

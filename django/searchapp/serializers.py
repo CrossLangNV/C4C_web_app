@@ -5,8 +5,11 @@ from searchapp.models import Attachment, Document, Website, AcceptanceState, Com
 from glossary.serializers import ConceptDocumentSerializer
 
 import logging
+import os
 
 logger = logging.getLogger(__name__)
+EXTRACT_TERMS_NLP_VERSION = os.environ.get(
+    'EXTRACT_TERMS_NLP_VERSION', '8a4f1d58')
 
 
 class WebsiteSerializer(serializers.ModelSerializer):
@@ -54,10 +57,16 @@ class DocumentSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     acceptance_states = AcceptanceStateSerializer(many=True, read_only=True)
     acceptance_state = serializers.SerializerMethodField()
-    definition = ConceptDocumentSerializer(many=True, read_only=True)
     acceptance_state_value = serializers.SerializerMethodField()
     content = serializers.SerializerMethodField()
     bookmark = serializers.SerializerMethodField()
+    definition = serializers.SerializerMethodField()
+
+    def get_definition(self, document):
+        qs = document.definition.filter(version=EXTRACT_TERMS_NLP_VERSION)
+        serializer = ConceptDocumentSerializer(
+            instance=qs, many=True, read_only=True)
+        return serializer.data
 
     def get_content(self, document):
         try:

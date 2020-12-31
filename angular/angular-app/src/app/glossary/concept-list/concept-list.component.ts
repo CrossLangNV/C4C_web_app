@@ -79,7 +79,7 @@ export class ConceptListComponent implements OnInit {
   filterTag = '';
   sortBy = 'name';
   filterType = '';
-  version = '';
+  version = '8a4f1d58';
   website = '';
   searchTermChanged: Subject<string> = new Subject<string>();
   userIcon: IconDefinition = faUserAlt;
@@ -115,12 +115,16 @@ export class ConceptListComponent implements OnInit {
       this.router.navigate(['/login']);
     }
 
+    this.fetchVersions();
     this.fetchConcepts();
+    this.fetchWebsites();
+
     this.service.messageSource.asObservable().subscribe((value: string) => {
       if (value === 'refresh') {
         this.fetchConcepts();
       }
     });
+
     this.searchTermChanged
       .pipe(debounceTime(600), distinctUntilChanged())
       .subscribe((model) => {
@@ -128,8 +132,6 @@ export class ConceptListComponent implements OnInit {
         this.page = 1;
         this.fetchConcepts();
       });
-      this.fetchVersions();
-      this.fetchWebsites();
   }
 
   fetchConcepts() {
@@ -154,7 +156,7 @@ export class ConceptListComponent implements OnInit {
       .getConceptVersions()
       .subscribe((versions) => {
         versions.forEach((version) =>{
-          this.versions.push({id: version, name: '..' + version })
+          this.versions.push({id: version, name: '..' + version });
         })
       });
   }
