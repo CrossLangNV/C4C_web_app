@@ -159,15 +159,26 @@
     </form>
   </div>
   <hr class="my-4" />
-  <div *ngIf="document.bookmark == true" >
-      <form (ngSubmit)="onRemoveBookmark()">
-        <button type="submit" class="btn btn-success">Remove from bookmarks</button>
-      </form>
-  </div>
-  <div *ngIf="document.bookmark == false" >
-      <form (ngSubmit)="onAddBookmark()" >
-        <button type="submit" class="btn btn-success">Add to my bookmarks</button>
-      </form>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-4">
+        <div *ngIf="document.bookmark == true" >
+            <form (ngSubmit)="onRemoveBookmark()">
+              <button type="submit" class="btn btn-success">Remove from bookmarks</button>
+            </form>
+        </div>
+        <div *ngIf="document.bookmark == false" >
+            <form (ngSubmit)="onAddBookmark()" >
+              <button type="submit" class="btn btn-success">Add to my bookmarks</button>
+            </form>
+        </div>
+      </div>
+      <div class="col-4">
+        <div>
+          <button type="submit" [disabled]="webanno_clicked"  (click)="onWebAnno();" class="btn btn-success">View in WebAnno</button>
+        </div>
+      </div>
+    </div>
   </div>
   <ng-template #elseBlock>
     <p>Select a document above.</p>

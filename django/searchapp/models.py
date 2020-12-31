@@ -49,6 +49,9 @@ class Document(models.Model):
     file_url = models.URLField(
         max_length=1000, unique=True, null=True, blank=True)
 
+    webanno_document_id = models.IntegerField(null=True, blank=True)
+    webanno_project_id = models.IntegerField(null=True, blank=True)
+
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 

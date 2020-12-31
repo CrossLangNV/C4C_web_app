@@ -8,13 +8,18 @@ import pysolr
 import cassis
 import requests
 import math
+import gzip
 
-from cassis import Cas, load_cas_from_xmi
+from cassis import Cas, load_cas_from_xmi, TypeSystem, merge_typesystems, load_dkpro_core_typesystem
 from cassis.typesystem import load_typesystem
 from celery import shared_task, chain
 from glossary.models import Concept, ConceptOccurs, ConceptDefined
 from searchapp.models import Website, Document
 from obligations.models import ReportingObligation
+from minio import Minio, ResponseError
+from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists, NoSuchKey
+from pycaprio.mappings import InceptionFormat, DocumentState
+from pycaprio import Pycaprio
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +36,12 @@ EXTRACT_TERMS_NLP_VERSION = os.environ.get(
     'EXTRACT_TERMS_NLP_VERSION', '8a4f1d58')
 
 SENTENCE_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
+TOKEN_CLASS = "cassis.Token"
 TFIDF_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.frequency.tfidf.type.Tfidf"
 LEMMA_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Lemma"
 PARAGRAPH_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Paragraph"
 VALUE_BETWEEN_TAG_TYPE_CLASS = "com.crosslang.uimahtmltotext.uima.type.ValueBetweenTagType"
+DEPENDENCY_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.syntax.type.dependency.Dependency"
 
 DEFAULT_TYPESYSTEM = "/tmp/typesystem.xml"
 
@@ -49,6 +56,31 @@ UIMA_URL = {"BASE": os.environ['GLOSSARY_UIMA_URL'],  # http://uima:8008
 CONST_EXPORT = '/export/'
 QUERY_ID_ASC = 'id asc'
 QUERY_WEBSITE = "website:"
+
+
+def save_cas(cas, file_path):
+    cas_xmi = cas.to_xmi(pretty_print=True)
+    with open(file_path, 'wb') as f:
+        f.write(cas_xmi.encode())
+
+
+def save_typesystem(typesystem, file_path):
+    ts_xml = typesystem.to_xml()
+    with open(file_path, 'wb') as f:
+        f.write(ts_xml.encode())
+
+
+def save_compressed_cas(cas, file_path):
+    cas_xmi = cas.to_xmi()
+    file = gzip.open(file_path, "wb")
+    file.write(cas_xmi.encode())
+    file.close()
+    return file
+
+
+def load_compressed_cas(file, typesystem):
+    with gzip.open(file, "rb") as f:
+        return load_cas_from_xmi(f, typesystem=typesystem)
 
 
 def get_html2text_cas(content_html, docid):
@@ -354,9 +386,6 @@ def extract_terms(website_id, document_id=None):
                'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC, 'fl': 'content_html,content,id'}
     documents = client.search(q, **options)
 
-    # Fetch typesystem
-    typesystem = fetch_typesystem()
-
     # Divide the document in chunks
     extract_terms_for_document.chunks(
         zip(documents), int(CELERY_EXTRACT_TERMS_CHUNKS)).delay()
@@ -366,8 +395,15 @@ def extract_terms(website_id, document_id=None):
 def extract_terms_for_document(document):
 
     logger.info("Started term extraction for document id: %s", document['id'])
+
+    # Load fisma specific types
+    ts_fisma = generate_typesystem_fisma()
+    term_type = ts_fisma.get_type('com.crosslang.fisma.Term')
+    definition_type = ts_fisma.get_type('com.crosslang.fisma.Definition')
+    defiterm_type = ts_fisma.get_type('com.crosslang.fisma.DefinitionTerm')
+
     # Generate and write tempfile for typesystem.xml
-    typesystem = fetch_typesystem()
+    typesystem = merge_typesystems(ts_fisma, fetch_typesystem())
 
     django_doc = Document.objects.get(id=document['id'])
     r = None
@@ -439,12 +475,21 @@ def extract_terms_for_document(document):
         for par in cas2.get_view(sofa_id_html2text).select_covering(PARAGRAPH_CLASS, sentence):
             if par.begin == sentence.begin:  # if beginning of paragraph == beginning of a definition ==> this detected paragraph should replace the definition
                 sentence = par
+        logger.debug("Found definition: %s",
+                     sentence.get_covered_text()[0:200])
+        cas2.get_view(sofa_id_html2text).add_annotation(
+            definition_type(begin=sentence.begin, end=sentence.end))
         # Find terms in definitions
-        for token in cas2.get_view('html2textView').select_covered('cassis.Token', sentence):
+        for token in cas2.get_view('html2textView').select_covered(TOKEN_CLASS, sentence):
             # take those tfidf annotations with a cassis.token annotation covering them ==> the terms defined in the definition
             for term_defined in cas2.get_view('html2textView').select_covering(TFIDF_CLASS, token):
                 if (term_defined.begin == token.begin) and (term_defined.end == token.end):
                     term_definitions.append((term_defined, sentence))
+                    cas2.get_view(sofa_id_html2text).add_annotation(defiterm_type(
+                        begin=term_defined.begin, end=term_defined.end, term=term_defined.term, confidence=term_defined.tfidfValue))
+                    logger.debug("Found definition term: %s",
+                                 term_defined.get_covered_text())
+
         # store terms + definitions in a list of definitions
         definitions.append(term_definitions)
 
@@ -452,6 +497,8 @@ def extract_terms_for_document(document):
         if len(term_definitions) and sentence.begin not in term_definition_uniq_idx:
             term_definition_uniq.append(sentence)
             term_definition_uniq_idx.append(sentence.begin)
+
+        logger.debug("-----------------------------------------------------")
 
     # For solr
     for definition in term_definition_uniq:
@@ -528,6 +575,7 @@ def extract_terms_for_document(document):
     # Select all Tfidfs from the CAS
     i = 0
     for term in cas2.get_view(sofa_id_html2text).select(TFIDF_CLASS):
+        # FIXME: check if convered text ends with a space ?
         # Save the token information
         token = term.get_covered_text()
         score = term.tfidfValue
@@ -554,6 +602,10 @@ def extract_terms_for_document(document):
             if term.begin == lemma.begin and term.end == lemma.end:
                 lemma_name = lemma.value
 
+        # Store fisma term
+        cas2.get_view(sofa_id_html2text).add_annotation(term_type(
+            begin=term.begin, end=term.end, term=lemma_name, confidence=term.tfidfValue))
+
         queryset = Concept.objects.filter(
             name=term.get_covered_text())
         if not queryset.exists():
@@ -568,7 +620,8 @@ def extract_terms_for_document(document):
             else:
                 logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
                             "Consider disabling supergrams or change the length in the database", token)
-    logger.info("Complete CAS handling took  %s seconds to succeed .",
+
+    logger.info("Complete CAS handling took %s seconds to succeed .",
                 time.time() - start_cas)
 
     # Step 6: Post term_occurs to Solr
@@ -588,3 +641,95 @@ def extract_terms_for_document(document):
                 len(concept_defined_tokens), document['id'])
     if len(concept_defined_tokens) > 0:
         post_pre_analyzed_to_solr(atomic_update_defined)
+
+    # Clean up annotations for Webanno
+    annotations_to_remove = [VALUE_BETWEEN_TAG_TYPE_CLASS,
+                             DEPENDENCY_CLASS, LEMMA_CLASS, TFIDF_CLASS, SENTENCE_CLASS, PARAGRAPH_CLASS, TOKEN_CLASS]
+    for remove in annotations_to_remove:
+        for anno in cas2.get_view(sofa_id_html2text).select(remove):
+            cas2.get_view(sofa_id_html2text).remove_annotation(anno)
+
+    # Save CAS to MINIO
+    minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                         secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+    bucket_name = "cas-files"
+    try:
+        minio_client.make_bucket(bucket_name)
+    except BucketAlreadyOwnedByYou as err:
+        pass
+    except BucketAlreadyExists as err:
+        pass
+
+    logger.info("Created bucket: %s", bucket_name)
+    filename = document['id']+"-" + EXTRACT_TERMS_NLP_VERSION + ".xml.gz"
+
+    file = save_compressed_cas(cas2, filename)
+    logger.info("Saved gzipped cas: %s", file.name)
+
+    minio_client.fput_object(bucket_name, file.name, filename)
+    logger.info("Uploaded to minio")
+
+    os.remove(file.name)
+    logger.info("Removed file from system")
+
+
+def generate_typesystem_fisma():
+    typesystem = TypeSystem()
+
+    # Term
+    term_type = typesystem.create_type(name='com.crosslang.fisma.Term')
+    typesystem.add_feature(
+        type_=term_type, name='term', rangeTypeName='uima.cas.String')
+    typesystem.add_feature(
+        type_=term_type, name='confidence', rangeTypeName='uima.cas.Float')
+
+    # Definition
+    typesystem.create_type(
+        name='com.crosslang.fisma.Definition')
+
+    # DefinitionTerm
+    typesystem.create_type(
+        name='com.crosslang.fisma.DefinitionTerm', supertypeName=term_type.name)
+
+    return typesystem
+
+
+@shared_task
+def send_document_to_webanno(document_id):
+    client = Pycaprio("http://webanno:8080", authentication=("admin", "admin"))
+    # List projects
+    projects = client.api.projects()
+    project = projects[0]
+    logger.info("PROJECT: %s", project)
+    # Load CAS from Minio
+    minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                         secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+    try:
+        cas_gz = minio_client.get_object(
+            "cas-files", document_id + "-" + EXTRACT_TERMS_NLP_VERSION + ".xml.gz")
+    except NoSuchKey:
+        return None
+
+    # Load typesystems
+    merged_ts = merge_typesystems(
+        fetch_typesystem(), generate_typesystem_fisma())
+
+    cas = load_compressed_cas(cas_gz, merged_ts)
+
+    # # Clean up annotations for Webanno
+    SOFA_ID_HTML2TEXT = "html2textView"
+    # Modify cas to make html2textview the _InitialView
+    cas._sofas["_InitialView"] = cas._sofas[SOFA_ID_HTML2TEXT]
+    del cas._sofas[SOFA_ID_HTML2TEXT]
+    cas._views["_InitialView"] = cas._views[SOFA_ID_HTML2TEXT]
+    del cas._views[SOFA_ID_HTML2TEXT]
+    cas._sofas["_InitialView"].sofaID = "_InitialView"
+    cas._sofas["_InitialView"].sofaNum = 1
+    cas._sofas["_InitialView"].xmiID = 1
+
+    cas_xmi = cas.to_xmi()
+
+    new_document = client.api.create_document(
+        project, document_id, cas_xmi.encode(), document_format=InceptionFormat.XMI, document_state=DocumentState.ANNOTATION_IN_PROGRESS)
+    logger.info("NEWDOC: %s", new_document)
+    return new_document

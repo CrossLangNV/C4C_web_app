@@ -37,6 +37,7 @@ export class DocumentValidateComponent implements OnInit {
   deleteIcon: IconDefinition;
   currentDjangoUser: DjangoUser;
   attachment: Attachment;
+  webanno_clicked: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -214,5 +215,29 @@ export class DocumentValidateComponent implements OnInit {
 
   onNumberCandidatesBlur(e) {
     this.getSimilarDocuments(this.similarityThreshold / 100, this.maxSimilarDocuments);
+  }
+
+  onWebAnno() {
+    // launch request to backend
+    this.webanno_clicked = true;
+    this.service.getWebAnnoLink(this.document.id).subscribe(
+      url => {
+        // Visit WebAnno
+        if(url == "404") {
+          this.onWebAnnoError()
+        } else {
+          this.goToLink(url);
+        }
+        this.webanno_clicked = false;
+      },
+      error => {this.onWebAnnoError(); this.webanno_clicked = false;} );
+  }
+
+  onWebAnnoError() {
+    this.messageService.add({
+      severity: "error",
+      summary: 'WebAnno Error',
+      detail: 'Document not yet available. Please try again later.',
+    });
   }
 }

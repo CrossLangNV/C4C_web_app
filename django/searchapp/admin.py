@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 
 from admin_rest.models import site as rest_site
 from scheduler import tasks
+from scheduler.extract import send_document_to_webanno
 from .models import Website, Attachment, Document, AcceptanceState, Comment, Tag
 
 logger = logging.getLogger(__name__)
@@ -122,6 +123,11 @@ def extract_terms_document(modeladmin, request, queryset):
         tasks.extract_terms(document.website.id, str(document.id))
 
 
+def send_to_webanno(modeladmin, request, queryset):
+    for document in queryset:
+        send_document_to_webanno(str(document.id))
+
+
 def reset_pre_analyzed_fields_document(modeladmin, request, queryset):
     for document in queryset:
         tasks.reset_pre_analyzed_fields_document(str(document.id))
@@ -130,7 +136,8 @@ def reset_pre_analyzed_fields_document(modeladmin, request, queryset):
 class DocumentAdmin(admin.ModelAdmin):
     search_fields = ['id', 'title', 'celex']
     list_filter = ('website__name',)
-    actions = [extract_terms_document, reset_pre_analyzed_fields_document]
+    actions = [extract_terms_document, send_to_webanno,
+               reset_pre_analyzed_fields_document]
 
 
 admin.site.register(Website, WebsiteAdmin)

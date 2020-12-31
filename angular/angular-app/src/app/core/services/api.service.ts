@@ -627,5 +627,10 @@ export class ApiService {
     return this.http.delete(`${this.API_RO_URL}/comment/${id}`);
   }
 
+  public getWebAnnoLink(id: string): Observable<string> {
+    return this.http.get<string>(
+      `${this.API_GLOSSARY_URL}/webanno_link/${id}`
+    );
+  }
 
 }

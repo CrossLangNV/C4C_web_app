@@ -44,7 +44,7 @@ export class DocumentService {
     this._search$
       .pipe(
         tap(() => this._loading$.next(true)),
-        debounceTime(200),
+        debounceTime(600),
         switchMap(() => this._search()),
         tap(() => this._loading$.next(false))
       )

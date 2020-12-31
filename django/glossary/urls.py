@@ -70,4 +70,7 @@ urlpatterns = [
     path('api/worklog/<int:pk>', views.WorklogDetailAPIView.as_view(),
          name='worklog_detail_api'),
 
+    # WebAnno
+    path('api/webanno_link/<document_id>', views.get_webanno_link,
+         name='webanno_link_api'),
 ]
