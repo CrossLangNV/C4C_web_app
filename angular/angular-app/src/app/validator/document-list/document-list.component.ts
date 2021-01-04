@@ -6,6 +6,7 @@ import {
   faSort,
   faSortDown,
   faSortUp,
+  faStar,
   faStopCircle,
   faSyncAlt,
   faUserAlt
@@ -15,7 +16,7 @@ import { AuthenticationService } from 'src/app/core/auth/authentication.service'
 import { ApiService } from 'src/app/core/services/api.service';
 import { DocumentService } from 'src/app/core/services/document.service';
 import { DjangoUser } from 'src/app/shared/models/django_user';
-import { DocumentResults } from 'src/app/shared/models/document';
+import {Document, DocumentResults} from 'src/app/shared/models/document';
 import { Tag } from 'src/app/shared/models/tag';
 import { NgbdSortableHeader, SortEvent } from './sortable.directive';
 
@@ -77,6 +78,7 @@ export class DocumentListComponent implements OnInit {
   reloadIcon: IconDefinition = faSyncAlt;
   resetIcon: IconDefinition = faStopCircle;
   titleSortIcon: IconDefinition = faSort;
+  bookmarkIcon: IconDefinition = faStar;
   dateSortIcon: IconDefinition = faSortDown;
   statesSortIcon: IconDefinition = faSort;
   filters = [
@@ -313,5 +315,18 @@ export class DocumentListComponent implements OnInit {
         },
       ],
     };
+  }
+
+  onAddBookmark(document: Document) {
+    this.service.addBookmark(this.currentDjangoUser, document).subscribe((dc) => {
+     document.bookmark = true
+    });
+  }
+
+  onRemoveBookmark(document: Document) {
+    this.service.removeBookmark(document).subscribe((dc) => {
+      // this.document.bookmark = false;
+      document.bookmark = false
+    });
   }
 }
