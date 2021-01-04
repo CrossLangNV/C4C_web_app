@@ -369,6 +369,7 @@ export class ApiService {
     return this.http.delete(`${this.API_URL}/comment/${id}`);
   }
 
+  // Returns a comment because comment is also compatible
   public addBookmark(user: DjangoUser, document: Document): Observable<Comment> {
     document.bookmark=false;
     let b = new Bookmark(user.username,document);

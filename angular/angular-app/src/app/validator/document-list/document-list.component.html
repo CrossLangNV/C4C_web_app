@@ -137,6 +137,11 @@
     <table class="table table-striped table-bordered table-hover">
       <thead class="thead-dark">
         <tr>
+          <th scope="col">
+            <span ngbTooltip="Bookmark">
+              <fa-icon [icon]="bookmarkIcon"></fa-icon>
+            </span>
+          </th>
           <th scope="col" sortable="title" (sort)="onSort($event)">
             <fa-icon [icon]="titleSortIcon"></fa-icon> Title
           </th>
@@ -154,6 +159,19 @@
           <td colspan="5">No results.</td>
         </tr>
         <tr *ngFor="let document of (documentResults$ | async)?.results; let i = index">
+          <td>
+            <span ngbTooltip="Remove bookmark">
+              <div *ngIf="document.bookmark">
+                <a (click)="onRemoveBookmark(document)"><fa-icon [icon]="bookmarkIcon"></fa-icon></a>
+              </div>
+            </span>
+
+            <span ngbTooltip="Bookmark">
+              <div *ngIf="!document.bookmark">
+                <a (click)="onAddBookmark(document)"><fa-icon [icon]="bookmarkIcon" style="color: rgb(179, 179, 179) !important;"></fa-icon></a>
+              </div>
+            </span>
+          </td>
           <td>
             <a
               (click)="setIndex(document.id)"
