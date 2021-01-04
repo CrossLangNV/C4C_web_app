@@ -16,7 +16,6 @@
               class="form-control form-control-sm"
               [(ngModel)]="keyword"
               (ngModelChange)="onSearch($event)"
-              (keypress)="filterResetPage()"
             />
           </div>
           <select
@@ -26,6 +25,24 @@
           >
             <option *ngFor="let f of filters" [ngValue]="f.id">{{
               f.name
+              }}</option>
+          </select>
+          <select
+            class="form-control form-control-sm m-1 col-2"
+            [(ngModel)]="website"
+            (change)="filterResetPage()"
+          >
+            <option *ngFor="let f of websites" [ngValue]="f.id">{{
+              f.name
+            }}</option>
+          </select>
+          <select
+            class="form-control form-control-sm m-1 col-2"
+            [(ngModel)]="version"
+            (change)="filterResetPage()"
+          >
+            <option *ngFor="let v of versions" [ngValue]="v.id">{{
+              v.name
               }}</option>
           </select>
         </div>

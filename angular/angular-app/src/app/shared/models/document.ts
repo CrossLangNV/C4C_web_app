@@ -37,8 +37,10 @@ export class Document {
     public attachments: Attachment[],
     public commentIds: string[],
     public tags: string[],
+    public bookmark: boolean,
     public consolidatedVersions: string,
-    public file_url: string,
+    public file: File,
+    public fileUrl: string,
     public occurrance: Concept[],
     public definition: Concept[]
   ) {}
@@ -70,7 +72,9 @@ export class DocumentAdapter implements Adapter<Document> {
       item.attachments,
       item.comments,
       item.tags,
+      item.bookmark,
       item.consolidated_versions,
+      item.file,
       item.file_url,
       item.occurrance,
       item.definition
@@ -99,8 +103,10 @@ export class DocumentAdapter implements Adapter<Document> {
       attachments: document.attachments,
       comments: document.commentIds,
       tags: document.tags,
+      bookmark: document.bookmark,
       consolidatedVersions: document.consolidatedVersions,
-      file_url: document.file_url,
+      file: document.file,
+      file_url: document.fileUrl,
       occurrance: document.occurrance,
       definition: document.definition
     };

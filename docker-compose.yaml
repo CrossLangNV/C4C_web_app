@@ -85,17 +85,17 @@ services:
       - "5672:5672"
 
   solr:
-    image: solr:8.5-slim
+    image: solr:8.7-slim
     ports:
       - "8983:8983"
     environment:
       - SOLR_HEAP=4g
     volumes:
       - solr:/var/solr
-    command: solr-precreate documents
+    command: bash -c "precreate-core documents && precreate-core archive && solr-foreground"
 
   postgres:
-    image: postgres:alpine
+    image: postgres:13
     ports:
       - "5432:5432"
     env_file:
@@ -104,7 +104,7 @@ services:
       - postgres:/var/lib/postgresql/data
 
   docclass:
-    image: docker.crosslang.com/ctlg-manager/docclass:latest
+    image: docker.crosslang.com/ctlg-manager/docclass:master-latest
     ports:
       - "5000:5000"
 

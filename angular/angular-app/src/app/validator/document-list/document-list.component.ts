@@ -164,7 +164,10 @@ export class DocumentListComponent implements OnInit {
     this.userIcon = faUserAlt;
     this.chipIcon = faMicrochip;
     this.authenticationService.currentDjangoUser.subscribe(
-      (x) => (this.currentDjangoUser = x)
+      (x) => {
+        this.currentDjangoUser = x;
+        this.documentService.username=x.username;
+      }
     );
     this.service.getWebsites().subscribe((websites) => {
       websites.forEach((website) => {

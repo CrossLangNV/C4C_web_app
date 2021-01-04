@@ -26,6 +26,8 @@ export class ReportingObligation {
     public tags: string[],
     public commentIds: string[],
     public concept: string,
+    public acceptanceState: string,
+    public acceptanceStateValue: string,
   ) {}
 }
 
@@ -42,6 +44,8 @@ export class RoAdapter implements Adapter<ReportingObligation> {
       item.tags,
       item.comments,
       item.concept,
+      item.acceptance_state,
+      item.acceptance_state_value,
     );
   }
   encode(ro: ReportingObligation): any {
@@ -53,6 +57,8 @@ export class RoAdapter implements Adapter<ReportingObligation> {
       tags: ro.tags,
       comments: ro.commentIds,
       concept: ro.concept,
+      acceptance_state: ro.acceptanceState,
+      acceptance_state_value: ro.acceptanceStateValue
     };
   }
 }

@@ -3,16 +3,25 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
+<<<<<<< HEAD
 
 from glossary.models import AcceptanceState, AcceptanceStateValue, Comment, Concept, Tag, AnnotationWorklog, ConceptOccurs, ConceptDefined
 from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer, \
     AnnotationWorklogSerializer, ConceptOccursSerializer, ConceptDefinedSerializer
+=======
+from rest_framework.decorators import api_view
+from glossary.models import AcceptanceState, AcceptanceStateValue, Comment, Concept, Tag, AnnotationWorklog
+from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer, \
+    AnnotationWorklogSerializer
+from scheduler.extract import send_document_to_webanno
+>>>>>>> 9d32d5d71315c9144b9821aa3d4ae40c9a663331
 from searchapp.models import Document
 from searchapp.serializers import DocumentSerializer
 from glossary.serializers import CommentSerializer
 from searchapp.solr_call import solr_search_paginated
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 from django.db.models import Q
+import os
 
 import status
 import datetime
@@ -34,7 +43,7 @@ class SmallResultsSetPagination(PageNumberPagination):
 
 
 class ConceptListAPIView(ListCreateAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
     queryset = Concept.objects.all()
     serializer_class = ConceptSerializer
@@ -43,7 +52,8 @@ class ConceptListAPIView(ListCreateAPIView):
 
     def get_queryset(self):
         # TODO Remove the Unknown term and empty definition exclude filter
-        q = Concept.objects.all().exclude(name__exact='Unknown').exclude(definition__exact='')
+        q = Concept.objects.all().exclude(
+            name__exact='Unknown').exclude(definition__exact='')
         keyword = self.request.GET.get('keyword', "")
         if keyword:
             q = q.filter(name__icontains=keyword)
@@ -63,11 +73,19 @@ class ConceptListAPIView(ListCreateAPIView):
         tag = self.request.GET.get('tag', "")
         if tag:
             q = q.filter(tags__value=tag)
+        version = self.request.GET.get('version', "")
+        if len(version):
+            q = q.filter(version=version)
+
+        website = self.request.GET.get('website', "")
+        if len(website):
+            q = q.filter(website__name__iexact=website)
+
         return q.order_by("name")
 
 
 class ConceptDetailAPIView(RetrieveUpdateDestroyAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     queryset = Concept.objects.all()
     serializer_class = ConceptSerializer
 
@@ -93,25 +111,25 @@ class ConceptDocumentsAPIView(APIView):
 
 
 class TagListAPIView(ListCreateAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
 
 
 class TagDetailAPIView(RetrieveUpdateDestroyAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
-    
+
 
 class WorkLogAPIView(ListCreateAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = AnnotationWorklogSerializer
     queryset = AnnotationWorklog.objects.all()
 
 
 class WorklogDetailAPIView(RetrieveUpdateDestroyAPIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = AnnotationWorklogSerializer
     queryset = AnnotationWorklog.objects.all()
 
@@ -168,6 +186,30 @@ class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
     def put(self, request, *args, **kwargs):
         request.data['user'] = request.user.id
         return self.update(request, *args, **kwargs)
+
+@api_view(['GET'])
+def get_distinct_versions(request):
+    if request.method == 'GET':
+        q = set(Concept.objects.values_list('version', flat=True))
+        return Response(q)
+
+
+@api_view(['GET'])
+def get_webanno_link(request, document_id):
+    doc = Document.objects.get(pk=document_id)
+    if doc.webanno_document_id is None:
+        webanno_doc = send_document_to_webanno(document_id)
+        if webanno_doc is None:
+            doc.webanno_document_id = None
+            doc.webanno_project_id = None
+            doc.save()
+            return Response("404")
+
+        doc.webanno_document_id = webanno_doc.document_id
+        doc.webanno_project_id = webanno_doc.project_id
+        doc.save()
+
+    return Response(os.environ['WEBANNO_URL'] + "/annotation.html?50#!p="+str(doc.webanno_project_id) + "&d="+str(doc.webanno_document_id)+"&f=1")
 
 # Terms and Definitions Annotations API
 

@@ -8,7 +8,7 @@
           <div class="input-group input-group-sm m-1">
             <div class="input-group-prepend">
               <span class="input-group-text" id="inputGroup-sizing-sm"
-                >Search title for..</span
+                >Search for..</span
               >
             </div>
             <input
@@ -17,7 +17,6 @@
               name="content"
               class="form-control form-control-sm"
               [(ngModel)]="documentService.searchTerm"
-              (keypress)="filterResetPage()"
             />
           </div>
           <select
@@ -44,6 +43,15 @@
                 (onChange)="filterResetPage()"
                 [(ngModel)]="documentService.showOnlyOwn"
                 >Own</p-inputSwitch
+              ></span
+            >
+          </div>
+          <div class="form-check m-1 pl-0 pt-1">
+            <span ngbTooltip="Show your bookmarked documents">
+              <p-inputSwitch
+                (onChange)="filterResetPage()"
+                [(ngModel)]="documentService.bookmarks"
+                >Bookmarks</p-inputSwitch
               ></span
             >
           </div>
