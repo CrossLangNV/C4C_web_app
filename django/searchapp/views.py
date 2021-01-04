@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import re
@@ -10,24 +9,22 @@ from django.db.models.functions import Length
 from django.http import FileResponse
 from lxml import html
 from minio import Minio
-from rest_framework import permissions, filters, status
-from rest_framework.decorators import api_view
+from rest_framework import permissions, filters
+from rest_framework import status
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveUpdateAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
 
+from glossary.models import Concept, ConceptOccurs, ConceptDefined, AcceptanceStateValue
 from scheduler.tasks import export_documents, sync_documents_task, score_documents_task
 from scheduler.tasks_single import full_service_single
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag, Bookmark
 from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer, BookmarkSerializer
-from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt, \
+from .solr_call import solr_search_id, solr_search_paginated, solr_mlt, \
     solr_search_query_paginated_preanalyzed, solr_search_ids, solr_get_preanalyzed_for_doc
-
-from glossary.models import Concept, ConceptOccurs, ConceptDefined
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +32,6 @@ export_path = '/django/scheduler/export/'
 
 
 class WebsiteListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = WebsiteSerializer
 
     def get_queryset(self):
@@ -47,7 +43,6 @@ class WebsiteListAPIView(ListCreateAPIView):
 
 
 class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = WebsiteSerializer
     logger = logging.getLogger(__name__)
 
@@ -95,7 +90,6 @@ class SmallResultsSetPagination(PageNumberPagination):
 
 
 class DocumentListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = DocumentSerializer
     pagination_class = SmallResultsSetPagination
     filter_backends = [filters.OrderingFilter]
@@ -155,7 +149,6 @@ class DocumentListAPIView(ListCreateAPIView):
 
 
 class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
 
@@ -174,13 +167,11 @@ class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
 
 
 class AttachmentListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
 
 
 class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
 
@@ -195,14 +186,15 @@ class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
 
 
 class AcceptanceStateValueAPIView(APIView):
+    queryset = AcceptanceState.objects.none()
 
     def get(self, request, format=None):
         return Response([state.value for state in AcceptanceStateValue])
 
 
 class AcceptanceStateListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = AcceptanceStateSerializer
+    queryset = AcceptanceState.objects.none()
     logger = logging.getLogger(__name__)
 
     def list(self, request, *args, **kwargs):
@@ -228,8 +220,8 @@ class AcceptanceStateDetailAPIView(RetrieveUpdateAPIView):
 
 
 class CommentListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = CommentSerializer
+    queryset = Comment.objects.none()
 
     def list(self, request, *args, **kwargs):
         queryset = Comment.objects.filter(user=request.user)
@@ -252,19 +244,17 @@ class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
 
 
 class TagListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
 
 
 class TagDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
 
 
 class IsSuperUserAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Tag.objects.none()
 
     def get(self, request, format=None):
         is_superuser = request.user.is_superuser
@@ -273,7 +263,7 @@ class IsSuperUserAPIView(APIView):
 
 
 class SolrDocumentSearch(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, search_term, format=None):
         result = solr_search_paginated(core="documents", term=search_term, page_number=request.GET.get('pageNumber', 1),
@@ -287,7 +277,7 @@ class SolrDocumentSearch(APIView):
 
 
 class SolrDocumentsSearchQueryPreAnalyzed(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def post(self, request, format=None):
         result = solr_search_query_paginated_preanalyzed(core="documents", term=request.data['query'],
@@ -302,7 +292,7 @@ class SolrDocumentsSearchQueryPreAnalyzed(APIView):
 
 
 class SolrDocumentsSearchQueryDjango(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def post(self, request, format=None):
 
@@ -339,7 +329,7 @@ class SolrDocumentsSearchQueryDjango(APIView):
 
 
 class SimilarDocumentsAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, id):
         similar_document_ids_with_coeff = solr_mlt('documents', str(id),
@@ -354,14 +344,14 @@ class SimilarDocumentsAPIView(APIView):
 
 
 class FormexUrlsAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, celex):
         return Response(get_formex_urls(celex))
 
 
 class FormexActAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, celex):
         formex_act = ''
@@ -403,7 +393,7 @@ def natural_keys(text):
 
 
 class ExportDocumentsLaunch(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, format=None):
         task = export_documents.delay()
@@ -412,7 +402,7 @@ class ExportDocumentsLaunch(APIView):
 
 
 class ExportDocumentsStatus(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, task_id, format=None):
         result = AsyncResult(task_id)
@@ -420,7 +410,7 @@ class ExportDocumentsStatus(APIView):
 
 
 class ExportDocumentsDownload(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, task_id, format=None):
         # get zip for given task id from minio
@@ -432,9 +422,10 @@ class ExportDocumentsDownload(APIView):
         return response
 
 
-@api_view(['GET'])
-def document_stats(request):
-    if request.method == 'GET':
+class DocumentStats(APIView):
+    queryset = Document.objects.none()
+
+    def get(self, request):
         q1 = AcceptanceState.objects.all().order_by("document").distinct("document_id").annotate(
             text_len=Length('document__title')).filter(text_len__gt=1)
         q2 = q1.exclude(Q(value="Rejected") | Q(value="Accepted")
@@ -459,17 +450,18 @@ def document_stats(request):
         })
 
 
-@api_view(['GET'])
-def count_total_documents(request):
-    if request.method == 'GET':
+class TotalDocuments(APIView):
+    queryset = Document.objects.none()
+
+    def get(self, request):
         q = Document.objects.annotate(
             text_len=Length('title')).filter(text_len__gt=1).count()
         return Response(q)
 
 
 class BookmarkListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = BookmarkSerializer
+    queryset = Bookmark.objects.none()
 
     def post(self, request):
         user = request.user
@@ -480,7 +472,7 @@ class BookmarkListAPIView(ListCreateAPIView):
 
 
 class BookmarkDetailAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Bookmark.objects.none()
     logger = logging.getLogger(__name__)
 
     def delete(self, request, document_id):
