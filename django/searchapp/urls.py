@@ -98,10 +98,10 @@ urlpatterns = [
          name='tag_detail_api'),
 
     # Document stats
-    path('api/stats', views.document_stats,
+    path('api/stats', views.DocumentStats.as_view(),
          name='document_stats'),
 
-    path('api/stats/total_documents', views.count_total_documents,
+    path('api/stats/total_documents', views.TotalDocuments.as_view(),
          name='total_documents'),
 
     # Super
