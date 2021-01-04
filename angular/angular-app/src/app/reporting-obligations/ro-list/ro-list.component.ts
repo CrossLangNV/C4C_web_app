@@ -6,7 +6,7 @@ import {
   Output,
   EventEmitter,
   ViewChildren,
-  QueryList,
+  QueryList, ViewChild,
 } from '@angular/core';
 import { ApiService } from 'src/app/core/services/api.service';
 import { ReportingObligation } from 'src/app/shared/models/ro';
@@ -26,8 +26,8 @@ import {Router} from "@angular/router";
 import {AuthenticationService} from "../../core/auth/authentication.service";
 import {DjangoUser} from "../../shared/models/django_user";
 
-import {SelectItem} from "primeng/api";
-import {logger} from "codelyzer/util/logger";
+import {RdfFilter} from "../../shared/models/rdfFilter";
+import {RoTag} from "../../shared/models/RoTag";
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -75,21 +75,9 @@ export class RoListComponent implements OnInit {
   >;
   ros: ReportingObligation[];
 
-  // RO Splits
-  reporters: SelectItem[] = [];
-  selectedReporter: RoDetail;
-  verbs: SelectItem[] = [];
-  selectedVerb: RoDetail;
-  reports: SelectItem[] = [];
-  selectedReport: RoDetail
-  regulatoryBodies: SelectItem[] = [];
-  selectedRegulatoryBody: RoDetail
-  propMods: SelectItem[] = [];
-  selectedPropMod: RoDetail
-  entities: SelectItem[] = [];
-  selectedEntity: RoDetail
-  frequencies: SelectItem[] = [];
-  selectedFrequency: RoDetail
+  availableItems: RdfFilter[]
+  availableItemsKeys: []
+  availableItemsQuery: Map<string, string>;
 
   selected: string;
   collectionSize = 0;
@@ -111,6 +99,10 @@ export class RoListComponent implements OnInit {
   statesSortIcon: IconDefinition = faSort;
   currentDjangoUser: DjangoUser;
 
+  contentLoaded = false;
+
+  collapsed: boolean = true;
+
   constructor(
     private service: ApiService,
     private router: Router,
@@ -118,6 +110,8 @@ export class RoListComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.availableItemsQuery = new Map<string, string>();
+
     this.authenticationService.currentDjangoUser.subscribe(
       (x) => (this.currentDjangoUser = x)
     );
@@ -127,6 +121,15 @@ export class RoListComponent implements OnInit {
       this.router.navigate(['/login']);
     }
 
+    // Fetch RDF for filters
+    this.fetchAvailableFilters();
+
+    this.service.messageSource.asObservable().subscribe((value: string) => {
+      if (value === 'refresh') {
+        this.fetchRos();
+      }
+    });
+
     this.fetchRos();
     this.searchTermChanged
       .pipe(debounceTime(600), distinctUntilChanged())
@@ -135,126 +138,44 @@ export class RoListComponent implements OnInit {
         this.page = 1;
         this.fetchRos();
       });
-
-    // Fetch RDF for filters
-    this.fetchReporters();
-    this.fetchVerbs();
-    this.fetchReports();
-    this.fetchRegulatoryBodies();
-    this.fetchPropMods();
-    this.fetchEntities();
-    this.fetchFrequencies();
   }
 
-  fetchReporters() {
+  fetchAvailableFilters() {
     this.service
-      .fetchReporters(
-      )
+      .fetchDropdowns()
       .subscribe((results) => {
-        results.forEach((reporter) => {
-          this.reporters.push({ label: reporter, value: reporter });
-        });
-    })
-  }
-
-  fetchVerbs() {
-    this.service
-      .fetchVerbs(
-      )
-      .subscribe((results) => {
-        results.forEach((verb) => {
-          this.verbs.push({ label: verb, value: verb });
-        });
-      })
-  }
-
-  // Fetch Reports
-  fetchReports() {
-    this.service
-      .fetchReports(
-      )
-      .subscribe((results) => {
-        results.forEach((report) => {
-          this.reports.push({ label: report, value: report });
-        });
-      })
-  }
-  // Fetch regulatoryBodies
-  fetchRegulatoryBodies() {
-    this.service
-      .fetchRegulatoryBody(
-      )
-      .subscribe((results) => {
-        results.forEach((regulatorybody) => {
-          this.regulatoryBodies.push({ label: regulatorybody, value: regulatorybody });
-        });
-      })
-  }
-  // Fetch propMods
-  fetchPropMods() {
-    this.service
-      .fetchPropMod(
-      )
-      .subscribe((results) => {
-        results.forEach((propmod) => {
-          this.propMods.push({ label: propmod, value: propmod });
-        });
-      })
-  }
-  // Fetch entities
-  fetchEntities() {
-    this.service
-      .fetchEntity(
-      )
-      .subscribe((results) => {
-        results.forEach((entity) => {
-          this.entities.push({ label: entity, value: entity });
-        });
-      })
-  }
-  // Fetch frequencies
-  fetchFrequencies() {
-    this.service
-      .fetchFrequency(
-      )
-      .subscribe((results) => {
-        results.forEach((frequency) => {
-          this.frequencies.push({ label: frequency, value: frequency });
-        });
+          this.availableItems = results
       })
   }
 
   fetchRos() {
     this.service
-      .getRos(
+      .getRdfRos(
         this.page,
         this.keyword,
         this.filterTag,
         this.filterType,
-        this.sortBy
+        this.sortBy,
+        this.availableItemsQuery
       )
       .subscribe((results) => {
         this.ros = results.results;
         this.collectionSize = results.count;
+        this.contentLoaded = true;
       });
   }
 
-  onSearch(keyword: string) {
+  /*onSearch(filter, keyword: string) {
     this.searchTermChanged.next(keyword);
-  }
+  }*/
 
-  getRoQueryString(): string {
-    let reporter = this.selectedReporter.name
-    let verb = this.selectedVerb.name
-    let report = this.selectedReport.name
-    let regBody = this.selectedRegulatoryBody.name
-    let propMod = this.selectedPropMod.name
-    let entity = this.selectedEntity.name
-    let frequency = this.selectedFrequency.name
-
-    let array = [reporter, verb, report, regBody, propMod, entity, frequency]
-
-    return array.join(" ")
+  onQuery(filter, keyword) {
+    if (keyword.code == "") {
+      this.availableItemsQuery.delete(filter.entity)
+    } else {
+      this.availableItemsQuery.set(filter.entity, keyword.name)
+    }
+    this.filterResetPage();
   }
 
   loadPage(page: number) {
@@ -314,18 +235,42 @@ export class RoListComponent implements OnInit {
     }
   }
 
+  onAddTag(event, tags, roId) {
+    const newTag = new RoTag('', event.value, roId);
+    this.service.addRoTag(newTag).subscribe((addedTag) => {
+      // primeng automatically adds the string value first, delete this as workaround
+      // see: https://github.com/primefaces/primeng/issues/3419
+      tags.splice(-1, 1);
+      // now add the tag object
+      tags.push(addedTag);
+    });
+  }
+
+  onRemoveTag(event) {
+    this.service.deleteRoTag(event.value.id).subscribe();
+  }
+
   onClickTag(event) {
     this.filterTag = event.value.value;
     this.fetchRos();
   }
 
   resetFilters() {
-    this.selectedReporter = null
-    this.selectedVerb = null
-    this.selectedReport = null
-    this.selectedRegulatoryBody = null
-    this.selectedPropMod = null
-    this.selectedEntity = null
-    this.selectedFrequency = null
+    this.availableItems = [];
+    this.availableItemsQuery.clear();
+    this.fetchAvailableFilters();
+    this.fetchRos();
+  }
+
+  collapsePanel() {
+    if (this.collapsed == true) {
+      this.collapsed = false;
+    } else {
+      this.collapsed = true;
+    }
+  }
+
+  numSequence(n: number): Array<number> {
+    return Array(n);
   }
 }

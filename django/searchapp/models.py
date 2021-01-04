@@ -5,8 +5,8 @@ import pysolr
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from safedelete.models import SOFT_DELETE_CASCADE
-from safedelete.models import SafeDeleteModel
+from django.db.models import Q
+from django.contrib.auth.models import User
 
 from searchapp.solr_call import solr_update
 
@@ -20,8 +20,7 @@ class Website(models.Model):
         return self.name
 
 
-class Document(SafeDeleteModel):
-    _safedelete_policy = SOFT_DELETE_CASCADE
+class Document(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     celex = models.CharField(max_length=20, default="", blank=True)
@@ -50,6 +49,9 @@ class Document(SafeDeleteModel):
     file_url = models.URLField(
         max_length=1000, unique=True, null=True, blank=True)
 
+    webanno_document_id = models.IntegerField(null=True, blank=True)
+    webanno_project_id = models.IntegerField(null=True, blank=True)
+
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -60,15 +62,13 @@ class Document(SafeDeleteModel):
         return self.title
 
     def update_solr(self):
-        # add and index data to Solr when it wasn't pulled from Solr first
         solr_doc = {}
         for field, value in self.__dict__.items():
             if field == 'website_id':
                 solr_doc['website'] = self.website.name
-            elif field == 'date' or field == 'created_at' or field == 'updated_at':
+            elif field.startswith('date') or field == 'created_at' or field == 'updated_at':
                 solr_doc[field] = value.strftime("%Y-%m-%dT%H:%M:%SZ")
-            elif not field.startswith('_') and field != 'extract_text' and not field.startswith(
-                    'content') and field != 'file' and field != 'pull':
+            elif not field.startswith('_') and field != 'file':
                 solr_doc[field] = value
 
         # Work around "Object of type UUID is not JSON serializable"
@@ -112,8 +112,12 @@ class AcceptanceState(models.Model):
             models.UniqueConstraint(
                 fields=['document_id', 'user_id'], name="unique_per_doc_and_user"),
             models.UniqueConstraint(
-                fields=['document_id', 'probability_model'], name="unique_per_doc_and_model")
-
+                fields=['document_id', 'probability_model'], name="unique_per_doc_and_model"),
+            models.CheckConstraint(
+                check=Q(user__isnull=False) | Q(
+                    probability_model__isnull=False),
+                name='searchapp_not_both_null'
+            )
         ]
         ordering = ['user']
 
@@ -179,3 +183,13 @@ class Tag(models.Model):
                 message='Tag with this (document, value) already exists.',
                 code='unique_together',
             )
+
+
+class Bookmark(models.Model):
+    user = models.ForeignKey(
+        User, related_name='bookmarks', on_delete=models.CASCADE)
+    document = models.ForeignKey(
+        Document, related_name='bookmarks', on_delete=models.CASCADE)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)

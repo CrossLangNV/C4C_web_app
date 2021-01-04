@@ -18,6 +18,7 @@ import {
 } from 'src/app/shared/models/acceptanceState';
 import { Comment, CommentAdapter } from 'src/app/shared/models/comment';
 import { Tag, TagAdapter } from 'src/app/shared/models/tag';
+import { Bookmark, BookmarkAdapter } from 'src/app/shared/models/Bookmark';
 import {
   Concept,
   ConceptAdapter,
@@ -35,6 +36,12 @@ import {
 import * as rosData from './ros.json';
 import {ConceptAcceptanceState, ConceptAcceptanceStateAdapter} from "../../shared/models/conceptAcceptanceState";
 import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/conceptComment";
+import {RdfEntity} from "../../shared/models/rdfEntity";
+import {RdfFilter} from "../../shared/models/rdfFilter";
+import {RoTag, RoTagAdapter} from "../../shared/models/RoTag";
+import {RoAcceptanceState, RoAcceptanceStateAdapter} from "../../shared/models/roAcceptanceState";
+import {RoComment, RoCommentAdapter} from "../../shared/models/roComment";
+import { DjangoUser } from 'src/app/shared/models/django_user';
 
 @Injectable({
   providedIn: 'root',
@@ -42,21 +49,7 @@ import {ConceptComment, ConceptCommentAdapter} from "../../shared/models/concept
 export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
   API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
-  //API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
-  API_RO_URL = "https://django.staging.dgfisma.crosslang.com/obligations/api";
-  ROS_MOCKED = rosData.ros.map(
-    (ro, index) =>
-      new ReportingObligation(
-        index.toString(),
-        ro.name,
-        ro.obligation,
-        [],
-        [],
-        [],
-        ''
-      )
-  );
-
+  API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
   messageSource: Subject<string>;
 
   constructor(
@@ -72,41 +65,13 @@ export class ApiService {
     private conceptAdapter: ConceptAdapter,
     private conceptAcceptanceStateAdapter: ConceptAcceptanceStateAdapter,
     private conceptCommentAdapter: ConceptCommentAdapter,
-    private roAdapter: RoAdapter
+    private roAdapter: RoAdapter,
+    private roTagAdapter: RoTagAdapter,
+    private roAcceptanceStateAdapter: RoAcceptanceStateAdapter,
+    private roCommentAdapter: RoCommentAdapter,
+    private bookmarkAdapter: BookmarkAdapter,
   ) {
     this.messageSource = new Subject<string>();
-  }
-
-  public getSolrFiles(pageNumber: number, pageSize: number): Observable<any[]> {
-    return this.http
-      .get<any[]>(
-        `${this.API_URL}/solrfiles/?pageNumber=${pageNumber}&pageSize=${pageSize}`
-      )
-      .pipe(
-        map((data: any[]) => {
-          const result = [data[0]];
-          result.push(data[1].map((item) => this.solrFileAdapter.adapt(item)));
-          return result;
-        })
-      );
-  }
-
-  public searchSolrFiles(
-    pageNumber: number,
-    pageSize: number,
-    term: string
-  ): Observable<any[]> {
-    return this.http
-      .get<any[]>(
-        `${this.API_URL}/solrfiles/${term}?pageNumber=${pageNumber}&pageSize=${pageSize}`
-      )
-      .pipe(
-        map((data: any[]) => {
-          const result = [data[0]];
-          result.push(data[1].map((item) => this.solrFileAdapter.adapt(item)));
-          return result;
-        })
-      );
   }
 
   public searchSolrDocuments(
@@ -173,18 +138,18 @@ export class ApiService {
     );
   }
 
-  public searchSolrPreAnalyzedDocument(
-    docId: string,
+  public getDjangoAndSolrPrAnalyzedDocuments(
     pageNumber: number,
     pageSize: number,
     term: string,
     field: string,
+    conceptId: string,
     idsFilter: string[],
     sortBy: string,
     sortDirection: string
   ): Observable<any[]> {
-    let requestUrl = `${this.API_URL}/solrdocument/search/query/preanalyzed/` + docId;
-    // let requestUrl = `http://localhost:8983/solr/documents/select?hl.fl=${field}&hl=on&q={!term f=${field}}${term}` + docId;
+    let requestUrl = `${this.API_URL}/solrdocument/search/query/django/`;
+    // let requestUrl = `http://localhost:8983/solr/documents/select?hl.fl=${field}&hl=on&q={!term f=${field}}${term}`;
 
     if (sortBy) {
       requestUrl += `?sortBy=${sortBy}`;
@@ -199,10 +164,11 @@ export class ApiService {
       }
     }
 
-    let formData = new FormData();
-    formData.append('query', `{!term f=${field}}${term}`);
+    // let formData = new FormData();
+    // formData.append('field', field);
+    // formData.append('term', term);
 
-    return this.http.post<any[]>(requestUrl, formData).pipe(
+    return this.http.post<any[]>(requestUrl, {'field': field, 'term': term, 'id': conceptId}).pipe(
       map((data: any[]) => {
         const result = [data[0]];
         result.push(data[1]);
@@ -327,12 +293,9 @@ export class ApiService {
       .pipe(map((item) => this.documentAdapter.adapt(item)));
   }
 
-  public createDocument(document: Document): Observable<Document> {
+  public createDocument(formData: FormData): Observable<Document> {
     return this.http
-      .post<Document>(
-        `${this.API_URL}/documents`,
-        this.documentAdapter.encode(document)
-      )
+      .post<Document>( `${this.API_URL}/documents`, formData)
       .pipe(map((item) => this.documentAdapter.adapt(item)));
   }
 
@@ -406,6 +369,21 @@ export class ApiService {
     return this.http.delete(`${this.API_URL}/comment/${id}`);
   }
 
+  public addBookmark(user: DjangoUser, document: Document): Observable<Comment> {
+    document.bookmark=false;
+    let b = new Bookmark(user.username,document);
+    return this.http
+      .post<Document>(
+        `${this.API_URL}/bookmarks`,
+        this.bookmarkAdapter.encode(b)
+      )
+      .pipe(map((item) => this.commentAdapter.adapt(item)));
+  }
+
+  public removeBookmark(document: Document): Observable<any> {
+    return this.http.delete(`${this.API_URL}/bookmarks/${document.id}`);
+  }
+
   public addTag(tag: Tag): Observable<Tag> {
     return this.http
       .post<Tag>(`${this.API_URL}/tags`, this.tagAdapter.encode(tag))
@@ -417,8 +395,8 @@ export class ApiService {
   }
 
   public updateState(state: AcceptanceState): Observable<AcceptanceState> {
-    return this.http.put<AcceptanceState>(
-      `${this.API_URL}/state/${state.id}`,
+    return this.http.post<AcceptanceState>(
+      `${this.API_URL}/states`,
       this.stateAdapter.encode(state)
     );
   }
@@ -431,11 +409,19 @@ export class ApiService {
   // GLOSSARY //
   //
 
+  public getConceptVersions(): Observable<any[]> {
+    return this.http.get<any[]>(
+      `${this.API_GLOSSARY_URL}/concepts/versions`
+    );
+  }
+
   public getConcepts(
     page: number,
     searchTerm: string,
     filterTag: string,
     filterType: string,
+    version: string,
+    website: string,
     sortBy: string
   ): Observable<ConceptResults> {
     var pageQuery = page ? '?page=' + page : '';
@@ -444,6 +430,12 @@ export class ApiService {
     }
     if (filterType) {
       pageQuery = pageQuery + '&filterType=' + filterType;
+    }
+    if (version) {
+      pageQuery = pageQuery + '&version=' + version;
+    }
+    if (website) {
+      pageQuery = pageQuery + '&website=' + website;
     }
     if (filterTag) {
       pageQuery = pageQuery + '&tag=' + filterTag;
@@ -538,68 +530,107 @@ export class ApiService {
     return this.http.get<RoResults>(
       `${this.API_RO_URL}/ros${pageQuery}`
     );
-    // return of(
-    //   new RoResults(
-    //     this.ROS_MOCKED.length,
-    //     this.ROS_MOCKED.length,
-    //     this.ROS_MOCKED.length,
-    //     0,
-    //     0,
-    //     0,
-    //     0,
-    //     '1',
-    //     '-1',
-    //     this.ROS_MOCKED.slice((page - 1) * 5, page * 5)
-    //   )
-    // );
+
+  }
+
+  public getRdfRos(
+    page: number,
+    searchTerm: string,
+    filterTag: string,
+    filterType: string,
+    sortBy: string,
+    rdfFilters: Map<string, string>
+  ): Observable<RoResults> {
+    var pageQuery = page ? '?page=' + page : '';
+    // Convert Map to an array as Typescript Maps cannot be used directly in a http post
+    let rdfFiltersMap = {};
+    rdfFilters.forEach((val: string, key: string) => {
+      rdfFiltersMap[key] = val;
+    });
+    if (searchTerm) {
+      pageQuery = pageQuery + '&keyword=' + searchTerm;
+    }
+    if (filterType) {
+      pageQuery = pageQuery + '&filterType=' + filterType;
+    }
+    if (filterTag) {
+      pageQuery = pageQuery + '&tag=' + filterTag;
+    }
+    if (sortBy) {
+      pageQuery = pageQuery + '&ordering=' + sortBy;
+    }
+    return this.http.post<RoResults>(
+      `${this.API_RO_URL}/rdf_ros${pageQuery}`, {"rdfFilters": rdfFiltersMap}
+    );
+
   }
 
   public getRo(id: string): Observable<ReportingObligation> {
     return this.http
       .get<ReportingObligation>(`${this.API_RO_URL}/ro/${id}`)
       .pipe(map((item) => this.roAdapter.adapt(item)));
-    //return of(this.ROS_MOCKED[Number(id)]);
   }
 
-  fetchReporters(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/reporters`
+  public fetchDropdowns(): Observable<RdfFilter[]> {
+    return this.http.get<RdfFilter[]>(
+      `${this.API_RO_URL}/ros/entity_map`
+    )
+  }
+
+  // RO States/comments/tags
+  public addRoTag(tag: RoTag): Observable<RoTag> {
+    return this.http
+      .post<RoTag>(
+        `${this.API_RO_URL}/tags`,
+        this.roTagAdapter.encode(tag)
+      )
+      .pipe(map((item) => this.roTagAdapter.adapt(item)));
+  }
+
+  public deleteRoTag(id: string): Observable<any> {
+    return this.http.delete(`${this.API_RO_URL}/tag/${id}`);
+  }
+
+  public getRoStateValues(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.API_RO_URL}/state/value`);
+  }
+
+  public getRoState(id: string): Observable<RoAcceptanceState> {
+    return this.http
+      .get<RoAcceptanceState>(`${this.API_RO_URL}/state/${id}`)
+      .pipe(map((item) => this.roAcceptanceStateAdapter.adapt(item)));
+  }
+
+  public updateRoState(state: RoAcceptanceState): Observable<RoAcceptanceState> {
+    return this.http.put<RoAcceptanceState>(
+      `${this.API_RO_URL}/state/${state.id}`,
+      this.roAcceptanceStateAdapter.encode(state)
     );
   }
 
-  fetchVerbs(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/verbs`
+  public getRoComment(id: string): Observable<RoComment> {
+    return this.http
+      .get<RoComment>(`${this.API_RO_URL}/comment/${id}`)
+      .pipe(map((item) => this.roCommentAdapter.adapt(item)));
+  }
+
+  public addRoComment(comment: RoComment): Observable<RoComment> {
+    return this.http
+      .post<RoComment>(
+        `${this.API_RO_URL}/comments`,
+        this.roCommentAdapter.encode(comment)
+      )
+      .pipe(map((item) => this.roCommentAdapter.adapt(item)));
+  }
+
+  public deleteRoComment(id: string): Observable<any> {
+    return this.http.delete(`${this.API_RO_URL}/comment/${id}`);
+  }
+
+  public getWebAnnoLink(id: string): Observable<string> {
+    return this.http.get<string>(
+      `${this.API_GLOSSARY_URL}/webanno_link/${id}`
     );
   }
 
-  fetchReports(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/reports`
-    );
-  }
-
-  fetchRegulatoryBody(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/regulatorybody`
-    );
-  }
-
-  fetchPropMod(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/propmod`
-    );
-  }
-
-  fetchEntity(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/entity`
-    );
-  }
-
-  fetchFrequency(): Observable<string[]> {
-    return this.http.get<string[]>(
-      `${this.API_RO_URL}/ros/frequency`
-    );
-  }
 }

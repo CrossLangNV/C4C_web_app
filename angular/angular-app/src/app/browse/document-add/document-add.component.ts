@@ -8,6 +8,8 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import { AcceptanceState } from 'src/app/shared/models/acceptanceState';
 
+import * as uuid from 'uuid';
+
 @Component({
   selector: 'app-document-add',
   templateUrl: './document-add.component.html',
@@ -57,7 +59,9 @@ export class DocumentAddComponent implements OnInit {
       [],
       [],
       [],
+      false,
       '',
+      null,
       '',
       [],
       []
@@ -65,9 +69,22 @@ export class DocumentAddComponent implements OnInit {
     this.calendarIcon = faCalendarAlt;
   }
 
+  onAddFile(event) {
+    this.document.file = event.files[0];
+    console.log(this.document.file);
+    this.document.fileUrl = `http://${uuid.v4()}.doc`;
+  }
+
   onSubmit() {
     this.submitted = true;
-    this.apiService.createDocument(this.document).subscribe((document) => {
+    let formData = new FormData();
+    formData.append('file', this.document.file);
+    formData.append('file_url', this.document.fileUrl);
+    formData.append('date', this.document.date.toISOString());
+    formData.append('title', this.document.title);
+    formData.append('url', this.document.url);
+    formData.append('website', this.document.website);
+    this.apiService.createDocument(formData).subscribe((document) => {
       console.log(document);
       this.apiService
         .updateState(

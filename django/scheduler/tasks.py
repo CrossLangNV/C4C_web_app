@@ -1,16 +1,20 @@
 from __future__ import absolute_import, unicode_literals
 
-from datetime import datetime, timedelta
-from io import BytesIO
-
+import json
 import logging
 import os
 import shutil
-import requests
-import pysolr
+from datetime import datetime, timedelta
+from io import BytesIO
+from pathlib import Path
 
+import pysolr
+import requests
 from celery import shared_task, chain
+from django.core.exceptions import ValidationError
+from django.db.models.functions import Length
 from jsonlines import jsonlines
+from django.db.models import Q
 from langdetect import detect_langs
 from langdetect.lang_detect_exception import LangDetectException
 from minio import Minio, ResponseError
@@ -19,82 +23,19 @@ from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
 from tika import parser
 from twisted.internet import reactor
-from django.core.exceptions import ValidationError
-from django.db.models.functions import Length
 
+from scheduler.extract import extract_terms
 from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
 
-from scheduler.extract import extract_terms
-
-from SPARQLWrapper import SPARQLWrapper, JSON
-
 logger = logging.getLogger(__name__)
-workpath = os.path.dirname(os.path.abspath(__file__))
+workpath = os.path.dirname(os.path.abspath(__file__
+                                           ))
 
-CONST_UPDATE_WITH_COMMIT = "/update?commit=true"
 CONST_EXPORT = '/export/'
 QUERY_ID_ASC = 'id asc'
 QUERY_WEBSITE = "website:"
-
-
-@shared_task()
-def delete_deprecated_acceptance_states():
-    acceptance_states = AcceptanceState.objects.all().order_by("document").distinct(
-        "document_id").annotate(text_len=Length('document__title')).filter(text_len__gt=1).values()
-    documents = Document.objects.all().annotate(text_len=Length('title')).filter(
-        text_len__gt=1).values()
-
-    documents = [str(doc['id']) for doc in documents]
-    acceptances = [str(acc['document_id']) for acc in acceptance_states]
-
-    diff = list(set(acceptances) - set(documents))
-    count = AcceptanceState.objects.all().filter(document_id__in=diff).delete()
-
-    logger.info("Deleted %s deprecated acceptance states", count)
-
-
-@shared_task
-def reset_pre_analyzed_fields(website_id):
-    website = Website.objects.get(pk=website_id)
-    logger.info("Resetting all PreAnalyzed fields for WEBSITE: %s", website.name)
-
-    website_name = website.name.lower()
-    page_number = 0
-    rows_per_page = 250
-    cursor_mark = "*"
-    # Make sure solr index is updated
-    core = 'documents'
-    requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + CONST_UPDATE_WITH_COMMIT)
-    # select all records where content is empty and content_html is not
-    q = "( concept_occurs: [* TO *] OR concept_defined: [* TO *] ) AND website:" + website_name
-    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    options = {'rows': rows_per_page, 'start': page_number,
-               'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC}
-    results = client.search(q, **options)
-    items = []
-
-    for result in results:
-        # add to document model and save
-        document = {"id": result['id'],
-                    "concept_occurs": {"set": "null"},
-                    "concept_defined": {"set": "null"}
-                    }
-        items.append(document)
-
-        if len(items) == 1000:
-            logger.info("Got 1000 items, posting to solr")
-            client.add(items)
-            requests.get(os.environ['SOLR_URL'] +
-                         '/' + core + CONST_UPDATE_WITH_COMMIT)
-            items = []
-
-    # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
-    client.add(items)
-    requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + CONST_UPDATE_WITH_COMMIT)
 
 
 @shared_task
@@ -118,46 +59,120 @@ def full_service_task(website_id, **kwargs):
 
 
 @shared_task
-def export_documents(website_ids=None):
-    websites = Website.objects.all()
-    logger.info("Export for websites: %s", website_ids)
-    if website_ids:
-        websites = Website.objects.filter(pk__in=website_ids)
-    for website in websites:
-        page_number = 0
-        rows_per_page = 250
-        cursor_mark = "*"
-        # Make sure solr index is updated
-        core = 'documents'
-        requests.get(os.environ['SOLR_URL'] +
-                     '/' + core + CONST_UPDATE_WITH_COMMIT)
-        workdir = workpath + CONST_EXPORT + \
-            export_documents.request.id + '/' + website.name.lower()
-        os.makedirs(workdir)
-        # select all records for website
-        q = 'website:' + website.name
-        if website.name.lower() == 'eurlex':
-            # only documents with content_html for eurlex
-            q += ' AND content_html:*'
-        client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-        options = {'rows': rows_per_page, 'start': page_number,
-                   'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC}
-        documents = client.search(q, **options)
+def delete_deprecated_acceptance_states():
+    acceptance_states = AcceptanceState.objects.all().order_by("document").distinct(
+        "document_id").annotate(text_len=Length('document__title')).filter(text_len__gt=1).values()
+    documents = Document.objects.all().annotate(text_len=Length('title')).filter(
+        text_len__gt=1).values()
+
+    documents = [str(doc['id']) for doc in documents]
+    acceptances = [str(acc['document_id']) for acc in acceptance_states]
+
+    diff = list(set(acceptances) - set(documents))
+    count = AcceptanceState.objects.all().filter(document_id__in=diff).delete()
+
+    logger.info("Deleted %s deprecated acceptance states", count)
+
+
+def reset_pre_analyzed_fields_document(document_id):
+    logger.info("Resetting all PreAnalyzed fields for DOCUMENT: %s", document_id)
+    core = 'documents'
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    document = {"id": document_id,
+                "concept_occurs": {"set": ""},
+                "concept_defined": {"set": ""}
+                }
+    client.add(document, commit=True)
+
+
+@shared_task
+def reset_pre_analyzed_fields(website_id):
+    website = Website.objects.get(pk=website_id)
+    logger.info("Resetting all PreAnalyzed fields for WEBSITE: %s", website.name)
+
+    website_name = website.name.lower()
+    page_number = 0
+    rows_per_page = 250
+    cursor_mark = "*"
+    core = 'documents'
+    # select all records where content is empty and content_html is not
+    q = "( concept_occurs: [* TO *] OR concept_defined: [* TO *] ) AND website:" + website_name
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    options = {'rows': rows_per_page, 'start': page_number,
+               'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC}
+    results = client.search(q, **options)
+    items = []
+
+    for result in results:
+        # add to document model and save
+        document = {"id": result['id'],
+                    "concept_occurs": {"set": ""},
+                    "concept_defined": {"set": ""}
+                    }
+        items.append(document)
+
+        if len(items) == 1000:
+            logger.info("Got 1000 items, posting to solr")
+            client.add(items, commit=True)
+            items = []
+
+    # Send to solr
+    client.add(items, commit=True)
+
+
+@shared_task
+def export_documents():
+    logger.info("Export all human validated documents...")
+    # Find all human validated documents:
+    # - no probability model
+    # - ACCEPTED or REJECTED
+    # - group by document
+    human_states = AcceptanceState.objects.filter(
+        (Q(value=AcceptanceStateValue.ACCEPTED) | Q(value=AcceptanceStateValue.REJECTED)) & Q(probability_model=None))\
+        .order_by("document")
+
+    core = 'documents'
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    workdir = workpath + CONST_EXPORT + export_documents.request.id
+    os.makedirs(workdir)
+
+    # Find documents for all document ids found in human validated acceptance states
+    for human_state in human_states:
+        human_validation = {
+            'human_validation': human_state.value, 'username': human_state.user.username}
+        doc_id = human_state.document.id
+        q = 'id:' + str(doc_id)
+        documents = client.search(q, **{})
         for document in documents:
-            with jsonlines.open(workdir + '/doc_' + document['id'] + '.jsonl',
-                                mode='w') as f:
-                f.write(document)
-                # get acceptance state from django model
-                acceptance_state_qs = AcceptanceState.objects.filter(document__id=document['id'],
-                                                                     probability_model='auto classifier')
-                if acceptance_state_qs:
-                    acceptance_state = acceptance_state_qs[0]
-                    classifier_score = acceptance_state.accepted_probability
-                    classifier_status = acceptance_state.value
-                    classifier_index = acceptance_state.accepted_probability_index
-                    classifier = {'classifier_status': classifier_status, 'classifier_score': classifier_score,
-                                  'classifier_index': classifier_index}
-                    f.write(classifier)
+            # Each .jsonl file contains min 3 lines: document, auto classifier, human validation
+            jsonl_file = Path(workdir + '/doc_' + document['id'] + '.jsonl')
+            if jsonl_file.is_file():
+                # if the file for a document id already exists, append human validation
+                with jsonl_file.open(mode='a') as f:
+                    f.write(json.dumps(human_validation))
+                    f.write('\n')
+            else:
+                # file for document id doesn't exist, write document, auto classifier and human validation
+                with jsonl_file.open(mode='w') as f:
+                    # DOCUMENT
+                    f.write(json.dumps(document))
+                    f.write('\n')
+
+                    # Get acceptance state AUTO CLASSIFIER from django model
+                    acceptance_state_qs = AcceptanceState.objects.filter(document__id=document['id'],
+                                                                         probability_model='auto classifier')
+                    if acceptance_state_qs:
+                        acceptance_state = acceptance_state_qs[0]
+                        classifier_score = acceptance_state.accepted_probability
+                        classifier_status = acceptance_state.value
+                        classifier_index = acceptance_state.accepted_probability_index
+                        classifier = {'classifier_status': classifier_status, 'classifier_score': classifier_score,
+                                      'classifier_index': classifier_index}
+                        f.write(json.dumps(classifier))
+                        f.write('\n')
+
+                    # HUMAN validation
+                    f.write(json.dumps(human_validation))
 
     # create zip file for all .jsonl files
     zip_destination = workpath + CONST_EXPORT + export_documents.request.id
@@ -181,6 +196,66 @@ def export_documents(website_ids=None):
     shutil.rmtree(workpath + CONST_EXPORT + export_documents.request.id)
     os.remove(zip_destination + '.zip')
     logging.info("Removed: %s", zip_destination + '.zip')
+
+
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
+@shared_task
+def handle_document_updates_task(website_id):
+    website = Website.objects.get(pk=website_id)
+    logger.info("Handle updates for WEBSITE: %s", str(website))
+    # process files from minio
+    minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                         secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+    bucket_name = website.name.lower()
+    # get all content_hashes
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + 'documents')
+    client_archive = pysolr.Solr(os.environ['SOLR_URL'] + '/' + 'archive')
+    options = {'rows': 250000, 'fl': 'id,content_hash'}
+    results = client.search("*:*", **options)
+    content_hashes = {}
+    for result in results:
+        if 'content_hash' in result:
+            content_hashes[result['id']] = result['content_hash']
+    logger.info("Found " + str(len(content_hashes))+" hashes")
+
+    try:
+        # retrieve jsonlines files from minio
+        objects = minio_client.list_objects(bucket_name)
+        archive_items = []
+        for obj in objects:
+            logger.info("Working on %s", obj.object_name)
+            file_data = minio_client.get_object(bucket_name, obj.object_name)
+            with jsonlines.Reader(BytesIO(file_data.data)) as reader:
+                for obj in reader:
+                    # check if updated (see if we can find the hash from the jsonl object in the list of known content_hashes)
+                    if obj['id'] in content_hashes and obj['content_hash'] != content_hashes[obj['id']]:
+                        archive_items.append(obj['id'])
+
+            logger.info("Going to archive " +
+                        str(len(archive_items)) + " items")
+            # archive_items is the list of all solr document ids that need to be copied to the archive
+            for chunk in chunks(archive_items, 100):
+                solr_ids = ("AND id: ").join(chunk)
+                options = {'rows': 100}
+                results = client.search("id:" + solr_ids, **options)
+                # update ids in results
+                updates = []
+                for result in results:
+                    result['document_id'] = result['id']
+                    result['id'] = result['id'] + result['content_hash']
+                    del result['_version_']
+                    updates.append(result)
+                # send results to archive
+                client_archive.add(updates, commit=True)
+                updates = []
+
+    except ResponseError as err:
+        raise
 
 
 @shared_task
@@ -214,26 +289,6 @@ def get_stats_for_html_size(website_id):
 
     logger.info("[Document stats]: Documents over 500k lines: %s", size_1)
     logger.info("[Document stats]: Documents over 1M lines: %s", size_2)
-
-
-@shared_task()
-def sync_eurovoc_terms(website_id):
-    website = Website.objects.get(pk=website_id)
-    website_name = website.name.lower()
-
-    url = "http://192.168.105.173:3030/eurovoc"
-
-    sparql = SPARQLWrapper(url)
-    sparql.setQuery("""
-        SELECT ?subject ?predicate ?object
-        WHERE {
-           ?subject ?predicate ?object
-        }
-        LIMIT 25
-    """)
-    sparql.setReturnFormat(JSON)
-    results = sparql.query().convert()
-    logger.info(results)
 
 
 @shared_task
@@ -382,7 +437,7 @@ def launch_crawler(spider, spider_type, date_start, date_end):
     reactor.run()  # the script will block here until the crawling is finished
 
 
-@shared_task()
+@shared_task
 def parse_content_to_plaintext_task(website_id, **kwargs):
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
@@ -391,15 +446,12 @@ def parse_content_to_plaintext_task(website_id, **kwargs):
     rows_per_page = 250
     cursor_mark = "*"
     date = kwargs.get('date', None)
-    # Make sure solr index is updated
-    core = 'documents'
-    requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + CONST_UPDATE_WITH_COMMIT)
     # select all records where content is empty and content_html is not
     q = "-content: [\"\" TO *] AND ( content_html: [* TO *] OR file_name: [* TO *] ) AND website:" + website_name
     if date:
         q = q + " AND date:[" + date + " TO NOW]"  # eg. 2013-07-17T00:00:00Z
 
+    core = 'documents'
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     options = {'rows': rows_per_page, 'start': page_number,
                'cursorMark': cursor_mark, 'sort': QUERY_ID_ASC}
@@ -445,15 +497,11 @@ def parse_content_to_plaintext_task(website_id, **kwargs):
 
         if len(items) == 1000:
             logger.info("Got 1000 items, posting to solr")
-            client.add(items)
-            requests.get(os.environ['SOLR_URL'] +
-                         '/' + core + CONST_UPDATE_WITH_COMMIT)
+            client.add(items, commit=True)
             items = []
 
-    # Run solr commit: http://localhost:8983/solr/documents/update?commit=true
-    client.add(items)
-    requests.get(os.environ['SOLR_URL'] +
-                 '/' + core + CONST_UPDATE_WITH_COMMIT)
+    # Send to solr
+    client.add(items, commit=True)
 
 
 def is_document_english(plain_text):
@@ -480,44 +528,70 @@ def is_document_english(plain_text):
 @shared_task
 def sync_scrapy_to_solr_task(website_id):
     website = Website.objects.get(pk=website_id)
+    website_name = website.name.lower()
     logger.info("Scrapy to Solr WEBSITE: %s", str(website))
     # process files from minio
     minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
                          secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
     bucket_name = website.name.lower()
     bucket_archive_name = bucket_name + "-archive"
-    bucket_failed_name = bucket_name + "-failed"
     create_bucket(minio_client, bucket_name)
     create_bucket(minio_client, bucket_archive_name)
-    create_bucket(minio_client, bucket_failed_name)
     core = "documents"
+
+    # Fetch existing id's
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    options = {'rows': 250000, 'fl': 'id,content_hash'}
+    results = client.search("website: " + website_name, **options)
+    content_ids = []
+    for result in results:
+        content_ids.append(result['id'])
+    logger.info("Found " + str(len(content_ids)) + " ids")
+
     try:
         objects = minio_client.list_objects(bucket_name)
         for obj in objects:
+            # Fetch jsonlines file
             logger.info("Working on %s", obj.object_name)
             file_data = minio_client.get_object(bucket_name, obj.object_name)
-            url = os.environ['SOLR_URL'] + '/' + core + "/update/json/docs"
-            output = BytesIO()
-            for d in file_data.stream(32 * 1024):
-                output.write(d)
-            r = requests.post(url, output.getvalue())
-            json_r = r.json()
-            logger.info("SOLR RESPONSE: %s", json_r)
-            if json_r['responseHeader']['status'] == 0:
-                logger.info("ALL good, MOVE to '%s'", bucket_archive_name)
-                copy_result = minio_client.copy_object(
-                    bucket_archive_name, obj.object_name, bucket_name + "/" + obj.object_name)
-            else:
-                logger.info("NOT so good, MOVE to '%s'", bucket_failed_name)
-                copy_result = minio_client.copy_object(
-                    bucket_failed_name, obj.object_name, bucket_name + "/" + obj.object_name)
+            updated_items = 0
+            new_items = 0
+            results = []
+            # a json-line file may contain up to 1000 json documents (memory issue ?)
+            with jsonlines.Reader(BytesIO(file_data.data)) as reader:
+                for json in reader:
+                    if json['id'] in content_ids:
+                        updated_items = updated_items + 1
+                        results.append(rewrite_json_doc_to_update(json))
+                    else:
+                        new_items = updated_items + 1
+                        results.append(json)
+                    if len(results) == 1000:
+                        # Update solr index
+                        client.add(results, commit=True)
+                        results = []
 
+            logger.info("Found " + str(updated_items) + " updated items")
+            logger.info("Found " + str(new_items) + " new items")
+
+            # Update solr index one last time
+            client.add(results, commit=True)
+
+            # move jsonlines file to archive
+            logger.info("ALL good, MOVE to '%s'", bucket_archive_name)
+            minio_client.copy_object(
+                bucket_archive_name, obj.object_name, bucket_name + "/" + obj.object_name)
             minio_client.remove_object(bucket_name, obj.object_name)
-        # Update solr index
-        requests.get(os.environ['SOLR_URL'] + '/' +
-                     core + CONST_UPDATE_WITH_COMMIT)
+
     except ResponseError as err:
         raise
+
+
+def rewrite_json_doc_to_update(doc):
+    for field in doc:
+        if field != "id":
+            doc[field] = {"set": doc[field]}
+    return doc
 
 
 @shared_task

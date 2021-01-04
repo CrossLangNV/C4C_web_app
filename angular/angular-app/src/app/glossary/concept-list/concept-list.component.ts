@@ -77,6 +77,8 @@ export class ConceptListComponent implements OnInit {
   filterTag = '';
   sortBy = 'name';
   filterType = '';
+  version = '8a4f1d58';
+  website = '';
   searchTermChanged: Subject<string> = new Subject<string>();
   userIcon: IconDefinition = faUserAlt;
   chipIcon: IconDefinition = faMicrochip;
@@ -92,6 +94,8 @@ export class ConceptListComponent implements OnInit {
     { id: 'accepted', name: '..Accepted' },
     { id: 'rejected', name: '..Rejected' },
   ];
+  versions = [{ id: '', name: 'Version...'}]
+  websites = [ { id: '', name: 'Website..' } ];
 
   constructor(
     private service: ApiService,
@@ -109,12 +113,16 @@ export class ConceptListComponent implements OnInit {
       this.router.navigate(['/login']);
     }
 
+    this.fetchVersions();
     this.fetchConcepts();
+    this.fetchWebsites();
+
     this.service.messageSource.asObservable().subscribe((value: string) => {
       if (value === 'refresh') {
         this.fetchConcepts();
       }
     });
+
     this.searchTermChanged
       .pipe(debounceTime(600), distinctUntilChanged())
       .subscribe((model) => {
@@ -131,12 +139,34 @@ export class ConceptListComponent implements OnInit {
         this.keyword,
         this.filterTag,
         this.filterType,
+        this.version,
+        this.website,
         this.sortBy
       )
       .subscribe((results) => {
         this.concepts = results.results;
         this.collectionSize = results.count;
       });
+  }
+
+  fetchVersions() {
+    this.service
+      .getConceptVersions()
+      .subscribe((versions) => {
+        versions.forEach((version) =>{
+          this.versions.push({id: version, name: '..' + version });
+        })
+      });
+  }
+  fetchWebsites() {
+    this.service.getWebsites().subscribe((websites) => {
+      websites.forEach((website) => {
+        this.websites.push({
+          id: website.name.toLowerCase(),
+          name: '..' + website.name.toUpperCase(),
+        });
+      });
+    });
   }
 
   onSearch(keyword: string) {

@@ -37,3 +37,21 @@ app-document-validate {
   background: green;
   padding: 0.2145em 0.429em;
 }
+
+.smaller-text {
+  font-size: 16px !important;
+}
+
+p-dropdown {
+  padding: 8px;
+}
+
+body .ui-fieldset .ui-fieldset-legend a {
+  max-height: 64px !important;
+  padding: 2px !important;
+  padding-left: 20px !important;
+}
+
+body .ui-fieldset .ui-fieldset-legend a .ui-fieldset-toggler {
+  font-size: 14px;
+}

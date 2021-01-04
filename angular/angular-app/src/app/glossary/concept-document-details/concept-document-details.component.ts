@@ -74,4 +74,15 @@ export class ConceptDocumentDetailsComponent implements OnInit {
           });
       });
   }
+
+  highlight(xhtml, concept): String {
+    var searchMask = concept.name;
+    var regEx = new RegExp(searchMask, 'ig');
+    var replaceMask = '<span class="highlight">' + concept.name + '</span>';
+    return xhtml.replace(regEx, replaceMask);
+  }
+  
+  goToLink(url: string) {
+    window.open(url, '_blank');
+  }
 }

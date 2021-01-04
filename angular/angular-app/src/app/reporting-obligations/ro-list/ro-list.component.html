@@ -1,42 +1,57 @@
 <div class="jumbotron p-1 m-2">
   <div class="form-group">
     <div class="row">
-      <div class="col">
+      <div *ngIf="!contentLoaded" class="col" style="padding: 32px !important;">
+        <ngx-skeleton-loader
+                             *ngIf="!contentLoaded"
+                             [theme]="{width: '332px', height: '32px'}">
+        </ngx-skeleton-loader>
+        <br/>
+        <ngx-skeleton-loader
+          [theme]="{width: '180px', height: '32px', 'margin-top': '16px', 'margin-right': '20px'}"
+          count="6">
+        </ngx-skeleton-loader>
+        <ngx-skeleton-loader
+          [theme]="{width: '100%', height: '64px', 'margin-top': '32px'}">
+        </ngx-skeleton-loader>
+        <br/>
+        <ngx-skeleton-loader
+          [theme]="{width: '120px', height: '32px', 'margin-top': '10px'}">
+        </ngx-skeleton-loader>
+      </div>
 
+
+
+      <div *ngIf="contentLoaded" class="col" style="padding: 32px !important;">
+        <div>
+          <h4>Query for Reporting Obligations</h4>
+          <br/>
+
+          <p-dropdown *ngFor="let filter of availableItems.slice(0, 6)" [options]="filter.options" class="a-dropdown"
+                      optionLabel="name" optionValue="code" [ngModel]="availableItemsQuery.get(item)"
+                      (ngModelChange)="onQuery(filter, $event)" [virtualScroll]="true" [filter]="true">
+
+          </p-dropdown>
+
+        </div>
+
+        <br/>
 
         <div>
-          <p>Query for Reporting Obligations</p>
-          <p-dropdown [options]="reporters" [(ngModel)]="selectedReporter" placeholder="Reporter..." [virtualScroll]="true" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
-          <p-dropdown [options]="verbs" [(ngModel)]="selectedVerb" placeholder="Verb..." [virtualScroll]="false" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
+          <p-fieldset [toggleable]="true" collapsed="false">
+            <p-header class="smaller-text">Advanced filters</p-header>
+            <p-dropdown *ngFor="let filter of availableItems.slice(7)" [options]="filter.options" class="a-dropdown"
+                        optionLabel="name" optionValue="code" [ngModel]="availableItemsQuery.get(item)"
+                        (ngModelChange)="onQuery(filter, $event)" [virtualScroll]="true" [filter]="true">
 
-          <p-dropdown [options]="reports" [(ngModel)]="selectedReport" placeholder="Report..." [virtualScroll]="false" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
-          <p-dropdown [options]="regulatoryBodies" [(ngModel)]="selectedRegulatoryBody" placeholder="Regulatory body..." [virtualScroll]="true" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
-          <p-dropdown [options]="propMods" [(ngModel)]="selectedPropMod" placeholder="Prop mod..." [virtualScroll]="true" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
-          <p-dropdown [options]="entities" [(ngModel)]="selectedEntity" placeholder="Entity..." [virtualScroll]="true" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
-          <p-dropdown [options]="frequencies" [(ngModel)]="selectedFrequency" placeholder="Frequency..." [virtualScroll]="true" [showClear]="true" [filter]="true" (ngModelChange)="onSearch($event)"></p-dropdown>
-          <fa-icon (click)="resetFilters()" class="p-2" ngbTooltip="Reset filters" [icon]="resetIcon"></fa-icon>
-
-          <p>{{selectedReporter}} {{selectedVerb}}  {{selectedReport}} {{selectedRegulatoryBody}} {{selectedPropMod}} {{selectedEntity}} {{selectedFrequency}}</p>
-          <hr class="my-2" />
+            </p-dropdown>
+          </p-fieldset>
         </div>
 
-        <div class="d-flex justify-content-between p-0">
-          <div class="input-group input-group-sm m-1">
-            <div class="input-group-prepend">
-              <span class="input-group-text" id="inputGroup-sizing-sm"
-                >Search for..</span
-              >
-            </div>
-            <input
-              id="content"
-              type="search"
-              name="content"
-              class="form-control form-control-sm"
-              [(ngModel)]="keyword"
-              (ngModelChange)="onSearch($event)"
-            />
-          </div>
-        </div>
+        <br/>
+
+        <button (click)="resetFilters()" label="Reset filters" pButton pRipple type="button" icon="pi pi-times" class="p-button-rounded p-button-danger p-button-outlined"></button>
+
         <div class="row">
           <div class="col">
             <hr class="my-2" />
@@ -53,11 +68,35 @@
             </div>
           </div>
         </div>
+
       </div>
     </div>
 
+    <table *ngIf="!contentLoaded" class="table table-striped table-bordered table-hover">
+      <thead class="thead-dark">
+      <tr>
+        <th scope="col" sortable="name">
+          <fa-icon [icon]="nameSortIcon"></fa-icon> Label
+        </th>
+        <th scope="col">Tags</th>
+        <th scope="col" sortable="states">
+          <fa-icon [icon]="statesSortIcon"></fa-icon> States
+        </th>
+      </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let n of numSequence(3); let i = index;">
+          <td *ngFor="let n of numSequence(3); let i = index;">
+            <ngx-skeleton-loader
+              [theme]="{width: '100%', height: '64px'}">
+            </ngx-skeleton-loader>
+          </td>
+      </tbody>
+    </table>
+
+
     <hr class="my-2" />
-    <table class="table table-striped table-bordered table-hover">
+    <table *ngIf="contentLoaded" class="table table-striped table-bordered table-hover">
       <thead class="thead-dark">
         <tr>
           <th scope="col" sortable="name" (sort)="onSort($event)">
@@ -81,13 +120,13 @@
               [routerLink]="[ro.id]"
               >{{ ro.definition || "(no label)" }}</a
             >&nbsp;
-            <!-- <span
+             <span
               *ngIf="ro.comments.length > 0"
               class="badge badge-secondary"
               >{{ ro.comments.length }}</span
-            > -->
+            >
           </td>
-          <!-- <td>
+           <td>
             <p-chips
               [(ngModel)]="ro.tags"
               allowDuplicate="false"
@@ -96,8 +135,8 @@
               (onRemove)="onRemoveTag($event)"
               (onChipClick)="onClickTag($event)"
             ></p-chips>
-          </td> -->
-          <!-- <td>
+          </td>
+           <td>
             <p-chips
               [(ngModel)]="ro.acceptance_states"
               disabled="true"
@@ -134,7 +173,7 @@
                 </div>
               </ng-template>
             </p-chips>
-          </td> -->
+          </td>
         </tr>
       </tbody>
     </table>

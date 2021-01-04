@@ -1,7 +1,7 @@
 from django.urls import path
 
 import os
-from . import views
+
 
 from django.urls import path, re_path, include
 
@@ -9,6 +9,7 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 
 from rest_framework import permissions
+from obligations import views
 
 
 schema_view = get_schema_view(
@@ -41,21 +42,39 @@ urlpatterns = [
     path('api/ros', views.ReportingObligationListAPIView.as_view(), name='ro_api_list'),
     path('api/ro/<int:pk>', views.ReportingObligationDetailAPIView.as_view(), name='ro_api_detail'),
 
-    #path('api/ro/<ro>', views.ReportingObligationDocumentsAPIView.as_view(), name='ro_api_search'),
+    # State
+    path('api/states', views.AcceptanceStateListAPIView.as_view(),
+         name='state_list_api'),
+    path('api/state/<int:pk>',
+         views.AcceptanceStateDetailAPIView.as_view(), name='state_detail_api'),
+    path('api/state/value', views.AcceptanceStateValueAPIView.as_view(),
+         name='state_value_api'),
 
-    # RO splits
-    path('api/ros/reporters', views.ReportingObligationReportersListAPIView.as_view(), name='ro_reporters_api_list'),
-    path('api/ros/verbs', views.ReportingObligationVerbsListAPIView.as_view(), name='ro_verbs_api_list'),
-    path('api/ros/reports', views.ReportingObligationReportsListAPIView.as_view(), name='ro_reports_api_list'),
-    path('api/ros/regulatorybody', views.ReportingObligationRegulatoryBodyListAPIView.as_view(),
-         name='ro_regulatorybody_api_list'),
-    path('api/ros/propmod', views.ReportingObligationPropModListAPIView.as_view(), name='ro_propmod_api_list'),
-    path('api/ros/entity', views.ReportingObligationEntityListAPIView.as_view(), name='ro_entity_api_list'),
-    path('api/ros/frequency', views.ReportingObligationFrequencyListAPIView.as_view(), name='ro_frequency_api_list'),
+    # Comment
+    path('api/comments', views.CommentListAPIView.as_view(),
+         name='comment_list_api'),
+    path('api/comment/<int:pk>', views.CommentDetailAPIView.as_view(),
+         name='comment_detail_api'),
+
+    # Tag
+    path('api/tags', views.TagListAPIView.as_view(),
+         name='tag_list_api'),
+    path('api/tag/<int:pk>', views.TagDetailAPIView.as_view(),
+         name='tag_detail_api'),
+
+    # Get list of all entities
     path('api/ros/rdfentities', views.ReportingObligationAvailableEntitiesAPIView.as_view(),
          name='ro_available_entities_api_list'),
-    path('api/ros/predicate/<predicate>', views.ReportingObligationGetByPredicate.as_view(), name='ro_find_by_predicate'),
+    # Get all items from this entity
+    path('api/ros/predicate', views.ReportingObligationGetByPredicate.as_view(), name='ro_find_by_predicate'),
 
     # Replace the other one later
-    path('api/rdf_ros', views.ReportingObligationsRDFListAPIView.as_view(), name='ro_rdf_api_list'),
+    path('api/rdf_ros', views.ReportingObligationListRdfQueriesAPIView.as_view(), name='ro_rdf_api_list'),
+
+    # Query RDF
+    path('api/ros/query', views.ReportingObligationQueryMultipleAPIView.as_view(), name='ro_rdf_api_query_multiple'),
+
+    # All entities of RDF + their options
+    path('api/ros/entity_map', views.ReportingObligationEntityMapAPIView.as_view(), name='ro_rdf_entity_map'),
+
 ]

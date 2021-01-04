@@ -32,6 +32,7 @@
     "bootstrap": "^4.5.0",
     "chart.js": "^2.9.3",
     "jquery": "^3.5.1",
+    "ngx-skeleton-loader": "^2.6.2",
     "path": "^0.12.7",
     "primeicons": "^4.0.0",
     "primeng": "^9.1.3",
