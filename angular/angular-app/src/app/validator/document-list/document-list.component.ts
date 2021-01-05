@@ -19,6 +19,7 @@ import { DjangoUser } from 'src/app/shared/models/django_user';
 import {Document, DocumentResults} from 'src/app/shared/models/document';
 import { Tag } from 'src/app/shared/models/tag';
 import { NgbdSortableHeader, SortEvent } from './sortable.directive';
+import {DropdownOption} from '../../shared/models/DropdownOption';
 
 @Component({
   selector: 'app-document-list',
@@ -91,7 +92,7 @@ export class DocumentListComponent implements OnInit {
   currentDjangoUser: DjangoUser;
   selectedIndex: string = null;
 
-  celexOptions: string[];
+  celexOptions: DropdownOption[];
   selectedCelex: string;
 
   constructor(
@@ -342,5 +343,10 @@ export class DocumentListComponent implements OnInit {
     this.service.fetchCelexOptions().subscribe((res) => {
       this.celexOptions = res
     })
+  }
+
+  onQuery(keyword) {
+    this.documentService.celex = keyword.code;
+    this.filterResetPage();
   }
 }

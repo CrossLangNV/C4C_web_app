@@ -42,6 +42,7 @@ import {RoTag, RoTagAdapter} from "../../shared/models/RoTag";
 import {RoAcceptanceState, RoAcceptanceStateAdapter} from "../../shared/models/roAcceptanceState";
 import {RoComment, RoCommentAdapter} from "../../shared/models/roComment";
 import { DjangoUser } from 'src/app/shared/models/django_user';
+import {DropdownOption} from '../../shared/models/DropdownOption';
 
 @Injectable({
   providedIn: 'root',
@@ -634,8 +635,8 @@ export class ApiService {
     );
   }
 
-  public fetchCelexOptions(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.API_URL}/filters/celex`)
+  public fetchCelexOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/celex`)
   }
 
 }

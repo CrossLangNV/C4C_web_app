@@ -490,12 +490,12 @@ class CelexListAPIView(APIView):
 
         celex_objects = Document.objects.order_by('celex').values_list('celex', flat=True).distinct('celex')
 
-        options = [{"name": "CELEX", "code": "none"}]
+        options = [{"name": "CELEX", "code": ""}]
         for celex in celex_objects:
             options.append({"name": celex, "code": celex})
 
 
-        return Response(celex_objects)
+        return Response(options)
 
 
 class BookmarkDetailAPIView(APIView):
