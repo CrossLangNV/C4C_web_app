@@ -105,6 +105,7 @@ class DocumentListAPIView(ListCreateAPIView):
         keyword = self.request.GET.get('keyword', "")
         showonlyown = self.request.GET.get('showOnlyOwn', "")
         bookmarks = self.request.GET.get('bookmarks', "")
+        celex = self.request.GET.get('celex', "")
         username = self.request.GET.get('username', "")
         website = self.request.GET.get('website', "")
         tag = self.request.GET.get('tag', "")
@@ -132,6 +133,9 @@ class DocumentListAPIView(ListCreateAPIView):
                                                                           Q(acceptance_states__value="Rejected")))
         if bookmarks == "true":
             q = q.filter(bookmarks__user__username=username)
+
+        if celex:
+            q = q.filter(celex__exact=celex)
 
         if website:
             q = q.filter(website__name__iexact=website)
@@ -486,10 +490,12 @@ class CelexListAPIView(APIView):
 
         celex_objects = Document.objects.order_by('celex').values_list('celex', flat=True).distinct('celex')
 
-        options = [{"name": "CELEX", "code": ""}]
+        options = [{"name": "CELEX", "code": "none"}]
         for celex in celex_objects:
             options.append({"name": celex, "code": celex})
-        return Response(options)
+
+
+        return Response(celex_objects)
 
 
 class BookmarkDetailAPIView(APIView):

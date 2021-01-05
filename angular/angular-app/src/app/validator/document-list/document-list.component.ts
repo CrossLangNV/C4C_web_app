@@ -92,6 +92,7 @@ export class DocumentListComponent implements OnInit {
   selectedIndex: string = null;
 
   celexOptions: string[];
+  selectedCelex: string;
 
   constructor(
     private route: ActivatedRoute,
@@ -272,7 +273,8 @@ export class DocumentListComponent implements OnInit {
       this.documentService.filterTag.length > 0 ||
       this.documentService.showOnlyOwn ||
       this.documentService.filterType !== 'none' ||
-      this.documentService.website !== 'none';
+      this.documentService.website !== 'none' ||
+      this.documentService.celex !== 'none';
   }
 
   resetFilters() {
@@ -281,6 +283,7 @@ export class DocumentListComponent implements OnInit {
     this.documentService.showOnlyOwn = false;
     this.documentService.filterType = '';
     this.documentService.website = '';
+    this.documentService.celex = '';
     this.router.navigate(['/validator']);
   }
 
