@@ -317,10 +317,15 @@ def sync_documents_task(website_id, **kwargs):
 
         solr_doc_date_types = solr_doc.get('dates_type', [''])
         solr_doc_date_dates = solr_doc.get('dates', [''])
+        solr_doc_date_info = solr_doc.get('dates_info', [''])
 
         solr_doc_date_of_effect = None
-        if "date of effect" in solr_doc_date_types:
-            solr_doc_date_of_effect = solr_doc_date_dates[solr_doc_date_types.index("date of effect")]
+        for date_info in solr_doc_date_info:
+            if date_info.lower().startswith("entry into force"):
+                index = solr_doc_date_info.index(date_info)
+                if solr_doc_date_types[index] == "date of effect":
+                    solr_doc_date_of_effect = solr_doc_date_dates[index]
+                    break
 
         solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
         solr_doc_date_last_update = solr_doc.get(
