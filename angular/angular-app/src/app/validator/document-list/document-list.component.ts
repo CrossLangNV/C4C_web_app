@@ -91,6 +91,8 @@ export class DocumentListComponent implements OnInit {
   currentDjangoUser: DjangoUser;
   selectedIndex: string = null;
 
+  celexOptions: string[];
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -189,6 +191,9 @@ export class DocumentListComponent implements OnInit {
         this.documentService.page = this.documentService.page;
       }
     });
+
+    // Fill dropdowns
+    this.fetchCelexOptions();
   }
 
   onSort({ column, direction }: SortEvent) {
@@ -328,5 +333,11 @@ export class DocumentListComponent implements OnInit {
       // this.document.bookmark = false;
       document.bookmark = false
     });
+  }
+
+  fetchCelexOptions() {
+    this.service.fetchCelexOptions().subscribe((res) => {
+      this.celexOptions = res
+    })
   }
 }
