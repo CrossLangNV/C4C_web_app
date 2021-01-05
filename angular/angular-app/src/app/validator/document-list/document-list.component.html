@@ -70,14 +70,10 @@
         <div>
           <p-fieldset [toggleable]="true" collapsed="false">
             <p-header class="smaller-text">Advanced filters</p-header>
-            <p-dropdown [options]="celexOptions" class="a-dropdown" [virtualScroll]="true" [filter]="true" placeholder="CELEX">
+            <p-dropdown [options]="celexOptions" class="a-dropdown" [virtualScroll]="true" [filter]="true" placeholder="CELEX"
+                        optionLabel="name" optionValue="code" >
 
             </p-dropdown>
-<!--            <p-dropdown *ngFor="let filter of availableItems.slice(7)" [options]="filter.options" class="a-dropdown"-->
-<!--                        optionLabel="name" optionValue="code" [ngModel]="availableItemsQuery.get(item)"-->
-<!--                        (ngModelChange)="onQuery(filter, $event)" [virtualScroll]="true" [filter]="true">-->
-
-<!--            </p-dropdown>-->
           </p-fieldset>
         </div>
 
