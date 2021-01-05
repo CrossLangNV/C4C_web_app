@@ -634,4 +634,8 @@ export class ApiService {
     );
   }
 
+  public fetchCelexOptions(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.API_URL}/filters/celex`)
+  }
+
 }
