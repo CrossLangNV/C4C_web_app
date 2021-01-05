@@ -70,8 +70,9 @@
         <div>
           <p-fieldset [toggleable]="true" collapsed="false">
             <p-header class="smaller-text">Advanced filters</p-header>
-            <p-dropdown [options]="celexOptions" [(ngModel)]="selectedCelex" class="a-dropdown" [virtualScroll]="true" [filter]="true"
-                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery($event)">
+            <p-dropdown [options]="celexOptions" [(ngModel)]="selectedCelex" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery($event)"
+                        [virtualScroll]="true" itemSize="20">
 
             </p-dropdown>
           </p-fieldset>
