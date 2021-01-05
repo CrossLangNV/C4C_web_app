@@ -15,6 +15,7 @@ interface State {
   bookmarks: boolean;
   filterTag: string;
   sortBy: string;
+  celex: string;
 }
 
 @Injectable({
@@ -38,6 +39,7 @@ export class DocumentService {
     bookmarks: false,
     filterTag: '',
     sortBy: '-date',
+    celex: '',
   };
 
   constructor(private http: HttpClient) {
@@ -107,6 +109,12 @@ export class DocumentService {
   set bookmarks(bookmarks: boolean) {
     this._set({ bookmarks });
   }
+  get celex() {
+    return this._state.celex;
+  }
+  set celex(celex: string) {
+    this._set({ celex });
+  }
   get filterTag() {
     return this._state.searchTerm;
   }
@@ -132,6 +140,7 @@ export class DocumentService {
       website,
       showOnlyOwn,
       bookmarks,
+      celex,
       filterTag,
       sortBy,
     } = this._state;
@@ -150,6 +159,8 @@ export class DocumentService {
       showOnlyOwn +
       '&bookmarks=' +
       bookmarks +
+      '&celex=' +
+      celex +
       '&tag=' +
       filterTag +
       '&ordering=' +
