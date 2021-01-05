@@ -13,6 +13,7 @@ import requests
 from celery import shared_task, chain
 from django.core.exceptions import ValidationError
 from django.db.models.functions import Length
+from django.utils import timezone
 from jsonlines import jsonlines
 from django.db.models import Q
 from langdetect import detect_langs
@@ -315,6 +316,16 @@ def sync_documents_task(website_id, **kwargs):
     solr_documents = solr_search_website_sorted(
         core='documents', website=website.name.lower(), date=date)
     for solr_doc in solr_documents:
+
+        solr_doc_date_types = solr_doc.get('dates_type', [''])
+        solr_doc_date_dates = solr_doc.get('dates', [''])
+
+        solr_doc_date_of_effect = None
+        if "date of effect" in solr_doc_date_types:
+            solr_doc_date_of_effect = solr_doc_date_dates[solr_doc_date_types.index("date of effect")]
+
+        logger.info("solr_doc_date_of_effect: %s for document celex: %s", solr_doc_date_of_effect, solr_doc)
+
         solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
         solr_doc_date_last_update = solr_doc.get(
             'date_last_update', datetime.now())
@@ -326,6 +337,7 @@ def sync_documents_task(website_id, **kwargs):
             "celex": solr_doc.get('celex', [''])[0][:20],
             "consolidated_versions": ','.join(x.strip() for x in solr_doc.get('consolidated_versions', [''])),
             "date": solr_doc_date,
+            "date_of_effect": solr_doc_date_of_effect,
             "date_last_update": solr_doc_date_last_update,
             "eli": solr_doc.get('eli', [''])[0],
             "file_url": solr_doc.get('file_url', [None])[0],
