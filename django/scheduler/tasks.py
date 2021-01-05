@@ -9,11 +9,9 @@ from io import BytesIO
 from pathlib import Path
 
 import pysolr
-import requests
 from celery import shared_task, chain
 from django.core.exceptions import ValidationError
 from django.db.models.functions import Length
-from django.utils import timezone
 from jsonlines import jsonlines
 from django.db.models import Q
 from langdetect import detect_langs
@@ -323,8 +321,6 @@ def sync_documents_task(website_id, **kwargs):
         solr_doc_date_of_effect = None
         if "date of effect" in solr_doc_date_types:
             solr_doc_date_of_effect = solr_doc_date_dates[solr_doc_date_types.index("date of effect")]
-
-        logger.info("solr_doc_date_of_effect: %s for document celex: %s", solr_doc_date_of_effect, solr_doc)
 
         solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
         solr_doc_date_last_update = solr_doc.get(
