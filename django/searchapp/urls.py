@@ -137,4 +137,8 @@ urlpatterns = [
     path('api/bookmarks/<document_id>', views.BookmarkDetailAPIView.as_view(),
          name='bookmark_detail_api'),
 
+    # Dropdown: celex
+    path('api/filters/celex', views.CelexListAPIView.as_view(),
+         name='celex_list_api'),
+
 ]

@@ -479,6 +479,19 @@ class BookmarkListAPIView(ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+class CelexListAPIView(APIView):
+    #permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+
+        celex_objects = Document.objects.order_by('celex').values_list('celex', flat=True).distinct('celex')
+
+        options = [{"name": "CELEX", "code": ""}]
+        for celex in celex_objects:
+            options.append({"name": celex, "code": celex})
+        return Response(options)
+
+
 class BookmarkDetailAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     logger = logging.getLogger(__name__)
