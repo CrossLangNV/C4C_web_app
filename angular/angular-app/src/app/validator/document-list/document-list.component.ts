@@ -311,6 +311,7 @@ export class DocumentListComponent implements OnInit {
     this.documentService.eli = '';
     this.documentService.author = '';
     this.documentService.date_of_effect = '';
+    this.resetDropdowns();
     this.router.navigate(['/validator']);
   }
 
@@ -429,5 +430,14 @@ export class DocumentListComponent implements OnInit {
     if (hasMatched) {
       this.filterResetPage();
     }
+  }
+
+  resetDropdowns() {
+    this.selectedCelex = '';
+    this.selectedType = '';
+    this.selectedStatus = '';
+    this.selectedEli = '';
+    this.selectedAuthor = '';
+    this.selectedEffectDate = '';
   }
 }
