@@ -581,7 +581,7 @@ class DateOfEffectListAPIView(APIView):
         date_objects = Document.objects.order_by('date_of_effect').values_list('date_of_effect', flat=True)\
                         .distinct('date_of_effect')
 
-        options = [{"name": "Date of effect", "code": ""}]
+        options = [{"name": "In Force Date", "code": ""}]
         for d in date_objects:
             options.append({"name": d, "code": d})
 
