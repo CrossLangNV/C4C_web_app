@@ -17,6 +17,7 @@
               name="content"
               class="form-control form-control-sm"
               [(ngModel)]="documentService.searchTerm"
+              (ngModelChange)="filterResetPage()"
             />
           </div>
           <select
