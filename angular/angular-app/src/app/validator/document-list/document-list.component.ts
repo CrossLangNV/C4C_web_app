@@ -401,33 +401,33 @@ export class DocumentListComponent implements OnInit {
     })
   }
 
-  onQueryCelex(keyword) {
-    this.documentService.celex = keyword.code;
-    this.filterResetPage();
-  }
-
-  onQueryType(keyword) {
-    this.documentService.type = keyword.code;
-    this.filterResetPage();
-  }
-
-  onQueryStatus(keyword) {
-    this.documentService.status = keyword.code;
-    this.filterResetPage();
-  }
-
-  onQueryEli(keyword) {
-    this.documentService.eli = keyword.code;
-    this.filterResetPage();
-  }
-
-  onQueryAuthor(keyword) {
-    this.documentService.author = keyword.code;
-    this.filterResetPage();
-  }
-
-  onQueryEffectDate(keyword) {
-    this.documentService.date_of_effect = keyword.code;
-    this.filterResetPage();
+  onQuery(type, keyword) {
+    let hasMatched = true;
+    switch (type) {
+      case 'celex':
+        this.documentService.celex = keyword.code;
+        break
+      case 'type':
+        this.documentService.type = keyword.code;
+        break
+      case 'status':
+        this.documentService.status = keyword.code;
+        break
+      case 'eli':
+        this.documentService.eli = keyword.code;
+        break
+      case 'author':
+        this.documentService.author = keyword.code;
+        break
+      case 'date_of_effect':
+        this.documentService.date_of_effect = keyword.code;
+        break
+      default:
+        hasMatched = false;
+    }
+    // Because typescript has no 'finally' statement..
+    if (hasMatched) {
+      this.filterResetPage();
+    }
   }
 }

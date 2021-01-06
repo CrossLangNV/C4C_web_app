@@ -71,32 +71,32 @@
           <p-fieldset [toggleable]="true" collapsed="false">
             <p-header class="smaller-text">Advanced filters</p-header>
             <p-dropdown [options]="celexOptions" [(ngModel)]="selectedCelex" class="a-dropdown" [filter]="true"
-                        optionLabel="name" optionValue="code" (ngModelChange)="onQueryCelex($event)"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('celex', $event)"
                         [virtualScroll]="true" itemSize="20">
             </p-dropdown>
 
             <p-dropdown [options]="typeOptions" [(ngModel)]="selectedType" class="a-dropdown" [filter]="true"
-                        optionLabel="name" optionValue="code" (ngModelChange)="onQueryType($event)"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('type', $event)"
                         [virtualScroll]="true" itemSize="20">
             </p-dropdown>
 
             <p-dropdown [options]="statusOptions" [(ngModel)]="selectedStatus" class="a-dropdown" [filter]="true"
-                        optionLabel="name" optionValue="code" (ngModelChange)="onQueryStatus($event)"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('status', $event)"
                         [virtualScroll]="true" itemSize="20">
             </p-dropdown>
 
             <p-dropdown [options]="eliOptions" [(ngModel)]="selectedEli" class="a-dropdown" [filter]="true"
-                        optionLabel="name" optionValue="code" (ngModelChange)="onQueryEli($event)"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('eli', $event)"
                         [virtualScroll]="true" itemSize="20">
             </p-dropdown>
 
             <p-dropdown [options]="authorOptions" [(ngModel)]="selectedAuthor" class="a-dropdown" [filter]="true"
-                        optionLabel="name" optionValue="code" (ngModelChange)="onQueryAuthor($event)"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('author', $event)"
                         [virtualScroll]="true" itemSize="20">
             </p-dropdown>
 
             <p-dropdown [options]="effectDateOptions" [(ngModel)]="selectedEffectDate" class="a-dropdown" [filter]="true"
-                        optionLabel="name" optionValue="code" (ngModelChange)="onQueryEffectDate($event)"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('date_of_effect', $event)"
                         [virtualScroll]="true" itemSize="20">
             </p-dropdown>
 
