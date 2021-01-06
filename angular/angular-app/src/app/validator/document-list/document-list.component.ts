@@ -96,11 +96,15 @@ export class DocumentListComponent implements OnInit {
   typeOptions: DropdownOption[];
   statusOptions: DropdownOption[];
   eliOptions: DropdownOption[];
+  authorOptions: DropdownOption[];
+  effectDateOptions: DropdownOption[];
 
   selectedCelex: string;
   selectedType: string;
   selectedStatus: string;
   selectedEli: string;
+  selectedAuthor: string;
+  selectedEffectDate: string;
 
   constructor(
     private route: ActivatedRoute,
@@ -206,6 +210,8 @@ export class DocumentListComponent implements OnInit {
     this.fetchTypeOptions();
     this.fetchStatusOptions();
     this.fetchEliOptions();
+    this.fetchAuthorOptions();
+    this.fetchEffectDateOptions();
   }
 
   onSort({ column, direction }: SortEvent) {
@@ -288,7 +294,9 @@ export class DocumentListComponent implements OnInit {
       this.documentService.celex !== 'none' ||
       this.documentService.type !== 'none' ||
       this.documentService.status !== 'none' ||
-      this.documentService.eli !== 'none';
+      this.documentService.eli !== 'none' ||
+      this.documentService.author !== 'none' ||
+      this.documentService.date_of_effect !== 'none';
   }
 
   resetFilters() {
@@ -301,6 +309,8 @@ export class DocumentListComponent implements OnInit {
     this.documentService.type = '';
     this.documentService.status = '';
     this.documentService.eli = '';
+    this.documentService.author = '';
+    this.documentService.date_of_effect = '';
     this.router.navigate(['/validator']);
   }
 
@@ -379,6 +389,18 @@ export class DocumentListComponent implements OnInit {
     })
   }
 
+  fetchAuthorOptions() {
+    this.service.fetchAuthorOptions().subscribe((res) => {
+      this.authorOptions = res
+    })
+  }
+
+  fetchEffectDateOptions() {
+    this.service.fetchEffectDateOptions().subscribe((res) => {
+      this.effectDateOptions = res
+    })
+  }
+
   onQueryCelex(keyword) {
     this.documentService.celex = keyword.code;
     this.filterResetPage();
@@ -396,6 +418,16 @@ export class DocumentListComponent implements OnInit {
 
   onQueryEli(keyword) {
     this.documentService.eli = keyword.code;
+    this.filterResetPage();
+  }
+
+  onQueryAuthor(keyword) {
+    this.documentService.author = keyword.code;
+    this.filterResetPage();
+  }
+
+  onQueryEffectDate(keyword) {
+    this.documentService.date_of_effect = keyword.code;
     this.filterResetPage();
   }
 }

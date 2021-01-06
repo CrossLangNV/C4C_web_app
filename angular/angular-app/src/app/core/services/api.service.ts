@@ -651,4 +651,12 @@ export class ApiService {
     return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/eli`)
   }
 
+  public fetchAuthorOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/author`)
+  }
+
+  public fetchEffectDateOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/effectdate`)
+  }
+
 }

@@ -19,6 +19,8 @@ interface State {
   type: string;
   status: string;
   eli: string;
+  author: string;
+  date_of_effect: string;
 }
 
 @Injectable({
@@ -46,6 +48,8 @@ export class DocumentService {
     type: '',
     status: '',
     eli: '',
+    author: '',
+    date_of_effect: '',
   };
 
   constructor(private http: HttpClient) {
@@ -139,6 +143,18 @@ export class DocumentService {
   set eli(eli: string) {
     this._set({ eli });
   }
+  get author() {
+    return this._state.author;
+  }
+  set author(author: string) {
+    this._set({ author });
+  }
+  get date_of_effect() {
+    return this._state.date_of_effect;
+  }
+  set date_of_effect(date_of_effect: string) {
+    this._set({ date_of_effect });
+  }
   get filterTag() {
     return this._state.searchTerm;
   }
@@ -168,6 +184,8 @@ export class DocumentService {
       type,
       status,
       eli,
+      author,
+      date_of_effect,
       filterTag,
       sortBy,
     } = this._state;
@@ -194,6 +212,10 @@ export class DocumentService {
       status +
       '&eli=' +
       eli +
+      '&author=' +
+      author +
+      '&date_of_effect=' +
+      date_of_effect +
       '&tag=' +
       filterTag +
       '&ordering=' +

@@ -109,6 +109,8 @@ class DocumentListAPIView(ListCreateAPIView):
         type = self.request.GET.get('type', "")
         status = self.request.GET.get('status', "")
         eli = self.request.GET.get('eli', "")
+        author = self.request.GET.get('author', "")
+        date_of_effect = self.request.GET.get('date_of_effect', "")
         username = self.request.GET.get('username', "")
         website = self.request.GET.get('website', "")
         tag = self.request.GET.get('tag', "")
@@ -148,6 +150,12 @@ class DocumentListAPIView(ListCreateAPIView):
 
         if eli:
             q = q.filter(eli__exact=eli)
+
+        if author:
+            q = q.filter(author__exact=author)
+
+        if date_of_effect:
+            q = q.filter(date_of_effect__exact=date_of_effect)
 
         if website:
             q = q.filter(website__name__iexact=website)
@@ -547,6 +555,35 @@ class EliListAPIView(APIView):
         options = [{"name": "ELI", "code": ""}]
         for e in eli_objects:
             options.append({"name": e, "code": e})
+
+        return Response(options)
+
+
+class AuthorListAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+
+        author_objects = Document.objects.order_by('author').values_list('author', flat=True).distinct('author')
+
+        options = [{"name": "Author", "code": ""}]
+        for a in author_objects:
+            options.append({"name": a, "code": a})
+
+        return Response(options)
+
+
+class DateOfEffectListAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+
+        date_objects = Document.objects.order_by('date_of_effect').values_list('date_of_effect', flat=True)\
+                        .distinct('date_of_effect')
+
+        options = [{"name": "Date of effect", "code": ""}]
+        for d in date_objects:
+            options.append({"name": d, "code": d})
 
         return Response(options)
 
