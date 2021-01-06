@@ -19,6 +19,7 @@ import { DjangoUser } from 'src/app/shared/models/django_user';
 import {Document, DocumentResults} from 'src/app/shared/models/document';
 import { Tag } from 'src/app/shared/models/tag';
 import { NgbdSortableHeader, SortEvent } from './sortable.directive';
+import {DropdownOption} from '../../shared/models/DropdownOption';
 
 @Component({
   selector: 'app-document-list',
@@ -90,6 +91,16 @@ export class DocumentListComponent implements OnInit {
   websites = [ { id: '', name: 'Website..' } ];
   currentDjangoUser: DjangoUser;
   selectedIndex: string = null;
+
+  celexOptions: DropdownOption[];
+  typeOptions: DropdownOption[];
+  statusOptions: DropdownOption[];
+  eliOptions: DropdownOption[];
+
+  selectedCelex: string;
+  selectedType: string;
+  selectedStatus: string;
+  selectedEli: string;
 
   constructor(
     private route: ActivatedRoute,
@@ -189,6 +200,12 @@ export class DocumentListComponent implements OnInit {
         this.documentService.page = this.documentService.page;
       }
     });
+
+    // Fill dropdowns
+    this.fetchCelexOptions();
+    this.fetchTypeOptions();
+    this.fetchStatusOptions();
+    this.fetchEliOptions();
   }
 
   onSort({ column, direction }: SortEvent) {
@@ -267,7 +284,11 @@ export class DocumentListComponent implements OnInit {
       this.documentService.filterTag.length > 0 ||
       this.documentService.showOnlyOwn ||
       this.documentService.filterType !== 'none' ||
-      this.documentService.website !== 'none';
+      this.documentService.website !== 'none' ||
+      this.documentService.celex !== 'none' ||
+      this.documentService.type !== 'none' ||
+      this.documentService.status !== 'none' ||
+      this.documentService.eli !== 'none';
   }
 
   resetFilters() {
@@ -276,6 +297,10 @@ export class DocumentListComponent implements OnInit {
     this.documentService.showOnlyOwn = false;
     this.documentService.filterType = '';
     this.documentService.website = '';
+    this.documentService.celex = '';
+    this.documentService.type = '';
+    this.documentService.status = '';
+    this.documentService.eli = '';
     this.router.navigate(['/validator']);
   }
 
@@ -328,5 +353,49 @@ export class DocumentListComponent implements OnInit {
       // this.document.bookmark = false;
       document.bookmark = false
     });
+  }
+
+  fetchCelexOptions() {
+    this.service.fetchCelexOptions().subscribe((res) => {
+      this.celexOptions = res
+    })
+  }
+
+  fetchTypeOptions() {
+    this.service.fetchTypeOptions().subscribe((res) => {
+      this.typeOptions = res
+    })
+  }
+
+  fetchStatusOptions() {
+    this.service.fetchStatusOptions().subscribe((res) => {
+      this.statusOptions = res
+    })
+  }
+
+  fetchEliOptions() {
+    this.service.fetchEliOptions().subscribe((res) => {
+      this.eliOptions = res
+    })
+  }
+
+  onQueryCelex(keyword) {
+    this.documentService.celex = keyword.code;
+    this.filterResetPage();
+  }
+
+  onQueryType(keyword) {
+    this.documentService.type = keyword.code;
+    this.filterResetPage();
+  }
+
+  onQueryStatus(keyword) {
+    this.documentService.status = keyword.code;
+    this.filterResetPage();
+  }
+
+  onQueryEli(keyword) {
+    this.documentService.eli = keyword.code;
+    this.filterResetPage();
   }
 }
