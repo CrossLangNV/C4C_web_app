@@ -334,7 +334,7 @@ def sync_documents_task(website_id, **kwargs):
         if isinstance(solr_doc_date_last_update, list):
             solr_doc_date_last_update = solr_doc_date_last_update[0]
         data = {
-            "author": solr_doc.get('author', [''])[0][:20],
+            "author": solr_doc.get('misc_author', [''])[0][:20],
             "celex": solr_doc.get('celex', [''])[0][:20],
             "consolidated_versions": ','.join(x.strip() for x in solr_doc.get('consolidated_versions', [''])),
             "date": solr_doc_date,
