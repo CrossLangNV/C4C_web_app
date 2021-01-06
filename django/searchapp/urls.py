@@ -149,5 +149,11 @@ urlpatterns = [
     # Dropdown: eli
     path('api/filters/eli', views.EliListAPIView.as_view(),
          name='eli_list_api'),
+    # Dropdown: eli
+    path('api/filters/author', views.AuthorListAPIView.as_view(),
+         name='eli_list_api'),
+    # Dropdown: eli
+    path('api/filters/effectdate', views.DateOfEffectListAPIView.as_view(),
+         name='eli_list_api'),
 
 ]
