@@ -47,8 +47,8 @@ class SmallResultsSetPagination(PageNumberPagination):
 
 # For multiple RDF queries
 class ReportingObligationQueryMultipleAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
+    queryset = ReportingObligation.objects.none()
 
     def post(self, request, format=None):
         filter_list = request.data['filters']
@@ -62,8 +62,8 @@ class ReportingObligationQueryMultipleAPIView(APIView):
 
 # This one is used to fill the dropdowns in the UI
 class ReportingObligationEntityMapAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
+    queryset = ReportingObligation.objects.none()
 
     @method_decorator(cache_page(60 * 60 * 2))
     @method_decorator(vary_on_cookie)
@@ -109,7 +109,6 @@ class ReportingObligationEntityMapAPIView(APIView):
 
 
 class ReportingObligationListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
     queryset = ReportingObligation.objects.all()
     serializer_class = ReportingObligationSerializer
@@ -127,7 +126,6 @@ class ReportingObligationListAPIView(ListCreateAPIView):
 
 # Query for RO+RDF ROS search
 class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
-    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
     queryset = ReportingObligation.objects.all()
     serializer_class = ReportingObligationSerializer
@@ -156,13 +154,13 @@ class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
 
 
 class ReportingObligationDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     queryset = ReportingObligation.objects.all()
     serializer_class = ReportingObligationSerializer
 
 
 # Entities
 class ReportingObligationAvailableEntitiesAPIView(APIView):
+    queryset = ReportingObligation.objects.none()
 
     def get(self, request, format=None):
         result = rdf_get_available_entities()
@@ -171,6 +169,7 @@ class ReportingObligationAvailableEntitiesAPIView(APIView):
 
 # Predicate
 class ReportingObligationGetByPredicate(APIView):
+    queryset = ReportingObligation.objects.none()
 
     def post(self, request, format=None):
         predicate = request.data['predicate']
@@ -180,6 +179,7 @@ class ReportingObligationGetByPredicate(APIView):
 
 # Get all RO's from RDF
 class ReportingObligationsRDFListAPIView(APIView):
+    queryset = ReportingObligation.objects.none()
 
     def get(self, request, format=None):
         result = rdf_get_all_reporting_obligations()
@@ -187,26 +187,25 @@ class ReportingObligationsRDFListAPIView(APIView):
 
 
 class TagListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
 
 
 class TagDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
 
 
 class AcceptanceStateValueAPIView(APIView):
+    queryset = AcceptanceState.objects.none()
 
     def get(self, request, format=None):
         return Response([state.value for state in AcceptanceStateValue])
 
 
 class AcceptanceStateListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = AcceptanceStateSerializer
+    queryset = AcceptanceState.objects.none()
 
     def list(self, request, *args, **kwargs):
         queryset = AcceptanceState.objects.filter(user=request.user)

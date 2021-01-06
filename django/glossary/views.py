@@ -24,7 +24,6 @@ class SmallResultsSetPagination(PageNumberPagination):
 
 
 class ConceptListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     pagination_class = SmallResultsSetPagination
     queryset = Concept.objects.all()
     serializer_class = ConceptSerializer
@@ -66,13 +65,12 @@ class ConceptListAPIView(ListCreateAPIView):
 
 
 class ConceptDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     queryset = Concept.objects.all()
     serializer_class = ConceptSerializer
 
 
 class ConceptDocumentsAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, concept, format=None):
         files_result = solr_search_paginated(core="files", term=concept, page_number=request.GET.get('pageNumber', 1),
@@ -92,38 +90,35 @@ class ConceptDocumentsAPIView(APIView):
 
 
 class TagListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
 
 
 class TagDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
 
 
 class WorkLogAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = AnnotationWorklogSerializer
     queryset = AnnotationWorklog.objects.all()
 
 
 class WorklogDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = AnnotationWorklogSerializer
     queryset = AnnotationWorklog.objects.all()
 
 
 class AcceptanceStateValueAPIView(APIView):
+    queryset = AcceptanceState.objects.none()
 
     def get(self, request, format=None):
         return Response([state.value for state in AcceptanceStateValue])
 
 
 class AcceptanceStateListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = AcceptanceStateSerializer
+    queryset = AcceptanceState.objects.none()
 
     def list(self, request, *args, **kwargs):
         queryset = AcceptanceState.objects.filter(user=request.user)
@@ -146,8 +141,8 @@ class AcceptanceStateDetailAPIView(RetrieveUpdateAPIView):
 
 
 class CommentListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = CommentSerializer
+    queryset = Comment.objects.none()
 
     def list(self, request, *args, **kwargs):
         queryset = Comment.objects.filter(user=request.user)
@@ -169,26 +164,29 @@ class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
         return self.update(request, *args, **kwargs)
 
 
-@api_view(['GET'])
-def get_distinct_versions(request):
-    if request.method == 'GET':
+class ConceptDistinctVersions(APIView):
+    queryset = Concept.objects.none()
+
+    def get(self, request):
         q = set(Concept.objects.values_list('version', flat=True))
         return Response(q)
 
 
-@api_view(['GET'])
-def get_webanno_link(request, document_id):
-    doc = Document.objects.get(pk=document_id)
-    if doc.webanno_document_id is None:
-        webanno_doc = send_document_to_webanno(document_id)
-        if webanno_doc is None:
-            doc.webanno_document_id = None
-            doc.webanno_project_id = None
+class WebAnnoLink(APIView):
+    queryset = Document.objects.none()
+
+    def get(self, request, document_id):
+        doc = Document.objects.get(pk=document_id)
+        if doc.webanno_document_id is None:
+            webanno_doc = send_document_to_webanno(document_id)
+            if webanno_doc is None:
+                doc.webanno_document_id = None
+                doc.webanno_project_id = None
+                doc.save()
+                return Response("404")
+
+            doc.webanno_document_id = webanno_doc.document_id
+            doc.webanno_project_id = webanno_doc.project_id
             doc.save()
-            return Response("404")
 
-        doc.webanno_document_id = webanno_doc.document_id
-        doc.webanno_project_id = webanno_doc.project_id
-        doc.save()
-
-    return Response(os.environ['WEBANNO_URL'] + "/annotation.html?50#!p="+str(doc.webanno_project_id) + "&d="+str(doc.webanno_document_id)+"&f=1")
+        return Response(os.environ['WEBANNO_URL'] + "/annotation.html?50#!p="+str(doc.webanno_project_id) + "&d="+str(doc.webanno_document_id)+"&f=1")
