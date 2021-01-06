@@ -42,6 +42,7 @@ import {RoTag, RoTagAdapter} from "../../shared/models/RoTag";
 import {RoAcceptanceState, RoAcceptanceStateAdapter} from "../../shared/models/roAcceptanceState";
 import {RoComment, RoCommentAdapter} from "../../shared/models/roComment";
 import { DjangoUser } from 'src/app/shared/models/django_user';
+import {DropdownOption} from '../../shared/models/DropdownOption';
 
 @Injectable({
   providedIn: 'root',
@@ -632,6 +633,22 @@ export class ApiService {
     return this.http.get<string>(
       `${this.API_GLOSSARY_URL}/webanno_link/${id}`
     );
+  }
+
+  public fetchCelexOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/celex`)
+  }
+
+  public fetchTypeOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/type`)
+  }
+
+  public fetchStatusOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/status`)
+  }
+
+  public fetchEliOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/eli`)
   }
 
 }

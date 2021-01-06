@@ -66,6 +66,34 @@
             </div>
           </div>
         </div>
+
+        <div>
+          <p-fieldset [toggleable]="true" collapsed="false">
+            <p-header class="smaller-text">Advanced filters</p-header>
+            <p-dropdown [options]="celexOptions" [(ngModel)]="selectedCelex" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQueryCelex($event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+            <p-dropdown [options]="typeOptions" [(ngModel)]="selectedType" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQueryType($event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+            <p-dropdown [options]="statusOptions" [(ngModel)]="selectedStatus" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQueryStatus($event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+            <p-dropdown [options]="eliOptions" [(ngModel)]="selectedEli" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQueryEli($event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+
+          </p-fieldset>
+        </div>
+
         <div class="row">
           <div class="col">
             <hr class="my-2" />
