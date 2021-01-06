@@ -106,6 +106,9 @@ class DocumentListAPIView(ListCreateAPIView):
         showonlyown = self.request.GET.get('showOnlyOwn', "")
         bookmarks = self.request.GET.get('bookmarks', "")
         celex = self.request.GET.get('celex', "")
+        type = self.request.GET.get('type', "")
+        status = self.request.GET.get('status', "")
+        eli = self.request.GET.get('eli', "")
         username = self.request.GET.get('username', "")
         website = self.request.GET.get('website', "")
         tag = self.request.GET.get('tag', "")
@@ -136,6 +139,15 @@ class DocumentListAPIView(ListCreateAPIView):
 
         if celex:
             q = q.filter(celex__exact=celex)
+
+        if type:
+            q = q.filter(type__exact=type)
+
+        if status:
+            q = q.filter(status__exact=status)
+
+        if eli:
+            q = q.filter(eli__exact=eli)
 
         if website:
             q = q.filter(website__name__iexact=website)
@@ -484,7 +496,7 @@ class BookmarkListAPIView(ListCreateAPIView):
 
 
 class CelexListAPIView(APIView):
-    #permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
 
@@ -494,6 +506,47 @@ class CelexListAPIView(APIView):
         for celex in celex_objects:
             options.append({"name": celex, "code": celex})
 
+        return Response(options)
+
+
+class TypeListAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+
+        type_objects = Document.objects.order_by('type').values_list('type', flat=True).distinct('type')
+
+        options = [{"name": "Type", "code": ""}]
+        for t in type_objects:
+            options.append({"name": t, "code": t})
+
+        return Response(options)
+
+
+class StatusListAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+
+        status_objects = Document.objects.order_by('status').values_list('status', flat=True).distinct('status')
+
+        options = [{"name": "Status", "code": ""}]
+        for s in status_objects:
+            options.append({"name": s, "code": s})
+
+        return Response(options)
+
+
+class EliListAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+
+        eli_objects = Document.objects.order_by('eli').values_list('eli', flat=True).distinct('eli')
+
+        options = [{"name": "ELI", "code": ""}]
+        for e in eli_objects:
+            options.append({"name": e, "code": e})
 
         return Response(options)
 

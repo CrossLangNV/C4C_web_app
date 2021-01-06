@@ -639,4 +639,16 @@ export class ApiService {
     return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/celex`)
   }
 
+  public fetchTypeOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/type`)
+  }
+
+  public fetchStatusOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/status`)
+  }
+
+  public fetchEliOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/eli`)
+  }
+
 }
