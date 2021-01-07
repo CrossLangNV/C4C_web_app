@@ -13,6 +13,9 @@ import { Concept } from 'src/app/shared/models/concept';
 export class ConceptDocumentDetailsComponent implements OnInit {
   document: Document;
   concept: Concept;
+  annotationType: String;
+  instanceType: string = "unknown";
+  term: string = "unknown";
   consolidatedVersions = new Map();
   content_html: String;
   constructor(
@@ -32,22 +35,42 @@ export class ConceptDocumentDetailsComponent implements OnInit {
         this.concept = concept;
         this.route.paramMap
           .pipe(
-            switchMap((params: ParamMap) =>
-              this.service.getDocument(params.get('documentId'))
+            switchMap((params: ParamMap) => 
+                this.service.getDocument(params.get('documentId'))
             )
           )
           .subscribe((document) => {
             this.document = document;
-            this.service
+
+            this.route.paramMap.subscribe((params: ParamMap) => {
+              this.annotationType = params.get('annotationType');
+              if (this.annotationType == "occurence") {
+                this.instanceType = "concept_occurs";
+                this.term = this.concept.name;
+              }
+              if (this.annotationType == "definition") {
+                this.instanceType = "concept_defined";
+                this.term = this.concept.definition;
+              }
+              this.service
               .getDocumentWithContent(document.id)
               .subscribe((doc) => {
-                this.content_html = this.highlight(doc.content, concept);
-                // this.service
-                //   .getSolrDocument(this.document.id)
-                //   .subscribe((solrDocument) => {
-                //     this.consolidatedVersions = new Map();
-                //   });
+                this.service
+                  .searchSolrPreAnalyzedDocument(
+                    this.document.id,
+                    1,
+                    1,
+                    this.term,
+                    this.instanceType,
+                    [],
+                    "id",
+                    "asc"
+                  )
+                  .subscribe((data) => {
+                    this.content_html = data[1]["highlighting"][this.document.id][this.instanceType];
+                  });
               });
+            });
           });
       });
   }
