@@ -25,6 +25,11 @@ psutil==5.7.2
 psycopg2-binary==2.8.5
 pycaprio==0.2.0
 pysolr==3.9.0
+python-crontab==2.5.1
+python-dateutil==2.8.1
+python-status==1.0.1
+python3-openid==3.2.0
+pytz==2020.1
 PyYAML==5.3.1
 scrapy-user-agents==0.1.1
 scrapy==2.4.1
@@ -33,3 +38,5 @@ SPARQLWrapper==1.8.5
 textdistance==4.2.0
 tika==1.24
 zipp==3.1.0
+dkpro-cassis==0.3.0
+rdflib==5.0.0

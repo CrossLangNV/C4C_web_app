@@ -4,9 +4,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view
-from glossary.models import AcceptanceState, AcceptanceStateValue, Comment, Concept, Tag, AnnotationWorklog
+from glossary.models import AcceptanceState, AcceptanceStateValue, Comment, Concept, Tag, AnnotationWorklog, ConceptOccurs, ConceptDefined
 from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer, \
-    AnnotationWorklogSerializer
+    AnnotationWorklogSerializer, ConceptOccursSerializer, ConceptDefinedSerializer
 from scheduler.extract import send_document_to_webanno
 from searchapp.models import Document
 from searchapp.serializers import DocumentSerializer
@@ -16,6 +16,18 @@ from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 from django.db.models import Q
 import os
 
+import status
+import datetime
+import json
+
+# Annotation API consants
+
+ANNOTATION_STORE_METADATA = '{"message": "Annotator Store API","links": {}}'
+KWARGS_ANNOTATION_TYPE_KEY = 'annotation_type'
+KWARGS_ANNOTATION_TYPE_VALUE_OCCURENCE = 'occurence'
+KWARGS_ANNOTATION_TYPE_VALUE_DEFINITION = 'definition'
+KWARGS_CONCEPT_ID_KEY = 'concept_id'
+KWARGS_DOCUMENT_ID_KEY = 'document_id'
 
 class SmallResultsSetPagination(PageNumberPagination):
     page_size = 5
@@ -168,7 +180,6 @@ class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
         request.data['user'] = request.user.id
         return self.update(request, *args, **kwargs)
 
-
 @api_view(['GET'])
 def get_distinct_versions(request):
     if request.method == 'GET':
@@ -192,3 +203,99 @@ def get_webanno_link(request, document_id):
         doc.save()
 
     return Response(os.environ['WEBANNO_URL'] + "/annotation.html?50#!p="+str(doc.webanno_project_id) + "&d="+str(doc.webanno_document_id)+"&f=1")
+
+# Terms and Definitions Annotations API
+
+class RootAPIView(APIView):
+    def get(self, request, annotation_type, concept_id, document_id, format=None):
+        return Response(ANNOTATION_STORE_METADATA)
+
+class SearchListAPIView(ListCreateAPIView):
+    serializer_class = AnnotationWorklogSerializer
+    queryset = AnnotationWorklog.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        annotation_worklogs = None
+        if (self.kwargs[KWARGS_ANNOTATION_TYPE_KEY] == KWARGS_ANNOTATION_TYPE_VALUE_OCCURENCE):
+            annotation_worklogs = AnnotationWorklog.objects.filter(concept_occurs__concept__id=self.kwargs[KWARGS_CONCEPT_ID_KEY])
+        elif (self.kwargs[KWARGS_ANNOTATION_TYPE_KEY] == KWARGS_ANNOTATION_TYPE_VALUE_DEFINITION):
+            annotation_worklogs = AnnotationWorklog.objects.filter(concept_defined__concept__id=self.kwargs[KWARGS_CONCEPT_ID_KEY])
+        serializer = AnnotationWorklogSerializer(annotation_worklogs, many=True)
+        count = 0
+        rows_data = ''
+        for data_item in serializer.data:
+            concept_offset_base = None
+            if (data_item['concept_occurs']):
+                concept_offset_base = ConceptOccurs.objects.get(pk=data_item['concept_occurs'])
+            elif (data_item['concept_defined']):
+                concept_offset_base = ConceptDefined.objects.get(pk=data_item['concept_defined'])
+            if concept_offset_base:
+                count += 1
+                if count != 1:
+                    rows_data += ','
+                rows_data += '{'
+                rows_data += '"id":"{}",'.format(str(data_item["id"]))
+                rows_data += '"quote":"{}",'.format(concept_offset_base.quote)
+                rows_data += '"ranges":[{'
+                rows_data += '"start":"{}",'.format(str(concept_offset_base.start))
+                rows_data += '"startOffset":{},'.format(str(concept_offset_base.startOffset))
+                rows_data += '"end":"{}",'.format(str(concept_offset_base.end))
+                rows_data += '"endOffset":{}'.format(str(concept_offset_base.endOffset))
+                rows_data += '}],'
+                rows_data += '"text":""'
+                rows_data += '}'
+
+        response_string = '{"total":' + str(count) +',"rows":[' + rows_data + ']}'
+        return Response(json.loads(response_string))
+
+class CreateListAPIView(ListCreateAPIView):
+    serializer_class = AnnotationWorklogSerializer
+    queryset = AnnotationWorklog.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        concept_offset_data = request.data
+        concept_offset_data.update({'concept': str(self.kwargs['concept_id'])})
+        concept_offset_data.update({'document': str(self.kwargs['document_id'])})
+        concept_offset_data.update({'quote': str(request.data['quote']).replace('"', '\\\"')})
+        concept_offset_data.update({'probability': 1.0})
+        concept_offset_data.update({'start': request.data['ranges'][0]['start']})
+        concept_offset_data.update({'startOffset': request.data['ranges'][0]['startOffset']})
+        concept_offset_data.update({'end': request.data['ranges'][0]['end']})
+        concept_offset_data.update({'endOffset': request.data['ranges'][0]['endOffset']})
+
+        annotation_worklog_data = request.data
+        annotation_worklog_data.update({'user': request.user.id})
+        annotation_worklog_data.update({'created_at': datetime.datetime.now()})
+        annotation_worklog_data.update({'updated_at': datetime.datetime.now()})
+
+        concept_occurs = None
+        concept_defined = None
+        if (KWARGS_ANNOTATION_TYPE_KEY == KWARGS_ANNOTATION_TYPE_VALUE_OCCURENCE):
+            concept_occurs_serializer = ConceptOccursSerializer(data=concept_offset_data)
+            if concept_occurs_serializer.is_valid():
+                concept_occurs = concept_occurs_serializer.save()
+                annotation_worklog_data.update({'concept_occurs': concept_occurs.id})
+                annotation_worklog_data.update({'concept_defined': None})
+            else:
+                return Response(concept_occurs_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        elif (KWARGS_ANNOTATION_TYPE_KEY == KWARGS_ANNOTATION_TYPE_VALUE_DEFINITION):
+            concept_defined_serializer = ConceptDefinedSerializer(data=concept_offset_data)
+            if concept_defined_serializer.is_valid():
+                concept_defined = concept_defined_serializer.save()
+                annotation_worklog_data.update({'concept_occurs': None})
+                annotation_worklog_data.update({'concept_defined': concept_defined.id})
+            else:
+                return Response(concept_defined_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        annotation_worklog_serializer = AnnotationWorklogSerializer(data=annotation_worklog_data)
+        if annotation_worklog_serializer.is_valid():
+            annotation_worklog = annotation_worklog_serializer.save()
+            annotation_worklog_serializer = AnnotationWorklogSerializer(annotation_worklog)
+            return Response(annotation_worklog_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(annotation_worklog_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DeleteAPIView(APIView):
+    def delete(self, request, annotation_type, concept_id, document_id, annotation_id, format=None):
+        annotation_worklog = AnnotationWorklog.objects.get(id=annotation_id)
+        annotation_worklog.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+

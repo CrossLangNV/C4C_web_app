@@ -29,7 +29,7 @@ const routes: Routes = [
     },
     children: [
       {
-        path: ':conceptId/:documentId',
+        path: ':annotationType/:conceptId/:documentId',
         component: ConceptDocumentDetailsComponent,
       },
     ],

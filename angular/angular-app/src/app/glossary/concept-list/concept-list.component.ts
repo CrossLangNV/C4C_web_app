@@ -39,8 +39,6 @@ export interface SortEvent {
   direction: SortDirection;
 }
 
-declare const annotator: any;
-
 @Directive({
   selector: 'th[sortable]',
   host: {

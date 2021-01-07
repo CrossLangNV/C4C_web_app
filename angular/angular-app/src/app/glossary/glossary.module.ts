@@ -21,6 +21,7 @@ import {
   NgbDateAdapter,
   NgbDateNativeAdapter,
 } from '@ng-bootstrap/ng-bootstrap';
+import { AnnotatorDirective } from './concept-document-details/annotator.directive';
 @NgModule({
   declarations: [
     ConceptListComponent,
@@ -28,6 +29,7 @@ import {
     NgbdSortableHeaderDirective,
     ConceptDetailSortableHeaderDirective,
     ConceptDocumentDetailsComponent,
+    AnnotatorDirective,
   ],
     imports: [
         SharedModule,

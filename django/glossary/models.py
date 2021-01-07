@@ -38,17 +38,16 @@ class Concept(models.Model):
 class ConceptOffsetBase(models.Model):
     concept = models.ForeignKey(Concept, on_delete=models.CASCADE)
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    quote = models.TextField(default="")
     probability = models.FloatField(default=0.0, blank=True)
-    begin = models.IntegerField()
-    end = models.IntegerField()
+
+    start = models.CharField(max_length=255, default="", blank=True, null=True)
+    startOffset = models.IntegerField(default=0)
+    end = models.CharField(max_length=255, default="", blank=True, null=True)
+    endOffset = models.IntegerField(default=0)
 
     class Meta:
-        abstract = True,
-        constraints = [
-            models.UniqueConstraint(
-                fields=['concept_id', 'document_id'], name="unique_per_%(class)s_and_document")
-        ]
-
+        abstract = True
 
 class ConceptOccurs(ConceptOffsetBase):
     class Meta(ConceptOffsetBase.Meta):
@@ -61,27 +60,18 @@ class ConceptDefined(ConceptOffsetBase):
 
 
 class AnnotationWorklog(models.Model):
-    concept_occurs = models.ForeignKey(
-        ConceptOccurs, on_delete=models.CASCADE, null=True)
-    concept_defined = models.ForeignKey(
-        ConceptDefined, on_delete=models.CASCADE, null=True)
-    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+   # Each AnnotationWorklog will concern an occurence OR a definition.
+   # So, one of the two fields below will always have null=True.
+    concept_occurs = models.ForeignKey(ConceptOccurs, on_delete=models.CASCADE, null=True)
+    concept_defined = models.ForeignKey(ConceptDefined, on_delete=models.CASCADE, null=True)
+
     user = models.ForeignKey(
         'auth.User', related_name="user_worklog", on_delete=models.SET_NULL, null=True)
-
-    class Action(models.TextChoices):
-        ADD = 'add', 'Add concept'
-        DELETE = 'del', 'Delete concept'
-
-    action = models.CharField(
-        max_length=3,
-        choices=Action.choices,
-    )
 
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
-
+    
 class AcceptanceStateValue(models.TextChoices):
     UNVALIDATED = 'Unvalidated',
     ACCEPTED = 'Accepted',
