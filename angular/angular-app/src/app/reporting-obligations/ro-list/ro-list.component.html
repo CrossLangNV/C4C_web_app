@@ -41,7 +41,7 @@
           <p-fieldset [toggleable]="true" collapsed="false">
             <p-header class="smaller-text">Advanced filters</p-header>
             <p-dropdown *ngFor="let filter of availableItems.slice(7)" [options]="filter.options" class="a-dropdown"
-                        optionLabel="name" optionValue="code" [ngModel]="availableItemsQuery.get(item)"
+                        optionLabel="name" optionValue="code" dataKey="name" [ngModel]="availableItemsQuery.get(item)"
                         (ngModelChange)="onQuery(filter, $event)" [virtualScroll]="true" [filter]="true">
 
             </p-dropdown>

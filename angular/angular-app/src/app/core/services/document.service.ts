@@ -15,6 +15,12 @@ interface State {
   bookmarks: boolean;
   filterTag: string;
   sortBy: string;
+  celex: string;
+  type: string;
+  status: string;
+  eli: string;
+  author: string;
+  date_of_effect: string;
 }
 
 @Injectable({
@@ -38,6 +44,12 @@ export class DocumentService {
     bookmarks: false,
     filterTag: '',
     sortBy: '-date',
+    celex: '',
+    type: '',
+    status: '',
+    eli: '',
+    author: '',
+    date_of_effect: '',
   };
 
   constructor(private http: HttpClient) {
@@ -107,6 +119,42 @@ export class DocumentService {
   set bookmarks(bookmarks: boolean) {
     this._set({ bookmarks });
   }
+  get celex() {
+    return this._state.celex;
+  }
+  set celex(celex: string) {
+    this._set({ celex });
+  }
+  get type() {
+    return this._state.type;
+  }
+  set type(type: string) {
+    this._set({ type });
+  }
+  get status() {
+    return this._state.status;
+  }
+  set status(status: string) {
+    this._set({ status });
+  }
+  get eli() {
+    return this._state.eli;
+  }
+  set eli(eli: string) {
+    this._set({ eli });
+  }
+  get author() {
+    return this._state.author;
+  }
+  set author(author: string) {
+    this._set({ author });
+  }
+  get date_of_effect() {
+    return this._state.date_of_effect;
+  }
+  set date_of_effect(date_of_effect: string) {
+    this._set({ date_of_effect });
+  }
   get filterTag() {
     return this._state.searchTerm;
   }
@@ -132,6 +180,12 @@ export class DocumentService {
       website,
       showOnlyOwn,
       bookmarks,
+      celex,
+      type,
+      status,
+      eli,
+      author,
+      date_of_effect,
       filterTag,
       sortBy,
     } = this._state;
@@ -150,6 +204,18 @@ export class DocumentService {
       showOnlyOwn +
       '&bookmarks=' +
       bookmarks +
+      '&celex=' +
+      celex +
+      '&type=' +
+      type +
+      '&status=' +
+      status +
+      '&eli=' +
+      eli +
+      '&author=' +
+      author +
+      '&date_of_effect=' +
+      date_of_effect +
       '&tag=' +
       filterTag +
       '&ordering=' +
