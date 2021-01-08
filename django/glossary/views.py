@@ -7,10 +7,11 @@ from rest_framework.decorators import api_view
 from glossary.models import AcceptanceState, AcceptanceStateValue, Comment, Concept, Tag, AnnotationWorklog, ConceptOccurs, ConceptDefined
 from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer, \
     AnnotationWorklogSerializer, ConceptOccursSerializer, ConceptDefinedSerializer
+from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer, \
+    AnnotationWorklogSerializer, ConceptOccursSerializer, ConceptDefinedSerializer, CommentSerializer
 from scheduler.extract import send_document_to_webanno
 from searchapp.models import Document
 from searchapp.serializers import DocumentSerializer
-from glossary.serializers import CommentSerializer
 from searchapp.solr_call import solr_search_paginated
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 from django.db.models import Q
@@ -246,8 +247,6 @@ class SearchListAPIView(ListCreateAPIView):
                 rows_data += '}'
 
         response_string = '{"total":' + str(count) +',"rows":[' + rows_data + ']}'
-        print("AAAAAAA")
-        print(response_string)
         return Response(json.loads(response_string))
 
 class CreateListAPIView(ListCreateAPIView):
@@ -272,7 +271,6 @@ class CreateListAPIView(ListCreateAPIView):
 
         concept_occurs = None
         concept_defined = None
-        print("CCCCCCCC")
         if (self.kwargs[KWARGS_ANNOTATION_TYPE_KEY] == KWARGS_ANNOTATION_TYPE_VALUE_OCCURENCE):
             concept_occurs_serializer = ConceptOccursSerializer(data=concept_offset_data)
             if concept_occurs_serializer.is_valid():
@@ -293,8 +291,6 @@ class CreateListAPIView(ListCreateAPIView):
         if annotation_worklog_serializer.is_valid():
             annotation_worklog = annotation_worklog_serializer.save()
             annotation_worklog_serializer = AnnotationWorklogSerializer(annotation_worklog)
-            print("BBBBB")
-            print(annotation_worklog_serializer.data)
             return Response(annotation_worklog_serializer.data, status=status.HTTP_201_CREATED)
         return Response(annotation_worklog_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
