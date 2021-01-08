@@ -211,7 +211,7 @@ def solr_search_website_with_content(core="", website="", **kwargs):
 
 def solr_search_website_sorted(core="", website="", **kwargs):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    SOLR_SYNC_FIELDS = 'id,title,title_prefix,author,status,type,date,date_last_update,url,eli,celex,file_url,website,summary,various,consolidated_versions'
+    SOLR_SYNC_FIELDS = 'id,title,title_prefix,author,misc_author,status,type,date,dates,dates_type,dates_info,date_last_update,url,eli,celex,file_url,website,summary,various,consolidated_versions'
     date = kwargs.get('date', None)
     query = 'website:' + website
 

@@ -33,6 +33,7 @@ class Document(models.Model):
     type = models.CharField(max_length=200, default="", blank=True)
 
     date = models.DateTimeField(default=timezone.now)
+    date_of_effect = models.DateTimeField(null=True, blank=True)
     date_last_update = models.DateTimeField(default=timezone.now)
 
     url = models.URLField(max_length=1000, unique=True)

@@ -44,6 +44,7 @@ export class DocumentAddComponent implements OnInit {
       '',
       '',
       new Date(),
+      new Date(),
       '',
       '',
       '',

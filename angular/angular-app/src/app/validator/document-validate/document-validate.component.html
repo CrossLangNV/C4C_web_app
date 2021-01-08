@@ -15,6 +15,7 @@
   <p *ngIf="document.celex" class=""><u>Celex:</u> {{ document.celex }}</p>
   <p *ngIf="document.eli" class=""><u>Eli:</u> {{ document.eli }}</p>
   <p *ngIf="document.status" class=""><u>Status:</u> {{ document.status }}</p>
+  <p *ngIf="document.dateOfEffect" class=""><u>Date of force:</u> {{ document.dateOfEffect | date}}</p>
   <p *ngIf="document.various" class="">
     <u>Various:</u> {{ document.various }}
   </p>

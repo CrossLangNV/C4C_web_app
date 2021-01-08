@@ -6,6 +6,7 @@ import {
   faSort,
   faSortDown,
   faSortUp,
+  faStar,
   faStopCircle,
   faSyncAlt,
   faUserAlt
@@ -15,9 +16,10 @@ import { AuthenticationService } from 'src/app/core/auth/authentication.service'
 import { ApiService } from 'src/app/core/services/api.service';
 import { DocumentService } from 'src/app/core/services/document.service';
 import { DjangoUser } from 'src/app/shared/models/django_user';
-import { DocumentResults } from 'src/app/shared/models/document';
+import {Document, DocumentResults} from 'src/app/shared/models/document';
 import { Tag } from 'src/app/shared/models/tag';
 import { NgbdSortableHeader, SortEvent } from './sortable.directive';
+import {DropdownOption} from '../../shared/models/DropdownOption';
 
 @Component({
   selector: 'app-document-list',
@@ -77,6 +79,7 @@ export class DocumentListComponent implements OnInit {
   reloadIcon: IconDefinition = faSyncAlt;
   resetIcon: IconDefinition = faStopCircle;
   titleSortIcon: IconDefinition = faSort;
+  bookmarkIcon: IconDefinition = faStar;
   dateSortIcon: IconDefinition = faSortDown;
   statesSortIcon: IconDefinition = faSort;
   filters = [
@@ -88,6 +91,20 @@ export class DocumentListComponent implements OnInit {
   websites = [ { id: '', name: 'Website..' } ];
   currentDjangoUser: DjangoUser;
   selectedIndex: string = null;
+
+  celexOptions: DropdownOption[];
+  typeOptions: DropdownOption[];
+  statusOptions: DropdownOption[];
+  eliOptions: DropdownOption[];
+  authorOptions: DropdownOption[];
+  effectDateOptions: DropdownOption[];
+
+  selectedCelex: string;
+  selectedType: string;
+  selectedStatus: string;
+  selectedEli: string;
+  selectedAuthor: string;
+  selectedEffectDate: string;
 
   constructor(
     private route: ActivatedRoute,
@@ -187,6 +204,14 @@ export class DocumentListComponent implements OnInit {
         this.documentService.page = this.documentService.page;
       }
     });
+
+    // Fill dropdowns
+    this.fetchCelexOptions();
+    this.fetchTypeOptions();
+    this.fetchStatusOptions();
+    this.fetchEliOptions();
+    this.fetchAuthorOptions();
+    this.fetchEffectDateOptions();
   }
 
   onSort({ column, direction }: SortEvent) {
@@ -265,7 +290,13 @@ export class DocumentListComponent implements OnInit {
       this.documentService.filterTag.length > 0 ||
       this.documentService.showOnlyOwn ||
       this.documentService.filterType !== 'none' ||
-      this.documentService.website !== 'none';
+      this.documentService.website !== 'none' ||
+      this.documentService.celex !== 'none' ||
+      this.documentService.type !== 'none' ||
+      this.documentService.status !== 'none' ||
+      this.documentService.eli !== 'none' ||
+      this.documentService.author !== 'none' ||
+      this.documentService.date_of_effect !== 'none';
   }
 
   resetFilters() {
@@ -274,6 +305,13 @@ export class DocumentListComponent implements OnInit {
     this.documentService.showOnlyOwn = false;
     this.documentService.filterType = '';
     this.documentService.website = '';
+    this.documentService.celex = '';
+    this.documentService.type = '';
+    this.documentService.status = '';
+    this.documentService.eli = '';
+    this.documentService.author = '';
+    this.documentService.date_of_effect = '';
+    this.resetDropdowns();
     this.router.navigate(['/validator']);
   }
 
@@ -313,5 +351,93 @@ export class DocumentListComponent implements OnInit {
         },
       ],
     };
+  }
+
+  onAddBookmark(document: Document) {
+    this.service.addBookmark(this.currentDjangoUser, document).subscribe((dc) => {
+     document.bookmark = true
+    });
+  }
+
+  onRemoveBookmark(document: Document) {
+    this.service.removeBookmark(document).subscribe((dc) => {
+      // this.document.bookmark = false;
+      document.bookmark = false
+    });
+  }
+
+  fetchCelexOptions() {
+    this.service.fetchCelexOptions().subscribe((res) => {
+      this.celexOptions = res
+    })
+  }
+
+  fetchTypeOptions() {
+    this.service.fetchTypeOptions().subscribe((res) => {
+      this.typeOptions = res
+    })
+  }
+
+  fetchStatusOptions() {
+    this.service.fetchStatusOptions().subscribe((res) => {
+      this.statusOptions = res
+    })
+  }
+
+  fetchEliOptions() {
+    this.service.fetchEliOptions().subscribe((res) => {
+      this.eliOptions = res
+    })
+  }
+
+  fetchAuthorOptions() {
+    this.service.fetchAuthorOptions().subscribe((res) => {
+      this.authorOptions = res
+    })
+  }
+
+  fetchEffectDateOptions() {
+    this.service.fetchEffectDateOptions().subscribe((res) => {
+      this.effectDateOptions = res
+    })
+  }
+
+  onQuery(type, keyword) {
+    let hasMatched = true;
+    switch (type) {
+      case 'celex':
+        this.documentService.celex = keyword.code;
+        break
+      case 'type':
+        this.documentService.type = keyword.code;
+        break
+      case 'status':
+        this.documentService.status = keyword.code;
+        break
+      case 'eli':
+        this.documentService.eli = keyword.code;
+        break
+      case 'author':
+        this.documentService.author = keyword.code;
+        break
+      case 'date_of_effect':
+        this.documentService.date_of_effect = keyword.code;
+        break
+      default:
+        hasMatched = false;
+    }
+    // Because typescript has no 'finally' statement..
+    if (hasMatched) {
+      this.filterResetPage();
+    }
+  }
+
+  resetDropdowns() {
+    this.selectedCelex = '';
+    this.selectedType = '';
+    this.selectedStatus = '';
+    this.selectedEli = '';
+    this.selectedAuthor = '';
+    this.selectedEffectDate = '';
   }
 }
