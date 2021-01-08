@@ -25,7 +25,7 @@ from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer, BookmarkSerializer
 from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt, \
-    solr_search_query_paginated_preanalyzed, solr_search_ids, solr_get_preanalyzed_for_doc
+    solr_search_query_paginated_preanalyzed, solr_search_ids, solr_get_preanalyzed_for_doc, solr_search_query_with_doc_id_preanalyzed
 
 from glossary.models import Concept, ConceptOccurs, ConceptDefined
 
