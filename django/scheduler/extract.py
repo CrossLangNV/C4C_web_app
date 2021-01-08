@@ -300,7 +300,7 @@ def extract_reporting_obligations(website_id):
 
         # Paragraph detection for PDF + fallback cas for not having a html2text request
         if is_pdf:
-            r = get_cas_from_pdf(document['content'][0])
+            r = get_cas_from_pdf(document['content'][0], document['id'])
             paragraph_request = r
 
         encoded_b64 = get_encoded_content_from_cas(r)
@@ -325,7 +325,7 @@ def extract_reporting_obligations(website_id):
             # logger.info("sofa_reporting_obligations: %s",sofa_reporting_obligations)
 
             # Now send the CAS to UIMA Html2Text for the VBTT annotations (paragraph_request)
-            r = get_html2text_cas(sofa_reporting_obligations)
+            r = get_html2text_cas(sofa_reporting_obligations, document['id'])
             cas_html2text = load_cas_from_xmi(
                 r.content.decode("utf-8"), typesystem=ts)
 
