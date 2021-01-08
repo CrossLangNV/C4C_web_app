@@ -246,6 +246,8 @@ class SearchListAPIView(ListCreateAPIView):
                 rows_data += '}'
 
         response_string = '{"total":' + str(count) +',"rows":[' + rows_data + ']}'
+        print("AAAAAAA")
+        print(response_string)
         return Response(json.loads(response_string))
 
 class CreateListAPIView(ListCreateAPIView):
@@ -270,7 +272,8 @@ class CreateListAPIView(ListCreateAPIView):
 
         concept_occurs = None
         concept_defined = None
-        if (KWARGS_ANNOTATION_TYPE_KEY == KWARGS_ANNOTATION_TYPE_VALUE_OCCURENCE):
+        print("CCCCCCCC")
+        if (self.kwargs[KWARGS_ANNOTATION_TYPE_KEY] == KWARGS_ANNOTATION_TYPE_VALUE_OCCURENCE):
             concept_occurs_serializer = ConceptOccursSerializer(data=concept_offset_data)
             if concept_occurs_serializer.is_valid():
                 concept_occurs = concept_occurs_serializer.save()
@@ -278,7 +281,7 @@ class CreateListAPIView(ListCreateAPIView):
                 annotation_worklog_data.update({'concept_defined': None})
             else:
                 return Response(concept_occurs_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        elif (KWARGS_ANNOTATION_TYPE_KEY == KWARGS_ANNOTATION_TYPE_VALUE_DEFINITION):
+        elif (self.kwargs[KWARGS_ANNOTATION_TYPE_KEY] == KWARGS_ANNOTATION_TYPE_VALUE_DEFINITION):
             concept_defined_serializer = ConceptDefinedSerializer(data=concept_offset_data)
             if concept_defined_serializer.is_valid():
                 concept_defined = concept_defined_serializer.save()
@@ -290,6 +293,8 @@ class CreateListAPIView(ListCreateAPIView):
         if annotation_worklog_serializer.is_valid():
             annotation_worklog = annotation_worklog_serializer.save()
             annotation_worklog_serializer = AnnotationWorklogSerializer(annotation_worklog)
+            print("BBBBB")
+            print(annotation_worklog_serializer.data)
             return Response(annotation_worklog_serializer.data, status=status.HTTP_201_CREATED)
         return Response(annotation_worklog_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
