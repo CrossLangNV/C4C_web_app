@@ -10,6 +10,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 import logging as logger
+import os
+from minio import Minio, ResponseError
+from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists, NoSuchKey
 
 from .rdf_call import rdf_get_available_entities, rdf_get_predicate, \
     rdf_get_all_reporting_obligations, rdf_query_predicate_single, rdf_query_predicate_multiple, \
@@ -250,3 +253,23 @@ class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
     def put(self, request, *args, **kwargs):
         request.data['user'] = request.user.id
         return self.update(request, *args, **kwargs)
+
+
+class ReportingObligationDocumentHtmlAPIView(APIView):
+    #permission_classes = [permissions.IsAuthenticated, IsOwnerOrSuperUser]
+
+    def get(self, request, document_id, format=None):
+
+        minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                             secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+        bucket_name = "ro-html-output"
+
+        EXTRACT_RO_NLP_VERSION = os.environ.get(
+            'EXTRACT_RO_NLP_VERSION', 'd16bba97890')
+
+        html_file = minio_client.get_object(bucket_name, document_id + "-" + EXTRACT_RO_NLP_VERSION + ".html")
+
+        result = html_file.data
+        logger.info(result)
+
+        return Response(result)

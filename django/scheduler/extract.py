@@ -34,6 +34,8 @@ CAS_TO_RDF_API = os.environ['CAS_TO_RDF_API']
 CELERY_EXTRACT_TERMS_CHUNKS = os.environ.get('CELERY_EXTRACT_TERMS_CHUNKS', 8)
 EXTRACT_TERMS_NLP_VERSION = os.environ.get(
     'EXTRACT_TERMS_NLP_VERSION', '8a4f1d58')
+EXTRACT_RO_NLP_VERSION = os.environ.get(
+    'EXTRACT_RO_NLP_VERSION', 'd16bba97890')
 
 SENTENCE_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
 TOKEN_CLASS = "cassis.Token"
@@ -322,7 +324,32 @@ def extract_reporting_obligations(website_id):
             cas = load_cas_from_xmi(ro_cas, typesystem=ts)
             sofa_reporting_obligations = cas.get_view(
                 "ReportingObligationsView").sofa_string
-            # logger.info("sofa_reporting_obligations: %s",sofa_reporting_obligations)
+
+            logger.info("sofa_reporting_obligations: %s", sofa_reporting_obligations)
+            # Save the HTML view of the reporting obligations
+            # Save CAS to MINIO
+            minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                                 secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+            bucket_name = "ro-html-output"
+            try:
+                minio_client.make_bucket(bucket_name)
+            except BucketAlreadyOwnedByYou as err:
+                pass
+            except BucketAlreadyExists as err:
+                pass
+
+            logger.info("Created bucket: %s", bucket_name)
+            filename = document['id'] + "-" + EXTRACT_RO_NLP_VERSION + ".html"
+
+            html_file = open(filename, "w")
+            html_file.write(sofa_reporting_obligations)
+            html_file.close()
+
+            minio_client.fput_object(bucket_name, html_file.name, filename)
+            logger.info("Uploaded to minio")
+
+            os.remove(html_file.name)
+            logger.info("Removed file from system")
 
             # Now send the CAS to UIMA Html2Text for the VBTT annotations (paragraph_request)
             r = get_html2text_cas(sofa_reporting_obligations, document['id'])
