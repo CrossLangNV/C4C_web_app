@@ -3,6 +3,9 @@ import { ActivatedRoute, Router, ParamMap } from '@angular/router';
 import { ApiService } from 'src/app/core/services/api.service';
 import { switchMap } from 'rxjs/operators';
 import { Document } from 'src/app/shared/models/document';
+import { ReportingObligation } from 'src/app/shared/models/ro';
+import { DirectivesModule } from '../../directives/directives.module';
+import { AnnotatorDirective } from '../../directives/annotator.directive';
 
 @Component({
   selector: 'app-ro-document-details',
@@ -11,6 +14,9 @@ import { Document } from 'src/app/shared/models/document';
 })
 export class RoDocumentDetailsComponent implements OnInit {
   document: Document;
+  ro: ReportingObligation;
+  instanceType: string = "ro";
+  term: string = "unknown";
   consolidatedVersions = new Map();
   content_html: String;
   constructor(
@@ -20,32 +26,47 @@ export class RoDocumentDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // this.route.paramMap
-    //   .pipe(
-    //     switchMap((params: ParamMap) =>
-    //       this.service.getConcept(params.get('conceptId'))
-    //     )
-    //   )
-    //   .subscribe((concept) => {
-    //     this.concept = concept;
-    //     this.route.paramMap
-    //       .pipe(
-    //         switchMap((params: ParamMap) =>
-    //           this.service.getDocument(params.get('documentId'))
-    //         )
-    //       )
-    //       .subscribe((document) => {
-    //         this.document = document;
-    //         this.service.getEURLEXxhtml(document.celex).subscribe((xhtml) => {
-    //           this.content_html = this.highlight(xhtml, concept);
-    //           // this.service
-    //           //   .getSolrDocument(this.document.id)
-    //           //   .subscribe((solrDocument) => {
-    //           //     this.consolidatedVersions = new Map();
-    //           //   });
-    //         });
-    //       });
-    //   });
+    this.route.paramMap
+      .pipe(
+        switchMap((params: ParamMap) =>
+          this.service.getRo(params.get('roId'))
+        )
+      )
+      .subscribe((ro) => {
+        this.ro = ro;
+        this.route.paramMap
+          .pipe(
+            switchMap((params: ParamMap) =>
+              this.service.getDocument(params.get('documentId'))
+            )
+          )
+          .subscribe((document) => {
+            this.document = document;
+            this.route.paramMap.subscribe((params: ParamMap) => {
+              this.term = "test";
+              // this.term = this.ro.name;
+              this.service
+              .getDocumentWithContent(document.id)
+              .subscribe((doc) => {
+                this.service
+                  .searchSolrPreAnalyzedDocument(
+                    this.document.id,
+                    1,
+                    1,
+                    this.term,
+                    this.instanceType,
+                    [],
+                    "id",
+                    "asc"
+                  )
+                  .subscribe((data) => {
+                    // this.content_html = data[1]["highlighting"][this.document.id][this.instanceType];
+                    this.content_html = "Dummy document text. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+                  });
+              });
+            });
+          });
+      });
   }
 
   highlight(xhtml, concept): String {

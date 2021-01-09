@@ -21,7 +21,7 @@ import {
   NgbDateAdapter,
   NgbDateNativeAdapter,
 } from '@ng-bootstrap/ng-bootstrap';
-import { AnnotatorDirective } from './concept-document-details/annotator.directive';
+import { DirectivesModule } from '../directives/directives.module';
 @NgModule({
   declarations: [
     ConceptListComponent,
@@ -29,7 +29,6 @@ import { AnnotatorDirective } from './concept-document-details/annotator.directi
     NgbdSortableHeaderDirective,
     ConceptDetailSortableHeaderDirective,
     ConceptDocumentDetailsComponent,
-    AnnotatorDirective,
   ],
     imports: [
         SharedModule,
@@ -41,6 +40,7 @@ import { AnnotatorDirective } from './concept-document-details/annotator.directi
         SharedModule,
         GlossaryRoutingModule,
         SelectButtonModule,
+        DirectivesModule,
     ],
   providers: [
     ConfirmationService,
