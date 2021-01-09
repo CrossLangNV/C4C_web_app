@@ -218,9 +218,13 @@ class SearchListAPIView(ListCreateAPIView):
     def list(self, request, *args, **kwargs):
         annotation_worklogs = None
         if (self.kwargs[KWARGS_ANNOTATION_TYPE_KEY] == KWARGS_ANNOTATION_TYPE_VALUE_OCCURENCE):
-            annotation_worklogs = AnnotationWorklog.objects.filter(concept_occurs__concept__id=self.kwargs[KWARGS_CONCEPT_ID_KEY])
+            annotation_worklogs = AnnotationWorklog.objects\
+                .filter(concept_occurs__concept__id=self.kwargs[KWARGS_CONCEPT_ID_KEY])\
+                .filter(concept_occurs__document__id=self.kwargs[KWARGS_DOCUMENT_ID_KEY])
         elif (self.kwargs[KWARGS_ANNOTATION_TYPE_KEY] == KWARGS_ANNOTATION_TYPE_VALUE_DEFINITION):
-            annotation_worklogs = AnnotationWorklog.objects.filter(concept_defined__concept__id=self.kwargs[KWARGS_CONCEPT_ID_KEY])
+            annotation_worklogs = AnnotationWorklog.objects\
+                .filter(concept_defined__concept__id=self.kwargs[KWARGS_CONCEPT_ID_KEY])\
+                .filter(concept_defined__document__id=self.kwargs[KWARGS_DOCUMENT_ID_KEY])
         serializer = AnnotationWorklogSerializer(annotation_worklogs, many=True)
         count = 0
         rows_data = ''

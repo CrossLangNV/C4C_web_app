@@ -13,7 +13,8 @@ export class AnnotatorDirective {
   private annotationType: string;
   private app;
 
-  private readonly annotationStoreAddress = 'http://localhost:8000/glossary/api/annotations/';
+  private readonly annotationStoreAddressGlossary = 'http://localhost:8000/glossary/api/annotations/';
+  private readonly annotationStoreAddressRO = 'http://localhost:8000/obligations/api/annotations/';
   private readonly subjectIdAttributeName = 'subject-id';
   private readonly documentIdAttributeName = 'doc-id';
   private readonly annotationTypeAttributeName = 'annotation-type';
@@ -28,12 +29,17 @@ export class AnnotatorDirective {
     this.documentId = this.callerElement.nativeElement.getAttribute(this.documentIdAttributeName);
     this.annotationType = this.callerElement.nativeElement.getAttribute(this.annotationTypeAttributeName);
 
+    var annotationStoreAddress = this.annotationStoreAddressGlossary;
+    if (this.annotationType == "ro") {
+      annotationStoreAddress = this.annotationStoreAddressRO;
+    }
+
     self.app = new annotator.App();
     self.app.include(annotator.ui.main, {
       element: this.callerElement.nativeElement
     });
     self.app.include(annotator.storage.http, {
-      prefix: this.annotationStoreAddress + this.annotationType + "/" + this.subjectId + "/" + this.documentId
+      prefix: annotationStoreAddress + this.annotationType + "/" + this.subjectId + "/" + this.documentId
     });
     self.app.start().then(function () {
       self.app.annotations.load();
