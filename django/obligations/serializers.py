@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+# from obligations.models import ReportingObligation, Tag, AcceptanceState, Comment, ROAnnotationWorklog, ReportingObligationOffsets
 from obligations.models import ReportingObligation, Tag, AcceptanceState, Comment
 from django.contrib.auth.models import User
 import logging as logger
@@ -10,6 +11,23 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = '__all__'
 
+# class ROAnnotationWorklogSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ROAnnotationWorklog
+#         fields = '__all__'
+
+#     def create(self, validated_data):
+#         annotation_worklog = ROAnnotationWorklog.objects.create(**validated_data)
+#         return annotation_worklog
+
+# class ReportingObligationOffsetsSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ReportingObligationOffsets
+#         fields = '__all__'
+
+#     def create(self, validated_data):
+#         ro_offsets = ReportingObligationOffsets.objects.create(**validated_data)
+#         return ro_offsets
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

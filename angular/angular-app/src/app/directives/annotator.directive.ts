@@ -8,13 +8,13 @@ declare const annotator: any;
 export class AnnotatorDirective {
 
   private callerElement:ElementRef;
-  private conceptId: string;
+  private subjectId: string;
   private documentId: string;
   private annotationType: string;
   private app;
 
   private readonly annotationStoreAddress = 'http://localhost:8000/glossary/api/annotations/';
-  private readonly conceptIdAttributeName = 'concept-id';
+  private readonly subjectIdAttributeName = 'subject-id';
   private readonly documentIdAttributeName = 'doc-id';
   private readonly annotationTypeAttributeName = 'annotation-type';
 
@@ -24,7 +24,7 @@ export class AnnotatorDirective {
 
   ngOnInit() {
     var self = this;
-    this.conceptId = this.callerElement.nativeElement.getAttribute(this.conceptIdAttributeName);
+    this.subjectId = this.callerElement.nativeElement.getAttribute(this.subjectIdAttributeName);
     this.documentId = this.callerElement.nativeElement.getAttribute(this.documentIdAttributeName);
     this.annotationType = this.callerElement.nativeElement.getAttribute(this.annotationTypeAttributeName);
 
@@ -33,7 +33,7 @@ export class AnnotatorDirective {
       element: this.callerElement.nativeElement
     });
     self.app.include(annotator.storage.http, {
-      prefix: this.annotationStoreAddress + this.annotationType + "/" + this.conceptId + "/" + this.documentId
+      prefix: this.annotationStoreAddress + this.annotationType + "/" + this.subjectId + "/" + this.documentId
     });
     self.app.start().then(function () {
       self.app.annotations.load();

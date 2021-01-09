@@ -26,6 +26,7 @@ import {PanelModule} from 'primeng/panel';
 import {MenuModule} from 'primeng/menu';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import {NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
+import { DirectivesModule } from '../directives/directives.module';
 
 @NgModule({
   declarations: [
@@ -50,6 +51,7 @@ import {NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
     MenuModule,
     SelectButtonModule,
     NgxSkeletonLoaderModule.forRoot(),
+    DirectivesModule,
   ],
   providers: [
     ConfirmationService,

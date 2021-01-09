@@ -4,6 +4,8 @@ import { ApiService } from 'src/app/core/services/api.service';
 import { switchMap } from 'rxjs/operators';
 import { Document } from 'src/app/shared/models/document';
 import { Concept } from 'src/app/shared/models/concept';
+import { DirectivesModule } from '../../directives/directives.module';
+import { AnnotatorDirective } from '../../directives/annotator.directive';
 
 @Component({
   selector: 'app-concept-document-details',

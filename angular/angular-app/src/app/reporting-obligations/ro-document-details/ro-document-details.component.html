@@ -1,6 +1,6 @@
 <div class="jumbotron m-2" *ngIf="document; else elseBlock">
-  <h3 class="mb-4">{{ concept.name }}</h3>
-  <p>Definition: {{ concept.definition }}</p>
+  <h3 class="mb-4">{{ ro.name }}</h3>
+  <p>Reporting obligation: {{ ro.definition }}</p>
   <hr class="my-4" />
   <h4>
     {{ document.websiteName }} :
@@ -21,15 +21,16 @@
   <p *ngIf="document.various" class="">
     <u>Various:</u> {{ document.various }}
   </p>
-  <div *ngIf="document.summary">
+ <div *ngIf="document.summary">
+  <div>
     <hr class="my-4" />
-    <samp class="text-justify">{{ document.summary }}</samp>
+   <samp class="text-justify">{{ document.summary }}</samp>
   </div>
 </div>
 
 <div *ngIf="content_html">
   <hr class="my-4" />
   <div class="container-fluid w-50">
-    <div [innerHTML]="content_html"></div>
+    <div attr.subject-id="{{ ro.id }}" attr.doc-id="{{ document.id }}" attr.annotation-type="ro" appAnnotator [innerHTML]="content_html"></div>
   </div>
 </div>
