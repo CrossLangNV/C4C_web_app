@@ -7,7 +7,7 @@ up:
 
 .PHONY: down
 down:
-	docker-compose down -d
+	docker-compose down
 
 .PHONY: psql
 psql:

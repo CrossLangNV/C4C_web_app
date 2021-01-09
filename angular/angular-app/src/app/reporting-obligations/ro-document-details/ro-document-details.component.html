@@ -31,6 +31,6 @@
 <div *ngIf="content_html">
   <hr class="my-4" />
   <div class="container-fluid w-50">
-    <div attr.subject-id="{{ ro.id }}" attr.doc-id="{{ document.id }}" attr.annotation-type="ro" appAnnotator [innerHTML]="content_html"></div>
+    <div attr.subject-id="{{ ro.id }}" attr.doc-id="{{ document.id }}" attr.annotation-type="{{ instanceType }}" appAnnotator [innerHTML]="content_html"></div>
   </div>
 </div>

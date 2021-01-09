@@ -21,25 +21,25 @@ class ReportingObligation(models.Model):
     def __str__(self):
         return self.name
 
-# class ReportingObligationOffsets(models.Model):
-#     ro = models.ForeignKey(ReportingObligation, on_delete=models.CASCADE)
-#     document = models.ForeignKey(Document, on_delete=models.CASCADE)
-#     quote = models.TextField(default="")
-#     probability = models.FloatField(default=0.0, blank=True)
+class ReportingObligationOffsets(models.Model):
+    ro = models.ForeignKey(ReportingObligation, on_delete=models.CASCADE)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    quote = models.TextField(default="")
+    probability = models.FloatField(default=0.0, blank=True)
 
-#     start = models.CharField(max_length=255, default="", blank=True, null=True)
-#     startOffset = models.IntegerField(default=0)
-#     end = models.CharField(max_length=255, default="", blank=True, null=True)
-#     endOffset = models.IntegerField(default=0)
+    start = models.CharField(max_length=255, default="", blank=True, null=True)
+    startOffset = models.IntegerField(default=0)
+    end = models.CharField(max_length=255, default="", blank=True, null=True)
+    endOffset = models.IntegerField(default=0)
 
-# class ROAnnotationWorklog(models.Model):
-#     ro_offsets = models.ForeignKey(ReportingObligationOffsets, on_delete=models.CASCADE, null=True)
+class ROAnnotationWorklog(models.Model):
+    ro_offsets = models.ForeignKey(ReportingObligationOffsets, on_delete=models.CASCADE, null=True)
 
-#     user = models.ForeignKey(
-#         'auth.User', related_name="obligation_user_worklog", on_delete=models.SET_NULL, null=True)
+    user = models.ForeignKey(
+        'auth.User', related_name="obligation_user_worklog", on_delete=models.SET_NULL, null=True)
 
-#     created_at = models.DateTimeField(default=timezone.now)
-#     updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
 class AcceptanceStateValue(models.TextChoices):
     UNVALIDATED = 'Unvalidated',
