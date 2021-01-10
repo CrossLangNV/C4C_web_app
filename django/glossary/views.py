@@ -228,6 +228,7 @@ class SearchListAPIView(ListCreateAPIView):
         serializer = AnnotationWorklogSerializer(annotation_worklogs, many=True)
         rows = []
         for data_item in serializer.data:
+            print(data_item['user'])
             concept_offset_base = None
             if (data_item['concept_occurs']):
                 concept_offset_base = ConceptOccurs.objects.get(pk=data_item['concept_occurs'])

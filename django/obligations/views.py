@@ -274,28 +274,28 @@ class SearchListAPIView(ListCreateAPIView):
             .filter(ro_offsets__ro__id=self.kwargs[KWARGS_RO_ID_KEY])\
             .filter(ro_offsets__document__id=self.kwargs[KWARGS_DOCUMENT_ID_KEY])
         serializer = ROAnnotationWorklogSerializer(annotation_worklogs, many=True)
-        count = 0
-        rows_data = ''
+        rows = []
         for data_item in serializer.data:
             ro_offsets = ReportingObligationOffsets.objects.get(pk=data_item['ro_offsets'])
             if ro_offsets:
-                count += 1
-                if count != 1:
-                    rows_data += ','
-                rows_data += '{'
-                rows_data += '"id":"{}",'.format(str(data_item["id"]))
-                rows_data += '"quote":"{}",'.format(ro_offsets.quote)
-                rows_data += '"ranges":[{'
-                rows_data += '"start":"{}",'.format(str(ro_offsets.start))
-                rows_data += '"startOffset":{},'.format(str(ro_offsets.startOffset))
-                rows_data += '"end":"{}",'.format(str(ro_offsets.end))
-                rows_data += '"endOffset":{}'.format(str(ro_offsets.endOffset))
-                rows_data += '}],'
-                rows_data += '"text":""'
-                rows_data += '}'
+                row = {}
+                row['id'] = str(data_item['id'])
+                row['quote'] = ro_offsets.quote
+                row['ranges'] = []
+                ranges_dict = {}
+                ranges_dict['start'] = str(ro_offsets.start)
+                ranges_dict['startOffset'] = ro_offsets.startOffset
+                ranges_dict['end'] = str(ro_offsets.end)
+                ranges_dict['endOffset'] = ro_offsets.endOffset
+                row['ranges'].append(ranges_dict)
+                row['text'] = ''
+                rows.append(row)
 
-        response_string = '{"total":' + str(count) +',"rows":[' + rows_data + ']}'
-        return Response(json.loads(response_string))
+        response = {}
+        response['total'] = str(len(rows))
+        response['rows'] = rows
+        print(response)
+        return Response(response)
 
 class CreateListAPIView(ListCreateAPIView):
     serializer_class = ROAnnotationWorklogSerializer
