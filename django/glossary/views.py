@@ -226,8 +226,7 @@ class SearchListAPIView(ListCreateAPIView):
                 .filter(concept_defined__concept__id=self.kwargs[KWARGS_CONCEPT_ID_KEY])\
                 .filter(concept_defined__document__id=self.kwargs[KWARGS_DOCUMENT_ID_KEY])
         serializer = AnnotationWorklogSerializer(annotation_worklogs, many=True)
-        count = 0
-        rows_data = ''
+        rows = []
         for data_item in serializer.data:
             concept_offset_base = None
             if (data_item['concept_occurs']):
@@ -235,23 +234,23 @@ class SearchListAPIView(ListCreateAPIView):
             elif (data_item['concept_defined']):
                 concept_offset_base = ConceptDefined.objects.get(pk=data_item['concept_defined'])
             if concept_offset_base:
-                count += 1
-                if count != 1:
-                    rows_data += ','
-                rows_data += '{'
-                rows_data += '"id":"{}",'.format(str(data_item["id"]))
-                rows_data += '"quote":"{}",'.format(concept_offset_base.quote)
-                rows_data += '"ranges":[{'
-                rows_data += '"start":"{}",'.format(str(concept_offset_base.start))
-                rows_data += '"startOffset":{},'.format(str(concept_offset_base.startOffset))
-                rows_data += '"end":"{}",'.format(str(concept_offset_base.end))
-                rows_data += '"endOffset":{}'.format(str(concept_offset_base.endOffset))
-                rows_data += '}],'
-                rows_data += '"text":""'
-                rows_data += '}'
+                row = {}
+                row['id'] = str(data_item['id'])
+                row['quote'] = concept_offset_base.quote
+                row['ranges'] = []
+                ranges_dict = {}
+                ranges_dict['start'] = str(concept_offset_base.start)
+                ranges_dict['startOffset'] = concept_offset_base.startOffset
+                ranges_dict['end'] = str(concept_offset_base.end)
+                ranges_dict['endOffset'] = concept_offset_base.endOffset
+                row['ranges'].append(ranges_dict)
+                row['text'] = ''
+                rows.append(row)
 
-        response_string = '{"total":' + str(count) +',"rows":[' + rows_data + ']}'
-        return Response(json.loads(response_string))
+        response = {}
+        response['total'] = str(len(rows))
+        response['rows'] = rows
+        return Response(response)
 
 class CreateListAPIView(ListCreateAPIView):
     serializer_class = AnnotationWorklogSerializer
