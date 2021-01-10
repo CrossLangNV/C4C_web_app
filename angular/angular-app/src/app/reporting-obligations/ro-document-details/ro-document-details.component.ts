@@ -42,28 +42,22 @@ export class RoDocumentDetailsComponent implements OnInit {
           )
           .subscribe((document) => {
             this.document = document;
-            this.route.paramMap.subscribe((params: ParamMap) => {
-              this.term = "test";
-              // this.term = this.ro.name;
-              this.service
-              .getDocumentWithContent(document.id)
-              .subscribe((doc) => {
-                this.service
-                  .searchSolrPreAnalyzedDocument(
-                    this.document.id,
-                    1,
-                    1,
-                    this.term,
-                    this.instanceType,
-                    [],
-                    "id",
-                    "asc"
-                  )
-                  .subscribe((data) => {
-                    // this.content_html = data[1]["highlighting"][this.document.id][this.instanceType];
-                    this.content_html = "Dummy document text. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-                  });
-              });
+            console.log(this.ro);
+            this.service.searchSolrPreAnalyzedDocument(
+              this.document.id,
+              1,
+              1,
+              'maximum',
+              'concept_occurs',
+              [],
+              'id',
+              'asc'
+            )
+            .subscribe((data) => {
+              console.log(data[1]["highlighting"]);
+              console.log(this.document.id);
+              this.content_html = "Lorem ipsum lorem ipsum."
+              // this.content_html = data[1]["highlighting"][this.document.id][this.instanceType];
             });
           });
       });
