@@ -67,18 +67,11 @@ class ConceptListAPIView(ListCreateAPIView):
         showbookmarked = self.request.GET.get('showBookmarked', "")
         if showbookmarked == "true":
             email = self.request.GET.get('email', "")
-
-            logger.info("showbookmarked: %s", showbookmarked)
-            logger.info("email: %s", email)
-
             bookmarks = Bookmark.objects.filter(user__username=email)
-            logger.info("bookmarks: %s", bookmarks)
             bookmarked_documents = Document.objects.filter(bookmarks__in=bookmarks)
-            logger.info("bookmarked_documents: %s", bookmarked_documents)
             q = Concept.objects.filter(document_defined__in=bookmarked_documents) | \
                 Concept.objects.filter(document_occurs__in=bookmarked_documents)
 
-        logger.info("Q: %s", q)
         return q.order_by("name")
 
 
