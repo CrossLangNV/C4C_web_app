@@ -8,11 +8,12 @@ from rest_framework import permissions, filters
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, RetrieveUpdateAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK, HTTP_204_NO_CONTENT
 from rest_framework.views import APIView
 import logging as logger
 import os
-from minio import Minio, ResponseError
-from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists, NoSuchKey
+from minio import Minio
+from minio.error import NoSuchKey
 
 from .rdf_call import rdf_get_available_entities, rdf_get_predicate, \
     rdf_get_all_reporting_obligations, rdf_query_predicate_single, rdf_query_predicate_multiple, \
@@ -267,9 +268,11 @@ class ReportingObligationDocumentHtmlAPIView(APIView):
         EXTRACT_RO_NLP_VERSION = os.environ.get(
             'EXTRACT_RO_NLP_VERSION', 'd16bba97890')
 
-        html_file = minio_client.get_object(bucket_name, document_id + "-" + EXTRACT_RO_NLP_VERSION + ".html")
+        try:
+            html_file = minio_client.get_object(bucket_name, document_id + "-" + EXTRACT_RO_NLP_VERSION + ".html")
+            result = html_file.data
 
-        result = html_file.data
-        logger.info(result)
-
-        return Response(result)
+            logger.info(result)
+            return Response(result, HTTP_200_OK)
+        except NoSuchKey as err:
+            return Response("", HTTP_204_NO_CONTENT)

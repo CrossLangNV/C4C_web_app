@@ -345,7 +345,7 @@ def extract_reporting_obligations(website_id):
             html_file.write(sofa_reporting_obligations)
             html_file.close()
 
-            minio_client.fput_object(bucket_name, html_file.name, filename)
+            minio_client.fput_object(bucket_name, html_file.name, filename, "text/html; charset=UTF-8")
             logger.info("Uploaded to minio")
 
             os.remove(html_file.name)
