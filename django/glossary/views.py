@@ -8,7 +8,7 @@ from glossary.models import AcceptanceState, AcceptanceStateValue, Comment, Conc
 from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer, \
     AnnotationWorklogSerializer
 from scheduler.extract import send_document_to_webanno
-from searchapp.models import Document
+from searchapp.models import Document, Bookmark
 from searchapp.serializers import DocumentSerializer
 from glossary.serializers import CommentSerializer
 from searchapp.solr_call import solr_search_paginated
@@ -43,6 +43,14 @@ class ConceptListAPIView(ListCreateAPIView):
             email = self.request.GET.get('email', "")
             q = q.filter(Q(acceptance_states__user__email=email) & (Q(acceptance_states__value="Accepted") |
                                                                     Q(acceptance_states__value="Rejected")))
+
+        showbookmarked = self.request.GET.get('showBookmarked', "")
+        if showbookmarked == "true":
+            bookmarks = Bookmark.objects.filter(user__email=email)
+            bookmarked_documents = Document.objects.filter(bookmarks__in=bookmarks)
+            q = Concept.objects.filter(document_defined__in=bookmarked_documents) | \
+                Concept.objects.filter(document_occurs__in=bookmarked_documents)
+
         filtertype = self.request.GET.get('filterType', "")
         if filtertype == "unvalidated":
             q = q.exclude(Q(acceptance_states__value="Rejected")
