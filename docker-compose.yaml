@@ -95,7 +95,7 @@ services:
     command: bash -c "precreate-core documents && precreate-core archive && solr-foreground"
 
   postgres:
-    image: postgres:12
+    image: postgres:13
     ports:
       - "5432:5432"
     env_file:
