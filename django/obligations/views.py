@@ -16,7 +16,6 @@ from .rdf_call import rdf_get_available_entities, rdf_get_predicate, \
     rdf_query_predicate_multiple_id, rdf_get_name_of_entity
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 
-import json
 import datetime
 import status
 
@@ -294,7 +293,6 @@ class SearchListAPIView(ListCreateAPIView):
         response = {}
         response['total'] = str(len(rows))
         response['rows'] = rows
-        print(response)
         return Response(response)
 
 class CreateListAPIView(ListCreateAPIView):

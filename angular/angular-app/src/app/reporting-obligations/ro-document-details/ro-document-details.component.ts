@@ -42,23 +42,11 @@ export class RoDocumentDetailsComponent implements OnInit {
           )
           .subscribe((document) => {
             this.document = document;
-            console.log(this.ro);
-            this.service.searchSolrPreAnalyzedDocument(
-              this.document.id,
-              1,
-              1,
-              'maximum',
-              'concept_occurs',
-              [],
-              'id',
-              'asc'
-            )
-            .subscribe((data) => {
-              console.log(data[1]["highlighting"]);
-              console.log(this.document.id);
-              this.content_html = "Lorem ipsum lorem ipsum."
-              // this.content_html = data[1]["highlighting"][this.document.id][this.instanceType];
-            });
+            this.service
+              .getDocumentWithContent(document.id)
+              .subscribe((doc) => {
+                this.content_html = this.highlight(doc.content, ro);
+              });
           });
       });
   }
