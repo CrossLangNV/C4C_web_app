@@ -15,6 +15,7 @@ from searchapp.solr_call import solr_search_paginated
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 from django.db.models import Q
 import os
+import logging as logger
 
 
 class SmallResultsSetPagination(PageNumberPagination):
@@ -44,13 +45,6 @@ class ConceptListAPIView(ListCreateAPIView):
             q = q.filter(Q(acceptance_states__user__email=email) & (Q(acceptance_states__value="Accepted") |
                                                                     Q(acceptance_states__value="Rejected")))
 
-        showbookmarked = self.request.GET.get('showBookmarked', "")
-        if showbookmarked == "true":
-            bookmarks = Bookmark.objects.filter(user__email=email)
-            bookmarked_documents = Document.objects.filter(bookmarks__in=bookmarks)
-            q = Concept.objects.filter(document_defined__in=bookmarked_documents) | \
-                Concept.objects.filter(document_occurs__in=bookmarked_documents)
-
         filtertype = self.request.GET.get('filterType', "")
         if filtertype == "unvalidated":
             q = q.exclude(Q(acceptance_states__value="Rejected")
@@ -70,6 +64,21 @@ class ConceptListAPIView(ListCreateAPIView):
         if len(website):
             q = q.filter(website__name__iexact=website)
 
+        showbookmarked = self.request.GET.get('showBookmarked', "")
+        if showbookmarked == "true":
+            email = self.request.GET.get('email', "")
+
+            logger.info("showbookmarked: %s", showbookmarked)
+            logger.info("email: %s", email)
+
+            bookmarks = Bookmark.objects.filter(user__username=email)
+            logger.info("bookmarks: %s", bookmarks)
+            bookmarked_documents = Document.objects.filter(bookmarks__in=bookmarks)
+            logger.info("bookmarked_documents: %s", bookmarked_documents)
+            q = Concept.objects.filter(document_defined__in=bookmarked_documents) | \
+                Concept.objects.filter(document_occurs__in=bookmarked_documents)
+
+        logger.info("Q: %s", q)
         return q.order_by("name")
 
 
