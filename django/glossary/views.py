@@ -19,7 +19,6 @@ import os
 
 import status
 import datetime
-import json
 
 # Annotation API consants
 
