@@ -659,4 +659,9 @@ export class ApiService {
     return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/effectdate`)
   }
 
+  public getReportingObligationsView(id: string): Observable<string> {
+    return this.http
+      .get<string>(`${this.API_RO_URL}/ros/document/${id}`)
+  }
+
 }
