@@ -10,12 +10,13 @@ from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, T
 from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer, \
     AnnotationWorklogSerializer, ConceptOccursSerializer, ConceptDefinedSerializer, CommentSerializer
 from scheduler.extract import send_document_to_webanno
-from searchapp.models import Document
+from searchapp.models import Document, Bookmark
 from searchapp.serializers import DocumentSerializer
 from searchapp.solr_call import solr_search_paginated
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 from django.db.models import Q
 import os
+import logging as logger
 
 import status
 import datetime
@@ -55,6 +56,7 @@ class ConceptListAPIView(ListCreateAPIView):
             email = self.request.GET.get('email', "")
             q = q.filter(Q(acceptance_states__user__email=email) & (Q(acceptance_states__value="Accepted") |
                                                                     Q(acceptance_states__value="Rejected")))
+
         filtertype = self.request.GET.get('filterType', "")
         if filtertype == "unvalidated":
             q = q.exclude(Q(acceptance_states__value="Rejected")
@@ -73,6 +75,14 @@ class ConceptListAPIView(ListCreateAPIView):
         website = self.request.GET.get('website', "")
         if len(website):
             q = q.filter(website__name__iexact=website)
+
+        showbookmarked = self.request.GET.get('showBookmarked', "")
+        if showbookmarked == "true":
+            email = self.request.GET.get('email', "")
+            bookmarks = Bookmark.objects.filter(user__username=email)
+            bookmarked_documents = Document.objects.filter(bookmarks__in=bookmarks)
+            q = Concept.objects.filter(document_defined__in=bookmarked_documents) | \
+                Concept.objects.filter(document_occurs__in=bookmarked_documents)
 
         return q.order_by("name")
 

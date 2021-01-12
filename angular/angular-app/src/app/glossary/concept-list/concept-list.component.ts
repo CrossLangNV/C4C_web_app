@@ -78,6 +78,7 @@ export class ConceptListComponent implements OnInit {
   sortBy = 'name';
   filterType = '';
   version = '8a4f1d58';
+  showBookmarked = false;
   website = '';
   searchTermChanged: Subject<string> = new Subject<string>();
   userIcon: IconDefinition = faUserAlt;
@@ -140,6 +141,8 @@ export class ConceptListComponent implements OnInit {
         this.filterTag,
         this.filterType,
         this.version,
+        this.showBookmarked,
+        this.currentDjangoUser.username,
         this.website,
         this.sortBy
       )
