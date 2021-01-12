@@ -18,7 +18,7 @@ export class RoDocumentDetailsComponent implements OnInit {
   instanceType: string = "ro";
   term: string = "unknown";
   consolidatedVersions = new Map();
-  content_html: String;
+  content_html: string;
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -45,7 +45,7 @@ export class RoDocumentDetailsComponent implements OnInit {
             this.service
               .getDocumentWithContent(document.id)
               .subscribe((doc) => {
-                this.content_html = this.highlight(doc.content, ro);
+                this.content_html = String(this.highlight(doc.content, ro));
               });
           });
       });

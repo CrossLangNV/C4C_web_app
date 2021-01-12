@@ -1,4 +1,5 @@
 import { Directive, ElementRef, HostListener } from '@angular/core';
+import { Environment } from '../../environments/environment-variables';
 
 declare const annotator: any;
 
@@ -13,8 +14,8 @@ export class AnnotatorDirective {
   private annotationType: string;
   private app;
 
-  private readonly annotationStoreAddressGlossary = 'http://localhost:8000/glossary/api/annotations/';
-  private readonly annotationStoreAddressRO = 'http://localhost:8000/obligations/api/annotations/';
+  private readonly ANNOTATION_STORE_ADDRESS_GLOSSARY = Environment.ANGULAR_DJANGO_API_GLOSSARY_ANNOTATIONS_URL;
+  private readonly ANNOTATION_STORE_ADDRESS_RO = Environment.ANGULAR_DJANGO_API_RO_ANNOTATIONS_URL;
   private readonly subjectIdAttributeName = 'subject-id';
   private readonly documentIdAttributeName = 'doc-id';
   private readonly annotationTypeAttributeName = 'annotation-type';
@@ -29,9 +30,9 @@ export class AnnotatorDirective {
     this.documentId = this.callerElement.nativeElement.getAttribute(this.documentIdAttributeName);
     this.annotationType = this.callerElement.nativeElement.getAttribute(this.annotationTypeAttributeName);
 
-    var annotationStoreAddress = this.annotationStoreAddressGlossary;
+    var annotationStoreAddress = this.ANNOTATION_STORE_ADDRESS_GLOSSARY;
     if (this.annotationType == "ro") {
-      annotationStoreAddress = this.annotationStoreAddressRO;
+      annotationStoreAddress = this.ANNOTATION_STORE_ADDRESS_RO;
     }
 
     self.app = new annotator.App();
@@ -39,7 +40,7 @@ export class AnnotatorDirective {
       element: this.callerElement.nativeElement
     });
     self.app.include(annotator.storage.http, {
-      prefix: annotationStoreAddress + this.annotationType + "/" + this.subjectId + "/" + this.documentId
+      prefix: annotationStoreAddress + "/" + this.annotationType + "/" + this.subjectId + "/" + this.documentId
     });
     self.app.start().then(function () {
       self.app.annotations.load();
