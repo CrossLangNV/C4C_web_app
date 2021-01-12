@@ -22,6 +22,7 @@ import {
   NgbDateNativeAdapter,
 } from '@ng-bootstrap/ng-bootstrap';
 import { DirectivesModule } from '../directives/directives.module';
+import {InputSwitchModule} from 'primeng/inputswitch';
 @NgModule({
   declarations: [
     ConceptListComponent,
@@ -41,6 +42,7 @@ import { DirectivesModule } from '../directives/directives.module';
         GlossaryRoutingModule,
         SelectButtonModule,
         DirectivesModule,
+        InputSwitchModule,
     ],
   providers: [
     ConfirmationService,

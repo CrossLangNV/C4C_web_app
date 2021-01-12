@@ -45,6 +45,15 @@
               v.name
               }}</option>
           </select>
+          <div class="form-check m-1 pl-0 pt-1">
+            <span ngbTooltip="Show concepts from your bookmarked documents">
+              <p-inputSwitch
+                (onChange)="filterResetPage()"
+                [(ngModel)]="showBookmarked"
+              >Own</p-inputSwitch
+              ></span
+            >
+          </div>
         </div>
         <div class="row">
           <div class="col">

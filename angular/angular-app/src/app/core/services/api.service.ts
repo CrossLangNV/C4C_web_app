@@ -461,6 +461,8 @@ export class ApiService {
     filterTag: string,
     filterType: string,
     version: string,
+    showBookmarked: boolean,
+    email: string,
     website: string,
     sortBy: string
   ): Observable<ConceptResults> {
@@ -473,6 +475,12 @@ export class ApiService {
     }
     if (version) {
       pageQuery = pageQuery + '&version=' + version;
+    }
+    if (showBookmarked) {
+      pageQuery = pageQuery + '&showBookmarked=' + showBookmarked;
+    }
+    if (email) {
+      pageQuery = pageQuery + '&email=' + email;
     }
     if (website) {
       pageQuery = pageQuery + '&website=' + website;
