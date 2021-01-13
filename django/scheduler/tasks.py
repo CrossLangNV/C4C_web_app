@@ -134,7 +134,7 @@ def export_documents():
     # - ACCEPTED or REJECTED
     # - group by document
     human_states = AcceptanceState.objects.filter(
-        (Q(value=AcceptanceStateValue.ACCEPTED) | Q(value=AcceptanceStateValue.REJECTED)) & Q(probability_model=None))\
+        (Q(value=AcceptanceStateValue.ACCEPTED) | Q(value=AcceptanceStateValue.REJECTED)) & Q(probability_model=None)) \
         .order_by("document")
 
     core = 'documents'
@@ -227,7 +227,7 @@ def handle_document_updates_task(website_id):
     for result in results:
         if 'content_hash' in result:
             content_hashes[result['id']] = result['content_hash']
-    logger.info("Found " + str(len(content_hashes))+" hashes")
+    logger.info("Found " + str(len(content_hashes)) + " hashes")
 
     try:
         # retrieve jsonlines files from minio
@@ -631,19 +631,21 @@ def export_all_user_data():
                                   'probability_model', 'accepted_probability', 'version', 'website',
                                   'other', 'created_at', 'updated_at'])
         for concept in concepts:
-            acceptance_state_value = ""
-            probability_model = ""
-            accepted_probability = ""
+            acceptance_state_values = ""
+            probability_models = ""
+            accepted_probabilities = ""
             try:
-                acceptance_state = ConceptAcceptanceState.objects.get(concept=concept)
-                acceptance_state_value = acceptance_state.value
-                probability_model = acceptance_state.probability_model
-                accepted_probability = acceptance_state.accepted_probability
+                acceptance_states = ConceptAcceptanceState.objects.filter(concept=concept)
+                acceptance_state_values = ','.join([state.value for state in acceptance_states])
+
+                if len(acceptance_states) > 0:
+                    probability_models = ','.join([str(state.probability_model) for state in acceptance_states])
+                    accepted_probabilities = ','.join([str(state.accepted_probability) for state in acceptance_states])
             except ConceptAcceptanceState.DoesNotExist as err:
                 pass
 
-            concepts_writer.writerow([concept.name, concept.definition, concept.lemma, acceptance_state_value,
-                                      probability_model, accepted_probability, concept.version, concept.website,
+            concepts_writer.writerow([concept.name, concept.definition, concept.lemma, acceptance_state_values,
+                                      probability_models, accepted_probabilities, concept.version, concept.website,
                                       concept.other.name, concept.created_at, concept.updated_at])
         logger.info("Saved: %s", csv_file.name)
 
@@ -694,9 +696,45 @@ def export_all_user_data():
             ro_writer.writerow([ro.name, ro.rdf_id, ro.created_at, ro.updated_at])
         logger.info("Saved: %s", csv_file.name)
 
+    # Documents
+    csv_file = Path(workdir + '/documents_export.csv')
+    with csv_file.open(mode='w') as documents_file:
+        documents_writer = csv.writer(documents_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        documents = Document.objects.all()
 
+        documents_writer.writerow(['id', 'celex', 'title', 'title_prefix', 'author', 'status',
+                                   'acceptance_state', 'probability_model', 'accepted_probability',
+                                   'type', 'date', 'date_of_effect', 'date_last_update',
+                                   'url', 'eli', 'website', 'summary', 'various',
+                                   'consolidated_versions', 'file', 'file_url', 'webanno_document_id',
+                                   'webanno_project_id', 'created_at', 'updated_at',
+                                   'acceptance_state_max_probability', 'unvalidated'])
+        for doc in documents:
+            acceptance_state_values = ""
+            probability_models = ""
+            accepted_probabilities = ""
+            has_file = False
+            if doc.file != None:
+                has_file = True
+            try:
+                acceptance_states = AcceptanceState.objects.filter(document=doc)
+                acceptance_state_values = ','.join([state.value for state in acceptance_states])
 
+                if len(acceptance_states) > 0:
+                    probability_models = ','.join([str(state.probability_model) for state in acceptance_states])
+                    accepted_probabilities = ','.join([str(state.accepted_probability) for state in acceptance_states])
 
+            except AcceptanceState.DoesNotExist as err:
+                pass
+
+            documents_writer.writerow([doc.id, doc.celex, doc.title, doc.title_prefix, doc.author, doc.status,
+                                       acceptance_state_values, probability_models, accepted_probabilities,
+                                       doc.type, doc.date, doc.date_of_effect, doc.date_last_update,
+                                       doc.url, doc.eli, doc.website, doc.summary, doc.various,
+                                       doc.consolidated_versions, has_file, doc.file_url, doc.webanno_document_id,
+                                       doc.webanno_project_id, doc.created_at, doc.updated_at,
+                                       doc.acceptance_state_max_probability, doc.unvalidated])
+        logger.info("Saved: %s", csv_file.name)
 
     # create zip file for all .csv files and remove the base folders
     zip = shutil.make_archive(workdir, 'zip', workdir)
@@ -713,7 +751,7 @@ def export_all_user_data():
     except BucketAlreadyExists as err:
         pass
 
-    name = "export_"+date_folder+".zip"
+    name = "export_" + date_folder + ".zip"
     minio_client.fput_object(bucket_name, name, zip)
     # os.remove(zip)
 
