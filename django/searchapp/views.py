@@ -336,6 +336,7 @@ class SolrDocumentSearchQueryPreAnalyzed(APIView):
                                                          sort_direction=request.GET.get('sortDirection'))
         return Response(result)
 
+
 class SolrDocumentsSearchQueryDjango(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -346,10 +347,10 @@ class SolrDocumentsSearchQueryDjango(APIView):
         concept_defined_or_occurs = None
         if request.data['field'] == "concept_defined":
             concept_defined_or_occurs = ConceptDefined.objects.filter(
-                concept=concept)
+                concept=concept).distinct('document')
         else:
             concept_defined_or_occurs = ConceptOccurs.objects.filter(
-                concept=concept)
+                concept=concept).distinct('document')
 
         definitions = []
         for defi_or_occ in concept_defined_or_occurs:
