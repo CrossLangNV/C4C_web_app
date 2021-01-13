@@ -14,6 +14,10 @@ Provide a `secrets/django-docker.env` and run with `docker-compose up -d` (see s
 
 Data for both PostgreSQL and Solr is persisted through named volumes.
 
+Create solr collection: 
+
+`docker-compose exec solr bin/solr create -c archive`
+
 Configure Solr to have all the fields, run the following command in the solr directory:
 
 `./fields.sh`
@@ -31,7 +35,12 @@ You can create a admin user with these commands:
 
 The angular app requires an application (uses django-oath-toolkit):
 
-`python manage.py createapplication --client-id $ANGULAR_DJANGO_CLIENT_ID --client-secret $ANGULAR_DJANGO_CLIENT_SECRET --name searchapp confidential password`
+`python manage.py createapplication --name searchapp confidential password`
+
+In your browser, navigate to `http://localhost:8000/admin/oauth2_provider/application/`
+Go to the detail page of the searchapp app by clicking on it's id in the list of applications.
+In the user field, add the admin user.
+
 
 ### Solr data
 
@@ -41,6 +50,14 @@ The Solr service is started by docker-compose and will create a core named `docu
 ### Django app
 
 Open browser at `http://localhost:8000`
+
+### Django Unit Tests
+
+Put your unit test in a file that matches "test\*py"
+
+To run tests from module scheduler:
+
+`docker-compose exec django python manage.py test scheduler`
 
 
 ### Scrapy app

@@ -9,11 +9,18 @@ interface State {
   page: number;
   searchTerm: string;
   filterType: string;
-  email: string;
+  username: string;
   website: string;
   showOnlyOwn: boolean;
+  bookmarks: boolean;
   filterTag: string;
   sortBy: string;
+  celex: string;
+  type: string;
+  status: string;
+  eli: string;
+  author: string;
+  date_of_effect: string;
 }
 
 @Injectable({
@@ -31,18 +38,25 @@ export class DocumentService {
     page: 1,
     searchTerm: '',
     filterType: '',
-    email: '',
+    username: '',
     website: '',
     showOnlyOwn: false,
+    bookmarks: false,
     filterTag: '',
     sortBy: '-date',
+    celex: '',
+    type: '',
+    status: '',
+    eli: '',
+    author: '',
+    date_of_effect: '',
   };
 
   constructor(private http: HttpClient) {
     this._search$
       .pipe(
         tap(() => this._loading$.next(true)),
-        debounceTime(200),
+        debounceTime(600),
         switchMap(() => this._search()),
         tap(() => this._loading$.next(false))
       )
@@ -81,11 +95,11 @@ export class DocumentService {
   set filterType(filterType: string) {
     this._set({ filterType });
   }
-  get email() {
-    return this._state.email;
+  get username() {
+    return this._state.username;
   }
-  set email(email: string) {
-    this._set({ email });
+  set username(username: string) {
+    this._set({ username });
   }
   get website() {
     return this._state.website;
@@ -98,6 +112,48 @@ export class DocumentService {
   }
   set showOnlyOwn(showOnlyOwn: boolean) {
     this._set({ showOnlyOwn });
+  }
+  get bookmarks() {
+    return this._state.bookmarks;
+  }
+  set bookmarks(bookmarks: boolean) {
+    this._set({ bookmarks });
+  }
+  get celex() {
+    return this._state.celex;
+  }
+  set celex(celex: string) {
+    this._set({ celex });
+  }
+  get type() {
+    return this._state.type;
+  }
+  set type(type: string) {
+    this._set({ type });
+  }
+  get status() {
+    return this._state.status;
+  }
+  set status(status: string) {
+    this._set({ status });
+  }
+  get eli() {
+    return this._state.eli;
+  }
+  set eli(eli: string) {
+    this._set({ eli });
+  }
+  get author() {
+    return this._state.author;
+  }
+  set author(author: string) {
+    this._set({ author });
+  }
+  get date_of_effect() {
+    return this._state.date_of_effect;
+  }
+  set date_of_effect(date_of_effect: string) {
+    this._set({ date_of_effect });
   }
   get filterTag() {
     return this._state.searchTerm;
@@ -120,9 +176,16 @@ export class DocumentService {
       page,
       searchTerm,
       filterType,
-      email,
+      username,
       website,
       showOnlyOwn,
+      bookmarks,
+      celex,
+      type,
+      status,
+      eli,
+      author,
+      date_of_effect,
       filterTag,
       sortBy,
     } = this._state;
@@ -133,18 +196,38 @@ export class DocumentService {
       searchTerm +
       '&filterType=' +
       filterType +
-      '&email=' +
-      email +
+      '&username=' +
+      username +
       '&website=' +
       website +
       '&showOnlyOwn=' +
       showOnlyOwn +
+      '&bookmarks=' +
+      bookmarks +
+      '&celex=' +
+      celex +
+      '&type=' +
+      type +
+      '&status=' +
+      status +
+      '&eli=' +
+      eli +
+      '&author=' +
+      author +
+      '&date_of_effect=' +
+      date_of_effect +
       '&tag=' +
       filterTag +
       '&ordering=' +
       sortBy;
     return this.http.get<DocumentResults>(
       `${this.API_URL}/documents${pageQuery}`
+    );
+  }
+
+  public total_documents(): Observable<number> {
+    return this.http.get<number>(
+      `${this.API_URL}/stats/total_documents`
     );
   }
 }

@@ -6,7 +6,7 @@ import {
   Output,
   EventEmitter,
   ViewChildren,
-  QueryList,
+  QueryList, ViewChild,
 } from '@angular/core';
 import { ApiService } from 'src/app/core/services/api.service';
 import { ReportingObligation } from 'src/app/shared/models/ro';
@@ -22,6 +22,12 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import {Router} from "@angular/router";
+import {AuthenticationService} from "../../core/auth/authentication.service";
+import {DjangoUser} from "../../shared/models/django_user";
+
+import {RdfFilter} from "../../shared/models/rdfFilter";
+import {RoTag} from "../../shared/models/RoTag";
 
 export type SortDirection = 'asc' | 'desc' | '';
 const rotate: { [key: string]: SortDirection } = {
@@ -33,6 +39,10 @@ const rotate: { [key: string]: SortDirection } = {
 export interface SortEvent {
   column: string;
   direction: SortDirection;
+}
+
+export interface RoDetail {
+  name: string;
 }
 
 @Directive({
@@ -64,6 +74,12 @@ export class RoListComponent implements OnInit {
     NgbdSortableHeaderDirective
   >;
   ros: ReportingObligation[];
+
+  availableItems: RdfFilter[]
+  availableItemsKeys: []
+  availableItemsQuery: Map<string, string>;
+
+  selected: string;
   collectionSize = 0;
   selectedIndex: string = null;
   page = 1;
@@ -81,10 +97,39 @@ export class RoListComponent implements OnInit {
   nameSortIcon: IconDefinition = faSort;
   dateSortIcon: IconDefinition = faSortDown;
   statesSortIcon: IconDefinition = faSort;
+  currentDjangoUser: DjangoUser;
 
-  constructor(private service: ApiService) {}
+  contentLoaded = false;
+
+  collapsed: boolean = true;
+
+  constructor(
+    private service: ApiService,
+    private router: Router,
+    private authenticationService: AuthenticationService,
+  ) {}
 
   ngOnInit() {
+    this.availableItemsQuery = new Map<string, string>();
+
+    this.authenticationService.currentDjangoUser.subscribe(
+      (x) => (this.currentDjangoUser = x)
+    );
+
+    // Force login page when not authenticated
+    if (this.currentDjangoUser == null) {
+      this.router.navigate(['/login']);
+    }
+
+    // Fetch RDF for filters
+    this.fetchAvailableFilters();
+
+    this.service.messageSource.asObservable().subscribe((value: string) => {
+      if (value === 'refresh') {
+        this.fetchRos();
+      }
+    });
+
     this.fetchRos();
     this.searchTermChanged
       .pipe(debounceTime(600), distinctUntilChanged())
@@ -95,23 +140,42 @@ export class RoListComponent implements OnInit {
       });
   }
 
+  fetchAvailableFilters() {
+    this.service
+      .fetchDropdowns()
+      .subscribe((results) => {
+          this.availableItems = results
+      })
+  }
+
   fetchRos() {
     this.service
-      .getRos(
+      .getRdfRos(
         this.page,
         this.keyword,
         this.filterTag,
         this.filterType,
-        this.sortBy
+        this.sortBy,
+        this.availableItemsQuery
       )
       .subscribe((results) => {
         this.ros = results.results;
         this.collectionSize = results.count;
+        this.contentLoaded = true;
       });
   }
 
-  onSearch(keyword: string) {
+  /*onSearch(filter, keyword: string) {
     this.searchTermChanged.next(keyword);
+  }*/
+
+  onQuery(filter, keyword) {
+    if (keyword.code == "") {
+      this.availableItemsQuery.delete(filter.entity)
+    } else {
+      this.availableItemsQuery.set(filter.entity, keyword.name)
+    }
+    this.filterResetPage();
   }
 
   loadPage(page: number) {
@@ -171,8 +235,42 @@ export class RoListComponent implements OnInit {
     }
   }
 
+  onAddTag(event, tags, roId) {
+    const newTag = new RoTag('', event.value, roId);
+    this.service.addRoTag(newTag).subscribe((addedTag) => {
+      // primeng automatically adds the string value first, delete this as workaround
+      // see: https://github.com/primefaces/primeng/issues/3419
+      tags.splice(-1, 1);
+      // now add the tag object
+      tags.push(addedTag);
+    });
+  }
+
+  onRemoveTag(event) {
+    this.service.deleteRoTag(event.value.id).subscribe();
+  }
+
   onClickTag(event) {
     this.filterTag = event.value.value;
     this.fetchRos();
+  }
+
+  resetFilters() {
+    this.availableItems = [];
+    this.availableItemsQuery.clear();
+    this.fetchAvailableFilters();
+    this.fetchRos();
+  }
+
+  collapsePanel() {
+    if (this.collapsed == true) {
+      this.collapsed = false;
+    } else {
+      this.collapsed = true;
+    }
+  }
+
+  numSequence(n: number): Array<number> {
+    return Array(n);
   }
 }

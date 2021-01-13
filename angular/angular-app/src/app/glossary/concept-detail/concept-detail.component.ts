@@ -66,6 +66,7 @@ export class ConceptDetailComponent implements OnInit {
   newComment: ConceptComment;
   deleteIcon: IconDefinition;
   currentDjangoUser: DjangoUser;
+  definitionHtml: String;
 
   occursIn: Document[] = [];
   occursInPage = 1;
@@ -114,6 +115,9 @@ export class ConceptDetailComponent implements OnInit {
       .subscribe((concept) => {
         this.concept = concept;
 
+        this.definitionHtml = this.replaceTerms(concept.definition, [concept]);
+        this.definitionHtml = this.replaceTerms(this.definitionHtml, concept.other);
+        
         this.newComment.conceptId = concept.id;
         this.comments = [];
 
@@ -191,42 +195,25 @@ export class ConceptDetailComponent implements OnInit {
       )
       .subscribe((data) => {
         this.occursInTotal = data[0];
-        const solrDocuments = data[1];
-        this.occursIn = [];
-        const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
-        this.getDocuments(solrDocumentIds).subscribe((doc) => {
-          doc.forEach((document, index) => {
-            document.content = solrDocuments[index].concept_occurs;
-            this.occursIn.push(document);
-          });
-        });
+        this.occursIn = data[1];
       });
   }
 
   loadDefinedInDocuments() {
     this.service
-      .searchSolrPreAnalyzedDocuments(
+      .getDjangoAndSolrPrAnalyzedDocuments(
         this.definedInPage,
         this.definedInPageSize,
         this.concept.definition,
         "concept_defined",
+        this.concept.id,
         [],
         this.definedInSortBy,
         this.definedInSortDirection
       )
       .subscribe((data) => {
         this.definedInTotal = data[0];
-        const solrDocuments = data[1];
-        this.definedIn = [];
-        const solrDocumentIds = solrDocuments.map((solrDoc) => solrDoc.id);
-        this.getDocuments(solrDocumentIds).subscribe((doc) => {
-          doc.forEach((document, index) => {
-            let solrContent = solrDocuments[index].concept_defined;
-            // solrContent = solrContent.map(text => text.replace('<span class=\"highlight\">means</span>', 'means'));
-            document.content = solrContent;
-            this.definedIn.push(document);
-          });
-        });
+        this.definedIn = data[1];
       });
   }
 
@@ -300,5 +287,19 @@ export class ConceptDetailComponent implements OnInit {
       }
       this.loadDefinedInDocuments();
     }
+  }
+
+  replaceTerms(definition, terms) {
+    terms.forEach(term => {
+      definition = this.highlight(definition, term)
+    });
+    return definition;
+  }
+
+  highlight(definition, concept): String {
+    var searchMask = concept.name;
+    var regEx = new RegExp(searchMask, 'ig');
+    var replaceMask = '<span class="highlight">' + concept.name + '</span>';
+    return definition.replace(regEx, replaceMask);
   }
 }

@@ -37,6 +37,7 @@ export class DocumentValidateComponent implements OnInit {
   deleteIcon: IconDefinition;
   currentDjangoUser: DjangoUser;
   attachment: Attachment;
+  webanno_clicked: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -153,6 +154,17 @@ export class DocumentValidateComponent implements OnInit {
     });
   }
 
+  onAddBookmark() {
+    this.service.addBookmark(this.currentDjangoUser, this.document).subscribe((document) => {
+      this.document.bookmark = true;
+    });
+  }
+
+  onRemoveBookmark() {
+    this.service.removeBookmark(this.document).subscribe((document) => {
+      this.document.bookmark = false;
+    });
+  }
   openModal(targetModal, attachmentId: string) {
     this.attachment = new Attachment('', '', '', '', '');
     this.modalService.open(targetModal, {
@@ -175,7 +187,6 @@ export class DocumentValidateComponent implements OnInit {
         }
         this.document = attachment;
       });
-    // }
   }
 
   onSubmit() {
@@ -196,14 +207,6 @@ export class DocumentValidateComponent implements OnInit {
           website: docWithCoeff.website,
           coeff: docWithCoeff.coefficient,
         });
-        if (docWithCoeff.coefficient >= 0.9) {
-          const roundedPercentage = +(docWithCoeff.coefficient*100).toFixed(2);
-          this.messageService.add({
-            severity: 'info',
-            summary: 'Very likely duplicate document found!',
-            detail: 'Similarity is ' + roundedPercentage + '%',
-          });
-        }
       });
     });
   }
@@ -215,5 +218,29 @@ export class DocumentValidateComponent implements OnInit {
 
   onNumberCandidatesBlur(e) {
     this.getSimilarDocuments(this.similarityThreshold / 100, this.maxSimilarDocuments);
+  }
+
+  onWebAnno() {
+    // launch request to backend
+    this.webanno_clicked = true;
+    this.service.getWebAnnoLink(this.document.id).subscribe(
+      url => {
+        // Visit WebAnno
+        if(url == "404") {
+          this.onWebAnnoError()
+        } else {
+          this.goToLink(url);
+        }
+        this.webanno_clicked = false;
+      },
+      error => {this.onWebAnnoError(); this.webanno_clicked = false;} );
+  }
+
+  onWebAnnoError() {
+    this.messageService.add({
+      severity: "error",
+      summary: 'WebAnno Error',
+      detail: 'Document not yet available. Please try again later.',
+    });
   }
 }

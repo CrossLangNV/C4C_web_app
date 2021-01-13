@@ -19,6 +19,8 @@ import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { NgbDateAdapter, NgbDateNativeAdapter } from '@ng-bootstrap/ng-bootstrap';
 import { NgbdSortableHeader } from './document-list/sortable.directive';
+import { DropdownModule } from 'primeng/dropdown';
+import { FieldsetModule } from 'primeng/fieldset';
 
 @NgModule({
   declarations: [
@@ -42,6 +44,8 @@ import { NgbdSortableHeader } from './document-list/sortable.directive';
     ScrollPanelModule,
     InputNumberModule,
     ValidatorRoutingModule,
+    DropdownModule,
+    FieldsetModule,
   ],
   providers: [
     ConfirmationService,

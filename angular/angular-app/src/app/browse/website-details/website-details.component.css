@@ -4,3 +4,6 @@
     cursor: pointer;
 }
 
+a.document-url {
+    word-break: break-all;
+  }

@@ -15,6 +15,7 @@
   <p *ngIf="document.celex" class=""><u>Celex:</u> {{ document.celex }}</p>
   <p *ngIf="document.eli" class=""><u>Eli:</u> {{ document.eli }}</p>
   <p *ngIf="document.status" class=""><u>Status:</u> {{ document.status }}</p>
+  <p *ngIf="document.dateOfEffect" class=""><u>Date of force:</u> {{ document.dateOfEffect | date}}</p>
   <p *ngIf="document.various" class="">
     <u>Various:</u> {{ document.various }}
   </p>
@@ -38,7 +39,17 @@
       {{ document.content }}
     </p-scrollPanel>
   </div>
-  <div *ngIf="similarDocuments">
+  <div *ngIf="document.definition.length > 0">
+    <hr class="my-4" />
+    <p><b>Concept definitions ({{ document.definition.length }}):</b></p>
+    <ul  class="list-group">
+      <li *ngFor="let concept of document.definition" class="list-group-item">
+          <a [routerLink]="['/glossary', concept.id ]" ><u>{{concept.name}}</u></a> <br>
+          <a [routerLink]="['/document', concept.id, document.id ]" >{{concept.definition}}</a>
+      </li>
+    </ul>
+  </div>
+  <div *ngIf="similarDocuments.length > 0">
     <hr class="my-4" />
     <p><b>Similar documents:</b></p>
     <div>
@@ -50,7 +61,7 @@
       <p>Similarity greater than {{ similarityThreshold }} %</p>
       <p-slider [(ngModel)]="similarityThreshold" (onSlideEnd)="onSimilarityChange($event)"></p-slider>
     </div>
-    <div *ngIf="similarDocuments.length > 0; else noSimilar">
+    <div>
       <table class="table table-striped table-bordered table-hover my-4">
         <thead class="thead-dark">
           <tr>
@@ -70,10 +81,9 @@
           </tr>
         </tbody>
       </table>
-      <ngb-pagination [(page)]="similarDocsPage" [pageSize]="5" [collectionSize]="similarDocuments.length">
+      <ngb-pagination [(page)]="similarDocsPage" [pageSize]="5" [rotate]="true" [collectionSize]="similarDocuments.length">
       </ngb-pagination>
     </div>
-    <ng-template #noSimilar><div class="my-4">No similar documents were found.</div></ng-template>
   </div>
   <div *ngIf="document.file_url || document.celex">
     <hr class="my-4" />
@@ -90,7 +100,7 @@
           </button>
         </td>
       </tr>
-      <tr *ngIf="document.celex">
+      <tr *ngIf="!document.file_url && document.celex">
         <td>
           <button
             type="button"
@@ -152,6 +162,28 @@
       <button type="submit" class="btn btn-success">Add</button>
     </form>
   </div>
+  <hr class="my-4" />
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-4">
+        <div *ngIf="document.bookmark == true" >
+            <form (ngSubmit)="onRemoveBookmark()">
+              <button type="submit" class="btn btn-success">Remove from bookmarks</button>
+            </form>
+        </div>
+        <div *ngIf="document.bookmark == false" >
+            <form (ngSubmit)="onAddBookmark()" >
+              <button type="submit" class="btn btn-success">Add to my bookmarks</button>
+            </form>
+        </div>
+      </div>
+      <div class="col-4">
+        <div>
+          <button type="submit" [disabled]="webanno_clicked"  (click)="onWebAnno();" class="btn btn-success">View in WebAnno</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <ng-template #elseBlock>
     <p>Select a document above.</p>
   </ng-template>
@@ -175,7 +207,12 @@
 
   <div [innerHTML]="document.content" class="modal-body"></div>
   <div class="modal-footer">
-    <a (click)="goToLink(document.file_url)" class="text-primary">
+    <a *ngIf="document.file_url" (click)="goToLink(document.file_url)" class="text-primary">
+      <button type="button" class="btn btn-primary">
+        See original
+      </button>
+    </a>
+    <a *ngIf="!document.file_url && document.celex" (click)="goToLink('https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:' + document.celex + '&from=EN')" class="text-primary">
       <button type="button" class="btn btn-primary">
         See original
       </button>
@@ -187,3 +224,4 @@
 </ng-template>
 
 <p-toast position="top-center"></p-toast>
+

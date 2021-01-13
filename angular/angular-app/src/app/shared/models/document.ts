@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Adapter } from './adapter';
 import { Attachment } from './attachment';
+import { Concept } from './concept';
 
 export interface DocumentResults {
   count: number;
@@ -21,6 +22,7 @@ export class Document {
     public titlePrefix: string,
     public type: string,
     public date: Date,
+    public dateOfEffect: Date,
     public acceptanceState: string,
     public acceptanceStateValue: string,
     public url: string,
@@ -36,8 +38,12 @@ export class Document {
     public attachments: Attachment[],
     public commentIds: string[],
     public tags: string[],
+    public bookmark: boolean,
     public consolidatedVersions: string,
-    public file_url: string
+    public file: File,
+    public fileUrl: string,
+    public occurrance: Concept[],
+    public definition: Concept[]
   ) {}
 }
 
@@ -52,6 +58,7 @@ export class DocumentAdapter implements Adapter<Document> {
       item.title_prefix,
       item.type,
       new Date(item.date),
+      new Date(item.date_of_effect),
       item.acceptance_state,
       item.acceptance_state_value,
       item.url,
@@ -67,8 +74,12 @@ export class DocumentAdapter implements Adapter<Document> {
       item.attachments,
       item.comments,
       item.tags,
+      item.bookmark,
       item.consolidated_versions,
-      item.file_url
+      item.file,
+      item.file_url,
+      item.occurrance,
+      item.definition
     );
   }
   encode(document: Document): any {
@@ -79,6 +90,7 @@ export class DocumentAdapter implements Adapter<Document> {
       title_prefix: document.titlePrefix,
       type: document.type,
       date: stringDate,
+      date_of_effect: stringDate,
       acceptance_state: document.acceptanceState,
       acceptance_state_value: document.acceptanceStateValue,
       url: document.url,
@@ -94,8 +106,12 @@ export class DocumentAdapter implements Adapter<Document> {
       attachments: document.attachments,
       comments: document.commentIds,
       tags: document.tags,
+      bookmark: document.bookmark,
       consolidatedVersions: document.consolidatedVersions,
-      file_url: document.file_url,
+      file: document.file,
+      file_url: document.fileUrl,
+      occurrance: document.occurrance,
+      definition: document.definition
     };
   }
 }
