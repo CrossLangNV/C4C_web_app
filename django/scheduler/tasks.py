@@ -32,6 +32,7 @@ from searchapp.solr_call import solr_search_website_sorted, solr_search_website_
 from glossary.models import Concept
 from glossary.models import AcceptanceState as ConceptAcceptanceState
 from glossary.models import Comment as ConceptComment
+from glossary.models import Tag as ConceptTag
 from obligations.models import ReportingObligation
 
 logger = logging.getLogger(__name__)
@@ -658,6 +659,24 @@ def export_all_user_data():
 
             writer.writerow([comment.value, concept, concept_id, comment.user,
                              comment.created_at, comment.updated_at])
+        logger.info("Saved: %s", csv_file.name)
+
+    # Concept Tags
+    csv_file = Path(workdir + '/concept_tags.csv')
+    with csv_file.open(mode='w') as file:
+        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        tags = ConceptTag.objects.all()
+
+        writer.writerow(['value', 'concept', 'concept_id', 'created_at', 'updated_at'])
+        for tag in tags:
+            concept = ""
+            concept_id = ""
+            if tag.concept:
+                concept = tag.concept.name
+                concept_id = tag.concept.id
+
+            writer.writerow([tag.value, concept, concept_id,
+                             tag.created_at, tag.updated_at])
         logger.info("Saved: %s", csv_file.name)
 
     # Reporting Obligations
