@@ -4,7 +4,7 @@ from django.views.decorators.vary import vary_on_cookie
 from obligations.models import ReportingObligation, AcceptanceState, AcceptanceStateValue, Comment, Tag, ROAnnotationWorklog, ReportingObligationOffsets
 from obligations.serializers import ReportingObligationSerializer, AcceptanceStateSerializer, CommentSerializer,\
     TagSerializer, ROAnnotationWorklogSerializer, ReportingObligationOffsetsSerializer
-from rest_framework import permissions, filters
+from rest_framework import permissions, filters, status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, RetrieveUpdateAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -17,7 +17,6 @@ from .rdf_call import rdf_get_available_entities, rdf_get_predicate, \
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 
 import datetime
-import status
 
 # Annotation API consants
 
