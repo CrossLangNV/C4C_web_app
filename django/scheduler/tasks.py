@@ -627,18 +627,24 @@ def export_all_user_data():
         concepts_writer = csv.writer(concepts_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         concepts = Concept.objects.all()
 
-        concepts_writer.writerow(['name', 'definition', 'lemma', 'acceptance_state', 'version', 'website',
+        concepts_writer.writerow(['name', 'definition', 'lemma', 'acceptance_state',
+                                  'probability_model', 'accepted_probability', 'version', 'website',
                                   'other', 'document_occurs', 'document_defined',
                                   'created_at', 'updated_at'])
         for concept in concepts:
-
-            acceptance_state = ""
+            acceptance_state_value = ""
+            probability_model = ""
+            accepted_probability = ""
             try:
-                acceptance_state = ConceptAcceptanceState.objects.get(concept=concept).value
+                acceptance_state = ConceptAcceptanceState.objects.get(concept=concept)
+                acceptance_state_value = acceptance_state.value
+                probability_model = acceptance_state.probability_model
+                accepted_probability = acceptance_state.accepted_probability
             except ConceptAcceptanceState.DoesNotExist as err:
                 pass
 
-            concepts_writer.writerow([concept.name, concept.definition, concept.lemma, acceptance_state, concept.version, concept.website,
+            concepts_writer.writerow([concept.name, concept.definition, concept.lemma, acceptance_state_value,
+                                      probability_model, accepted_probability, concept.version, concept.website,
                                       concept.other.name, concept.document_occurs.name, concept.document_defined.name,
                                       concept.created_at, concept.updated_at])
         logger.info("Saved: %s", csv_file.name)
