@@ -29,7 +29,7 @@ from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
 
-from glossary.models import Concept
+from glossary.models import Concept, ConceptOccurs, ConceptDefined
 from glossary.models import AcceptanceState as ConceptAcceptanceState
 from glossary.models import Comment as ConceptComment
 from glossary.models import Tag as ConceptTag
@@ -629,8 +629,7 @@ def export_all_user_data():
 
         concepts_writer.writerow(['name', 'definition', 'lemma', 'acceptance_state',
                                   'probability_model', 'accepted_probability', 'version', 'website',
-                                  'other', 'document_occurs', 'document_defined',
-                                  'created_at', 'updated_at'])
+                                  'other', 'created_at', 'updated_at'])
         for concept in concepts:
             acceptance_state_value = ""
             probability_model = ""
@@ -645,8 +644,7 @@ def export_all_user_data():
 
             concepts_writer.writerow([concept.name, concept.definition, concept.lemma, acceptance_state_value,
                                       probability_model, accepted_probability, concept.version, concept.website,
-                                      concept.other.name, concept.document_occurs.name, concept.document_defined.name,
-                                      concept.created_at, concept.updated_at])
+                                      concept.other.name, concept.created_at, concept.updated_at])
         logger.info("Saved: %s", csv_file.name)
 
     # Concept comments
