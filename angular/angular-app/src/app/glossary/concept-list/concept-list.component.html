@@ -18,6 +18,42 @@
               (ngModelChange)="onSearch($event)"
             />
           </div>
+          <select
+            class="form-control form-control-sm m-1 col-2"
+            [(ngModel)]="filterType"
+            (change)="filterResetPage()"
+          >
+            <option *ngFor="let f of filters" [ngValue]="f.id">{{
+              f.name
+              }}</option>
+          </select>
+          <select
+            class="form-control form-control-sm m-1 col-2"
+            [(ngModel)]="website"
+            (change)="filterResetPage()"
+          >
+            <option *ngFor="let f of websites" [ngValue]="f.id">{{
+              f.name
+            }}</option>
+          </select>
+          <select
+            class="form-control form-control-sm m-1 col-2"
+            [(ngModel)]="version"
+            (change)="filterResetPage()"
+          >
+            <option *ngFor="let v of versions" [ngValue]="v.id">{{
+              v.name
+              }}</option>
+          </select>
+          <div class="form-check m-1 pl-0 pt-1">
+            <span ngbTooltip="Show concepts from your bookmarked documents">
+              <p-inputSwitch
+                (onChange)="filterResetPage()"
+                [(ngModel)]="showBookmarked"
+              >Own</p-inputSwitch
+              ></span
+            >
+          </div>
         </div>
         <div class="row">
           <div class="col">
@@ -128,6 +164,8 @@
         [pageSize]="pageSize"
         [maxSize]="10"
         [ellipses]="true"
+        [rotate]="true"
+        (pageChange)="onPageChange()"
       >
       </ngb-pagination>
     </div>

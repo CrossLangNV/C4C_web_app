@@ -1,6 +1,8 @@
 <div class="jumbotron m-2" *ngIf="document; else elseBlock">
   <h3 class="mb-4">{{ concept.name }}</h3>
   <p>Definition: {{ concept.definition }}</p>
+  <p><a [routerLink]="['/validator', document.id]"  [fragment]="link">View other concepts in this document</a></p>
+
   <hr class="my-4" />
   <h4>
     {{ document.websiteName }} :

@@ -3,6 +3,7 @@
 COLLECTION="documents"
 SOLR_HOST="https://solr.cefat4cities.crosslang.com"
 # SOLR_HOST="http://localhost:8983"
+COLLECTION_ARCHIVE="archive"
 
 
 JSON='{
@@ -98,13 +99,26 @@ JSON='{
 
 {"name":"consolidated_versions",           "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 
-{"name":"spider",          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
-{"name":"task",            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
-{"name":"concept_occurs",                 "type":"preanalyzed","indexed":true,"termOffsets":true,"stored":true,"termPositions":true,"termVectors":true,"multiValued":false,"storeOffsetsWithPositions":true},
-{"name":"concept_defined",                "type":"preanalyzed","indexed":true,"termOffsets":true,"stored":true,"termPositions":true,"termVectors":true,"multiValued":false,"storeOffsetsWithPositions":true}
+{"name":"spider",                          "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"task",                            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
+{"name":"concept_occurs",                  "type":"preanalyzed","indexed":true,"termOffsets":true,"stored":true,"termPositions":true,"termVectors":true,"multiValued":false,"storeOffsetsWithPositions":true},
+{"name":"concept_defined",                 "type":"preanalyzed","indexed":true,"termOffsets":true,"stored":true,"termPositions":true,"termVectors":true,"multiValued":false,"storeOffsetsWithPositions":true},
+{"name":"content_hash",                    "type":"text_general","stored":true,"indexed":true,"multiValued":false}
 
 ]
 }';
 
+JSON_ARCHIVE='{
+"add-field": [
+{"name":"document_id",      "type":"text_general","stored":true,"indexed":true,"multiValued":false}
+]
+}';
+
+# COLLECTION
 curl -k -X POST --user crosslang:***REMOVED*** -H 'Content-type:application/json' --data-binary "$JSON" $SOLR_HOST/solr/$COLLECTION/schema
 curl -k --user crosslang:***REMOVED*** $SOLR_HOST/solr/$COLLECTION/config -d '{"set-user-property": {"update.autoCreateFields":"false"}}'
+
+# COLLECTION_ARCHIVE@
+curl -k -X POST --user crosslang:***REMOVED*** -H 'Content-type:application/json' --data-binary "$JSON" $SOLR_HOST/solr/$COLLECTION_ARCHIVE/schema
+curl -k -X POST --user crosslang:***REMOVED*** -H 'Content-type:application/json' --data-binary "$JSON_ARCHIVE" $SOLR_HOST/solr/$COLLECTION_ARCHIVE/schema
+curl -k --user crosslang:***REMOVED*** $SOLR_HOST/solr/$COLLECTION_ARCHIVE/config -d '{"set-user-property": {"update.autoCreateFields":"false"}}'

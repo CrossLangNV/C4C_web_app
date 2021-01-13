@@ -20,6 +20,13 @@ import {
   NgbDateAdapter,
   NgbDateNativeAdapter,
 } from '@ng-bootstrap/ng-bootstrap';
+import { DropdownModule } from 'primeng/dropdown';
+import { FieldsetModule } from 'primeng/fieldset';
+import {PanelModule} from 'primeng/panel';
+import {MenuModule} from 'primeng/menu';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import {NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
+
 @NgModule({
   declarations: [
     RoListComponent,
@@ -37,6 +44,12 @@ import {
     ConfirmDialogModule,
     SharedModule,
     RoRoutingModule,
+    DropdownModule,
+    FieldsetModule,
+    PanelModule,
+    MenuModule,
+    SelectButtonModule,
+    NgxSkeletonLoaderModule.forRoot(),
   ],
   providers: [
     ConfirmationService,

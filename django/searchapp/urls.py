@@ -65,6 +65,12 @@ urlpatterns = [
     path('api/document/<uuid:pk>', views.DocumentDetailAPIView.as_view(),
          name='document_detail_api'),
 
+    # EurLex Formex
+    path('api/formex/urls/<str:celex>', views.FormexUrlsAPIView.as_view(),
+         name='formex_urls_api'),
+    path('api/formex/act/<str:celex>', views.FormexActAPIView.as_view(),
+         name='formex_act_api'),
+
     # Attachment
     path('api/attachments', views.AttachmentListAPIView.as_view(),
          name='attachment_list_api'),
@@ -95,20 +101,27 @@ urlpatterns = [
     path('api/stats', views.document_stats,
          name='document_stats'),
 
+    path('api/stats/total_documents', views.count_total_documents,
+         name='total_documents'),
+
     # Super
     path('api/super', views.IsSuperUserAPIView.as_view(), name='super_api'),
 
     # Solr
-    path('api/solrfiles/', views.SolrFileList.as_view(), name='solr_file_list_api'),
-    path('api/solrfiles/<search_term>',
-         views.SolrFile.as_view(), name='solr_file_search_api'),
+    path('api/solrdocument/search/<search_term>',
+         views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
+
+    # Django + SOLR
     path('api/solrdocument/<id>', views.SolrDocument.as_view(),
          name='solr_document_api'),
-    path('api/solrdocument/search/<search_term>', views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
-    path('api/solrdocument/search/query/<search_term>', views.SolrDocumentSearchQuery.as_view(),
-         name='solr_document_search_query_api'),
+    path('api/solrdocument/search/query/django/', views.SolrDocumentsSearchQueryDjango.as_view(),
+         name='solr_document_search_query_django_api'),
+    # SOLR ONLY
     path('api/solrdocument/search/query/preanalyzed/', views.SolrDocumentsSearchQueryPreAnalyzed.as_view(),
          name='solr_document_search_query_preanalyzed_api'),
+
+
+    # solr_get_preanalyzed_for_doc
     path('api/solrdocuments/like/<id>', views.SimilarDocumentsAPIView.as_view(),
          name='similar_documents_api'),
 
@@ -119,4 +132,30 @@ urlpatterns = [
          views.ExportDocumentsStatus.as_view(), name='export_status_api'),
     path('api/export/download/<task_id>',
          views.ExportDocumentsDownload.as_view(), name='export_download_api'),
+
+    # Bookmarks
+    path('api/bookmarks', views.BookmarkListAPIView.as_view(),
+         name='bookmark_list_api'),
+    path('api/bookmarks/<document_id>', views.BookmarkDetailAPIView.as_view(),
+         name='bookmark_detail_api'),
+
+    # Dropdown: celex
+    path('api/filters/celex', views.CelexListAPIView.as_view(),
+         name='celex_list_api'),
+    # Dropdown: type
+    path('api/filters/type', views.TypeListAPIView.as_view(),
+         name='type_list_api'),
+    # Dropdown: status
+    path('api/filters/status', views.StatusListAPIView.as_view(),
+         name='status_list_api'),
+    # Dropdown: eli
+    path('api/filters/eli', views.EliListAPIView.as_view(),
+         name='eli_list_api'),
+    # Dropdown: eli
+    path('api/filters/author', views.AuthorListAPIView.as_view(),
+         name='eli_list_api'),
+    # Dropdown: eli
+    path('api/filters/effectdate', views.DateOfEffectListAPIView.as_view(),
+         name='eli_list_api'),
+
 ]

@@ -7,6 +7,8 @@
     "http://localhost:8000/searchapp/api";
   window["env"]["ANGULAR_DJANGO_API_GLOSSARY_URL"] =
     "http://localhost:8000/glossary/api";
+  window["env"]["ANGULAR_DJANGO_API_RO_URL"] =
+    "http://localhost:8000/obligations/api";
   window["env"]["ANGULAR_DJANGO_API_ADMIN_URL"] =
     "http://localhost:8000/admin/api";
   window["env"]["ANGULAR_DJANGO_AUTH_URL"] = "http://localhost:8000/auth";

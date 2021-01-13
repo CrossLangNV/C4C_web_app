@@ -17,6 +17,7 @@
               name="content"
               class="form-control form-control-sm"
               [(ngModel)]="documentService.searchTerm"
+              (ngModelChange)="filterResetPage()"
             />
           </div>
           <select
@@ -46,44 +47,99 @@
               ></span
             >
           </div>
+          <div class="form-check m-1 pl-0 pt-1">
+            <span ngbTooltip="Show your bookmarked documents">
+              <p-inputSwitch
+                (onChange)="filterResetPage()"
+                [(ngModel)]="documentService.bookmarks"
+                >Bookmarks</p-inputSwitch
+              ></span
+            >
+          </div>
         </div>
         <div class="row">
           <div class="col">
+            <div class="d-flex progress justify-content-end p-0 my-2">
+              Documents found: <u>{{ documentService.total$ | async }}</u>
+              <span class="" *ngIf="filterActive">
+                <fa-icon (click)="resetFilters()" class="p-2" ngbTooltip="Reset filters" [icon]="resetIcon"></fa-icon>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p-fieldset [toggleable]="true" collapsed="false">
+            <p-header class="smaller-text">Advanced filters</p-header>
+            <p-dropdown [options]="celexOptions" [(ngModel)]="selectedCelex" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('celex', $event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+            <p-dropdown [options]="typeOptions" [(ngModel)]="selectedType" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('type', $event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+            <p-dropdown [options]="statusOptions" [(ngModel)]="selectedStatus" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('status', $event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+            <p-dropdown [options]="eliOptions" [(ngModel)]="selectedEli" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('eli', $event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+            <p-dropdown [options]="authorOptions" [(ngModel)]="selectedAuthor" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('author', $event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+            <p-dropdown [options]="effectDateOptions" [(ngModel)]="selectedEffectDate" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('date_of_effect', $event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+
+          </p-fieldset>
+        </div>
+
+        <div class="row">
+          <div class="col">
             <hr class="my-2" />
-            <div class="d-flex progress justify-content-between p-0">
+            <div class="d-flex progress justify-content-between p-0 my-2">
               <div>
-                Total: <u>{{ stats.total }}</u
+                Auto-validated documents: <u>{{ stats.autoClassifiedSize }} / {{stats.totalDocuments}}</u
                 ><!-- Unvalidated :
                 <u>{{ stats.unvalidatedSize }}</u>-->
-                Auto-rejected :
-                <u>{{ stats.autoRejectedSize }}</u> Auto-validated :
-                <u>{{ stats.autoAcceptedSize }} </u>
-              </div>
-              <div>
-                Documents found: <u>{{ documentService.total$ | async }}</u>
-                <span class="" *ngIf="filterActive">
-                  <fa-icon
-                    (click)="resetFilters()"
-                    class="p-2"
-                    ngbTooltip="Reset filters"
-                    [icon]="resetIcon"
-                  ></fa-icon>
-                </span>
+                ( Auto-accepted :
+                <u>{{ stats.autoAcceptedSize }}</u>, Auto-rejected :
+                <u>{{ stats.autoRejectedSize }}</u> )
               </div>
             </div>
-            <hr class="my-2" />
             <ngb-progressbar
               [showValue]="true"
               type="success"
-              [value]="stats.autoValidatedPercent"
+              [value]="stats.autoClassifiedPercent"
               (click)="updateChart1($event)"
               (click)="op1.toggle($event)"
             ></ngb-progressbar>
             <hr class="my-2" />
+            <div class="d-flex progress justify-content-between p-0 my-2">
+              <div>
+                Human validated documents: <u>{{ stats.classifiedSize }} / {{stats.totalDocuments}}</u
+                ><!-- Unvalidated :
+                <u>{{ stats.unvalidatedSize }}</u>-->
+                ( Accepted :
+                <u>{{ stats.acceptedSize }}</u>, Rejected :
+                <u>{{ stats.rejectedSize }}</u> )
+              </div>
+            </div>
             <ngb-progressbar
               [showValue]="true"
               type="success"
-              [value]="stats.validatedPercent"
+              [value]="stats.classifiedPercent"
               (click)="updateChart2($event)"
               (click)="op2.toggle($event)"
             ></ngb-progressbar>
@@ -120,6 +176,11 @@
     <table class="table table-striped table-bordered table-hover">
       <thead class="thead-dark">
         <tr>
+          <th scope="col">
+            <span ngbTooltip="Bookmark">
+              <fa-icon [icon]="bookmarkIcon"></fa-icon>
+            </span>
+          </th>
           <th scope="col" sortable="title" (sort)="onSort($event)">
             <fa-icon [icon]="titleSortIcon"></fa-icon> Title
           </th>
@@ -137,6 +198,19 @@
           <td colspan="5">No results.</td>
         </tr>
         <tr *ngFor="let document of (documentResults$ | async)?.results; let i = index">
+          <td>
+            <span ngbTooltip="Remove bookmark">
+              <div *ngIf="document.bookmark">
+                <a (click)="onRemoveBookmark(document)"><fa-icon [icon]="bookmarkIcon"></fa-icon></a>
+              </div>
+            </span>
+
+            <span ngbTooltip="Bookmark">
+              <div *ngIf="!document.bookmark">
+                <a (click)="onAddBookmark(document)"><fa-icon [icon]="bookmarkIcon" style="color: rgb(179, 179, 179) !important;"></fa-icon></a>
+              </div>
+            </span>
+          </td>
           <td>
             <a
               (click)="setIndex(document.id)"
@@ -213,8 +287,14 @@
         [pageSize]="pageSize"
         [maxSize]="10"
         [ellipses]="true"
+        [rotate]="true"
+        (pageChange)="onPageChange()"
       >
       </ngb-pagination>
+      <div class="ml-3 p-1">
+        <input class="input-sm" type="number" [min]="1" [max]="documentService.total$ | async"
+          [(ngModel)]="documentService.page">
+      </div>
       <div class="ml-3 p-0" *ngIf="documentService.loading$ | async">
         <span>Loading <div class="spinner-border ml-auto" role="status" aria-hidden="true"></div></span>
       </div>

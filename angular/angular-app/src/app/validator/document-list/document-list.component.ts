@@ -6,6 +6,7 @@ import {
   faSort,
   faSortDown,
   faSortUp,
+  faStar,
   faStopCircle,
   faSyncAlt,
   faUserAlt
@@ -15,9 +16,10 @@ import { AuthenticationService } from 'src/app/core/auth/authentication.service'
 import { ApiService } from 'src/app/core/services/api.service';
 import { DocumentService } from 'src/app/core/services/document.service';
 import { DjangoUser } from 'src/app/shared/models/django_user';
-import { DocumentResults } from 'src/app/shared/models/document';
+import {Document, DocumentResults} from 'src/app/shared/models/document';
 import { Tag } from 'src/app/shared/models/tag';
 import { NgbdSortableHeader, SortEvent } from './sortable.directive';
+import {DropdownOption} from '../../shared/models/DropdownOption';
 
 @Component({
   selector: 'app-document-list',
@@ -54,29 +56,30 @@ export class DocumentListComponent implements OnInit {
   pageSize = 5;
   filterActive = false;
   stats = {
-    total: 0,
+    classifiedSize: 0,
+    classifiedPercent: 0,
     unvalidatedSize: 0,
     unvalidatedPercent: 0,
     acceptedSize: 0,
     acceptedPercent: 0,
     rejectedSize: 0,
     rejectedPercent: 0,
+    autoClassifiedSize: 0,
+    autoClassifiedPercent: 0,
     autoUnvalidatedSize: 0,
     autoUnvalidatedPercent: 0,
     autoAcceptedSize: 0,
     autoAcceptedPercent: 0,
     autoRejectedSize: 0,
     autoRejectedPercent: 0,
-    validatedSize: 0,
-    validatedPercent: 0,
-    autoValidatedSize: 0,
-    autoValidatedPercent: 0,
+    totalDocuments: 0,
   };
   userIcon: IconDefinition;
   chipIcon: IconDefinition;
   reloadIcon: IconDefinition = faSyncAlt;
   resetIcon: IconDefinition = faStopCircle;
   titleSortIcon: IconDefinition = faSort;
+  bookmarkIcon: IconDefinition = faStar;
   dateSortIcon: IconDefinition = faSortDown;
   statesSortIcon: IconDefinition = faSort;
   filters = [
@@ -88,6 +91,20 @@ export class DocumentListComponent implements OnInit {
   websites = [ { id: '', name: 'Website..' } ];
   currentDjangoUser: DjangoUser;
   selectedIndex: string = null;
+
+  celexOptions: DropdownOption[];
+  typeOptions: DropdownOption[];
+  statusOptions: DropdownOption[];
+  eliOptions: DropdownOption[];
+  authorOptions: DropdownOption[];
+  effectDateOptions: DropdownOption[];
+
+  selectedCelex: string;
+  selectedType: string;
+  selectedStatus: string;
+  selectedEli: string;
+  selectedAuthor: string;
+  selectedEffectDate: string;
 
   constructor(
     private route: ActivatedRoute,
@@ -103,57 +120,60 @@ export class DocumentListComponent implements OnInit {
     this.documentResults$ = this.documentService.documentResults$;
     // Fetch statistics
     this.service.getDocumentStats().subscribe((result) => {
-      // Total
-      this.stats.total = result.count_total;
       // Human
-      this.stats.unvalidatedSize =
-        result.count_total - result.count_accepted - result.count_rejected;
+      this.stats.unvalidatedSize = result.count_unvalidated;
+      this.stats.acceptedSize = result.count_accepted;
+      this.stats.rejectedSize = result.count_rejected;
+      this.stats.classifiedSize = this.stats.acceptedSize + this.stats.rejectedSize;
+
+      this.stats.classifiedPercent =
+        (this.stats.classifiedSize / this.stats.totalDocuments) * 100;
+      this.stats.classifiedPercent =
+        Math.round((this.stats.classifiedPercent + Number.EPSILON) * 100) / 100;
+
       this.stats.unvalidatedPercent =
-        (this.stats.unvalidatedSize / result.count_total) * 100;
+        (this.stats.unvalidatedSize / (this.stats.classifiedSize + this.stats.unvalidatedSize)) * 100;
       this.stats.unvalidatedPercent =
         Math.round((this.stats.unvalidatedPercent + Number.EPSILON) * 100) /
         100;
-      this.stats.acceptedSize = result.count_accepted;
+
       this.stats.acceptedPercent =
-        (this.stats.acceptedSize / result.count_total) * 100;
+        (this.stats.acceptedSize / (this.stats.classifiedSize + this.stats.unvalidatedSize)) * 100;
       this.stats.acceptedPercent =
         Math.round((this.stats.acceptedPercent + Number.EPSILON) * 100) / 100;
-      this.stats.rejectedSize = result.count_rejected;
+
       this.stats.rejectedPercent =
-        (this.stats.rejectedSize / result.count_total) * 100;
+        (this.stats.rejectedSize / (this.stats.classifiedSize + this.stats.unvalidatedSize)) * 100;
       this.stats.rejectedPercent =
         Math.round((this.stats.rejectedPercent + Number.EPSILON) * 100) / 100;
-      this.stats.validatedSize =
-        result.count_total - this.stats.unvalidatedSize;
-      this.stats.validatedPercent =
-        (this.stats.validatedSize / result.count_total) * 100;
-      this.stats.validatedPercent =
-        Math.round((this.stats.validatedPercent + Number.EPSILON) * 100) / 100;
+
       // Classifier
       this.stats.autoUnvalidatedSize = result.count_autounvalidated;
+      this.stats.autoAcceptedSize = result.count_autoaccepted;
+      this.stats.autoRejectedSize = result.count_autorejected;
+      this.stats.autoClassifiedSize = this.stats.autoAcceptedSize + this.stats.autoRejectedSize;
+
+      this.stats.autoClassifiedPercent = (this.stats.autoClassifiedSize / this.stats.totalDocuments) * 100;
+      this.stats.autoClassifiedPercent =
+        Math.round((this.stats.autoClassifiedPercent + Number.EPSILON) * 100) /
+        100;
+
       this.stats.autoUnvalidatedPercent =
-        (this.stats.autoUnvalidatedSize / result.count_total) * 100;
+        (this.stats.autoUnvalidatedSize / (this.stats.autoClassifiedSize + this.stats.autoUnvalidatedSize)) * 100;
       this.stats.autoUnvalidatedPercent =
         Math.round((this.stats.autoUnvalidatedPercent + Number.EPSILON) * 100) /
         100;
-      this.stats.autoAcceptedSize = result.count_autoaccepted;
+
       this.stats.autoAcceptedPercent =
-        (this.stats.autoAcceptedSize / result.count_total) * 100;
+        (this.stats.autoAcceptedSize / (this.stats.autoClassifiedSize + this.stats.autoUnvalidatedSize)) * 100;
       this.stats.autoAcceptedPercent =
         Math.round((this.stats.autoAcceptedPercent + Number.EPSILON) * 100) /
         100;
-      this.stats.autoRejectedSize = result.count_autorejected;
+
       this.stats.autoRejectedPercent =
-        (this.stats.autoRejectedSize / result.count_total) * 100;
+        (this.stats.autoRejectedSize / (this.stats.autoClassifiedSize + this.stats.autoUnvalidatedSize)) * 100;
       this.stats.autoRejectedPercent =
         Math.round((this.stats.autoRejectedPercent + Number.EPSILON) * 100) /
-        100;
-      this.stats.autoValidatedSize =
-        result.count_total - result.count_autounvalidated;
-      this.stats.autoValidatedPercent =
-        (this.stats.autoValidatedSize / result.count_total) * 100;
-      this.stats.autoValidatedPercent =
-        Math.round((this.stats.autoValidatedPercent + Number.EPSILON) * 100) /
         100;
     });
   }
@@ -161,22 +181,37 @@ export class DocumentListComponent implements OnInit {
     this.userIcon = faUserAlt;
     this.chipIcon = faMicrochip;
     this.authenticationService.currentDjangoUser.subscribe(
-      (x) => (this.currentDjangoUser = x)
+      (x) => {
+        this.currentDjangoUser = x;
+        this.documentService.username=x.username;
+      }
     );
-    this.service.getWebsites().subscribe(websites => {
-      websites.forEach(website => {
+    this.service.getWebsites().subscribe((websites) => {
+      websites.forEach((website) => {
         this.websites.push({
           id: website.name.toLowerCase(),
-          name: '..' + website.name.toUpperCase()
-        })
+          name: '..' + website.name.toUpperCase(),
+        });
       });
+    });
+    this.documentService.total_documents().subscribe((value: number) => {
+      this.stats.totalDocuments = value;
     });
     this.fetchDocuments();
     this.service.messageSource.asObservable().subscribe((value: string) => {
       if (value === 'refresh') {
-        this.fetchDocuments();
+        // trigger documentService to update the list
+        this.documentService.page = this.documentService.page;
       }
     });
+
+    // Fill dropdowns
+    this.fetchCelexOptions();
+    this.fetchTypeOptions();
+    this.fetchStatusOptions();
+    this.fetchEliOptions();
+    this.fetchAuthorOptions();
+    this.fetchEffectDateOptions();
   }
 
   onSort({ column, direction }: SortEvent) {
@@ -238,6 +273,11 @@ export class DocumentListComponent implements OnInit {
 
   filterResetPage() {
     this.documentService.page = 1;
+    this.router.navigate(['/validator']);
+  }
+
+  onPageChange() {
+    this.router.navigate(['/validator']);
   }
 
   setIndex(index: string) {
@@ -250,7 +290,13 @@ export class DocumentListComponent implements OnInit {
       this.documentService.filterTag.length > 0 ||
       this.documentService.showOnlyOwn ||
       this.documentService.filterType !== 'none' ||
-      this.documentService.website !== 'none';
+      this.documentService.website !== 'none' ||
+      this.documentService.celex !== 'none' ||
+      this.documentService.type !== 'none' ||
+      this.documentService.status !== 'none' ||
+      this.documentService.eli !== 'none' ||
+      this.documentService.author !== 'none' ||
+      this.documentService.date_of_effect !== 'none';
   }
 
   resetFilters() {
@@ -259,6 +305,14 @@ export class DocumentListComponent implements OnInit {
     this.documentService.showOnlyOwn = false;
     this.documentService.filterType = '';
     this.documentService.website = '';
+    this.documentService.celex = '';
+    this.documentService.type = '';
+    this.documentService.status = '';
+    this.documentService.eli = '';
+    this.documentService.author = '';
+    this.documentService.date_of_effect = '';
+    this.resetDropdowns();
+    this.router.navigate(['/validator']);
   }
 
   updateChart1(event: Event) {
@@ -297,5 +351,93 @@ export class DocumentListComponent implements OnInit {
         },
       ],
     };
+  }
+
+  onAddBookmark(document: Document) {
+    this.service.addBookmark(this.currentDjangoUser, document).subscribe((dc) => {
+     document.bookmark = true
+    });
+  }
+
+  onRemoveBookmark(document: Document) {
+    this.service.removeBookmark(document).subscribe((dc) => {
+      // this.document.bookmark = false;
+      document.bookmark = false
+    });
+  }
+
+  fetchCelexOptions() {
+    this.service.fetchCelexOptions().subscribe((res) => {
+      this.celexOptions = res
+    })
+  }
+
+  fetchTypeOptions() {
+    this.service.fetchTypeOptions().subscribe((res) => {
+      this.typeOptions = res
+    })
+  }
+
+  fetchStatusOptions() {
+    this.service.fetchStatusOptions().subscribe((res) => {
+      this.statusOptions = res
+    })
+  }
+
+  fetchEliOptions() {
+    this.service.fetchEliOptions().subscribe((res) => {
+      this.eliOptions = res
+    })
+  }
+
+  fetchAuthorOptions() {
+    this.service.fetchAuthorOptions().subscribe((res) => {
+      this.authorOptions = res
+    })
+  }
+
+  fetchEffectDateOptions() {
+    this.service.fetchEffectDateOptions().subscribe((res) => {
+      this.effectDateOptions = res
+    })
+  }
+
+  onQuery(type, keyword) {
+    let hasMatched = true;
+    switch (type) {
+      case 'celex':
+        this.documentService.celex = keyword.code;
+        break
+      case 'type':
+        this.documentService.type = keyword.code;
+        break
+      case 'status':
+        this.documentService.status = keyword.code;
+        break
+      case 'eli':
+        this.documentService.eli = keyword.code;
+        break
+      case 'author':
+        this.documentService.author = keyword.code;
+        break
+      case 'date_of_effect':
+        this.documentService.date_of_effect = keyword.code;
+        break
+      default:
+        hasMatched = false;
+    }
+    // Because typescript has no 'finally' statement..
+    if (hasMatched) {
+      this.filterResetPage();
+    }
+  }
+
+  resetDropdowns() {
+    this.selectedCelex = '';
+    this.selectedType = '';
+    this.selectedStatus = '';
+    this.selectedEli = '';
+    this.selectedAuthor = '';
+    this.selectedEffectDate = '';
   }
 }

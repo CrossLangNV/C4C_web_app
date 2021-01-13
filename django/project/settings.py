@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'searchapp',
     'glossary',
+    'obligations',
     'admin_rest',
     'django_celery_beat',
     'django_celery_results',
@@ -59,7 +60,6 @@ INSTALLED_APPS = [
     'health_check.storage',
     'health_check.contrib.celery',
     'health_check.contrib.psutil',
-    'safedelete',
 ]
 
 MIDDLEWARE = [
@@ -121,6 +121,10 @@ AUTHENTICATION_BACKENDS = [
     'social_core.backends.google.GoogleOAuth2',
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+OAUTH2_PROVIDER = {
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 7 * 24 * 60 * 60
+}
 
 SOCIAL_AUTH_URL_NAMESPACE = 'social-view'
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ['SOCIAL_AUTH_GOOGLE_OAUTH2_KEY']
@@ -203,6 +207,7 @@ MINIO_STORAGE_SECRET_KEY = os.environ['MINIO_SECRET_KEY']
 MINIO_STORAGE_USE_HTTPS = os.environ.get('MINIO_HTTPS', False) == 'True'
 MINIO_STORAGE_MEDIA_BUCKET_NAME = 'local-media'
 MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
+MINIO_STORAGE_AUTO_CREATE_MEDIA_POLICY = 'WRITE_ONLY'
 MINIO_STORAGE_STATIC_BUCKET_NAME = 'local-static'
 MINIO_STORAGE_AUTO_CREATE_STATIC_BUCKET = True
 
@@ -248,7 +253,3 @@ CELERY_TASK_ACKS_LATE = True
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 # expire celery tasks results
 CELERY_RESULT_EXPIRES = 30
-
-
-# Safe delete -- revives delete docs in update_or_create()
-SAFE_DELETE_INTERPRET_UNDELETED_OBJECTS_AS_CREATED = True

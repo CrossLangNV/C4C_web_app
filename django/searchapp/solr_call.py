@@ -1,18 +1,35 @@
 import os
 
 import pysolr
+import requests
 import textdistance
+import logging as logger
 
 ROW_LIMIT = 250000
+
+QUERY_ID_ASC = 'id asc'
+QUERY_HL_FL = 'hl.fl'
+QUERY_HL_SNIPPETS = 'hl.snippets'
+QUERY_HL_MAX_CHARS = 'hl.maxAnalyzedChars'
+QUERY_HL_PRE = 'hl.simple.pre'
+QUERY_HL_POST = 'hl.simple.post'
+QUERY_HL_PREFIX = '<span class="highlight">'
+QUERY_HL_SUFFIX = '</span>'
 
 
 def solr_search(core="", term=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search = get_results_highlighted(client.search(term,
-                                                   **{'rows': ROW_LIMIT, 'hl': 'on', 'hl.fl': '*',
-                                                      'hl.snippets': 100, 'hl.maxAnalyzedChars': 1000000,
-                                                      'hl.simple.pre': '<span class="highlight">',
-                                                      'hl.simple.post': '</span>'}))
+                                                   **{'rows': ROW_LIMIT, 'hl': 'on', QUERY_HL_FL: '*',
+                                                      QUERY_HL_SNIPPETS: 100, QUERY_HL_MAX_CHARS: 1000000,
+                                                      QUERY_HL_PRE: QUERY_HL_PREFIX,
+                                                      QUERY_HL_POST: QUERY_HL_SUFFIX}))
+    return search
+
+
+def solr_search_ids(core="", term=""):
+    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    search = client.search(term, **{'rows': ROW_LIMIT, 'fl': 'id'})
     return search
 
 
@@ -35,11 +52,11 @@ def solr_search_paginated(core="", term="", page_number=1, rows_per_page=10, ids
         term = 'content:"' + term + '"'
     options = {'rows': rows_per_page,
                'start': start,
-               'hl': 'on', 'hl.fl': '*',
+               'hl': 'on', QUERY_HL_FL: '*',
                'hl.requireFieldMatch': 'true',
-               'hl.snippets': 3, 'hl.maxAnalyzedChars': -1,
-               'hl.simple.pre': '<span class="highlight">',
-               'hl.simple.post': '</span>'}
+               QUERY_HL_SNIPPETS: 3, QUERY_HL_MAX_CHARS: -1,
+               QUERY_HL_PRE: QUERY_HL_PREFIX,
+               QUERY_HL_POST: QUERY_HL_SUFFIX}
     if ids_to_filter_on:
         fq_ids = 'id:(' + ' OR '.join(ids_to_filter_on) + ')'
         options['fq'] = fq_ids
@@ -59,11 +76,11 @@ def solr_search_query_paginated(core="", term="", page_number=1, rows_per_page=1
     start = page_number * int(rows_per_page)
     options = {'rows': rows_per_page,
                'start': start,
-               'hl': 'on', 'hl.fl': '*',
+               'hl': 'on', QUERY_HL_FL: '*',
                'hl.requireFieldMatch': 'true',
-               'hl.snippets': 3, 'hl.maxAnalyzedChars': -1,
-               'hl.simple.pre': '<span class="highlight">',
-               'hl.simple.post': '</span>'}
+               QUERY_HL_SNIPPETS: 3, QUERY_HL_MAX_CHARS: -1,
+               QUERY_HL_PRE: QUERY_HL_PREFIX,
+               QUERY_HL_POST: QUERY_HL_SUFFIX}
     if ids_to_filter_on:
         fq_ids = 'id:(' + ' OR '.join(ids_to_filter_on) + ')'
         options['fq'] = fq_ids
@@ -77,21 +94,69 @@ def solr_search_query_paginated(core="", term="", page_number=1, rows_per_page=1
 
 def solr_search_query_paginated_preanalyzed(core="", term="", page_number=1, rows_per_page=10,
                                             sort_by=None, sort_direction='asc'):
-    client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    url = os.environ['SOLR_URL'] + '/' + core + '/select/'
     # solr page starts at 0
     page_number = int(page_number) - 1
     start = page_number * int(rows_per_page)
-    options = {'rows': rows_per_page,
+    options = {'q': term,
+               'hl': 'on',
+               'fl': 'id,title,website,date',
+               QUERY_HL_FL: 'concept_defined, concept_occurs',
+               QUERY_HL_MAX_CHARS: '-1',
+               QUERY_HL_PRE: QUERY_HL_PREFIX,
+               QUERY_HL_POST: QUERY_HL_SUFFIX,
                'start': start,
-               'hl': 'on', 'hl.fl': '*',
-               'hl.simple.pre': '<span class="highlight">',
-               'hl.simple.post': '</span>'}
+               'rows': rows_per_page
+               }
+
     if sort_by:
         options['sort'] = sort_by + ' ' + sort_direction
-    result = client.search(term, **options)
-    search = get_results_highlighted(result)
-    num_found = result.raw_response['response']['numFound']
+    response = requests.request("POST", url, data=options)
+    result = response.json()
+    search = get_results_highlighted_preanalyzed(result)
+    num_found = result['response']['numFound']
+
     return num_found, search
+
+
+def solr_get_preanalyzed_for_doc(core="", id="", field="", term="", page_number=1, rows_per_page=10,
+                                 sort_by=None, sort_direction='asc'):
+
+    query = "{!term f=" + field + "}" + term
+
+    url = os.environ['SOLR_URL'] + '/' + core + '/select/'
+    # solr page starts at 0
+    page_number = int(page_number) - 1
+    start = page_number * int(rows_per_page)
+    options = {'q': query,
+               'id': id,
+               'hl': 'on',
+               'fl': 'id,title,website,date',
+               QUERY_HL_FL: field,
+               QUERY_HL_MAX_CHARS: '-1',
+               QUERY_HL_PRE: QUERY_HL_PREFIX,
+               QUERY_HL_POST: QUERY_HL_SUFFIX,
+               'start': start,
+               'rows': rows_per_page
+               }
+
+    if sort_by:
+        options['sort'] = sort_by + ' ' + sort_direction
+    response = requests.request("POST", url, data=options)
+    fields = ["concept_occurs", "concept_defined"]
+
+    result = response.json()
+    highlights = []
+    for doc in result['response']['docs']:
+        for document_field in fields:
+            if document_field in result['highlighting'][doc['id']]:
+                doc[document_field] = result['highlighting'][doc['id']][document_field]
+                # Specific only the highlights
+                highlights.append(result['highlighting']
+                                  [doc['id']][document_field])
+
+    if len(highlights) > 0:
+        return highlights[0][0]
 
 
 def solr_search_id(core="", id=""):
@@ -103,29 +168,39 @@ def solr_search_id(core="", id=""):
 def solr_search_id_sorted(core="", id=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search = get_results(client.search(
-        'id:' + id, **{'rows': ROW_LIMIT, 'sort': 'id asc'}))
+        'id:' + id, **{'rows': ROW_LIMIT, 'sort': QUERY_ID_ASC}))
     return search
 
 
-def solr_search_website_with_content(core="", website="", language=""):
+def solr_search_website_with_content(core="", website="", language="", **kwargs):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
+    date = kwargs.get('date', None)
+    query = 'website:' + website
+
+    if date:
+        query = query + " AND date:[" + date + " TO NOW]"
     search = client.search(
         'website:' + website + ' AND language:' + language, **{'rows': 250, 'start': 0, 'cursorMark': "*", 'sort': 'id asc'})
     return search
 
 
-def solr_search_website_sorted(core="", website=""):
+def solr_search_website_sorted(core="", website="", **kwargs):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    SOLR_SYNC_FIELDS = 'id,title,title_prefix,author,status,type,date,date_last_update,url,eli,celex,file_url,website,summary,various,content,consolidated_versions'
+    SOLR_SYNC_FIELDS = 'id,title,title_prefix,author,misc_author,status,type,date,dates,dates_type,dates_info,date_last_update,url,eli,celex,file_url,website,summary,various,consolidated_versions'
+    date = kwargs.get('date', None)
+    query = 'website:' + website
+
+    if date:
+        query = query + " AND date:[" + date + " TO NOW]"
     search = get_results(client.search(
-        'website:' + website, **{'rows': ROW_LIMIT, 'fl': SOLR_SYNC_FIELDS, 'sort': 'id asc'}))
+        query, **{'rows': ROW_LIMIT, 'fl': SOLR_SYNC_FIELDS, 'sort': QUERY_ID_ASC}))
     return search
 
 
 def solr_search_document_id_sorted(core="", document_id=""):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
     search = get_results(client.search(
-        'attr_document_id:"' + document_id + '"', **{'rows': ROW_LIMIT, 'sort': 'id asc'}))
+        'attr_document_id:"' + document_id + '"', **{'rows': ROW_LIMIT, 'sort': QUERY_ID_ASC}))
     return search
 
 
@@ -145,6 +220,27 @@ def get_results_highlighted(response):
             if key in response.highlighting[doc['id']]:
                 doc[key] = response.highlighting[doc['id']][key]
         results.append(doc)
+    return results
+
+
+def get_results_highlighted_preanalyzed(response):
+    results = []
+    fields = ["concept_occurs", "concept_defined"]
+
+    highlights = []
+    # iterate over docs
+    for doc in response['response']['docs']:
+        for document_field in fields:
+            # iterate over every key in single doc dictionary
+            # Here we replace the docs['concept_defined'] full-text by the one provided by the highlighting (shorter)
+            if document_field in response['highlighting'][doc['id']]:
+                doc[document_field] = response['highlighting'][doc['id']
+                                                               ][document_field]
+                results.append(doc)
+                # Specific only the highlights
+                highlights.append(
+                    response['highlighting'][doc['id']][document_field])
+
     return results
 
 
@@ -198,18 +294,24 @@ def solr_mlt(core, id, mlt_field='title,content', number_candidates=5, threshold
                                                  'mlt.count': number_candidates,
                                                  'fl': 'id,website,' + mlt_field})
     # document to compare against
-    base_doc = search_result.docs[0]
-    base_tokens = base_doc['content'][0].split()
 
-    # list of similar documents with Jaccard coefficient
     similar_documents_with_coeff = []
-    for doc in search_result.raw_response['moreLikeThis'][id]['docs']:
-        candidate_tokens = doc['content'][0].split()
-        similarity = textdistance.jaccard(base_tokens, candidate_tokens)
-        if similarity > float(threshold):
-            similar_documents_with_coeff.append((doc['id'], doc['title'][0], doc['website'][0], similarity))
 
-    # sort descending on coefficient
-    similar_documents_with_coeff.sort(key=lambda x: x[-1], reverse=True)
+    if search_result:
+        base_doc = search_result.docs[0]
+
+        base_tokens = base_doc['content'][0].split()
+
+        # list of similar documents with Jaccard coefficient
+
+        for doc in search_result.raw_response['moreLikeThis'][id]['docs']:
+            candidate_tokens = doc['content'][0].split()
+            similarity = textdistance.jaccard(base_tokens, candidate_tokens)
+            if similarity > float(threshold):
+                similar_documents_with_coeff.append(
+                    (doc['id'], doc['title'][0], doc['website'][0], similarity))
+
+        # sort descending on coefficient
+        similar_documents_with_coeff.sort(key=lambda x: x[-1], reverse=True)
 
     return similar_documents_with_coeff

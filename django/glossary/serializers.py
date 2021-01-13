@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 
-from glossary.models import Concept, Comment, Tag, AcceptanceState
+from glossary.models import Concept, Comment, Tag, AcceptanceState, AnnotationWorklog
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -10,10 +10,16 @@ class TagSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class AnnotationWorklogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnnotationWorklog
+        fields = '__all__'
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        exclude = ['password']
+        fields = ['id', 'username']
 
 
 class AcceptanceStateSerializer(serializers.ModelSerializer):
@@ -26,14 +32,20 @@ class AcceptanceStateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ConceptSerializer(serializers.ModelSerializer):
-    documents = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+class ConceptOtherSerializer(serializers.ModelSerializer):
 
+    class Meta:
+        model = Concept
+        fields = ['id', 'name']
+
+
+class ConceptSerializer(serializers.ModelSerializer):
     comments = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     acceptance_states = AcceptanceStateSerializer(many=True, read_only=True)
     acceptance_state = serializers.SerializerMethodField()
     acceptance_state_value = serializers.SerializerMethodField()
+    other = ConceptOtherSerializer(many=True, read_only=True)
 
     def get_acceptance_state(self, concept):
         user = self.context['request'].user
@@ -62,6 +74,13 @@ class ConceptSerializer(serializers.ModelSerializer):
     class Meta:
         model = Concept
         fields = '__all__'
+
+
+class ConceptDocumentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Concept
+        fields = ('id', 'name', 'definition')
 
 
 class CommentSerializer(serializers.ModelSerializer):
