@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import shutil
+import csv
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
@@ -27,6 +28,11 @@ from scheduler.extract import extract_terms, extract_reporting_obligations
 from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
+
+from glossary.models import Concept
+from glossary.models import AcceptanceState as ConceptAcceptanceState
+from glossary.models import Comment as ConceptComment
+from obligations.models import ReportingObligation
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__
@@ -605,6 +611,88 @@ def rewrite_json_doc_to_update(doc):
         if field != "id":
             doc[field] = {"set": doc[field]}
     return doc
+
+
+@shared_task
+def export_all_user_data():
+    date_folder = str(datetime.now()).replace(" ", "_")
+    workdir = workpath + CONST_EXPORT + date_folder
+    logger.info(workdir)
+    os.makedirs(workdir)
+
+    # Concepts
+    csv_file = Path(workdir + '/concepts_export.csv')
+    with csv_file.open(mode='w') as concepts_file:
+        concepts_writer = csv.writer(concepts_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        concepts = Concept.objects.all()
+
+        concepts_writer.writerow(['name', 'definition', 'lemma', 'acceptance_state', 'version', 'website',
+                                  'other', 'document_occurs', 'document_defined',
+                                  'created_at', 'updated_at'])
+        for concept in concepts:
+
+            acceptance_state = ""
+            try:
+                acceptance_state = ConceptAcceptanceState.objects.get(concept=concept).value
+            except ConceptAcceptanceState.DoesNotExist as err:
+                pass
+
+            concepts_writer.writerow([concept.name, concept.definition, concept.lemma, acceptance_state, concept.version, concept.website,
+                                      concept.other.name, concept.document_occurs.name, concept.document_defined.name,
+                                      concept.created_at, concept.updated_at])
+        logger.info("Saved: %s", csv_file.name)
+
+    # Concept comments
+    csv_file = Path(workdir + '/concept_comments.csv')
+    with csv_file.open(mode='w') as file:
+        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        comments = ConceptComment.objects.all()
+
+        writer.writerow(['value', 'concept', 'concept_id', 'user', 'created_at', 'updated_at'])
+        for comment in comments:
+            concept = ""
+            concept_id = ""
+            if comment.Concept:
+                concept = comment.Concept.name
+                concept_id = comment.Concept.id
+
+            writer.writerow([comment.value, concept, concept_id, comment.user,
+                             comment.created_at, comment.updated_at])
+        logger.info("Saved: %s", csv_file.name)
+
+    # Reporting Obligations
+    csv_file = Path(workdir + '/reporting_obligations_export.csv')
+    with csv_file.open(mode='w') as ro_file:
+        ro_writer = csv.writer(ro_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        ros = ReportingObligation.objects.all()
+
+        ro_writer.writerow(['name', 'rdf_id', 'created_at', 'updated_at'])
+        for ro in ros:
+            ro_writer.writerow([ro.name, ro.rdf_id, ro.created_at, ro.updated_at])
+        logger.info("Saved: %s", csv_file.name)
+
+
+
+
+
+    # create zip file for all .csv files and remove the base folders
+    zip = shutil.make_archive(workdir, 'zip', workdir)
+    shutil.rmtree(workdir)
+
+    # Save to Minio
+    minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                         secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+    bucket_name = "user-exports"
+    try:
+        minio_client.make_bucket(bucket_name)
+    except BucketAlreadyOwnedByYou as err:
+        pass
+    except BucketAlreadyExists as err:
+        pass
+
+    name = "export_"+date_folder+".zip"
+    minio_client.fput_object(bucket_name, name, zip)
+    # os.remove(zip)
 
 
 @shared_task
