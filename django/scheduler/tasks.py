@@ -29,7 +29,7 @@ from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
 
-from glossary.models import Concept, ConceptOccurs, ConceptDefined
+from glossary.models import Concept, ConceptOccurs, ConceptDefined, AnnotationWorklog
 from glossary.models import AcceptanceState as ConceptAcceptanceState
 from glossary.models import Comment as ConceptComment
 from glossary.models import Tag as ConceptTag
@@ -734,6 +734,44 @@ def export_all_user_data():
                                        doc.consolidated_versions, has_file, doc.file_url, doc.webanno_document_id,
                                        doc.webanno_project_id, doc.created_at, doc.updated_at,
                                        doc.acceptance_state_max_probability, doc.unvalidated])
+        logger.info("Saved: %s", csv_file.name)
+
+    # AnnotationWorklog
+    csv_file = Path(workdir + '/concept_annotations.csv')
+    with csv_file.open(mode='w') as file:
+        writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        annotations = AnnotationWorklog.objects.all()
+
+        writer.writerow(['type', 'concept', 'concept_id', 'document_id', 'begin', 'end', 'user', 'email', 'created_at', 'updated_at'])
+        for annotation in annotations:
+            type = ""
+            concept = ""
+            concept_id = ""
+            document_id = ""
+            begin = ""
+            end = ""
+            user = ""
+            email = ""
+            if annotation.concept_occurs:
+                type = "concept_occurs"
+                concept = annotation.concept_occurs.concept
+                concept_id = annotation.concept_occurs.concept.id
+                document_id = annotation.concept_occurs.document.id
+                begin = annotation.concept_occurs.begin
+                end = annotation.concept_occurs.end
+            else:
+                type = "concept_defined"
+                concept = annotation.concept_defined.concept
+                concept_id = annotation.concept_defined.concept.id
+                document_id = annotation.concept_defined.document.id
+                begin = annotation.concept_defined.begin
+                end = annotation.concept_defined.end
+
+            if annotation.user:
+                user = annotation.user.username
+                email = annotation.user.email
+
+            writer.writerow([type, concept, concept_id, document_id, begin, end, user, email, annotation.created_at, annotation.updated_at])
         logger.info("Saved: %s", csv_file.name)
 
     # create zip file for all .csv files and remove the base folders
