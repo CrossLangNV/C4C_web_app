@@ -146,7 +146,7 @@
           <tbody>
             <tr *ngFor="let doc of definedIn">
               <td>
-                {{ doc.website[0] | uppercase }}
+                {{ doc.website | uppercase }}
               </td>
               <td>
                 <a [routerLink]="['/document', 'definition', concept.id, doc.id]">
