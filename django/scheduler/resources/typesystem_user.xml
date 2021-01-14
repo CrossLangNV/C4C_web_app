@@ -1347,6 +1347,11 @@
                     <rangeTypeName>uima.cas.String</rangeTypeName>
                 </featureDescription>
                 <featureDescription>
+                    <name>role</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.String</rangeTypeName>
+                </featureDescription>
+                <featureDescription>
                     <name>datetime</name>
                     <description/>
                     <rangeTypeName>uima.cas.String</rangeTypeName>
@@ -1778,6 +1783,11 @@
                 </featureDescription>
                 <featureDescription>
                     <name>user</name>
+                    <description/>
+                    <rangeTypeName>uima.cas.String</rangeTypeName>
+                </featureDescription>
+                <featureDescription>
+                    <name>role</name>
                     <description/>
                     <rangeTypeName>uima.cas.String</rangeTypeName>
                 </featureDescription>
