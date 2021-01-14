@@ -23,7 +23,6 @@ rest_site.register(Attachment)
 rest_site.register(AcceptanceState)
 rest_site.register(Comment)
 rest_site.register(Tag)
-
 rest_site.register(User)
 
 
@@ -105,7 +104,8 @@ def delete_from_solr(modeladmin, request, queryset):
 
 
 def export_all_user_data(modeladmin, request, queryset):
-    tasks.export_all_user_data.delay()
+    for website in queryset:
+        tasks.export_all_user_data.delay(website.id)
 
 
 class WebsiteAdmin(admin.ModelAdmin):
