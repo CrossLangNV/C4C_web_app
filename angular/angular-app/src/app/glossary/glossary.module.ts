@@ -21,6 +21,7 @@ import {
   NgbDateAdapter,
   NgbDateNativeAdapter,
 } from '@ng-bootstrap/ng-bootstrap';
+import { DirectivesModule } from '../directives/directives.module';
 import {InputSwitchModule} from 'primeng/inputswitch';
 @NgModule({
   declarations: [
@@ -30,18 +31,19 @@ import {InputSwitchModule} from 'primeng/inputswitch';
     ConceptDetailSortableHeaderDirective,
     ConceptDocumentDetailsComponent,
   ],
-  imports: [
-    SharedModule,
-    ChipsModule,
-    ToastModule,
-    TooltipModule,
-    OverlayPanelModule,
-    ConfirmDialogModule,
-    SharedModule,
-    GlossaryRoutingModule,
-    SelectButtonModule,
-    InputSwitchModule,
-  ],
+    imports: [
+        SharedModule,
+        ChipsModule,
+        ToastModule,
+        TooltipModule,
+        OverlayPanelModule,
+        ConfirmDialogModule,
+        SharedModule,
+        GlossaryRoutingModule,
+        SelectButtonModule,
+        DirectivesModule,
+        InputSwitchModule,
+    ],
   providers: [
     ConfirmationService,
     { provide: NgbDateAdapter, useClass: NgbDateNativeAdapter },
