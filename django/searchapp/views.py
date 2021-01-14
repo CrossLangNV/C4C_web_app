@@ -25,7 +25,7 @@ from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer, BookmarkSerializer
 from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt, \
-    solr_search_query_paginated_preanalyzed, solr_search_ids, solr_get_preanalyzed_for_doc
+    solr_search_query_paginated_preanalyzed, solr_search_ids, solr_get_preanalyzed_for_doc, solr_search_query_with_doc_id_preanalyzed
 
 from glossary.models import Concept, ConceptOccurs, ConceptDefined
 
@@ -324,6 +324,18 @@ class SolrDocumentsSearchQueryPreAnalyzed(APIView):
                                                          sort_direction=request.GET.get('sortDirection'))
         return Response(result)
 
+class SolrDocumentSearchQueryPreAnalyzed(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, doc_id, format=None):
+        result = solr_search_query_with_doc_id_preanalyzed(doc_id=doc_id, core="documents", term=request.data['query'],
+                                                         page_number=request.GET.get('pageNumber', 1),
+                                                         rows_per_page=request.GET.get(
+                                                             'pageSize', 1),
+                                                         sort_by=request.GET.get('sortBy'),
+                                                         sort_direction=request.GET.get('sortDirection'))
+        return Response(result)
+
 
 class SolrDocumentsSearchQueryDjango(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -335,10 +347,10 @@ class SolrDocumentsSearchQueryDjango(APIView):
         concept_defined_or_occurs = None
         if request.data['field'] == "concept_defined":
             concept_defined_or_occurs = ConceptDefined.objects.filter(
-                concept=concept)
+                concept=concept).distinct('document')
         else:
             concept_defined_or_occurs = ConceptOccurs.objects.filter(
-                concept=concept)
+                concept=concept).distinct('document')
 
         definitions = []
         for defi_or_occ in concept_defined_or_occurs:

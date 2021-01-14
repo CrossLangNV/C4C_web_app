@@ -3,6 +3,9 @@ import { ActivatedRoute, Router, ParamMap } from '@angular/router';
 import { ApiService } from 'src/app/core/services/api.service';
 import { switchMap } from 'rxjs/operators';
 import { Document } from 'src/app/shared/models/document';
+import { ReportingObligation } from 'src/app/shared/models/ro';
+import { DirectivesModule } from '../../directives/directives.module';
+import { AnnotatorDirective } from '../../directives/annotator.directive';
 
 @Component({
   selector: 'app-ro-document-details',
@@ -11,8 +14,11 @@ import { Document } from 'src/app/shared/models/document';
 })
 export class RoDocumentDetailsComponent implements OnInit {
   document: Document;
+  ro: ReportingObligation;
+  instanceType: string = "ro";
+  term: string = "unknown";
   consolidatedVersions = new Map();
-  content_html: String;
+  content_html: string;
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -20,32 +26,29 @@ export class RoDocumentDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // this.route.paramMap
-    //   .pipe(
-    //     switchMap((params: ParamMap) =>
-    //       this.service.getConcept(params.get('conceptId'))
-    //     )
-    //   )
-    //   .subscribe((concept) => {
-    //     this.concept = concept;
-    //     this.route.paramMap
-    //       .pipe(
-    //         switchMap((params: ParamMap) =>
-    //           this.service.getDocument(params.get('documentId'))
-    //         )
-    //       )
-    //       .subscribe((document) => {
-    //         this.document = document;
-    //         this.service.getEURLEXxhtml(document.celex).subscribe((xhtml) => {
-    //           this.content_html = this.highlight(xhtml, concept);
-    //           // this.service
-    //           //   .getSolrDocument(this.document.id)
-    //           //   .subscribe((solrDocument) => {
-    //           //     this.consolidatedVersions = new Map();
-    //           //   });
-    //         });
-    //       });
-    //   });
+    this.route.paramMap
+      .pipe(
+        switchMap((params: ParamMap) =>
+          this.service.getRo(params.get('roId'))
+        )
+      )
+      .subscribe((ro) => {
+        this.ro = ro;
+        this.route.paramMap
+          .pipe(
+            switchMap((params: ParamMap) =>
+              this.service.getDocument(params.get('documentId'))
+            )
+          )
+          .subscribe((document) => {
+            this.document = document;
+            this.service
+              .getDocumentWithContent(document.id)
+              .subscribe((doc) => {
+                this.content_html = String(this.highlight(doc.content, ro));
+              });
+          });
+      });
   }
 
   highlight(xhtml, concept): String {
