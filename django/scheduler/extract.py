@@ -776,8 +776,10 @@ def export_all_user_data(website_id):
             for annotation in annotations:
 
                 user = ""
+                role = ""
                 if annotation.user:
                     user = annotation.user.username
+                    # role = annotation.user.role
 
 
                 date = annotation.created_at
@@ -788,7 +790,7 @@ def export_all_user_data(website_id):
                     end = annotation.concept_occurs.endOffset
 
                     cas.get_view(sofa_id_html2text).add_annotation(
-                        occurs_type(begin=begin, end=end, user=user, datetime=date))
+                        occurs_type(begin=begin, end=end, user=user, role=role, datetime=date))
                     logger.info("Added occurs_type annotation on CAS")
 
                 else:
@@ -797,7 +799,7 @@ def export_all_user_data(website_id):
                     end = annotation.concept_defined.endOffset
 
                     cas.get_view(sofa_id_html2text).add_annotation(
-                        defined_type(begin=begin, end=end, user=user, datetime=date))
+                        defined_type(begin=begin, end=end, user=user, role=role, datetime=date))
 
             filename = str(document.id) + "-" + EXTRACT_TERMS_NLP_VERSION + ".xml.gz"
 
