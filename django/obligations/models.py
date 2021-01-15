@@ -21,6 +21,7 @@ class ReportingObligation(models.Model):
     def __str__(self):
         return self.name
 
+
 class ReportingObligationOffsets(models.Model):
     ro = models.ForeignKey(ReportingObligation, on_delete=models.CASCADE)
     document = models.ForeignKey(Document, on_delete=models.CASCADE)
@@ -31,6 +32,7 @@ class ReportingObligationOffsets(models.Model):
     startOffset = models.IntegerField(default=0)
     end = models.CharField(max_length=255, default="", blank=True, null=True)
     endOffset = models.IntegerField(default=0)
+
 
 class ROAnnotationWorklog(models.Model):
     ro_offsets = models.ForeignKey(ReportingObligationOffsets, on_delete=models.CASCADE, null=True)
