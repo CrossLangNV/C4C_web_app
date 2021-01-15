@@ -154,6 +154,8 @@ class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
 
     def post(self, request, format=None, *args, **kwargs):
         request.data['user'] = request.user.id
+        groups = self.request.user.groups.all()
+        opinion = any(group.name == 'opinion' for group in groups)
 
         q = ReportingObligation.objects.all()
         rdf_filters = request.data['rdfFilters']
@@ -161,6 +163,10 @@ class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
 
         if rdf_results:
             q = q.filter(rdf_id__in=rdf_results)
+            if opinion:
+                rejected_state_ids = AcceptanceState.objects.filter(
+                    Q(user__groups__name='decision') & Q(value="Rejected")).values_list('id', flat=True)
+                q = q.exclude(Q(acceptance_states__in=list(rejected_state_ids)))
         else:
             q = ReportingObligation.objects.none()
 
@@ -169,8 +175,6 @@ class ReportingObligationListRdfQueriesAPIView(APIView, PaginationHandlerMixin):
         serializer = self.get_paginated_response(self.serializer_class(page, many=True, context={'request': request}).data)
 
         return Response(serializer.data)
-
-
 
 
 class ReportingObligationDetailAPIView(RetrieveUpdateDestroyAPIView):
