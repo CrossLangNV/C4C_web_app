@@ -21,6 +21,8 @@ from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists, NoSuchKey
 from pycaprio.mappings import InceptionFormat, DocumentState
 from pycaprio import Pycaprio
 
+from glossary.models import AnnotationWorklog
+
 logger = logging.getLogger(__name__)
 
 # TODO Theres already a solr defined
@@ -42,8 +44,10 @@ LEMMA_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Lemma"
 PARAGRAPH_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Paragraph"
 VALUE_BETWEEN_TAG_TYPE_CLASS = "com.crosslang.uimahtmltotext.uima.type.ValueBetweenTagType"
 DEPENDENCY_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.syntax.type.dependency.Dependency"
+DEFINED_TYPE = "cassis.Token"
 
 DEFAULT_TYPESYSTEM = "/tmp/typesystem.xml"
+TYPESYSTEM_USER = "scheduler/resources/typesystem_user.xml"
 
 sofa_id_html2text = "html2textView"
 sofa_id_text2html = "text2htmlView"
@@ -733,3 +737,69 @@ def send_document_to_webanno(document_id):
         project, document_id, cas_xmi.encode(), document_format=InceptionFormat.XMI, document_state=DocumentState.ANNOTATION_IN_PROGRESS)
     logger.info("NEWDOC: %s", new_document)
     return new_document
+
+
+@shared_task
+def export_all_user_data(website_id):
+    website = Website.objects.get(pk=website_id)
+    website_name = website.name.lower()
+    documents = Document.objects.filter(website=website)
+    logger.info("Exporting User Annotations to Minio CAS files for website: %s", website_name)
+
+    # Load CAS from Minio
+    minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                         secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+
+    # Load typesystem
+    with open(TYPESYSTEM_USER, 'rb') as f:
+        # Generate and write tempfile for typesystem.xml
+        typesystem_user = load_typesystem(f)
+
+    ts_fisma = generate_typesystem_fisma()
+    typesystem = merge_typesystems(typesystem_user, ts_fisma)
+
+    for document in documents:
+        logger.info("Extracting document: %s", str(document.id))
+
+        try:
+            cas_gz = minio_client.get_object(
+                "cas-files", str(document.id) + "-" + EXTRACT_TERMS_NLP_VERSION + ".xml.gz")
+
+            cas = load_compressed_cas(cas_gz, typesystem)
+
+            annotations = AnnotationWorklog.objects.filter(document=document)
+            for annotation in annotations:
+                user = ""
+                role = ""
+                if annotation.user:
+                    user = annotation.user.username
+                    # role = annotation.user.role
+
+                date = annotation.created_at
+                if annotation.concept_occurs is not None:
+                    occurs_type = typesystem_user.get_type(TFIDF_CLASS)
+                    begin = annotation.concept_occurs.startOffset
+                    end = annotation.concept_occurs.endOffset
+
+                    cas.get_view(sofa_id_html2text).add_annotation(
+                        occurs_type(begin=begin, end=end, user=user, role=role, datetime=date))
+                else:
+                    defined_type = typesystem.get_type(DEFINED_TYPE)
+                    begin = annotation.concept_defined.startOffset
+                    end = annotation.concept_defined.endOffset
+
+                    cas.get_view(sofa_id_html2text).add_annotation(
+                        defined_type(begin=begin, end=end, user=user, role=role, datetime=date))
+
+            filename = str(document.id) + "-" + EXTRACT_TERMS_NLP_VERSION + ".xml.gz"
+            file = save_compressed_cas(cas, filename)
+            logger.info("Saved gzipped cas: %s", file.name)
+
+            minio_client.fput_object("cas-files", file.name, filename)
+            logger.info("Uploaded to minio")
+
+            os.remove(file.name)
+            logger.info("Removed file from system")
+
+        except NoSuchKey:
+            pass

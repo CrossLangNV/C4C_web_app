@@ -280,6 +280,7 @@ class CreateListAPIView(ListCreateAPIView):
         annotation_worklog_data.update({'user': request.user.id})
         annotation_worklog_data.update({'created_at': datetime.datetime.now()})
         annotation_worklog_data.update({'updated_at': datetime.datetime.now()})
+        annotation_worklog_data.update({'document': str(self.kwargs['document_id'])})
 
         concept_occurs = None
         concept_defined = None
