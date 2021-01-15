@@ -27,15 +27,18 @@ import {MenuModule} from 'primeng/menu';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import {NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
 import { DirectivesModule } from '../directives/directives.module';
+import { RoBreakdownComponent } from './ro-breakdown/ro-breakdown.component';
 
 @NgModule({
-  declarations: [
-    RoListComponent,
-    RoDetailComponent,
-    NgbdSortableHeaderDirective,
-    RoDetailSortableHeaderDirective,
-    RoDocumentDetailsComponent,
-  ],
+    declarations: [
+        RoListComponent,
+        RoDetailComponent,
+        NgbdSortableHeaderDirective,
+        RoDetailSortableHeaderDirective,
+        RoDocumentDetailsComponent,
+        RoBreakdownComponent,
+        RoBreakdownComponent
+    ],
   imports: [
     SharedModule,
     ChipsModule,

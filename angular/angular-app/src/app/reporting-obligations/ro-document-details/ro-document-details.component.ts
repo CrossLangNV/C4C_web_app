@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit, ViewEncapsulation} from '@angular/core';
 import { ActivatedRoute, Router, ParamMap } from '@angular/router';
 import { ApiService } from 'src/app/core/services/api.service';
 import { switchMap } from 'rxjs/operators';
 import { Document } from 'src/app/shared/models/document';
+import {ReportingObligation} from '../../shared/models/ro';
 import { ReportingObligation } from 'src/app/shared/models/ro';
 import { DirectivesModule } from '../../directives/directives.module';
 import { AnnotatorDirective } from '../../directives/annotator.directive';
@@ -15,6 +16,11 @@ import { AnnotatorDirective } from '../../directives/annotator.directive';
 export class RoDocumentDetailsComponent implements OnInit {
   document: Document;
   ro: ReportingObligation;
+  //consolidatedVersions = new Map();
+  //content_html: string;
+  content_html_ro: string;
+
+  ro: ReportingObligation;
   instanceType: string = "ro";
   term: string = "unknown";
   consolidatedVersions = new Map();
@@ -23,7 +29,21 @@ export class RoDocumentDetailsComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private service: ApiService
-  ) {}
+  ) {
+    this.route.paramMap
+      .pipe(
+        switchMap((params: ParamMap) =>
+          this.service.getReportingObligationsView(params.get('documentId'))
+        )
+      ).subscribe((response) => {
+        console.log('what 1')
+        this.content_html_ro = 'No reporting obligations available'
+
+        if (response !== null) {
+          this.content_html_ro = response
+        }
+    });
+  }
 
   ngOnInit(): void {
     this.route.paramMap
@@ -56,5 +76,9 @@ export class RoDocumentDetailsComponent implements OnInit {
     var regEx = new RegExp(searchMask, 'ig');
     var replaceMask = '<span class="highlight">' + concept.name + '</span>';
     return xhtml.replace(regEx, replaceMask);
+  }*/
+
+  goToLink(url: string) {
+    window.open(url, '_blank');
   }
 }

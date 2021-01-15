@@ -96,4 +96,8 @@ urlpatterns = [
         name='api_delete'),
 
 
+    # Get HTML output from reporting obligation extraction
+    path('api/ros/document/<document_id>', views.ReportingObligationDocumentHtmlAPIView.as_view(),
+         name='ro_document_html_api_detail'),
+
 ]
