@@ -329,7 +329,8 @@ def extract_reporting_obligations(website_id):
             sofa_reporting_obligations = cas.get_view(
                 "ReportingObligationsView").sofa_string
 
-            logger.info("sofa_reporting_obligations: %s", sofa_reporting_obligations)
+            logger.info("sofa_reporting_obligations: %s",
+                        sofa_reporting_obligations)
             # Save the HTML view of the reporting obligations
             # Save CAS to MINIO
             minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
@@ -349,7 +350,8 @@ def extract_reporting_obligations(website_id):
             html_file.write(sofa_reporting_obligations)
             html_file.close()
 
-            minio_client.fput_object(bucket_name, html_file.name, filename, "text/html; charset=UTF-8")
+            minio_client.fput_object(
+                bucket_name, html_file.name, filename, "text/html; charset=UTF-8")
             logger.info("Uploaded to minio")
 
             os.remove(html_file.name)
@@ -572,7 +574,7 @@ def extract_terms_for_document(document):
                         cd.save()
                     else:
                         ConceptDefined.objects.create(
-                            concept=c[0], document=django_doc, begin=start_defined, end=end_defined)
+                            concept=c[0], document=django_doc, startOffset=start_defined, endOffset=end_defined)
                 else:
                     logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
                                 "Consider disabling supergrams or change the length in the database", token)
@@ -645,8 +647,8 @@ def extract_terms_for_document(document):
                 c = Concept.objects.update_or_create(
                     name=term.get_covered_text(), lemma=lemma_name, version=EXTRACT_TERMS_NLP_VERSION, defaults={'website_id': django_doc.website.id})
                 ConceptOccurs.objects.update_or_create(
-                    concept=c[0], document=django_doc, probability=float(score.encode("utf-8")), begin=start,
-                    end=end)
+                    concept=c[0], document=django_doc, probability=float(score.encode("utf-8")), startOffset=start,
+                    endOffset=end)
 
             else:
                 logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
@@ -771,7 +773,8 @@ def export_all_user_data(website_id):
     website = Website.objects.get(pk=website_id)
     website_name = website.name.lower()
     documents = Document.objects.filter(website=website)
-    logger.info("Exporting User Annotations to Minio CAS files for website: %s", website_name)
+    logger.info(
+        "Exporting User Annotations to Minio CAS files for website: %s", website_name)
 
     # Load CAS from Minio
     minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
@@ -818,7 +821,8 @@ def export_all_user_data(website_id):
                     cas.get_view(sofa_id_html2text).add_annotation(
                         defined_type(begin=begin, end=end, user=user, role=role, datetime=date))
 
-            filename = str(document.id) + "-" + EXTRACT_TERMS_NLP_VERSION + ".xml.gz"
+            filename = str(document.id) + "-" + \
+                EXTRACT_TERMS_NLP_VERSION + ".xml.gz"
             file = save_compressed_cas(cas, filename)
             logger.info("Saved gzipped cas: %s", file.name)
 
