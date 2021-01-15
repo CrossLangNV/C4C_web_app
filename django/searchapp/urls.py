@@ -117,8 +117,8 @@ urlpatterns = [
     # SOLR ONLY
     path('api/solrdocument/search/query/preanalyzed/', views.SolrDocumentsSearchQueryPreAnalyzed.as_view(),
          name='solr_document_search_query_preanalyzed_api'),
-
-
+    path('api/solrdocument/search/query/preanalyzed/<doc_id>', views.SolrDocumentSearchQueryPreAnalyzed.as_view(),
+         name='solr_search_query_with_doc_id_preanalyzed_api'),
     # solr_get_preanalyzed_for_doc
     path('api/solrdocuments/like/<id>', views.SimilarDocumentsAPIView.as_view(),
          name='similar_documents_api'),
@@ -136,5 +136,24 @@ urlpatterns = [
          name='bookmark_list_api'),
     path('api/bookmarks/<document_id>', views.BookmarkDetailAPIView.as_view(),
          name='bookmark_detail_api'),
+
+    # Dropdown: celex
+    path('api/filters/celex', views.CelexListAPIView.as_view(),
+         name='celex_list_api'),
+    # Dropdown: type
+    path('api/filters/type', views.TypeListAPIView.as_view(),
+         name='type_list_api'),
+    # Dropdown: status
+    path('api/filters/status', views.StatusListAPIView.as_view(),
+         name='status_list_api'),
+    # Dropdown: eli
+    path('api/filters/eli', views.EliListAPIView.as_view(),
+         name='eli_list_api'),
+    # Dropdown: eli
+    path('api/filters/author', views.AuthorListAPIView.as_view(),
+         name='eli_list_api'),
+    # Dropdown: eli
+    path('api/filters/effectdate', views.DateOfEffectListAPIView.as_view(),
+         name='eli_list_api'),
 
 ]

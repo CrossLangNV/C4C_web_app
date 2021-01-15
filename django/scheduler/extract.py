@@ -21,6 +21,8 @@ from minio.error import BucketAlreadyOwnedByYou, BucketAlreadyExists, NoSuchKey
 from pycaprio.mappings import InceptionFormat, DocumentState
 from pycaprio import Pycaprio
 
+from glossary.models import AnnotationWorklog
+
 logger = logging.getLogger(__name__)
 
 # TODO Theres already a solr defined
@@ -34,6 +36,8 @@ CAS_TO_RDF_API = os.environ['CAS_TO_RDF_API']
 CELERY_EXTRACT_TERMS_CHUNKS = os.environ.get('CELERY_EXTRACT_TERMS_CHUNKS', 8)
 EXTRACT_TERMS_NLP_VERSION = os.environ.get(
     'EXTRACT_TERMS_NLP_VERSION', '8a4f1d58')
+EXTRACT_RO_NLP_VERSION = os.environ.get(
+    'EXTRACT_RO_NLP_VERSION', 'd16bba97890')
 
 SENTENCE_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence"
 TOKEN_CLASS = "cassis.Token"
@@ -42,8 +46,10 @@ LEMMA_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Lemma"
 PARAGRAPH_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Paragraph"
 VALUE_BETWEEN_TAG_TYPE_CLASS = "com.crosslang.uimahtmltotext.uima.type.ValueBetweenTagType"
 DEPENDENCY_CLASS = "de.tudarmstadt.ukp.dkpro.core.api.syntax.type.dependency.Dependency"
+DEFINED_TYPE = "cassis.Token"
 
 DEFAULT_TYPESYSTEM = "/tmp/typesystem.xml"
+TYPESYSTEM_USER = "scheduler/resources/typesystem_user.xml"
 
 sofa_id_html2text = "html2textView"
 sofa_id_text2html = "text2htmlView"
@@ -300,7 +306,7 @@ def extract_reporting_obligations(website_id):
 
         # Paragraph detection for PDF + fallback cas for not having a html2text request
         if is_pdf:
-            r = get_cas_from_pdf(document['content'][0])
+            r = get_cas_from_pdf(document['content'][0], document['id'])
             paragraph_request = r
 
         encoded_b64 = get_encoded_content_from_cas(r)
@@ -322,10 +328,37 @@ def extract_reporting_obligations(website_id):
             cas = load_cas_from_xmi(ro_cas, typesystem=ts)
             sofa_reporting_obligations = cas.get_view(
                 "ReportingObligationsView").sofa_string
-            # logger.info("sofa_reporting_obligations: %s",sofa_reporting_obligations)
+
+            logger.info("sofa_reporting_obligations: %s",
+                        sofa_reporting_obligations)
+            # Save the HTML view of the reporting obligations
+            # Save CAS to MINIO
+            minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                                 secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+            bucket_name = "ro-html-output"
+            try:
+                minio_client.make_bucket(bucket_name)
+            except BucketAlreadyOwnedByYou as err:
+                pass
+            except BucketAlreadyExists as err:
+                pass
+
+            logger.info("Created bucket: %s", bucket_name)
+            filename = document['id'] + "-" + EXTRACT_RO_NLP_VERSION + ".html"
+
+            html_file = open(filename, "w")
+            html_file.write(sofa_reporting_obligations)
+            html_file.close()
+
+            minio_client.fput_object(
+                bucket_name, html_file.name, filename, "text/html; charset=UTF-8")
+            logger.info("Uploaded to minio")
+
+            os.remove(html_file.name)
+            logger.info("Removed file from system")
 
             # Now send the CAS to UIMA Html2Text for the VBTT annotations (paragraph_request)
-            r = get_html2text_cas(sofa_reporting_obligations)
+            r = get_html2text_cas(sofa_reporting_obligations, document['id'])
             cas_html2text = load_cas_from_xmi(
                 r.content.decode("utf-8"), typesystem=ts)
 
@@ -541,7 +574,7 @@ def extract_terms_for_document(document):
                         cd.save()
                     else:
                         ConceptDefined.objects.create(
-                            concept=c[0], document=django_doc, begin=start_defined, end=end_defined)
+                            concept=c[0], document=django_doc, startOffset=start_defined, endOffset=end_defined)
                 else:
                     logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
                                 "Consider disabling supergrams or change the length in the database", token)
@@ -614,8 +647,8 @@ def extract_terms_for_document(document):
                 c = Concept.objects.update_or_create(
                     name=term.get_covered_text(), lemma=lemma_name, version=EXTRACT_TERMS_NLP_VERSION, defaults={'website_id': django_doc.website.id})
                 ConceptOccurs.objects.update_or_create(
-                    concept=c[0], document=django_doc, probability=float(score.encode("utf-8")), begin=start,
-                    end=end)
+                    concept=c[0], document=django_doc, probability=float(score.encode("utf-8")), startOffset=start,
+                    endOffset=end)
 
             else:
                 logger.info("WARNING: Term '%s' has been skipped because the term name was too long. "
@@ -733,3 +766,71 @@ def send_document_to_webanno(document_id):
         project, document_id, cas_xmi.encode(), document_format=InceptionFormat.XMI, document_state=DocumentState.ANNOTATION_IN_PROGRESS)
     logger.info("NEWDOC: %s", new_document)
     return new_document
+
+
+@shared_task
+def export_all_user_data(website_id):
+    website = Website.objects.get(pk=website_id)
+    website_name = website.name.lower()
+    documents = Document.objects.filter(website=website)
+    logger.info(
+        "Exporting User Annotations to Minio CAS files for website: %s", website_name)
+
+    # Load CAS from Minio
+    minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                         secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+
+    # Load typesystem
+    with open(TYPESYSTEM_USER, 'rb') as f:
+        # Generate and write tempfile for typesystem.xml
+        typesystem_user = load_typesystem(f)
+
+    ts_fisma = generate_typesystem_fisma()
+    typesystem = merge_typesystems(typesystem_user, ts_fisma)
+
+    for document in documents:
+        logger.info("Extracting document: %s", str(document.id))
+
+        try:
+            cas_gz = minio_client.get_object(
+                "cas-files", str(document.id) + "-" + EXTRACT_TERMS_NLP_VERSION + ".xml.gz")
+
+            cas = load_compressed_cas(cas_gz, typesystem)
+
+            annotations = AnnotationWorklog.objects.filter(document=document)
+            for annotation in annotations:
+                user = ""
+                role = ""
+                if annotation.user:
+                    user = annotation.user.username
+                    # role = annotation.user.role
+
+                date = annotation.created_at
+                if annotation.concept_occurs is not None:
+                    occurs_type = typesystem_user.get_type(TFIDF_CLASS)
+                    begin = annotation.concept_occurs.startOffset
+                    end = annotation.concept_occurs.endOffset
+
+                    cas.get_view(sofa_id_html2text).add_annotation(
+                        occurs_type(begin=begin, end=end, user=user, role=role, datetime=date))
+                else:
+                    defined_type = typesystem.get_type(DEFINED_TYPE)
+                    begin = annotation.concept_defined.startOffset
+                    end = annotation.concept_defined.endOffset
+
+                    cas.get_view(sofa_id_html2text).add_annotation(
+                        defined_type(begin=begin, end=end, user=user, role=role, datetime=date))
+
+            filename = str(document.id) + "-" + \
+                EXTRACT_TERMS_NLP_VERSION + ".xml.gz"
+            file = save_compressed_cas(cas, filename)
+            logger.info("Saved gzipped cas: %s", file.name)
+
+            minio_client.fput_object("cas-files", file.name, filename)
+            logger.info("Uploaded to minio")
+
+            os.remove(file.name)
+            logger.info("Removed file from system")
+
+        except NoSuchKey:
+            pass

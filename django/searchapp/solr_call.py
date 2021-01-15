@@ -99,16 +99,16 @@ def solr_search_query_paginated_preanalyzed(core="", term="", page_number=1, row
     page_number = int(page_number) - 1
     start = page_number * int(rows_per_page)
     options = {'q': term,
-               'hl': 'on',
-               'fl': 'id,title,website,date',
-               QUERY_HL_FL: 'concept_defined, concept_occurs',
-               QUERY_HL_MAX_CHARS: '-1',
-               QUERY_HL_PRE: QUERY_HL_PREFIX,
-               QUERY_HL_POST: QUERY_HL_SUFFIX,
-               'start': start,
-               'rows': rows_per_page
-               }
-
+        'hl': 'on',
+        'fl': 'id,title,website,date, content',
+        QUERY_HL_FL: 'concept_defined, concept_occurs',
+        QUERY_HL_MAX_CHARS: '-1',
+        QUERY_HL_PRE: QUERY_HL_PREFIX,
+        QUERY_HL_POST: QUERY_HL_SUFFIX,
+        'start': start,
+        'rows': rows_per_page
+    }
+    
     if sort_by:
         options['sort'] = sort_by + ' ' + sort_direction
     response = requests.request("POST", url, data=options)
@@ -118,6 +118,31 @@ def solr_search_query_paginated_preanalyzed(core="", term="", page_number=1, row
 
     return num_found, search
 
+def solr_search_query_with_doc_id_preanalyzed(doc_id, core="", term="", page_number=1, rows_per_page=10,
+                                            sort_by=None, sort_direction='asc'):
+    url = os.environ['SOLR_URL'] + '/' + core + '/select/'
+    # solr page starts at 0
+    page_number = int(page_number) - 1
+    start = page_number * int(rows_per_page)
+    options = {'q': term,
+        'hl': 'on',
+        'hl.fragsize': '0',
+        'fl': 'id,title,website,date,content',
+        QUERY_HL_FL: 'concept_defined, concept_occurs',
+        QUERY_HL_MAX_CHARS: '-1',
+        QUERY_HL_PRE: QUERY_HL_PREFIX,
+        QUERY_HL_POST: QUERY_HL_SUFFIX,
+        'start': start,
+        'rows': rows_per_page,
+        'id': doc_id
+    }
+    
+    if sort_by:
+        options['sort'] = sort_by + ' ' + sort_direction
+    response = requests.request("POST", url, data = options)
+    result = response.json()
+    num_found = result['response']['numFound']
+    return num_found, result
 
 def solr_get_preanalyzed_for_doc(core="", id="", field="", term="", page_number=1, rows_per_page=10,
                                  sort_by=None, sort_direction='asc'):
@@ -186,7 +211,7 @@ def solr_search_website_with_content(core="", website="", **kwargs):
 
 def solr_search_website_sorted(core="", website="", **kwargs):
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    SOLR_SYNC_FIELDS = 'id,title,title_prefix,author,status,type,date,date_last_update,url,eli,celex,file_url,website,summary,various,consolidated_versions'
+    SOLR_SYNC_FIELDS = 'id,title,title_prefix,author,misc_author,status,type,date,dates,dates_type,dates_info,date_last_update,url,eli,celex,file_url,website,summary,various,consolidated_versions'
     date = kwargs.get('date', None)
     query = 'website:' + website
 

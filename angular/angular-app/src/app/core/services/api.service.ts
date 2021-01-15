@@ -42,6 +42,7 @@ import {RoTag, RoTagAdapter} from "../../shared/models/RoTag";
 import {RoAcceptanceState, RoAcceptanceStateAdapter} from "../../shared/models/roAcceptanceState";
 import {RoComment, RoCommentAdapter} from "../../shared/models/roComment";
 import { DjangoUser } from 'src/app/shared/models/django_user';
+import {DropdownOption} from '../../shared/models/DropdownOption';
 
 @Injectable({
   providedIn: 'root',
@@ -112,6 +113,44 @@ export class ApiService {
   ): Observable<any[]> {
     let requestUrl = `${this.API_URL}/solrdocument/search/query/preanalyzed/`;
     // let requestUrl = `http://localhost:8983/solr/documents/select?hl.fl=${field}&hl=on&q={!term f=${field}}${term}`;
+
+    if (sortBy) {
+      requestUrl += `?sortBy=${sortBy}`;
+      if (sortDirection) {
+        requestUrl += `&sortDirection=${sortDirection}`;
+      }
+      if (pageNumber) {
+        requestUrl += `&pageNumber=${pageNumber}`;
+      }
+      if (pageSize) {
+        requestUrl += `&pageSize=${pageSize}`;
+      }
+    }
+
+    let formData = new FormData();
+    formData.append('query', `{!term f=${field}}${term}`);
+
+    return this.http.post<any[]>(requestUrl, formData).pipe(
+      map((data: any[]) => {
+        const result = [data[0]];
+        result.push(data[1]);
+        return result;
+      })
+    );
+  }
+
+  public searchSolrPreAnalyzedDocument(
+    docId: string,
+    pageNumber: number,
+    pageSize: number,
+    term: string,
+    field: string,
+    idsFilter: string[],
+    sortBy: string,
+    sortDirection: string
+  ): Observable<any[]> {
+    let requestUrl = `${this.API_URL}/solrdocument/search/query/preanalyzed/` + docId;
+    // let requestUrl = `http://localhost:8983/solr/documents/select?hl.fl=${field}&hl=on&q={!term f=${field}}${term}` + docId;
 
     if (sortBy) {
       requestUrl += `?sortBy=${sortBy}`;
@@ -369,6 +408,7 @@ export class ApiService {
     return this.http.delete(`${this.API_URL}/comment/${id}`);
   }
 
+  // Returns a comment because comment is also compatible
   public addBookmark(user: DjangoUser, document: Document): Observable<Comment> {
     document.bookmark=false;
     let b = new Bookmark(user.username,document);
@@ -421,6 +461,8 @@ export class ApiService {
     filterTag: string,
     filterType: string,
     version: string,
+    showBookmarked: boolean,
+    email: string,
     website: string,
     sortBy: string
   ): Observable<ConceptResults> {
@@ -433,6 +475,12 @@ export class ApiService {
     }
     if (version) {
       pageQuery = pageQuery + '&version=' + version;
+    }
+    if (showBookmarked) {
+      pageQuery = pageQuery + '&showBookmarked=' + showBookmarked;
+    }
+    if (email) {
+      pageQuery = pageQuery + '&email=' + email;
     }
     if (website) {
       pageQuery = pageQuery + '&website=' + website;
@@ -631,6 +679,35 @@ export class ApiService {
     return this.http.get<string>(
       `${this.API_GLOSSARY_URL}/webanno_link/${id}`
     );
+  }
+
+  public fetchCelexOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/celex`)
+  }
+
+  public fetchTypeOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/type`)
+  }
+
+  public fetchStatusOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/status`)
+  }
+
+  public fetchEliOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/eli`)
+  }
+
+  public fetchAuthorOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/author`)
+  }
+
+  public fetchEffectDateOptions(): Observable<DropdownOption[]> {
+    return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/effectdate`)
+  }
+
+  public getReportingObligationsView(id: string): Observable<string> {
+    return this.http
+      .get<string>(`${this.API_RO_URL}/ros/document/${id}`)
   }
 
 }

@@ -4,12 +4,12 @@ import json
 import logging
 import os
 import shutil
+import csv
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 
 import pysolr
-import requests
 from celery import shared_task, chain
 from django.core.exceptions import ValidationError
 from django.db.models.functions import Length
@@ -24,10 +24,16 @@ from scrapy.utils.project import get_project_settings
 from tika import parser
 from twisted.internet import reactor
 
-from scheduler.extract import extract_terms
+from scheduler.extract import extract_terms, extract_reporting_obligations, export_all_user_data
 from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
+
+from glossary.models import Concept, ConceptOccurs, ConceptDefined, AnnotationWorklog
+from glossary.models import AcceptanceState as ConceptAcceptanceState
+from glossary.models import Comment as ConceptComment
+from glossary.models import Tag as ConceptTag
+from obligations.models import ReportingObligation
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__
@@ -128,7 +134,7 @@ def export_documents():
     # - ACCEPTED or REJECTED
     # - group by document
     human_states = AcceptanceState.objects.filter(
-        (Q(value=AcceptanceStateValue.ACCEPTED) | Q(value=AcceptanceStateValue.REJECTED)) & Q(probability_model=None))\
+        (Q(value=AcceptanceStateValue.ACCEPTED) | Q(value=AcceptanceStateValue.REJECTED)) & Q(probability_model=None)) \
         .order_by("document")
 
     core = 'documents'
@@ -221,7 +227,7 @@ def handle_document_updates_task(website_id):
     for result in results:
         if 'content_hash' in result:
             content_hashes[result['id']] = result['content_hash']
-    logger.info("Found " + str(len(content_hashes))+" hashes")
+    logger.info("Found " + str(len(content_hashes)) + " hashes")
 
     try:
         # retrieve jsonlines files from minio
@@ -315,6 +321,19 @@ def sync_documents_task(website_id, **kwargs):
     solr_documents = solr_search_website_sorted(
         core='documents', website=website.name.lower(), date=date)
     for solr_doc in solr_documents:
+
+        solr_doc_date_types = solr_doc.get('dates_type', [''])
+        solr_doc_date_dates = solr_doc.get('dates', [''])
+        solr_doc_date_info = solr_doc.get('dates_info', [''])
+
+        solr_doc_date_of_effect = None
+        for date_info in solr_doc_date_info:
+            if date_info.lower().startswith("entry into force"):
+                index = solr_doc_date_info.index(date_info)
+                if solr_doc_date_types[index] == "date of effect":
+                    solr_doc_date_of_effect = solr_doc_date_dates[index]
+                    break
+
         solr_doc_date = solr_doc.get('date', [datetime.now()])[0]
         solr_doc_date_last_update = solr_doc.get(
             'date_last_update', datetime.now())
@@ -322,10 +341,11 @@ def sync_documents_task(website_id, **kwargs):
         if isinstance(solr_doc_date_last_update, list):
             solr_doc_date_last_update = solr_doc_date_last_update[0]
         data = {
-            "author": solr_doc.get('author', [''])[0][:20],
+            "author": solr_doc.get('misc_author', [''])[0][:20],
             "celex": solr_doc.get('celex', [''])[0][:20],
             "consolidated_versions": ','.join(x.strip() for x in solr_doc.get('consolidated_versions', [''])),
             "date": solr_doc_date,
+            "date_of_effect": solr_doc_date_of_effect,
             "date_last_update": solr_doc_date_last_update,
             "eli": solr_doc.get('eli', [''])[0],
             "file_url": solr_doc.get('file_url', [None])[0],

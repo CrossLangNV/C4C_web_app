@@ -117,7 +117,7 @@ export class ConceptDetailComponent implements OnInit {
 
         this.definitionHtml = this.replaceTerms(concept.definition, [concept]);
         this.definitionHtml = this.replaceTerms(this.definitionHtml, concept.other);
-        
+
         this.newComment.conceptId = concept.id;
         this.comments = [];
 
@@ -205,7 +205,7 @@ export class ConceptDetailComponent implements OnInit {
         this.definedInPage,
         this.definedInPageSize,
         this.concept.definition,
-        "concept_defined",
+        'concept_defined',
         this.concept.id,
         [],
         this.definedInSortBy,
