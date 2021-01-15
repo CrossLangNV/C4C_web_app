@@ -3,7 +3,6 @@ import { ActivatedRoute, Router, ParamMap } from '@angular/router';
 import { ApiService } from 'src/app/core/services/api.service';
 import { switchMap } from 'rxjs/operators';
 import { Document } from 'src/app/shared/models/document';
-import {ReportingObligation} from '../../shared/models/ro';
 import { ReportingObligation } from 'src/app/shared/models/ro';
 import { DirectivesModule } from '../../directives/directives.module';
 import { AnnotatorDirective } from '../../directives/annotator.directive';
@@ -20,7 +19,6 @@ export class RoDocumentDetailsComponent implements OnInit {
   //content_html: string;
   content_html_ro: string;
 
-  ro: ReportingObligation;
   instanceType: string = "ro";
   term: string = "unknown";
   consolidatedVersions = new Map();
@@ -71,12 +69,12 @@ export class RoDocumentDetailsComponent implements OnInit {
       });
   }
 
-  highlight(xhtml, concept): String {
+  highlight(xhtml, concept): string {
     var searchMask = concept.name;
     var regEx = new RegExp(searchMask, 'ig');
     var replaceMask = '<span class="highlight">' + concept.name + '</span>';
     return xhtml.replace(regEx, replaceMask);
-  }*/
+  }
 
   goToLink(url: string) {
     window.open(url, '_blank');
