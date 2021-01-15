@@ -103,6 +103,9 @@ class DocumentListAPIView(ListCreateAPIView):
         website = self.request.GET.get('website', "")
         tag = self.request.GET.get('tag', "")
         filtertype = self.request.GET.get('filterType', "")
+        groups = self.request.user.groups.all()
+
+        opinion = any(group.name == 'opinion' for group in groups)
 
         q = Document.objects.annotate(
             text_len=Length('title')).filter(text_len__gt=1)
@@ -120,6 +123,12 @@ class DocumentListAPIView(ListCreateAPIView):
             else:
                 if keyword:
                     q = q.filter(title__icontains=keyword)
+
+        # if current user belongs to 'opinion' group:
+        # exclude rejected documents from users belonging to 'decision' group
+        if opinion:
+            q = q.exclude(
+                Q(acceptance_states__user__groups__name='decision') & Q(acceptance_states__value="Rejected"))
 
         if showonlyown == "true":
             q = q.filter(Q(acceptance_states__user__username=username) & (Q(acceptance_states__value="Accepted") |
@@ -308,19 +317,19 @@ class SolrDocumentsSearchQueryDjango(APIView):
 
         definitions = []
         for defi_or_occ in concept_defined_or_occurs:
-
             highlighting = solr_get_preanalyzed_for_doc(core="documents",
                                                         id=defi_or_occ.document.id,
-                                                             field=request.data['field'],
-                                                             term=request.data['term'],
-                                                             page_number=request.GET.get(
-                                                                 'pageNumber', 1),
-                                                             rows_per_page=request.GET.get(
-                                                                 'pageSize', 1),
-                                                             sort_by=request.GET.get(
-                                                                 'sortBy'),
-                                                             sort_direction=request.GET.get('sortDirection'))
-            definitions.append({"title": defi_or_occ.document.title, "date": str(defi_or_occ.document.date), "id": str(defi_or_occ.document.id),
+                                                        field=request.data['field'],
+                                                        term=request.data['term'],
+                                                        page_number=request.GET.get(
+                                                            'pageNumber', 1),
+                                                        rows_per_page=request.GET.get(
+                                                            'pageSize', 1),
+                                                        sort_by=request.GET.get(
+                                                            'sortBy'),
+                                                        sort_direction=request.GET.get('sortDirection'))
+            definitions.append({"title": defi_or_occ.document.title, "date": str(defi_or_occ.document.date),
+                                "id": str(defi_or_occ.document.id),
                                 "website": str(defi_or_occ.document.website), request.data['field']: highlighting})
 
         response = [len(definitions), definitions]
