@@ -13,6 +13,7 @@ import { ReportingObligation } from 'src/app/shared/models/ro';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {
   faUserAlt,
+  faUserLock,
   faMicrochip,
   faSyncAlt,
   faStopCircle,
@@ -91,6 +92,7 @@ export class RoListComponent implements OnInit {
   filterType = 'none';
   searchTermChanged: Subject<string> = new Subject<string>();
   userIcon: IconDefinition = faUserAlt;
+  userLockIcon: IconDefinition = faUserLock;
   chipIcon: IconDefinition = faMicrochip;
   reloadIcon: IconDefinition = faSyncAlt;
   resetIcon: IconDefinition = faStopCircle;
@@ -272,5 +274,9 @@ export class RoListComponent implements OnInit {
 
   numSequence(n: number): Array<number> {
     return Array(n);
+  }
+
+  containsGroup(groups: Array<any>, groupName: String) {
+    return groups.some(group => group.name == groupName);
   }
 }

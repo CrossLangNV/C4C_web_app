@@ -13,6 +13,7 @@ import { Concept } from 'src/app/shared/models/concept';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {
   faUserAlt,
+  faUserLock,
   faMicrochip,
   faSyncAlt,
   faStopCircle,
@@ -82,6 +83,7 @@ export class ConceptListComponent implements OnInit {
   website = '';
   searchTermChanged: Subject<string> = new Subject<string>();
   userIcon: IconDefinition = faUserAlt;
+  userLockIcon: IconDefinition = faUserLock;
   chipIcon: IconDefinition = faMicrochip;
   reloadIcon: IconDefinition = faSyncAlt;
   resetIcon: IconDefinition = faStopCircle;
@@ -256,5 +258,9 @@ export class ConceptListComponent implements OnInit {
   onClickTag(event) {
     this.filterTag = event.value.value;
     this.fetchConcepts();
+  }
+
+  containsGroup(groups: Array<any>, groupName: String) {
+    return groups.some(group => group.name == groupName);
   }
 }

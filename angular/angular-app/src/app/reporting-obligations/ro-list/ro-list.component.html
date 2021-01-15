@@ -154,7 +154,8 @@
                   tooltipPosition="top"
                 >
                   {{ state.user.username }}
-                  <fa-icon [icon]="userIcon"></fa-icon>
+                  <fa-icon *ngIf="containsGroup(state.user.groups, 'decision'); else elseUserIcon" [icon]="userLockIcon"></fa-icon>
+                  <ng-template #elseUserIcon><fa-icon [icon]="userIcon"></fa-icon></ng-template>
                 </div>
                 <div
                   [className]="state.value | lowercase"
