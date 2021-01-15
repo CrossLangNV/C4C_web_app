@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import shutil
+import csv
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
@@ -23,10 +24,16 @@ from scrapy.utils.project import get_project_settings
 from tika import parser
 from twisted.internet import reactor
 
-from scheduler.extract import extract_terms, extract_reporting_obligations
+from scheduler.extract import extract_terms, extract_reporting_obligations, export_all_user_data
 from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
+
+from glossary.models import Concept, ConceptOccurs, ConceptDefined, AnnotationWorklog
+from glossary.models import AcceptanceState as ConceptAcceptanceState
+from glossary.models import Comment as ConceptComment
+from glossary.models import Tag as ConceptTag
+from obligations.models import ReportingObligation
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__
@@ -127,7 +134,7 @@ def export_documents():
     # - ACCEPTED or REJECTED
     # - group by document
     human_states = AcceptanceState.objects.filter(
-        (Q(value=AcceptanceStateValue.ACCEPTED) | Q(value=AcceptanceStateValue.REJECTED)) & Q(probability_model=None))\
+        (Q(value=AcceptanceStateValue.ACCEPTED) | Q(value=AcceptanceStateValue.REJECTED)) & Q(probability_model=None)) \
         .order_by("document")
 
     core = 'documents'
@@ -220,7 +227,7 @@ def handle_document_updates_task(website_id):
     for result in results:
         if 'content_hash' in result:
             content_hashes[result['id']] = result['content_hash']
-    logger.info("Found " + str(len(content_hashes))+" hashes")
+    logger.info("Found " + str(len(content_hashes)) + " hashes")
 
     try:
         # retrieve jsonlines files from minio
