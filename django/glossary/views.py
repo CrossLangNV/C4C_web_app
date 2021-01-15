@@ -1,20 +1,21 @@
+import os
+
+from django.db.models import Q
 from rest_framework import permissions, filters
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, RetrieveUpdateAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.decorators import api_view
+
 from glossary.models import AcceptanceState, AcceptanceStateValue, Comment, Concept, Tag, AnnotationWorklog
 from glossary.serializers import AcceptanceStateSerializer, ConceptSerializer, TagSerializer, \
     AnnotationWorklogSerializer
+from glossary.serializers import CommentSerializer
 from scheduler.extract import send_document_to_webanno
 from searchapp.models import Document
-from searchapp.serializers import DocumentSerializer
-from glossary.serializers import CommentSerializer
-from searchapp.solr_call import solr_search_paginated
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
-from django.db.models import Q
-import os
+from searchapp.serializers import DocumentSerializer
+from searchapp.solr_call import solr_search_paginated
 
 
 class SmallResultsSetPagination(PageNumberPagination):
@@ -31,12 +32,21 @@ class ConceptListAPIView(ListCreateAPIView):
     ordering_fields = ['name', 'acceptance_state_max_probability']
 
     def get_queryset(self):
+        groups = self.request.user.groups.all()
+        opinion = any(group.name == 'opinion' for group in groups)
+
         # TODO Remove the Unknown term and empty definition exclude filter
         q = Concept.objects.all().exclude(
             name__exact='Unknown').exclude(definition__exact='')
         keyword = self.request.GET.get('keyword', "")
         if keyword:
             q = q.filter(name__icontains=keyword)
+
+        if opinion:
+            rejected_state_ids = AcceptanceState.objects.filter(
+                Q(user__groups__name='decision') & Q(value="Rejected")).values_list('id', flat=True)
+            q = q.exclude(Q(acceptance_states__in=list(rejected_state_ids)))
+
         showonlyown = self.request.GET.get('showOnlyOwn', "")
         if showonlyown == "true":
             email = self.request.GET.get('email', "")

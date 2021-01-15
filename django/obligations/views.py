@@ -1,20 +1,19 @@
+from django.db.models import Q
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_cookie
-from obligations.models import ReportingObligation, AcceptanceState, AcceptanceStateValue, Comment, Tag
-from obligations.serializers import ReportingObligationSerializer, AcceptanceStateSerializer, CommentSerializer,\
-    TagSerializer
 from rest_framework import permissions, filters
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, RetrieveUpdateAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
-import logging as logger
 
-from .rdf_call import rdf_get_available_entities, rdf_get_predicate, \
-    rdf_get_all_reporting_obligations, rdf_query_predicate_single, rdf_query_predicate_multiple, \
-    rdf_query_predicate_multiple_id, rdf_get_name_of_entity
+from obligations.models import ReportingObligation, AcceptanceState, AcceptanceStateValue, Comment, Tag
+from obligations.serializers import ReportingObligationSerializer, AcceptanceStateSerializer, CommentSerializer, \
+    TagSerializer
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
+from .rdf_call import rdf_get_available_entities, rdf_get_predicate, \
+    rdf_get_all_reporting_obligations, rdf_query_predicate_multiple_id, rdf_get_name_of_entity
 
 
 class PaginationHandlerMixin(object):
@@ -116,11 +115,18 @@ class ReportingObligationListAPIView(ListCreateAPIView):
     ordering_fields = ['name']
 
     def get_queryset(self):
+        groups = self.request.user.groups.all()
+        opinion = any(group.name == 'opinion' for group in groups)
+
         q = ReportingObligation.objects.all()
         keyword = self.request.GET.get('keyword', "")
         if keyword:
             q = q.filter(name__icontains=keyword)
 
+        if opinion:
+            rejected_state_ids = AcceptanceState.objects.filter(
+                Q(user__groups__name='decision') & Q(value="Rejected")).values_list('id', flat=True)
+            q = q.exclude(Q(acceptance_states__in=list(rejected_state_ids)))
         return q.order_by("name")
 
 
