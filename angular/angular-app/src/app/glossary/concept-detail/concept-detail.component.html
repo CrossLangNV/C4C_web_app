@@ -93,7 +93,7 @@
                 {{ doc.website[0] | uppercase }}
               </td>
               <td>
-                <a [routerLink]="['/document', concept.id, doc.id]">
+                <a [routerLink]="['/document', 'occurence', concept.id, doc.id]">
                   {{ doc.title }}
                 </a>
               </td>
@@ -149,12 +149,12 @@
                 {{ doc.website | uppercase }}
               </td>
               <td>
-                <a [routerLink]="['/document', concept.id, doc.id]">
+                <a [routerLink]="['/document', 'definition', concept.id, doc.id]">
                   {{ doc.title }}
                 </a>
               </td>
               <td>
-                {{ doc.date }}
+                {{ doc.date | date }}
               </td>
               <td [innerHTML]="doc.concept_defined"></td>
             </tr>

@@ -77,4 +77,27 @@ urlpatterns = [
     # All entities of RDF + their options
     path('api/ros/entity_map', views.ReportingObligationEntityMapAPIView.as_view(), name='ro_rdf_entity_map'),
 
+### RO Annotations API
+
+    # API root
+    path('api/annotations/ro/<str:ro_id>/<str:document_id>', views.RootAPIView.as_view(),
+        name='api_root'),
+
+    # Search
+    path('api/annotations/ro/<str:ro_id>/<str:document_id>/search', views.SearchListAPIView.as_view(),
+        name='api_search'),
+
+    # Create
+    path('api/annotations/ro/<str:ro_id>/<str:document_id>/annotations', views.CreateListAPIView.as_view(),
+        name='api_create'),
+
+    # Delete
+    path('api/annotations/ro/<str:ro_id>/<str:document_id>/annotations/<str:annotation_id>', views.DeleteAPIView.as_view(),
+        name='api_delete'),
+
+
+    # Get HTML output from reporting obligation extraction
+    path('api/ros/document/<document_id>', views.ReportingObligationDocumentHtmlAPIView.as_view(),
+         name='ro_document_html_api_detail'),
+
 ]

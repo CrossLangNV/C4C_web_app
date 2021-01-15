@@ -1,20 +1,34 @@
+import datetime
+import logging as logger
+import os
+
 from django.db.models import Q
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_cookie
-from rest_framework import permissions, filters
+from minio import Minio
+from minio.error import NoSuchKey
+from rest_framework import permissions, filters, status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, RetrieveUpdateAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK, HTTP_204_NO_CONTENT
 from rest_framework.views import APIView
 
+from obligations.models import ROAnnotationWorklog, ReportingObligationOffsets
 from obligations.models import ReportingObligation, AcceptanceState, AcceptanceStateValue, Comment, Tag
+from obligations.serializers import ROAnnotationWorklogSerializer, ReportingObligationOffsetsSerializer
 from obligations.serializers import ReportingObligationSerializer, AcceptanceStateSerializer, CommentSerializer, \
     TagSerializer
 from searchapp.permissions import IsOwner, IsOwnerOrSuperUser
 from .rdf_call import rdf_get_available_entities, rdf_get_predicate, \
     rdf_get_all_reporting_obligations, rdf_query_predicate_multiple_id, rdf_get_name_of_entity
 
+# Annotation API consants
+
+ANNOTATION_STORE_METADATA = '{"message": "Annotator Store API","links": {}}'
+KWARGS_RO_ID_KEY = 'ro_id'
+KWARGS_DOCUMENT_ID_KEY = 'document_id'
 
 class PaginationHandlerMixin(object):
     @property
@@ -255,3 +269,104 @@ class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
     def put(self, request, *args, **kwargs):
         request.data['user'] = request.user.id
         return self.update(request, *args, **kwargs)
+
+# RO Annotations API
+
+class RootAPIView(APIView):
+    def get(self, request, subject_id, document_id, format=None):
+        return Response(ANNOTATION_STORE_METADATA)
+
+class SearchListAPIView(ListCreateAPIView):
+    serializer_class = ROAnnotationWorklogSerializer
+
+    def list(self, request, *args, **kwargs):
+        annotation_worklogs = ROAnnotationWorklog.objects\
+            .filter(ro_offsets__ro__id=self.kwargs[KWARGS_RO_ID_KEY])\
+            .filter(ro_offsets__document__id=self.kwargs[KWARGS_DOCUMENT_ID_KEY])
+        serializer = ROAnnotationWorklogSerializer(annotation_worklogs, many=True)
+        rows = []
+        for data_item in serializer.data:
+            ro_offsets = ReportingObligationOffsets.objects.get(pk=data_item['ro_offsets'])
+            if ro_offsets:
+                row = {}
+                row['id'] = str(data_item['id'])
+                row['quote'] = ro_offsets.quote
+                row['ranges'] = []
+                ranges_dict = {}
+                ranges_dict['start'] = str(ro_offsets.start)
+                ranges_dict['startOffset'] = ro_offsets.startOffset
+                ranges_dict['end'] = str(ro_offsets.end)
+                ranges_dict['endOffset'] = ro_offsets.endOffset
+                row['ranges'].append(ranges_dict)
+                row['text'] = ''
+                rows.append(row)
+
+        response = {}
+        response['total'] = str(len(rows))
+        response['rows'] = rows
+        return Response(response)
+
+class CreateListAPIView(ListCreateAPIView):
+    serializer_class = ROAnnotationWorklogSerializer
+
+    def post(self, request, *args, **kwargs):
+        ro_offsets_data = request.data
+        ro_offsets_data.update({'ro': str(self.kwargs[KWARGS_RO_ID_KEY])})
+        ro_offsets_data.update({'document': str(self.kwargs[KWARGS_DOCUMENT_ID_KEY])})
+        ro_offsets_data.update({'quote': str(request.data['quote']).replace('"', '\\\"')})
+        ro_offsets_data.update({'probability': 1.0})
+        ro_offsets_data.update({'start': request.data['ranges'][0]['start']})
+        ro_offsets_data.update({'startOffset': request.data['ranges'][0]['startOffset']})
+        ro_offsets_data.update({'end': request.data['ranges'][0]['end']})
+        ro_offsets_data.update({'endOffset': request.data['ranges'][0]['endOffset']})
+
+        annotation_worklog_data = request.data
+        annotation_worklog_data.update({'user': request.user.id})
+        annotation_worklog_data.update({'created_at': datetime.datetime.now()})
+        annotation_worklog_data.update({'updated_at': datetime.datetime.now()})
+
+        ro_offsets_serializer = ReportingObligationOffsetsSerializer(data=ro_offsets_data)
+        if ro_offsets_serializer.is_valid():
+            ro_offsets = ro_offsets_serializer.save()
+            annotation_worklog_data.update({'ro_offsets': ro_offsets.id})
+        else:
+            return Response(ro_offsets_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        annotation_worklog_serializer = ROAnnotationWorklogSerializer(data=annotation_worklog_data)
+        if annotation_worklog_serializer.is_valid():
+            annotation_worklog = annotation_worklog_serializer.save()
+            annotation_worklog_serializer = ROAnnotationWorklogSerializer(annotation_worklog)
+            return Response(annotation_worklog_serializer.data, status=status.HTTP_201_CREATED)
+        return Response(annotation_worklog_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DeleteAPIView(APIView):
+    def delete(self, request, ro_id, document_id, annotation_id, format=None):
+        annotation_worklog = ROAnnotationWorklog.objects.get(id=annotation_id)
+        ro_offsets = annotation_worklog.ro_offsets
+        if (ro_offsets):
+            ro_offsets.delete()
+        annotation_worklog.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+class ReportingObligationDocumentHtmlAPIView(APIView):
+    #permission_classes = [permissions.IsAuthenticated, IsOwnerOrSuperUser]
+
+    def get(self, request, document_id, format=None):
+
+        minio_client = Minio(os.environ['MINIO_STORAGE_ENDPOINT'], access_key=os.environ['MINIO_ACCESS_KEY'],
+                             secret_key=os.environ['MINIO_SECRET_KEY'], secure=False)
+        bucket_name = "ro-html-output"
+
+        EXTRACT_RO_NLP_VERSION = os.environ.get(
+            'EXTRACT_RO_NLP_VERSION', 'd16bba97890')
+
+        try:
+            html_file = minio_client.get_object(bucket_name, document_id + "-" + EXTRACT_RO_NLP_VERSION + ".html")
+            result = html_file.data
+
+            logger.info(result)
+            return Response(result, HTTP_200_OK)
+        except NoSuchKey as err:
+            return Response("", HTTP_204_NO_CONTENT)

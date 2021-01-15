@@ -17,6 +17,7 @@
               name="content"
               class="form-control form-control-sm"
               [(ngModel)]="documentService.searchTerm"
+              (ngModelChange)="filterResetPage()"
             />
           </div>
           <select
@@ -66,6 +67,44 @@
             </div>
           </div>
         </div>
+
+        <div>
+          <p-fieldset [toggleable]="true" collapsed="false">
+            <p-header class="smaller-text">Advanced filters</p-header>
+            <p-dropdown [options]="celexOptions" [(ngModel)]="selectedCelex" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('celex', $event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+            <p-dropdown [options]="typeOptions" [(ngModel)]="selectedType" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('type', $event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+            <p-dropdown [options]="statusOptions" [(ngModel)]="selectedStatus" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('status', $event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+            <p-dropdown [options]="eliOptions" [(ngModel)]="selectedEli" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('eli', $event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+            <p-dropdown [options]="authorOptions" [(ngModel)]="selectedAuthor" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('author', $event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+            <p-dropdown [options]="effectDateOptions" [(ngModel)]="selectedEffectDate" class="a-dropdown" [filter]="true"
+                        optionLabel="name" optionValue="code" (ngModelChange)="onQuery('date_of_effect', $event)"
+                        [virtualScroll]="true" itemSize="20">
+            </p-dropdown>
+
+
+          </p-fieldset>
+        </div>
+
         <div class="row">
           <div class="col">
             <hr class="my-2" />
@@ -137,6 +176,11 @@
     <table class="table table-striped table-bordered table-hover">
       <thead class="thead-dark">
         <tr>
+          <th scope="col">
+            <span ngbTooltip="Bookmark">
+              <fa-icon [icon]="bookmarkIcon"></fa-icon>
+            </span>
+          </th>
           <th scope="col" sortable="title" (sort)="onSort($event)">
             <fa-icon [icon]="titleSortIcon"></fa-icon> Title
           </th>
@@ -154,6 +198,19 @@
           <td colspan="5">No results.</td>
         </tr>
         <tr *ngFor="let document of (documentResults$ | async)?.results; let i = index">
+          <td>
+            <span ngbTooltip="Remove bookmark">
+              <div *ngIf="document.bookmark">
+                <a (click)="onRemoveBookmark(document)"><fa-icon [icon]="bookmarkIcon"></fa-icon></a>
+              </div>
+            </span>
+
+            <span ngbTooltip="Bookmark">
+              <div *ngIf="!document.bookmark">
+                <a (click)="onAddBookmark(document)"><fa-icon [icon]="bookmarkIcon" style="color: rgb(179, 179, 179) !important;"></fa-icon></a>
+              </div>
+            </span>
+          </td>
           <td>
             <a
               (click)="setIndex(document.id)"
