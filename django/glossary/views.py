@@ -309,6 +309,12 @@ class CreateListAPIView(ListCreateAPIView):
 class DeleteAPIView(APIView):
     def delete(self, request, annotation_type, concept_id, document_id, annotation_id, format=None):
         annotation_worklog = AnnotationWorklog.objects.get(id=annotation_id)
+        concept_occurs = annotation_worklog.concept_occurs
+        if (concept_occurs):
+            concept_occurs.delete()
+        concept_defined = annotation_worklog.concept_defined
+        if (concept_defined):
+            concept_defined.delete()
         annotation_worklog.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

@@ -330,6 +330,9 @@ class CreateListAPIView(ListCreateAPIView):
 class DeleteAPIView(APIView):
     def delete(self, request, ro_id, document_id, annotation_id, format=None):
         annotation_worklog = ROAnnotationWorklog.objects.get(id=annotation_id)
+        ro_offsets = annotation_worklog.ro_offsets
+        if (ro_offsets):
+            ro_offsets.delete()
         annotation_worklog.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
