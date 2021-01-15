@@ -756,12 +756,9 @@ def export_all_user_data(website_id):
         typesystem_user = load_typesystem(f)
 
     ts_fisma = generate_typesystem_fisma()
-
     typesystem = merge_typesystems(typesystem_user, ts_fisma)
 
     for document in documents:
-        # CHEAT for DEBUG
-        # document = Document.objects.get(id='e96dd966-19d4-5452-adc4-ffa0ff8affe2')
         logger.info("Extracting document: %s", str(document.id))
 
         try:
@@ -769,21 +766,16 @@ def export_all_user_data(website_id):
                 "cas-files", str(document.id) + "-" + EXTRACT_TERMS_NLP_VERSION + ".xml.gz")
 
             cas = load_compressed_cas(cas_gz, typesystem)
-            logger.info("loaded compressed cas with dkpro cassis")
 
             annotations = AnnotationWorklog.objects.filter(document=document)
-
             for annotation in annotations:
-
                 user = ""
                 role = ""
                 if annotation.user:
                     user = annotation.user.username
                     # role = annotation.user.role
 
-
                 date = annotation.created_at
-
                 if annotation.concept_occurs is not None:
                     occurs_type = typesystem_user.get_type(TFIDF_CLASS)
                     begin = annotation.concept_occurs.startOffset
@@ -791,8 +783,6 @@ def export_all_user_data(website_id):
 
                     cas.get_view(sofa_id_html2text).add_annotation(
                         occurs_type(begin=begin, end=end, user=user, role=role, datetime=date))
-                    logger.info("Added occurs_type annotation on CAS")
-
                 else:
                     defined_type = typesystem.get_type(DEFINED_TYPE)
                     begin = annotation.concept_defined.startOffset
@@ -802,7 +792,6 @@ def export_all_user_data(website_id):
                         defined_type(begin=begin, end=end, user=user, role=role, datetime=date))
 
             filename = str(document.id) + "-" + EXTRACT_TERMS_NLP_VERSION + ".xml.gz"
-
             file = save_compressed_cas(cas, filename)
             logger.info("Saved gzipped cas: %s", file.name)
 
