@@ -63,7 +63,7 @@ class AnnotationWorklog(models.Model):
     concept_occurs = models.ForeignKey(ConceptOccurs, on_delete=models.CASCADE, null=True)
     concept_defined = models.ForeignKey(ConceptDefined, on_delete=models.CASCADE, null=True)
 
-    document = models.ForeignKey(Document, on_delete=models.CASCADE)
+    document = models.ForeignKey(Document, on_delete=models.CASCADE, null=True)
 
     user = models.ForeignKey(
         'auth.User', related_name="user_worklog", on_delete=models.SET_NULL, null=True)
