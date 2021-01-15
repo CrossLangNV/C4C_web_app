@@ -803,7 +803,7 @@ def export_all_user_data(website_id):
                 role = ""
                 if annotation.user:
                     user = annotation.user.username
-                    # role = annotation.user.role
+                    role = annotation.user.groups.name
 
                 date = annotation.created_at
                 if annotation.concept_occurs is not None:
