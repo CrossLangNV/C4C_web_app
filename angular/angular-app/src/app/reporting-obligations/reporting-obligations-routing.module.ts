@@ -23,7 +23,7 @@ const routes: Routes = [
     ],
   },
   {
-    path: 'ro-document',
+    path: 'ro/document',
     data: {
       breadcrumb: 'Reporting Obligations',
     },
