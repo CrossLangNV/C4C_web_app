@@ -127,8 +127,9 @@ class DocumentListAPIView(ListCreateAPIView):
         # if current user belongs to 'opinion' group:
         # exclude rejected documents from users belonging to 'decision' group
         if opinion:
-            q = q.exclude(
-                Q(acceptance_states__user__groups__name='decision') & Q(acceptance_states__value="Rejected"))
+            rejected_state_ids = AcceptanceState.objects.filter(
+                Q(user__groups__name='decision') & Q(value="Rejected")).values_list('id', flat=True)
+            q = q.exclude(Q(acceptance_states__in=list(rejected_state_ids)))
 
         if showonlyown == "true":
             q = q.filter(Q(acceptance_states__user__username=username) & (Q(acceptance_states__value="Accepted") |
@@ -435,8 +436,14 @@ class DocumentStats(APIView):
     queryset = Document.objects.none()
 
     def get(self, request):
+        groups = self.request.user.groups.all()
+        opinion = any(group.name == 'opinion' for group in groups)
         q1 = AcceptanceState.objects.all().order_by("document").distinct("document_id").annotate(
             text_len=Length('document__title')).filter(text_len__gt=1)
+        if opinion:
+            rejected_doc_ids = q1.filter(
+                Q(user__groups__name='decision') & Q(value="Rejected")).values_list('document_id', flat=True)
+            q1 = q1.exclude(Q(document_id__in=list(rejected_doc_ids)))
         q2 = q1.exclude(Q(value="Rejected") | Q(value="Accepted")
                         & Q(probability_model__isnull=True))
         q3 = q1.filter(Q(value="Accepted") & Q(probability_model__isnull=True))
@@ -463,9 +470,15 @@ class TotalDocuments(APIView):
     queryset = Document.objects.none()
 
     def get(self, request):
+        groups = self.request.user.groups.all()
+        opinion = any(group.name == 'opinion' for group in groups)
         q = Document.objects.annotate(
-            text_len=Length('title')).filter(text_len__gt=1).count()
-        return Response(q)
+            text_len=Length('title')).filter(text_len__gt=1)
+        if opinion:
+            rejected_state_ids = AcceptanceState.objects.filter(
+                Q(user__groups__name='decision') & Q(value="Rejected")).values_list('id', flat=True)
+            q = q.exclude(Q(acceptance_states__in=list(rejected_state_ids)))
+        return Response(q.count())
 
 
 class BookmarkListAPIView(ListCreateAPIView):
