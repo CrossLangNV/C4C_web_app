@@ -170,6 +170,7 @@ def get_cas_from_pdf(content, docid):
     end = time.time()
     logger.info(
         "Paragraph Detect took %s seconds to succeed (code: %s) (id: %s).", end - start, r.status_code, docid)
+    logger.info("Output: %s", r.content)
     return r
 
 
@@ -265,7 +266,8 @@ def extract_reporting_obligations(website_id):
     rows_per_page = 250
     cursor_mark = "*"
 
-    q = QUERY_WEBSITE + website_name + " AND acceptance_state:accepted"
+    q = QUERY_WEBSITE + website_name
+    # q = QUERY_WEBSITE + website_name + " AND acceptance_state:accepted"
 
     # Load all documents from Solr
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
@@ -291,8 +293,6 @@ def extract_reporting_obligations(website_id):
                         document['id'], len(document['content_html'][0]))
             is_html = True
 
-            logger.warning("SKIPPING HTML TO TEST PDFS")
-            continue
         elif "content_html" not in document and "content" in document:
             logger.info("Extracting terms from PDF document id: %s (%s chars)",
                         document['id'], len(document['content'][0]))
@@ -311,11 +311,16 @@ def extract_reporting_obligations(website_id):
             r = get_cas_from_pdf(document['content'][0], document['id'])
             paragraph_request = r
 
+        logger.info("")
         encoded_b64 = get_encoded_content_from_cas(r)
 
         # Paragraph Detection for HTML
         if is_html:
             paragraph_request = get_cas_from_paragraph_detection(encoded_b64)
+
+        if not paragraph_request.content['cas_content']:
+            logger.error("Something went wrong in paragraph detection.")
+            continue
 
         # Send to RO API
         res = json.loads(paragraph_request.content.decode('utf-8'))
