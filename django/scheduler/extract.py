@@ -164,6 +164,7 @@ def get_cas_from_pdf(content, docid):
 
     logger.info("Sending request to Paragraph Detection (PDF) (%s)",
                 PARAGRAPH_DETECT_URL)
+    logger.info("input_for_paragraph_detection: %s", input_for_paragraph_detection)
     r = requests.post(PARAGRAPH_DETECT_URL,
                       json=input_for_paragraph_detection)
     end = time.time()
@@ -306,6 +307,7 @@ def extract_reporting_obligations(website_id):
 
         # Paragraph detection for PDF + fallback cas for not having a html2text request
         if is_pdf:
+            logger.info("get_cas_from_pdf")
             r = get_cas_from_pdf(document['content'][0], document['id'])
             paragraph_request = r
 
