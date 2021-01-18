@@ -97,7 +97,6 @@ export class ConceptListComponent implements OnInit {
     { id: 'accepted', name: '..Accepted' },
     { id: 'rejected', name: '..Rejected' },
   ];
-  versions = [{ id: '', name: 'Version...'}]
   websites = [ { id: '', name: 'Website..' } ];
 
   constructor(
@@ -116,7 +115,6 @@ export class ConceptListComponent implements OnInit {
       this.router.navigate(['/login']);
     }
 
-    this.fetchVersions();
     this.fetchConcepts();
     this.fetchWebsites();
 
@@ -154,15 +152,6 @@ export class ConceptListComponent implements OnInit {
       });
   }
 
-  fetchVersions() {
-    this.service
-      .getConceptVersions()
-      .subscribe((versions) => {
-        versions.forEach((version) =>{
-          this.versions.push({id: version, name: '..' + version });
-        })
-      });
-  }
   fetchWebsites() {
     this.service.getWebsites().subscribe((websites) => {
       websites.forEach((website) => {
