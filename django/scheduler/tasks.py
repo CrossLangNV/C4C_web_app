@@ -381,7 +381,7 @@ def sync_documents_task(website_id, **kwargs):
         for doc in up_to_date_docs:
             # fetch OFFLINE tag for this document
             try:
-                offline_tag = Tag.objects.get(value="OFFLINE", document=doc)
+                offline_tag = Tag.objects.filter(value="OFFLINE", document=doc)
                 offline_tag.delete()
             except Tag.DoesNotExist:
                 # OFFLINE tag not found, skip
