@@ -36,15 +36,6 @@
               f.name
             }}</option>
           </select>
-          <select
-            class="form-control form-control-sm m-1 col-2"
-            [(ngModel)]="version"
-            (change)="filterResetPage()"
-          >
-            <option *ngFor="let v of versions" [ngValue]="v.id">{{
-              v.name
-              }}</option>
-          </select>
           <div class="form-check m-1 pl-0 pt-1">
             <span ngbTooltip="Show concepts from your bookmarked documents">
               <p-inputSwitch
