@@ -98,10 +98,10 @@ urlpatterns = [
          name='tag_detail_api'),
 
     # Document stats
-    path('api/stats', views.document_stats,
+    path('api/stats', views.DocumentStats.as_view(),
          name='document_stats'),
 
-    path('api/stats/total_documents', views.count_total_documents,
+    path('api/stats/total_documents', views.TotalDocuments.as_view(),
          name='total_documents'),
 
     # Super
@@ -119,8 +119,8 @@ urlpatterns = [
     # SOLR ONLY
     path('api/solrdocument/search/query/preanalyzed/', views.SolrDocumentsSearchQueryPreAnalyzed.as_view(),
          name='solr_document_search_query_preanalyzed_api'),
-
-
+    path('api/solrdocument/search/query/preanalyzed/<doc_id>', views.SolrDocumentSearchQueryPreAnalyzed.as_view(),
+         name='solr_search_query_with_doc_id_preanalyzed_api'),
     # solr_get_preanalyzed_for_doc
     path('api/solrdocuments/like/<id>', views.SimilarDocumentsAPIView.as_view(),
          name='similar_documents_api'),

@@ -9,7 +9,8 @@ import {
   faStar,
   faStopCircle,
   faSyncAlt,
-  faUserAlt
+  faUserAlt,
+  faUserLock
 } from '@fortawesome/free-solid-svg-icons';
 import { Observable, Subject } from 'rxjs';
 import { AuthenticationService } from 'src/app/core/auth/authentication.service';
@@ -75,6 +76,7 @@ export class DocumentListComponent implements OnInit {
     totalDocuments: 0,
   };
   userIcon: IconDefinition;
+  userLockIcon: IconDefinition;
   chipIcon: IconDefinition;
   reloadIcon: IconDefinition = faSyncAlt;
   resetIcon: IconDefinition = faStopCircle;
@@ -179,6 +181,7 @@ export class DocumentListComponent implements OnInit {
   }
   ngOnInit() {
     this.userIcon = faUserAlt;
+    this.userLockIcon = faUserLock;
     this.chipIcon = faMicrochip;
     this.authenticationService.currentDjangoUser.subscribe(
       (x) => {
@@ -351,6 +354,10 @@ export class DocumentListComponent implements OnInit {
         },
       ],
     };
+  }
+
+  containsGroup(groups: Array<any>, groupName: String) {
+    return groups.some(group => group.name == groupName);
   }
 
   onAddBookmark(document: Document) {

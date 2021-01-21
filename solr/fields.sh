@@ -103,6 +103,7 @@ JSON='{
 {"name":"task",                            "type":"text_general","stored":true,"indexed":true,"multiValued":true},
 {"name":"concept_occurs",                  "type":"preanalyzed","indexed":true,"termOffsets":true,"stored":true,"termPositions":true,"termVectors":true,"multiValued":false,"storeOffsetsWithPositions":true},
 {"name":"concept_defined",                 "type":"preanalyzed","indexed":true,"termOffsets":true,"stored":true,"termPositions":true,"termVectors":true,"multiValued":false,"storeOffsetsWithPositions":true},
+{"name":"ro_highlight",                    "type":"preanalyzed","indexed":true,"termOffsets":true,"stored":true,"termPositions":true,"termVectors":true,"multiValued":false,"storeOffsetsWithPositions":true},
 {"name":"content_hash",                    "type":"text_general","stored":true,"indexed":true,"multiValued":false}
 
 ]

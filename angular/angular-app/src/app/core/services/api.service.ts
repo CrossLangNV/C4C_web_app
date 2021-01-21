@@ -139,6 +139,44 @@ export class ApiService {
     );
   }
 
+  public searchSolrPreAnalyzedDocument(
+    docId: string,
+    pageNumber: number,
+    pageSize: number,
+    term: string,
+    field: string,
+    idsFilter: string[],
+    sortBy: string,
+    sortDirection: string
+  ): Observable<any[]> {
+    let requestUrl = `${this.API_URL}/solrdocument/search/query/preanalyzed/` + docId;
+    // let requestUrl = `http://localhost:8983/solr/documents/select?hl.fl=${field}&hl=on&q={!term f=${field}}${term}` + docId;
+
+    if (sortBy) {
+      requestUrl += `?sortBy=${sortBy}`;
+      if (sortDirection) {
+        requestUrl += `&sortDirection=${sortDirection}`;
+      }
+      if (pageNumber) {
+        requestUrl += `&pageNumber=${pageNumber}`;
+      }
+      if (pageSize) {
+        requestUrl += `&pageSize=${pageSize}`;
+      }
+    }
+
+    let formData = new FormData();
+    formData.append('query', `{!term f=${field}}${term}`);
+
+    return this.http.post<any[]>(requestUrl, formData).pipe(
+      map((data: any[]) => {
+        const result = [data[0]];
+        result.push(data[1]);
+        return result;
+      })
+    );
+  }
+
   public getDjangoAndSolrPrAnalyzedDocuments(
     pageNumber: number,
     pageSize: number,
@@ -675,6 +713,11 @@ export class ApiService {
 
   public fetchEffectDateOptions(): Observable<DropdownOption[]> {
     return this.http.get<DropdownOption[]>(`${this.API_URL}/filters/effectdate`)
+  }
+
+  public getReportingObligationsView(id: string): Observable<string> {
+    return this.http
+      .get<string>(`${this.API_RO_URL}/ros/document/${id}`)
   }
 
 }
