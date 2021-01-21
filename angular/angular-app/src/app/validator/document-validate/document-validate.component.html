@@ -45,7 +45,7 @@
     <ul  class="list-group">
       <li *ngFor="let concept of document.definition" class="list-group-item">
           <a [routerLink]="['/glossary', concept.id ]" ><u>{{concept.name}}</u></a> <br>
-          <a [routerLink]="['/document', concept.id, document.id ]" >{{concept.definition}}</a>
+          <a [routerLink]="['/document/definition', concept.id, document.id ]" >{{concept.definition}}</a>
       </li>
     </ul>
   </div>
@@ -177,11 +177,11 @@
             </form>
         </div>
       </div>
-      <div class="col-4">
+      <!-- <div class="col-4">
         <div>
           <button type="submit" [disabled]="webanno_clicked"  (click)="onWebAnno();" class="btn btn-success">View in WebAnno</button>
         </div>
-      </div>
+      </div> -->
     </div>
   </div>
   <ng-template #elseBlock>

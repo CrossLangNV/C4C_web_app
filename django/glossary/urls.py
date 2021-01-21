@@ -37,7 +37,7 @@ urlpatterns = [
     # Concept
     path('api/concepts', views.ConceptListAPIView.as_view(),
          name='concept_api_list'),
-    path('api/concepts/versions', views.get_distinct_versions,
+    path('api/concepts/versions', views.ConceptDistinctVersions.as_view(),
          name='concept_distinct_versions'),
     path('api/concept/<int:pk>', views.ConceptDetailAPIView.as_view(),
          name='concept_api_detail'),
@@ -71,6 +71,25 @@ urlpatterns = [
          name='worklog_detail_api'),
 
     # WebAnno
-    path('api/webanno_link/<document_id>', views.get_webanno_link,
+    path('api/webanno_link/<document_id>', views.WebAnnoLink.as_view(),
          name='webanno_link_api'),
+
+    ### Terms and Definitions Annotations API
+
+    # API root
+    path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>', views.RootAPIView.as_view(),
+        name='api_root'),
+
+    # Search
+    path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>/search', views.SearchListAPIView.as_view(),
+        name='api_search'),
+
+    # Create
+    path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>/annotations', views.CreateListAPIView.as_view(),
+        name='api_create'),
+
+    # Delete
+    path('api/annotations/<str:annotation_type>/<str:concept_id>/<str:document_id>/annotations/<str:annotation_id>', views.DeleteAPIView.as_view(),
+        name='api_delete'),
+
 ]

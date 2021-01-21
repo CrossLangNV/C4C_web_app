@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import re
@@ -10,24 +9,23 @@ from django.db.models.functions import Length
 from django.http import FileResponse
 from lxml import html
 from minio import Minio
-from rest_framework import permissions, filters, status
-from rest_framework.decorators import api_view
+from rest_framework import permissions, filters
+from rest_framework import status
 from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListCreateAPIView, RetrieveUpdateAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
 
+from glossary.models import Concept, ConceptOccurs, ConceptDefined, AcceptanceStateValue
 from scheduler.tasks import export_documents, sync_documents_task, score_documents_task
 from scheduler.tasks_single import full_service_single
 from .models import Website, Document, Attachment, AcceptanceState, AcceptanceStateValue, Comment, Tag, Bookmark
 from .permissions import IsOwner, IsOwnerOrSuperUser
 from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerializer, AcceptanceStateSerializer, \
     CommentSerializer, TagSerializer, BookmarkSerializer
-from .solr_call import solr_search_id, solr_search_paginated, solr_search_query_paginated, solr_mlt, \
-    solr_search_query_paginated_preanalyzed, solr_search_ids, solr_get_preanalyzed_for_doc
-
-from glossary.models import Concept, ConceptOccurs, ConceptDefined
+from .solr_call import solr_search_id, solr_search_paginated, solr_mlt, \
+    solr_search_query_paginated_preanalyzed, solr_search_ids, solr_get_preanalyzed_for_doc, \
+    solr_search_query_with_doc_id_preanalyzed
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +33,6 @@ export_path = '/django/scheduler/export/'
 
 
 class WebsiteListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = WebsiteSerializer
 
     def get_queryset(self):
@@ -47,7 +44,6 @@ class WebsiteListAPIView(ListCreateAPIView):
 
 
 class WebsiteDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = WebsiteSerializer
     logger = logging.getLogger(__name__)
 
@@ -89,7 +85,6 @@ class SmallResultsSetPagination(PageNumberPagination):
 
 
 class DocumentListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = DocumentSerializer
     pagination_class = SmallResultsSetPagination
     filter_backends = [filters.OrderingFilter]
@@ -109,6 +104,9 @@ class DocumentListAPIView(ListCreateAPIView):
         website = self.request.GET.get('website', "")
         tag = self.request.GET.get('tag', "")
         filtertype = self.request.GET.get('filterType', "")
+        groups = self.request.user.groups.all()
+
+        opinion = any(group.name == 'opinion' for group in groups)
 
         q = Document.objects.annotate(
             text_len=Length('title')).filter(text_len__gt=1)
@@ -126,6 +124,13 @@ class DocumentListAPIView(ListCreateAPIView):
             else:
                 if keyword:
                     q = q.filter(title__icontains=keyword)
+
+        # if current user belongs to 'opinion' group:
+        # exclude rejected documents from users belonging to 'decision' group
+        if opinion:
+            rejected_state_ids = AcceptanceState.objects.filter(
+                Q(user__groups__name='decision') & Q(value="Rejected")).values_list('id', flat=True)
+            q = q.exclude(Q(acceptance_states__in=list(rejected_state_ids)))
 
         if showonlyown == "true":
             q = q.filter(Q(acceptance_states__user__username=username) & (Q(acceptance_states__value="Accepted") |
@@ -173,7 +178,6 @@ class DocumentListAPIView(ListCreateAPIView):
 
 
 class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
 
@@ -192,13 +196,11 @@ class DocumentDetailAPIView(RetrieveUpdateDestroyAPIView):
 
 
 class AttachmentListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
 
 
 class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
 
@@ -213,14 +215,15 @@ class AttachmentDetailAPIView(RetrieveUpdateDestroyAPIView):
 
 
 class AcceptanceStateValueAPIView(APIView):
+    queryset = AcceptanceState.objects.none()
 
     def get(self, request, format=None):
         return Response([state.value for state in AcceptanceStateValue])
 
 
 class AcceptanceStateListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = AcceptanceStateSerializer
+    queryset = AcceptanceState.objects.none()
     logger = logging.getLogger(__name__)
 
     def list(self, request, *args, **kwargs):
@@ -246,8 +249,8 @@ class AcceptanceStateDetailAPIView(RetrieveUpdateAPIView):
 
 
 class CommentListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = CommentSerializer
+    queryset = Comment.objects.none()
 
     def list(self, request, *args, **kwargs):
         queryset = Comment.objects.filter(user=request.user)
@@ -270,19 +273,17 @@ class CommentDetailAPIView(RetrieveUpdateDestroyAPIView):
 
 
 class TagListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
 
 
 class TagDetailAPIView(RetrieveUpdateDestroyAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = TagSerializer
     queryset = Tag.objects.all()
 
 
 class IsSuperUserAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Tag.objects.none()
 
     def get(self, request, format=None):
         is_superuser = request.user.is_superuser
@@ -299,7 +300,7 @@ class SolrDocument(APIView):
 
 
 class SolrDocumentSearch(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, search_term, format=None):
         result = solr_search_paginated(core="documents", term=search_term, page_number=request.GET.get('pageNumber', 1),
@@ -313,7 +314,7 @@ class SolrDocumentSearch(APIView):
 
 
 class SolrDocumentsSearchQueryPreAnalyzed(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def post(self, request, format=None):
         result = solr_search_query_paginated_preanalyzed(core="documents", term=request.data['query'],
@@ -326,9 +327,21 @@ class SolrDocumentsSearchQueryPreAnalyzed(APIView):
                                                          sort_direction=request.GET.get('sortDirection'))
         return Response(result)
 
+class SolrDocumentSearchQueryPreAnalyzed(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, doc_id, format=None):
+        result = solr_search_query_with_doc_id_preanalyzed(doc_id=doc_id, core="documents", term=request.data['query'],
+                                                         page_number=request.GET.get('pageNumber', 1),
+                                                         rows_per_page=request.GET.get(
+                                                             'pageSize', 1),
+                                                         sort_by=request.GET.get('sortBy'),
+                                                         sort_direction=request.GET.get('sortDirection'))
+        return Response(result)
+
 
 class SolrDocumentsSearchQueryDjango(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def post(self, request, format=None):
 
@@ -337,26 +350,26 @@ class SolrDocumentsSearchQueryDjango(APIView):
         concept_defined_or_occurs = None
         if request.data['field'] == "concept_defined":
             concept_defined_or_occurs = ConceptDefined.objects.filter(
-                concept=concept)
+                concept=concept).distinct('document')
         else:
             concept_defined_or_occurs = ConceptOccurs.objects.filter(
-                concept=concept)
+                concept=concept).distinct('document')
 
         definitions = []
         for defi_or_occ in concept_defined_or_occurs:
-
             highlighting = solr_get_preanalyzed_for_doc(core="documents",
                                                         id=defi_or_occ.document.id,
-                                                             field=request.data['field'],
-                                                             term=request.data['term'],
-                                                             page_number=request.GET.get(
-                                                                 'pageNumber', 1),
-                                                             rows_per_page=request.GET.get(
-                                                                 'pageSize', 1),
-                                                             sort_by=request.GET.get(
-                                                                 'sortBy'),
-                                                             sort_direction=request.GET.get('sortDirection'))
-            definitions.append({"title": defi_or_occ.document.title, "date": str(defi_or_occ.document.date), "id": str(defi_or_occ.document.id),
+                                                        field=request.data['field'],
+                                                        term=request.data['term'],
+                                                        page_number=request.GET.get(
+                                                            'pageNumber', 1),
+                                                        rows_per_page=request.GET.get(
+                                                            'pageSize', 1),
+                                                        sort_by=request.GET.get(
+                                                            'sortBy'),
+                                                        sort_direction=request.GET.get('sortDirection'))
+            definitions.append({"title": defi_or_occ.document.title, "date": str(defi_or_occ.document.date),
+                                "id": str(defi_or_occ.document.id),
                                 "website": str(defi_or_occ.document.website), request.data['field']: highlighting})
 
         response = [len(definitions), definitions]
@@ -365,7 +378,7 @@ class SolrDocumentsSearchQueryDjango(APIView):
 
 
 class SimilarDocumentsAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, id):
         similar_document_ids_with_coeff = solr_mlt('documents', str(id),
@@ -380,14 +393,14 @@ class SimilarDocumentsAPIView(APIView):
 
 
 class FormexUrlsAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, celex):
         return Response(get_formex_urls(celex))
 
 
 class FormexActAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, celex):
         formex_act = ''
@@ -429,7 +442,7 @@ def natural_keys(text):
 
 
 class ExportDocumentsLaunch(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, format=None):
         task = export_documents.delay()
@@ -438,7 +451,7 @@ class ExportDocumentsLaunch(APIView):
 
 
 class ExportDocumentsStatus(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, task_id, format=None):
         result = AsyncResult(task_id)
@@ -446,7 +459,7 @@ class ExportDocumentsStatus(APIView):
 
 
 class ExportDocumentsDownload(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Document.objects.none()
 
     def get(self, request, task_id, format=None):
         # get zip for given task id from minio
@@ -458,11 +471,18 @@ class ExportDocumentsDownload(APIView):
         return response
 
 
-@api_view(['GET'])
-def document_stats(request):
-    if request.method == 'GET':
+class DocumentStats(APIView):
+    queryset = Document.objects.none()
+
+    def get(self, request):
+        groups = self.request.user.groups.all()
+        opinion = any(group.name == 'opinion' for group in groups)
         q1 = AcceptanceState.objects.all().order_by("document").distinct("document_id").annotate(
             text_len=Length('document__title')).filter(text_len__gt=1)
+        if opinion:
+            rejected_doc_ids = q1.filter(
+                Q(user__groups__name='decision') & Q(value="Rejected")).values_list('document_id', flat=True)
+            q1 = q1.exclude(Q(document_id__in=list(rejected_doc_ids)))
         q2 = q1.exclude(Q(value="Rejected") | Q(value="Accepted")
                         & Q(probability_model__isnull=True))
         q3 = q1.filter(Q(value="Accepted") & Q(probability_model__isnull=True))
@@ -485,17 +505,24 @@ def document_stats(request):
         })
 
 
-@api_view(['GET'])
-def count_total_documents(request):
-    if request.method == 'GET':
+class TotalDocuments(APIView):
+    queryset = Document.objects.none()
+
+    def get(self, request):
+        groups = self.request.user.groups.all()
+        opinion = any(group.name == 'opinion' for group in groups)
         q = Document.objects.annotate(
-            text_len=Length('title')).filter(text_len__gt=1).count()
-        return Response(q)
+            text_len=Length('title')).filter(text_len__gt=1)
+        if opinion:
+            rejected_state_ids = AcceptanceState.objects.filter(
+                Q(user__groups__name='decision') & Q(value="Rejected")).values_list('id', flat=True)
+            q = q.exclude(Q(acceptance_states__in=list(rejected_state_ids)))
+        return Response(q.count())
 
 
 class BookmarkListAPIView(ListCreateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
     serializer_class = BookmarkSerializer
+    queryset = Bookmark.objects.none()
 
     def post(self, request):
         user = request.user
@@ -591,7 +618,7 @@ class DateOfEffectListAPIView(APIView):
 
 
 class BookmarkDetailAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    queryset = Bookmark.objects.none()
     logger = logging.getLogger(__name__)
 
     def delete(self, request, document_id):
