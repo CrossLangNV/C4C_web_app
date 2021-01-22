@@ -2,7 +2,7 @@
   <div class="jumbotron">
     <h3 class="mb-4">{{ concept.name }}</h3>
     <div [innerHTML]="definitionHtml"></div>
-    <div *ngIf="concept.other.length > 0">
+    <!-- <div *ngIf="concept.other.length > 0">
       <hr class="my-4" />
       <p><b>Other terms ({{ concept.other.length }}):</b></p>
       <ul  class="list-group">
@@ -10,7 +10,7 @@
             <a [routerLink]="['/glossary', other_concept.id ]" ><u>{{other_concept.name}}</u></a> <br>
         </li>
       </ul>
-    </div>
+    </div> -->
     <hr class="my-4" />
     <div>
       <p><b>Choose Acceptance State:</b></p>
