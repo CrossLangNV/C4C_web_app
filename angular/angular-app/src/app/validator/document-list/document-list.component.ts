@@ -196,6 +196,7 @@ export class DocumentListComponent implements OnInit {
           name: '..' + website.name.toUpperCase(),
         });
       });
+      this.websites.sort((a, b) => (a.name > b.name) ? 1 : -1);
     });
     this.documentService.total_documents().subscribe((value: number) => {
       this.stats.totalDocuments = value;
