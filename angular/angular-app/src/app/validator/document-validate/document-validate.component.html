@@ -99,7 +99,7 @@
           </button>
         </td>
       </tr>
-      <tr *ngIf="document.content_html">
+      <tr *ngIf="document.contentHtml">
         <td>
           <button
             type="button"
@@ -204,7 +204,7 @@
     </button>
   </div>
 
-  <div [innerHTML]="document.content_html" class="modal-body"></div>
+  <div [innerHTML]="document.contentHtml" class="modal-body"></div>
   <div class="modal-footer">
     <a *ngIf="document.file_url" (click)="goToLink(document.file_url)" class="text-primary">
       <button type="button" class="btn btn-primary">
