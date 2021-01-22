@@ -73,7 +73,10 @@ export class DocumentValidateComponent implements OnInit {
         this.document = document;
         this.service.getSolrDocumentContent(document.id).subscribe(content => {
           this.document.content = content;
-        })
+        });
+        this.service.getSolrDocumentHTMLContent(document.id).subscribe(content => {
+          this.document.content_html = content;
+        });
         this.getSimilarDocuments(this.similarityThreshold / 100, this.maxSimilarDocuments);
         this.consolidatedVersions = new Map();
         let consolidatedVersionsArr = this.document.consolidatedVersions.split(
@@ -179,14 +182,14 @@ export class DocumentValidateComponent implements OnInit {
       attachmentId = attachmentId.replace(/CELEX:/g, '');
       isHtml = true;
     }
-    this.service
-      .getDocumentWithContent(attachmentId)
-      .subscribe((attachment) => {
-        if (!isHtml) {
-          attachment.content = '<pre>' + attachment.content + '</pre>';
-        }
-        this.document = attachment;
-      });
+    // this.service
+    //   .getDocumentWithContent(attachmentId)
+    //   .subscribe((attachment) => {
+    //     if (!isHtml) {
+    //       attachment.content = '<pre>' + attachment.content + '</pre>';
+    //     }
+    //     this.document = attachment;
+    //   });
   }
 
   onSubmit() {

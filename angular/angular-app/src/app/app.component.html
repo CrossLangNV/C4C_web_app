@@ -1,12 +1,15 @@
 <!-- nav -->
+<div>
+  <img src="/assets/img/banner.jpg" alt="banner">
+</div>
 <nav class="navbar navbar-expand navbar-dark bg-dark" *ngIf="currentDjangoUser">
   <div class="navbar-nav mr-auto">
     <a class="navbar-brand" routerLink="/">Home</a>
   </div>
   <div class="navbar-nav">
-    <a class="nav-item nav-link" routerLink="validator">Catalogue</a>
-    <a class="nav-item nav-link" routerLink="glossary">Glossary</a>
-    <a class="nav-item nav-link" routerLink="ro">Reporting Obligations</a>
+    <a class="nav-item nav-link" routerLink="validator">Web pages</a>
+    <a class="nav-item nav-link" routerLink="glossary">Terms</a>
+    <a class="nav-item nav-link" routerLink="ro">CPSV-AP</a>
     <a class="nav-item nav-link" routerLink="browse">Sources</a>
     <a class="nav-item nav-link">{{ currentDjangoUser.username }}</a>
     <a class="nav-item nav-link" (click)="logout()">Logout</a>

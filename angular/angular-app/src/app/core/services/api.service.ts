@@ -226,6 +226,16 @@ export class ApiService {
     );
   }
 
+  public getSolrDocumentHTMLContent(documentId: string): Observable<string> {
+    const requestUrl = `${this.API_URL}/solrdocument/${documentId}`;
+    return this.http.get<any[]>(requestUrl).pipe(
+      map((data: any[]) => {
+        const doc = data[0];
+        return doc.content_html[0];
+      })
+    );
+  }
+
   public getWebsites(): Observable<Website[]> {
     // return of([
     //   new Website("1", "Staatsblad", "htp://staatsblad.be", "Belgisch Staatsblad Het Belgisch Staatsblad (BS) produceert en verspreidt een brede waaier officiële en overheidspublicaties. Het doet dat zowel via traditionele (papier) als elektronische (internet) kanalen. Voor de belangrijkste officiële publicaties gebeurt de distributie enkel via elektronische weg. Het BS biedt een aantal databanken aan waarvan het Belgisch Staatsblad(externe link) zelf, de bijlage van de rechtspersonen(externe link), de openbare aanbestedingen(externe link) (tot 31 december 2010) en de Justel-databanken(externe link) (geconsolideerde wetgeving en wetgevingsindex) de meest bekende zijn. Daarnaast geven de diensten van het BS beknopte informatie over gegevens die in de publicaties zijn verschenen. Het BS helpt ook bij de distributie van een breed gamma informatiebrochures uitgegeven door de FOD Justitie.", ["1", "2"]),

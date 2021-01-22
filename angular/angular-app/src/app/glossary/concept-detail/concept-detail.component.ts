@@ -184,11 +184,10 @@ export class ConceptDetailComponent implements OnInit {
 
   loadOccursInDocuments() {
     this.service
-      .searchSolrPreAnalyzedDocuments(
+      .searchSolrDocuments(
         this.occursInPage,
         this.occursInPageSize,
         this.concept.name,
-        "concept_occurs",
         [],
         this.occursInSortBy,
         this.occursInSortDirection
@@ -201,12 +200,10 @@ export class ConceptDetailComponent implements OnInit {
 
   loadDefinedInDocuments() {
     this.service
-      .getDjangoAndSolrPrAnalyzedDocuments(
+      .searchSolrDocuments(
         this.definedInPage,
         this.definedInPageSize,
         this.concept.definition,
-        'concept_defined',
-        this.concept.id,
         [],
         this.definedInSortBy,
         this.definedInSortDirection
