@@ -75,7 +75,7 @@ export class DocumentValidateComponent implements OnInit {
           this.document.content = content;
         });
         this.service.getSolrDocumentHTMLContent(document.id).subscribe(content => {
-          this.document.content_html = content;
+          this.document.contentHtml = content;
         });
         this.getSimilarDocuments(this.similarityThreshold / 100, this.maxSimilarDocuments);
         this.consolidatedVersions = new Map();
