@@ -250,6 +250,8 @@ export class ConceptListComponent implements OnInit {
   }
 
   containsGroup(groups: Array<any>, groupName: String) {
-    return groups.some(group => group.name == groupName);
+    if (groups != null) {
+      return groups.some(group => group.name == groupName);
+    }
   }
 }

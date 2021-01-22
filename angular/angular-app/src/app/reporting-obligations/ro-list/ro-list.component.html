@@ -24,20 +24,20 @@
 
       <div *ngIf="contentLoaded" class="col" style="padding: 32px !important;">
         <div>
-          <h4>Query for Reporting Obligations</h4>
+          <h4>Query for CPSV-AP</h4>
           <br/>
 
-          <p-dropdown *ngFor="let filter of availableItems.slice(0, 6)" [options]="filter.options" class="a-dropdown"
+          <!-- <p-dropdown *ngFor="let filter of availableItems.slice(0, 6)" [options]="filter.options" class="a-dropdown"
                       optionLabel="name" optionValue="code" [ngModel]="availableItemsQuery.get(item)"
                       (ngModelChange)="onQuery(filter, $event)" [virtualScroll]="true" [filter]="true">
 
-          </p-dropdown>
+          </p-dropdown> -->
 
         </div>
 
         <br/>
 
-        <div>
+        <!-- <div>
           <p-fieldset [toggleable]="true" collapsed="false">
             <p-header class="smaller-text">Advanced filters</p-header>
             <p-dropdown *ngFor="let filter of availableItems.slice(7)" [options]="filter.options" class="a-dropdown"
@@ -50,7 +50,7 @@
 
         <br/>
 
-        <button (click)="resetFilters()" label="Reset filters" pButton pRipple type="button" icon="pi pi-times" class="p-button-rounded p-button-danger p-button-outlined"></button>
+        <button (click)="resetFilters()" label="Reset filters" pButton pRipple type="button" icon="pi pi-times" class="p-button-rounded p-button-danger p-button-outlined"></button> -->
 
         <div class="row">
           <div class="col">
@@ -62,9 +62,9 @@
                 <u>{{ stats.autoRejectedSize }}</u> Auto-validated :
                 <u>{{ stats.autoAcceptedSize }} </u> -->
               </div>
-              <div>
+              <!-- <div>
                 Reporting Obligations found: <u>{{ collectionSize }}</u>
-              </div>
+              </div> -->
             </div>
           </div>
         </div>

@@ -15,7 +15,6 @@
   <p *ngIf="document.celex" class=""><u>Celex:</u> {{ document.celex }}</p>
   <p *ngIf="document.eli" class=""><u>Eli:</u> {{ document.eli }}</p>
   <p *ngIf="document.status" class=""><u>Status:</u> {{ document.status }}</p>
-  <p *ngIf="document.dateOfEffect" class=""><u>Date of force:</u> {{ document.dateOfEffect | date}}</p>
   <p *ngIf="document.various" class="">
     <u>Various:</u> {{ document.various }}
   </p>
@@ -85,7 +84,7 @@
       </ngb-pagination>
     </div>
   </div>
-  <div *ngIf="document.file_url || document.celex">
+  <div>
     <hr class="my-4" />
     <p><b>Attachments:</b></p>
     <table>
@@ -100,12 +99,12 @@
           </button>
         </td>
       </tr>
-      <tr *ngIf="!document.file_url && document.celex">
+      <tr *ngIf="document.content_html">
         <td>
           <button
             type="button"
             class="btn btn-primary"
-            (click)="openModal(editProfileModal, 'CELEX:' + document.id)"
+            (click)="openModal(editProfileModal, document.id)"
           >
             HTML
           </button>
@@ -163,7 +162,7 @@
     </form>
   </div>
   <hr class="my-4" />
-  <div class="container">
+  <!-- <div class="container">
     <div class="row justify-content-center">
       <div class="col-4">
         <div *ngIf="document.bookmark == true" >
@@ -177,13 +176,13 @@
             </form>
         </div>
       </div>
-      <!-- <div class="col-4">
+      <div class="col-4">
         <div>
           <button type="submit" [disabled]="webanno_clicked"  (click)="onWebAnno();" class="btn btn-success">View in WebAnno</button>
         </div>
-      </div> -->
+      </div>
     </div>
-  </div>
+  </div> -->
   <ng-template #elseBlock>
     <p>Select a document above.</p>
   </ng-template>
@@ -205,7 +204,7 @@
     </button>
   </div>
 
-  <div [innerHTML]="document.content" class="modal-body"></div>
+  <div [innerHTML]="document.content_html" class="modal-body"></div>
   <div class="modal-footer">
     <a *ngIf="document.file_url" (click)="goToLink(document.file_url)" class="text-primary">
       <button type="button" class="btn btn-primary">
