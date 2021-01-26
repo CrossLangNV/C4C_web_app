@@ -32,6 +32,7 @@ urlpatterns = [
     path('auth/', include('rest_framework_social_oauth2.urls')),
     path('glossary/', include(('glossary.urls', 'glossary'), namespace="glossary")),
     path('obligations/', include(('obligations.urls', 'obligations'), namespace="obligations")),
+    path('cpsv/', include(('cpsv.urls', 'cpsv'), namespace="cpsv")),
     path('ht/', include('health_check.urls')),
 ]
 
