@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'searchapp',
     'glossary',
     'obligations',
+    'cpsv',
     'admin_rest',
     'django_celery_beat',
     'django_celery_results',
