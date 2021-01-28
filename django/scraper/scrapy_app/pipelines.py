@@ -92,7 +92,7 @@ class ScrapyAppPipeline(FilesPipeline):
         return item
 
     def handle_document(self, item, info, file_results):
-        item["content_hash"] = get_json_sem_hash(item)
+        # item["content_hash"] = get_json_sem_hash(item)
         item['task'] = self.task_id
         item['id'] = str(uuid.uuid5(uuid.NAMESPACE_URL, item['url']))
         self.logger.debug("HANDLING_DOC: %s, %s", item['id'], item['url'])
