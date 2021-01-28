@@ -105,6 +105,9 @@ AUTOTHROTTLE_DEBUG = False
 # Exit on first error (TEMP DISABLED)
 CLOSESPIDER_ERRORCOUNT = 0
 
+# Stop after this amount of items are passed by the item pipeline
+CLOSESPIDER_ITEMCOUNT = 1000
+
 COMPRESSION_ENABLED = True
 
 LOG_LEVEL = 'DEBUG'
