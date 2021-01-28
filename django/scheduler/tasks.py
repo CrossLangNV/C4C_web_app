@@ -584,7 +584,7 @@ def sync_scrapy_to_solr_task(website_id):
 
     # Fetch existing id's
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    options = {'rows': 250000, 'fl': 'id,content_hash'}
+    options = {'rows': 250000, 'fl': 'id'}
     results = client.search("website: " + website_name, **options)
     content_ids = []
     for result in results:
