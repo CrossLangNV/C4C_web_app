@@ -7,7 +7,7 @@ import { SharedModule } from './shared/shared.module';
 import { BrowseModule } from './browse/browse.module';
 import { AppRoutingModule } from './app-routing.module';
 import { GlossaryModule } from './glossary/glossary.module';
-import { ReportingObligationsModule } from './reporting-obligations/reporting-obligations.module';
+import { CPSVAPModule } from './cpsv-ap/cpsv-ap.module';
 import { NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
 
 @NgModule({
@@ -19,7 +19,7 @@ import { NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
     BrowserAnimationsModule,
     CoreModule,
     GlossaryModule,
-    ReportingObligationsModule,
+    CPSVAPModule,
     BrowseModule,
     NgxSkeletonLoaderModule,
   ],
