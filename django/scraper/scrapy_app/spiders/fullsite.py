@@ -2,11 +2,13 @@
 
 import logging
 import os
+import json
+import base64
+import requests
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 import lxml.html
-from langdetect import detect
 from lxml.html.clean import Cleaner
 from scrapy.exceptions import NotConfigured
 from scrapy.linkextractors import LinkExtractor
@@ -49,12 +51,25 @@ class FullSiteSpider(CrawlSpider):
         self.cleaner = Cleaner(style=True, links=True, add_nofollow=True,
                                page_structure=False, safe_attrs_only=False)
 
+    def get_language_code(self, document_content):
+        encoded_document = encode_to_base64(document_content)
+        data = {"content": encoded_document}
+        language_code = requests.post(f"languagedetection:5000/language-id", json=data).json()['language-id']
+        return language_code
+
+
+    def encode_to_base64(self, document):
+        document_bytes = document.encode('utf-8')
+        base64_bytes = base64.b64encode(document_bytes)
+        base64_document = base64_bytes.decode('utf-8')
+        return base64_document
+
     def parse_item(self, response):
         title = response.xpath('//head/title/text()').get()
         cleaned_html = self.cleaner.clean_html(response.body)
         document = lxml.html.document_fromstring(cleaned_html)
         document_txt = document.text_content()
-        detected_lang = detect(document_txt)
+        detected_lang = self.get_language_code(document_txt)
         self.logger.debug("Detected language '%s' for: %s",
                           detected_lang, response.url)
 
