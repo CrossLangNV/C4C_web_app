@@ -1,15 +1,9 @@
 import { NgModule } from '@angular/core';
 import { SharedModule } from '../shared/shared.module';
 import {
-  RoDetailComponent,
-  RoDetailSortableHeaderDirective,
-} from './ro-detail/ro-detail.component';
-import {
-  RoListComponent,
-  NgbdSortableHeaderDirective,
-} from './ro-list/ro-list.component';
-import { RoDocumentDetailsComponent } from './ro-document-details/ro-document-details.component';
-import { RoRoutingModule } from './reporting-obligations-routing.module';
+  PsListComponent,
+} from './ps-list/ps-list.component';
+import { CPSVAPRoutingModule } from './cpsv-ap-routing.module';
 import { ChipsModule } from 'primeng/chips';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
@@ -21,23 +15,19 @@ import {
   NgbDateNativeAdapter,
 } from '@ng-bootstrap/ng-bootstrap';
 import { DropdownModule } from 'primeng/dropdown';
+import { TruncatePipe } from '../shared/pipelines/truncate';
 import { FieldsetModule } from 'primeng/fieldset';
 import {PanelModule} from 'primeng/panel';
 import {MenuModule} from 'primeng/menu';
+import { TableModule } from 'primeng/table';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import {NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
 import { DirectivesModule } from '../directives/directives.module';
-import { RoBreakdownComponent } from './ro-breakdown/ro-breakdown.component';
 
 @NgModule({
     declarations: [
-        RoListComponent,
-        RoDetailComponent,
-        NgbdSortableHeaderDirective,
-        RoDetailSortableHeaderDirective,
-        RoDocumentDetailsComponent,
-        RoBreakdownComponent,
-        RoBreakdownComponent
+        PsListComponent,
+        TruncatePipe,
     ],
   imports: [
     SharedModule,
@@ -47,7 +37,7 @@ import { RoBreakdownComponent } from './ro-breakdown/ro-breakdown.component';
     OverlayPanelModule,
     ConfirmDialogModule,
     SharedModule,
-    RoRoutingModule,
+    CPSVAPRoutingModule,
     DropdownModule,
     FieldsetModule,
     PanelModule,
@@ -55,10 +45,11 @@ import { RoBreakdownComponent } from './ro-breakdown/ro-breakdown.component';
     SelectButtonModule,
     NgxSkeletonLoaderModule.forRoot(),
     DirectivesModule,
+    TableModule,
   ],
   providers: [
     ConfirmationService,
     { provide: NgbDateAdapter, useClass: NgbDateNativeAdapter },
   ],
 })
-export class ReportingObligationsModule {}
+export class CPSVAPModule {}

@@ -1,0 +1,50 @@
+<div class="jumbotron p-1 m-2">
+  <div class="form-group">
+    <div class="row">
+      <div class="col" style="padding: 32px !important;">
+        <div>
+          <h4>Public services</h4>
+          <br/>
+        </div>
+
+        <br/>
+      </div>
+    </div>
+
+    <hr class="my-2" />
+    <p-table class="table table-striped table-bordered table-hover">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">Title</th>
+          <th scope="col">Url</th>
+          <!-- <th scope="col">Terms</th> -->
+          <th scope="col">States</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let ps of publicServices; let i = index">
+          <td>
+            {{ ps.title || "(no title)" | truncate: [120, "..."] }}&nbsp;
+          </td>
+          <td>
+            <a href="{{ps.url}}">{{ ps.url || "(no url)" | truncate: [120, "..."] }}</a
+            >&nbsp;
+          </td>
+          <!-- <td>{{ ps.terms | slice: 0 : 9}}</td> -->
+           <td>
+            <p-chips
+              [(ngModel)]="ps.acceptance_states"
+              disabled="true"
+              styleClass="p-chips-state"
+            >
+            </p-chips>
+          </td>
+        </tr>
+      </tbody>
+    </p-table>
+    <div class="d-flex justify-content-between p-0">
+    </div>
+    <hr class="my-2" />
+  </div>
+  <router-outlet></router-outlet>
+</div>
