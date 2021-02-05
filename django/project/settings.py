@@ -206,7 +206,7 @@ USE_TZ = True
 
 DEFAULT_FILE_STORAGE = "minio_storage.storage.MinioMediaStorage"
 STATICFILES_STORAGE = "minio_storage.storage.MinioStaticStorage"
-MINIO_STORAGE_ENDPOINT = 'minio:9000'
+MINIO_STORAGE_ENDPOINT = 'c4c_minio:9000'
 MINIO_STORAGE_ACCESS_KEY = os.environ['MINIO_ACCESS_KEY']
 MINIO_STORAGE_SECRET_KEY = os.environ['MINIO_SECRET_KEY']
 MINIO_STORAGE_USE_HTTPS = os.environ.get('MINIO_HTTPS', False) == 'True'

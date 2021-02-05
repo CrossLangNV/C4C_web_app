@@ -25,9 +25,9 @@ services:
     restart:
       always
     depends_on:
-      - postgres
-      - solr
-      - minio
+      - c4c_postgres
+      - c4c_solr
+      - c4c_minio
 
   django_nginx:
     restart: always
@@ -84,31 +84,31 @@ services:
     ports:
       - "5672:5672"
 
-  solr:
+  c4c_solr:
     image: solr:8.7-slim
     ports:
       - "8983:8983"
     environment:
       - SOLR_HEAP=4g
     volumes:
-      - solr:/var/solr
+      - c4c_solr:/var/solr
     command: bash -c "precreate-core documents && precreate-core archive && solr-foreground"
 
-  postgres:
+  c4c_postgres:
     image: postgres:12
     ports:
       - "5432:5432"
     env_file:
       - ./secrets/django-docker.env
     volumes:
-      - postgres:/var/lib/postgresql/data
+      - c4c_postgres:/var/lib/postgresql/data
 
   docclass:
     image: docker.crosslang.com/ctlg-manager/docclass:master-latest
     ports:
       - "5000:5000"
 
-  minio:
+  c4c_minio:
     image: minio/minio
     command: server /data
     ports:
@@ -116,7 +116,7 @@ services:
     env_file:
       - ./secrets/django-docker.env
     volumes:
-      - minio:/data
+      - c4c_minio:/data
 
   tika:
     image: apache/tika
@@ -124,7 +124,7 @@ services:
       - "9998:9998"
 
 volumes:
-  solr:
-  postgres:
-  minio:
+  c4c_solr:
+  c4c_postgres:
+  c4c_minio:
   train:
