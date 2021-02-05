@@ -474,6 +474,13 @@ def launch_fullsite_multiple(urls, websites):
 
 
 @shared_task
+def launch_fullsite_brussels(start, stop):
+    with open(workpath + '/websites/brussels-all.csv') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in itertools.islice(csv_reader, start, stop):
+            launch_fullsite_crawler.delay(row[0], row[1])
+
+@shared_task
 def launch_fullsite_flanders(start, stop):
     with open(workpath + '/websites/flanders_municipalities.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -577,7 +584,7 @@ def sync_scrapy_to_solr_task(website_id):
 
     # Fetch existing id's
     client = pysolr.Solr(os.environ['SOLR_URL'] + '/' + core)
-    options = {'rows': 250000, 'fl': 'id,content_hash'}
+    options = {'rows': 250000, 'fl': 'id'}
     results = client.search("website: " + website_name, **options)
     content_ids = []
     for result in results:
