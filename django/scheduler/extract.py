@@ -22,6 +22,9 @@ from pycaprio.mappings import InceptionFormat, DocumentState
 from pycaprio import Pycaprio
 
 from glossary.models import AnnotationWorklog
+from cpsv.cpsv_rdf_call import get_contact_points, get_public_services, get_contact_point_info
+
+from cpsv.models import PublicService, ContactPoint
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +65,8 @@ UIMA_URL = {"BASE": os.environ['GLOSSARY_UIMA_URL'],  # http://uima:8008
 CONST_EXPORT = '/export/'
 QUERY_ID_ASC = 'id asc'
 QUERY_WEBSITE = "website:"
+
+RDF_FUSEKI_URL = os.environ['RDF_FUSEKI_URL']
 
 
 def save_cas(cas, file_path):
@@ -841,3 +846,35 @@ def export_all_user_data(website_id):
 
         except NoSuchKey:
             pass
+
+
+@shared_task
+def export_public_services():
+    public_services = get_public_services(RDF_FUSEKI_URL)
+
+    for ps in public_services:
+        uri = str(ps['uri'])
+        title = str(ps['title'])
+        description = str(ps['description'])
+
+        obj = PublicService.objects.update_or_create(name=title, description=description, defaults={'identifier': uri})
+        logger.info("PublicService: %s", obj[0].name)
+
+
+@shared_task
+def export_contact_points():
+    contact_points = get_contact_points(RDF_FUSEKI_URL)
+
+    for cp in contact_points:
+        logger.info(cp)
+        uri = str(cp['uri'])
+
+        cp_details = get_contact_point_info(RDF_FUSEKI_URL, uri)
+
+        for cp_detail in cp_details:
+            pred = str(cp_detail['pred'])
+            label = str(cp_detail['label'])
+
+        obj = ContactPoint.objects.update_or_create(description=label, defaults={'identifier': uri})
+        logger.info("ContactPoint: %s", obj[0].description)
+
