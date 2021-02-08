@@ -735,12 +735,16 @@ export class ApiService {
 
   public getRdfPublicServices(
     page: number,
+    rows: number,
     searchTerm: string,
     filterTag: string,
     filterType: string,
     sortBy: string,
   ): Observable<PublicServiceResults> {
-    var pageQuery = page ? '?page=' + page : '';
+    var pageQuery = '?page=' + page;
+    if (rows > 0) {
+      pageQuery = pageQuery + '&rows=' + rows;
+    }
     if (searchTerm) {
       pageQuery = pageQuery + '&keyword=' + searchTerm;
     }
