@@ -73,15 +73,11 @@ class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
     def post(self, request, format=None, *args, **kwargs):
         q = PublicService.objects.all()
         rdf_results = get_public_services(RDF_FUSEKI_URL)
-        logger.info("rdf_results: %s", rdf_results)
 
-        uris = [item[0] for item in rdf_results]
-        logger.info("uris: %s", uris)
+        rdf_uris = [str(item['uri']) for item in rdf_results]
 
-
-        if rdf_results:
-            q = q.filter(identifier__in=rdf_results)
-
+        if rdf_uris:
+            q = q.filter(identifier__in=rdf_uris)
         else:
             q = PublicService.objects.none()
 
