@@ -3,7 +3,7 @@ import { PsListComponent } from './ps-list/ps-list.component';
 
 const routes: Routes = [
   {
-    path: 'ro',
+    path: 'cpsv',
     data: {
       breadcrumb: 'CPSV-AP',
     },

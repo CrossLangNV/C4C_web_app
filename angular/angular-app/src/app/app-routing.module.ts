@@ -30,6 +30,13 @@ const routes: Routes = [
       import('./validator/validator.module').then((m) => m.ValidatorModule),
     canActivate: [AuthGuard],
   },
+  {
+    path: 'cpsv',
+    loadChildren: () =>
+      import('./cpsv-ap/cpsv-ap.module').then((m) => m.CPSVAPModule),
+    canActivate: [AuthGuard],
+  },
+
 
   // otherwise redirect to home
   { path: '**', redirectTo: '/validator' },

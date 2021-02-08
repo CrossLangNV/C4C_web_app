@@ -43,6 +43,7 @@ import {RoAcceptanceState, RoAcceptanceStateAdapter} from "../../shared/models/r
 import {RoComment, RoCommentAdapter} from "../../shared/models/roComment";
 import { DjangoUser } from 'src/app/shared/models/django_user';
 import {DropdownOption} from '../../shared/models/DropdownOption';
+import {PublicServiceResults} from '../../shared/models/PublicService';
 
 @Injectable({
   providedIn: 'root',
@@ -51,6 +52,7 @@ export class ApiService {
   API_URL = Environment.ANGULAR_DJANGO_API_URL;
   API_GLOSSARY_URL = Environment.ANGULAR_DJANGO_API_GLOSSARY_URL;
   API_RO_URL = Environment.ANGULAR_DJANGO_API_RO_URL;
+  API_CPSV_URL = Environment.ANGULAR_DJANGO_API_CPSV_URL;
   messageSource: Subject<string>;
 
   constructor(
@@ -728,6 +730,31 @@ export class ApiService {
   public getReportingObligationsView(id: string): Observable<string> {
     return this.http
       .get<string>(`${this.API_RO_URL}/ros/document/${id}`)
+  }
+
+
+  public getRdfPublicServices(
+    page: number,
+    searchTerm: string,
+    filterTag: string,
+    filterType: string,
+    sortBy: string,
+  ): Observable<PublicServiceResults> {
+    var pageQuery = page ? '?page=' + page : '';
+    if (searchTerm) {
+      pageQuery = pageQuery + '&keyword=' + searchTerm;
+    }
+    if (filterType) {
+      pageQuery = pageQuery + '&filterType=' + filterType;
+    }
+    if (filterTag) {
+      pageQuery = pageQuery + '&tag=' + filterTag;
+    }
+    if (sortBy) {
+      pageQuery = pageQuery + '&ordering=' + sortBy;
+    }
+    return this.http.post<PublicServiceResults>(`${this.API_CPSV_URL}/rdf_public_services${pageQuery}`, {});
+
   }
 
 }
