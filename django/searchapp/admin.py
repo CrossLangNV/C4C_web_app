@@ -110,13 +110,22 @@ def export_all_user_data(modeladmin, request, queryset):
         tasks.export_all_user_data.delay(website.id)
 
 
+def export_public_services(modeladmin, request, queryset):
+    tasks.export_public_services.delay()
+
+
+def export_contact_points(modeladmin, request, queryset):
+    tasks.export_contact_points.delay()
+
+
 class WebsiteAdmin(admin.ModelAdmin):
     list_display = ['name', 'count_documents']
     ordering = ['name']
     actions = [full_service, scrape_website, handle_document_updates, sync_scrapy_to_solr, parse_content_to_plaintext,
                sync_documents, delete_documents_not_in_solr, score_documents, check_documents_unvalidated,
                extract_terms, extract_reporting_obligations, export_documents,
-               delete_from_solr, reset_pre_analyzed_fields, export_all_user_data]
+               delete_from_solr, reset_pre_analyzed_fields, export_all_user_data,
+               export_public_services, export_contact_points]
 
     def count_documents(self, doc):
         return doc.documents.count()

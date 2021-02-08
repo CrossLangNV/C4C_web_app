@@ -24,7 +24,8 @@ from scrapy.utils.project import get_project_settings
 from tika import parser
 from twisted.internet import reactor
 
-from scheduler.extract import extract_terms, extract_reporting_obligations, export_all_user_data
+from scheduler.extract import extract_terms, extract_reporting_obligations, export_all_user_data, \
+    export_public_services, export_contact_points
 from searchapp.datahandling import score_documents
 from searchapp.models import Website, Document, AcceptanceState, Tag, AcceptanceStateValue
 from searchapp.solr_call import solr_search_website_sorted, solr_search_website_with_content
@@ -480,6 +481,7 @@ def launch_fullsite_brussels(start, stop):
         for row in itertools.islice(csv_reader, start, stop):
             launch_fullsite_crawler.delay(row[0], row[1])
 
+
 @shared_task
 def launch_fullsite_flanders(start, stop):
     with open(workpath + '/websites/flanders_municipalities.csv') as csv_file:
@@ -500,6 +502,7 @@ def create_flanders_websites():
                     'content': 'Flanders municipality'
                 }
             )
+
 
 @shared_task
 def parse_content_to_plaintext_task(website_id, **kwargs):
