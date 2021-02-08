@@ -9,6 +9,9 @@ import {DjangoUser} from "../../shared/models/django_user";
 import * as demoData from '../demo_data.json';
 import {PublicService} from '../../shared/models/PublicService';
 import {ApiService} from '../../core/services/api.service';
+import {Subject} from 'rxjs';
+import {debounceTime, distinctUntilChanged} from 'rxjs/operators';
+import {LazyLoadEvent} from 'primeng/api/lazyloadevent';
 
 
 @Component({
@@ -25,13 +28,15 @@ export class PsListComponent implements OnInit {
   selected: string;
   collectionSize = 0;
   selectedIndex: string = null;
-  page = 1;
+  offset = 0;
+  rows = 5;
   previousPage: any;
   pageSize = 5;
   keyword = '';
   filterTag = '';
   sortBy = 'name';
   filterType = 'none'
+  searchTermChanged: Subject<string> = new Subject<string>();
 
   constructor(
     private router: Router,
@@ -51,6 +56,14 @@ export class PsListComponent implements OnInit {
 
     this.fetchPublicServices();
 
+    this.searchTermChanged
+      .pipe(debounceTime(600), distinctUntilChanged())
+      .subscribe((model) => {
+        this.keyword = model;
+        this.offset = 0;
+        this.fetchPublicServices();
+      });
+
 
   }
 
@@ -65,7 +78,8 @@ export class PsListComponent implements OnInit {
   fetchPublicServices() {
     this.service
       .getRdfPublicServices(
-        this.page,
+        this.offset,
+        this.rows,
         this.keyword,
         this.filterTag,
         this.filterType,
@@ -74,5 +88,18 @@ export class PsListComponent implements OnInit {
         this.publicServices = results.results;
         this.collectionSize = results.count;
     });
+  }
+
+  onSearch(keyword: string) {
+    this.searchTermChanged.next(keyword);
+  }
+
+
+  fetchPublicServicesLazy(event: LazyLoadEvent) {
+    let sortOrder = event.sortOrder == 1 ? '' : '-';
+    this.sortBy = sortOrder + event.sortField;
+    this.offset = event.first;
+    this.rows = event.rows;
+    this.fetchPublicServices();
   }
 }

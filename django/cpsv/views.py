@@ -4,7 +4,7 @@ from django.shortcuts import render
 
 # Create your views here.
 from rest_framework import filters
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from searchapp.models import Document
@@ -42,10 +42,10 @@ class PaginationHandlerMixin(object):
         return self.paginator.get_paginated_response(data)
 
 
-class SmallResultsSetPagination(PageNumberPagination):
-    page_size = 5
-    page_size_query_param = 'page_size'
-    max_page_size = 1000
+class SmallResultsSetPagination(LimitOffsetPagination):
+    default_limit = 5
+    limit_query_param = 'rows'
+    offset_query_param = 'page'
 
 
 class RdfContactPointsAPIView(APIView, PaginationHandlerMixin):
@@ -72,12 +72,16 @@ class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
 
     def post(self, request, format=None, *args, **kwargs):
         q = PublicService.objects.all()
+        keyword = self.request.GET.get('keyword', "")
+
         rdf_results = get_public_services(RDF_FUSEKI_URL)
 
         rdf_uris = [str(item['uri']) for item in rdf_results]
 
         if rdf_uris:
             q = q.filter(identifier__in=rdf_uris)
+            if keyword:
+                q = q.filter(name__icontains=keyword)
         else:
             q = PublicService.objects.none()
 
@@ -85,6 +89,8 @@ class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
 
         serializer = self.get_paginated_response(
             self.serializer_class(page, many=True, context={'request': request}).data)
+
+        logger.info("serializer.data: %s", serializer.data)
 
         return Response(serializer.data)
 
