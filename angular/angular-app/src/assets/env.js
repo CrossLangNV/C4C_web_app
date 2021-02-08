@@ -9,6 +9,8 @@
     "http://localhost:8000/glossary/api";
   window["env"]["ANGULAR_DJANGO_API_RO_URL"] =
     "http://localhost:8000/obligations/api";
+  window["env"]["ANGULAR_DJANGO_API_CPSV_URL"] =
+    "http://localhost:8000/cpsv/api";
   window["env"]["ANGULAR_DJANGO_API_GLOSSARY_ANNOTATIONS_URL"] =
     "http://localhost:8000/glossary/api/annotations";
     window["env"]["ANGULAR_DJANGO_API_RO_ANNOTATIONS_URL"] =

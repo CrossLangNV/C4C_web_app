@@ -24,20 +24,20 @@
       <tbody>
         <tr *ngFor="let ps of publicServices; let i = index">
           <td>
-            {{ ps.title || "(no title)" | truncate: [120, "..."] }}&nbsp;
+            {{ ps.description || "(no title)" | truncate: [120, "..."] }}&nbsp;
           </td>
           <td>
-            <a href="{{ps.url}}">{{ ps.url || "(no url)" | truncate: [120, "..."] }}</a
+            <a href="{{ps.identifier}}">{{ ps.identifier || "(no url)" | truncate: [120, "..."] }}</a
             >&nbsp;
           </td>
           <!-- <td>{{ ps.terms | slice: 0 : 9}}</td> -->
            <td>
-            <p-chips
-              [(ngModel)]="ps.acceptance_states"
-              disabled="true"
-              styleClass="p-chips-state"
-            >
-            </p-chips>
+<!--            <p-chips-->
+<!--              [(ngModel)]="ps.acceptance_states"-->
+<!--              disabled="true"-->
+<!--              styleClass="p-chips-state"-->
+<!--            >-->
+<!--            </p-chips>-->
           </td>
         </tr>
       </tbody>
