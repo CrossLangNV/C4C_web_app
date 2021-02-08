@@ -23,6 +23,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import {NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
 import { DirectivesModule } from '../directives/directives.module';
 import {TableModule} from 'primeng/table';
+import {InputSwitchModule} from 'primeng/inputswitch';
 
 @NgModule({
     declarations: [
@@ -46,6 +47,7 @@ import {TableModule} from 'primeng/table';
     NgxSkeletonLoaderModule.forRoot(),
     DirectivesModule,
     TableModule,
+    InputSwitchModule,
   ],
   providers: [
     ConfirmationService,
