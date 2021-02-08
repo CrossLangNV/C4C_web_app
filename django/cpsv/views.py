@@ -57,7 +57,7 @@ class RdfContactPointsAPIView(APIView, PaginationHandlerMixin):
         contact_points = []
         for cpid in cp_ids:
             # logger.info(cpid[0])
-            contact_points.append(get_contact_point_info(RDF_FUSEKI_URL, cpid[0]))
+            contact_points.append(get_contact_point_info(RDF_FUSEKI_URL, cpid["uri"]))
             # logger.info(get_contact_point_info(RDF_FUSEKI_URL, cpid[0]))
 
         return Response(contact_points)
