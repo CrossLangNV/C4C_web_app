@@ -19,10 +19,10 @@ import { TruncatePipe } from '../shared/pipelines/truncate';
 import { FieldsetModule } from 'primeng/fieldset';
 import {PanelModule} from 'primeng/panel';
 import {MenuModule} from 'primeng/menu';
-import { TableModule } from 'primeng/table';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import {NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
 import { DirectivesModule } from '../directives/directives.module';
+import {TableModule} from 'primeng/table';
 
 @NgModule({
     declarations: [
