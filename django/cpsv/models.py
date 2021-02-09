@@ -35,5 +35,6 @@ class PublicServiceConcept(models.Model):
 class ContactPoint(models.Model):
     identifier = models.CharField(max_length=200)
     description = models.TextField()
+    pred = models.TextField()
     opening_hours = models.TextField()
 

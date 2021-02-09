@@ -13,9 +13,9 @@ from cpsv.cpsv_rdf_call import get_contact_points, get_public_services, get_cont
 
 import logging as logger
 
-from cpsv.models import PublicService
+from cpsv.models import PublicService,ContactPoint
 
-from cpsv.serializers import PublicServiceObligationSerializer
+from cpsv.serializers import PublicServiceSerializer, ContactPointSerializer
 
 RDF_FUSEKI_URL = os.environ['RDF_FUSEKI_URL']
 
@@ -49,24 +49,41 @@ class SmallResultsSetPagination(LimitOffsetPagination):
 
 
 class RdfContactPointsAPIView(APIView, PaginationHandlerMixin):
-    queryset = Document.objects.none()
+    pagination_class = SmallResultsSetPagination
+    queryset = ContactPoint.objects.all()
+    serializer_class = ContactPointSerializer
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['description']
 
-    def get(self, request, format=None):
+    def post(self, request, format=None, *args, **kwargs):
+        q = ContactPoint.objects.all()
+        keyword = self.request.GET.get('keyword', "")
+
         cp_ids = get_contact_points(RDF_FUSEKI_URL)
+        rdf_uris = [str(item['uri']) for item in cp_ids]
+        logger.info("rdf_uris: %s", rdf_uris)
 
-        contact_points = []
-        for cpid in cp_ids:
-            # logger.info(cpid[0])
-            contact_points.append(get_contact_point_info(RDF_FUSEKI_URL, cpid["uri"]))
-            # logger.info(get_contact_point_info(RDF_FUSEKI_URL, cpid[0]))
+        if rdf_uris:
+            q = q.filter(identifier__in=rdf_uris)
+            if keyword:
+                q = q.filter(name__icontains=keyword)
+        else:
+            q = ContactPoint.objects.none()
 
-        return Response(contact_points)
+        page = self.paginate_queryset(q)
+
+        serializer = self.get_paginated_response(
+            self.serializer_class(page, many=True, context={'request': request}).data)
+
+        logger.info("serializer.data: %s", serializer.data)
+
+        return Response(serializer.data)
 
 
 class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
     pagination_class = SmallResultsSetPagination
     queryset = PublicService.objects.all()
-    serializer_class = PublicServiceObligationSerializer
+    serializer_class = PublicServiceSerializer
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['name']
 
