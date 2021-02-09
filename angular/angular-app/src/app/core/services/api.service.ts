@@ -44,6 +44,7 @@ import {RoComment, RoCommentAdapter} from "../../shared/models/roComment";
 import { DjangoUser } from 'src/app/shared/models/django_user';
 import {DropdownOption} from '../../shared/models/DropdownOption';
 import {PublicServiceResults} from '../../shared/models/PublicService';
+import {ContactPointResults} from '../../shared/models/ContactPoint';
 
 @Injectable({
   providedIn: 'root',
@@ -758,6 +759,35 @@ export class ApiService {
       pageQuery = pageQuery + '&ordering=' + sortBy;
     }
     return this.http.post<PublicServiceResults>(`${this.API_CPSV_URL}/rdf_public_services${pageQuery}`, {});
+
+  }
+
+
+  public getContactPoints(
+    page: number,
+    rows: number,
+    searchTerm: string,
+    filterTag: string,
+    filterType: string,
+    sortBy: string,
+  ): Observable<ContactPointResults> {
+    var pageQuery = '?page=' + page;
+    if (rows > 0) {
+      pageQuery = pageQuery + '&rows=' + rows;
+    }
+    if (searchTerm) {
+      pageQuery = pageQuery + '&keyword=' + searchTerm;
+    }
+    if (filterType) {
+      pageQuery = pageQuery + '&filterType=' + filterType;
+    }
+    if (filterTag) {
+      pageQuery = pageQuery + '&tag=' + filterTag;
+    }
+    if (sortBy) {
+      pageQuery = pageQuery + '&ordering=' + sortBy;
+    }
+    return this.http.post<ContactPointResults>(`${this.API_CPSV_URL}/rdf_contact_points${pageQuery}`, {});
 
   }
 
