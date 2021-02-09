@@ -4,11 +4,15 @@ from django.utils import timezone
 
 from glossary.models import Concept
 
+from searchapp.models import Website
+
 
 class PublicService(models.Model):
     name = models.TextField(unique=True)
     description = models.TextField()
     identifier = models.CharField(max_length=200)
+    website = models.ForeignKey(
+        Website, related_name='ps_website', on_delete=models.CASCADE, null=True)
 
     concepts = models.ManyToManyField(
         Concept,
@@ -37,4 +41,7 @@ class ContactPoint(models.Model):
     description = models.TextField()
     pred = models.TextField()
     opening_hours = models.TextField()
+    website = models.ForeignKey(
+        Website, related_name='cp_website', on_delete=models.CASCADE, null=True)
+
 

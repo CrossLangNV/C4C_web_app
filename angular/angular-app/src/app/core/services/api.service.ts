@@ -741,6 +741,7 @@ export class ApiService {
     filterTag: string,
     filterType: string,
     sortBy: string,
+    website: string,
   ): Observable<PublicServiceResults> {
     var pageQuery = '?page=' + page;
     if (rows > 0) {
@@ -757,6 +758,9 @@ export class ApiService {
     }
     if (sortBy) {
       pageQuery = pageQuery + '&ordering=' + sortBy;
+    }
+    if (website) {
+      pageQuery = pageQuery + '&website=' + website;
     }
     return this.http.post<PublicServiceResults>(`${this.API_CPSV_URL}/rdf_public_services${pageQuery}`, {});
 

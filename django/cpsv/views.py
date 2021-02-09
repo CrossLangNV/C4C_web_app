@@ -90,6 +90,7 @@ class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
     def post(self, request, format=None, *args, **kwargs):
         q = PublicService.objects.all()
         keyword = self.request.GET.get('keyword', "")
+        website = self.request.GET.get('website', "")
 
         rdf_results = get_public_services(RDF_FUSEKI_URL)
 
@@ -99,6 +100,9 @@ class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
             q = q.filter(identifier__in=rdf_uris)
             if keyword:
                 q = q.filter(name__icontains=keyword)
+            if website:
+                q = q.filter(website__name__iexact=website)
+
         else:
             q = PublicService.objects.none()
 
