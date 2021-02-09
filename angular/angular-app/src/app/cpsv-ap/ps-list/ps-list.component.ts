@@ -12,6 +12,8 @@ import {ApiService} from '../../core/services/api.service';
 import {Subject} from 'rxjs';
 import {debounceTime, distinctUntilChanged} from 'rxjs/operators';
 import {LazyLoadEvent} from 'primeng/api/lazyloadevent';
+import {TabMenu, TabMenuModule} from 'primeng/tabmenu';
+import {MenuItem} from 'primeng/api';
 
 
 @Component({
@@ -40,6 +42,9 @@ export class PsListComponent implements OnInit {
   websites = [ { id: '', name: 'Website..' } ];
   searchTermChanged: Subject<string> = new Subject<string>();
 
+  items: MenuItem[];
+  activeItem: MenuItem;
+
   constructor(
     private router: Router,
     private authenticationService: AuthenticationService,
@@ -55,6 +60,12 @@ export class PsListComponent implements OnInit {
     if (this.currentDjangoUser == null) {
       this.router.navigate(['/login']);
     }
+
+    this.items = [
+      {label: 'Public Services', icon: 'pi pi-fw pi-home'},
+      {label: 'Contact Points', icon: 'pi pi-fw pi-calendar'},
+    ];
+    this.activeItem = this.items[0];
 
     this.fetchPublicServices();
     this.fetchWebsites();
@@ -105,6 +116,10 @@ export class PsListComponent implements OnInit {
     });
   }
 
+  fetchContactPoints() {
+
+  }
+
   onSearch(keyword: string) {
     this.searchTermChanged.next(keyword);
   }
@@ -117,10 +132,21 @@ export class PsListComponent implements OnInit {
 
 
   fetchPublicServicesLazy(event: LazyLoadEvent) {
-    let sortOrder = event.sortOrder == 1 ? '' : '-';
+    const sortOrder = event.sortOrder === 1 ? '' : '-';
     this.sortBy = sortOrder + event.sortField;
     this.offset = event.first;
     this.rows = event.rows;
     this.fetchPublicServices();
+  }
+
+  activateMenu(tab: TabMenu) {
+    this.activeItem = tab.activeItem;
+    this.collectionSize = 0;
+
+    if (tab.activeItem === this.items[0]) {
+      this.fetchPublicServices();
+    } else {
+      this.fetchContactPoints();
+    }
   }
 }
