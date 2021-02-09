@@ -866,7 +866,6 @@ def export_contact_points():
     contact_points = get_contact_points(RDF_FUSEKI_URL)
 
     for cp in contact_points:
-        logger.info(cp)
         uri = str(cp['uri'])
 
         cp_details = get_contact_point_info(RDF_FUSEKI_URL, uri)
@@ -875,6 +874,6 @@ def export_contact_points():
             pred = str(cp_detail['pred'])
             label = str(cp_detail['label'])
 
-        obj = ContactPoint.objects.update_or_create(description=label, defaults={'identifier': uri})
+        obj = ContactPoint.objects.update_or_create(description=label, defaults={'identifier': uri, 'pred': pred})
         logger.info("ContactPoint: %s", obj[0].description)
 
