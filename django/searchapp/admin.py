@@ -111,11 +111,13 @@ def export_all_user_data(modeladmin, request, queryset):
 
 
 def export_public_services(modeladmin, request, queryset):
-    tasks.export_public_services.delay()
+    for website in queryset:
+        tasks.export_public_services.delay(website.id)
 
 
 def export_contact_points(modeladmin, request, queryset):
-    tasks.export_contact_points.delay()
+    for website in queryset:
+        tasks.export_contact_points.delay(website.id)
 
 
 class WebsiteAdmin(admin.ModelAdmin):

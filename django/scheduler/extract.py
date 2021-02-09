@@ -849,7 +849,8 @@ def export_all_user_data(website_id):
 
 
 @shared_task
-def export_public_services():
+def export_public_services(website_id):
+    website = Website.objects.get(pk=website_id)
     public_services = get_public_services(RDF_FUSEKI_URL)
 
     for ps in public_services:
@@ -857,12 +858,16 @@ def export_public_services():
         title = str(ps['title'])
         description = str(ps['description'])
 
-        obj = PublicService.objects.update_or_create(name=title, description=description, defaults={'identifier': uri})
+        # Add website here
+        obj = PublicService.objects.update_or_create(name=title, description=description,
+                                                     defaults={'identifier': uri,
+                                                               'website_id': website.id})
         logger.info("PublicService: %s", obj[0].name)
 
 
 @shared_task
-def export_contact_points():
+def export_contact_points(website_id):
+    website = Website.objects.get(pk=website_id)
     contact_points = get_contact_points(RDF_FUSEKI_URL)
 
     for cp in contact_points:
@@ -874,6 +879,9 @@ def export_contact_points():
             pred = str(cp_detail['pred'])
             label = str(cp_detail['label'])
 
-        obj = ContactPoint.objects.update_or_create(description=label, defaults={'identifier': uri, 'pred': pred})
+        obj = ContactPoint.objects.update_or_create(description=label,
+                                                    defaults={'identifier': uri,
+                                                              'pred': pred,
+                                                              'website_id': website.id})
         logger.info("ContactPoint: %s", obj[0].description)
 

@@ -36,6 +36,8 @@ export class PsListComponent implements OnInit {
   filterTag = '';
   sortBy = 'name';
   filterType = 'none'
+  website = '';
+  websites = [ { id: '', name: 'Website..' } ];
   searchTermChanged: Subject<string> = new Subject<string>();
 
   constructor(
@@ -55,6 +57,7 @@ export class PsListComponent implements OnInit {
     }
 
     this.fetchPublicServices();
+    this.fetchWebsites();
 
     this.searchTermChanged
       .pipe(debounceTime(600), distinctUntilChanged())
@@ -65,6 +68,17 @@ export class PsListComponent implements OnInit {
       });
 
 
+  }
+
+  fetchWebsites() {
+    this.service.getWebsites().subscribe((websites) => {
+      websites.forEach((website) => {
+        this.websites.push({
+          id: website.name.toLowerCase(),
+          name: '..' + website.name.toUpperCase(),
+        });
+      });
+    });
   }
 
   numSequence(n: number): Array<number> {
@@ -83,7 +97,8 @@ export class PsListComponent implements OnInit {
         this.keyword,
         this.filterTag,
         this.filterType,
-        this.sortBy
+        this.sortBy,
+        this.website,
       ).subscribe((results) => {
         this.publicServices = results.results;
         this.collectionSize = results.count;
@@ -92,6 +107,12 @@ export class PsListComponent implements OnInit {
 
   onSearch(keyword: string) {
     this.searchTermChanged.next(keyword);
+  }
+
+  filterResetPage() {
+    this.offset = 0;
+    this.fetchPublicServices();
+    this.router.navigate(['/cpsv']);
   }
 
 
