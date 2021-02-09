@@ -14,6 +14,8 @@ import {debounceTime, distinctUntilChanged} from 'rxjs/operators';
 import {LazyLoadEvent} from 'primeng/api/lazyloadevent';
 import {TabMenu, TabMenuModule} from 'primeng/tabmenu';
 import {MenuItem} from 'primeng/api';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import {faStopCircle} from '@fortawesome/free-solid-svg-icons';
 
 
 @Component({
@@ -44,6 +46,9 @@ export class PsListComponent implements OnInit {
 
   items: MenuItem[];
   activeItem: MenuItem;
+  resetIcon: IconDefinition = faStopCircle;
+  filterActive = false;
+
 
   constructor(
     private router: Router,
@@ -63,7 +68,7 @@ export class PsListComponent implements OnInit {
 
     this.items = [
       {label: 'Public Services', icon: 'pi pi-fw pi-home'},
-      {label: 'Contact Points', icon: 'pi pi-fw pi-calendar'},
+      {label: 'Contact Points', icon: 'pi pi-fw pi-id-card'},
     ];
     this.activeItem = this.items[0];
 
@@ -101,6 +106,7 @@ export class PsListComponent implements OnInit {
   }
 
   fetchPublicServices() {
+    this.checkFilters();
     this.service
       .getRdfPublicServices(
         this.offset,
@@ -114,6 +120,22 @@ export class PsListComponent implements OnInit {
         this.publicServices = results.results;
         this.collectionSize = results.count;
     });
+  }
+
+  resetFilters() {
+    this.keyword = '';
+    this.filterTag = '';
+    this.filterType = '';
+    this.website = '';
+    this.filterResetPage();
+  }
+
+  checkFilters() {
+    this.filterActive =
+      this.keyword.length > 0 ||
+      this.filterTag.length > 0 ||
+      this.filterType !== '' ||
+      this.website !== '';
   }
 
   fetchContactPoints() {

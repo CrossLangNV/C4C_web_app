@@ -75,8 +75,6 @@ class RdfContactPointsAPIView(APIView, PaginationHandlerMixin):
         serializer = self.get_paginated_response(
             self.serializer_class(page, many=True, context={'request': request}).data)
 
-        logger.info("serializer.data: %s", serializer.data)
-
         return Response(serializer.data)
 
 
@@ -93,6 +91,7 @@ class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
         website = self.request.GET.get('website', "")
 
         rdf_results = get_public_services(RDF_FUSEKI_URL)
+        logger.info("rdf_results: %s", rdf_results)
 
         rdf_uris = [str(item['uri']) for item in rdf_results]
 
@@ -110,8 +109,6 @@ class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
 
         serializer = self.get_paginated_response(
             self.serializer_class(page, many=True, context={'request': request}).data)
-
-        logger.info("serializer.data: %s", serializer.data)
 
         return Response(serializer.data)
 
