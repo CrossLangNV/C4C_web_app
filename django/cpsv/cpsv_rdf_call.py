@@ -19,9 +19,10 @@ def get_types(endpoint):
     q = f"""
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-    SELECT distinct ?{OBJECT}
-    WHERE {{
+    SELECT distinct ?{OBJECT} ?g
+    WHERE {{  Graph ?g {{
         ?subject rdf:type ?{OBJECT}
+        }}
     }}
     """
 
@@ -34,9 +35,10 @@ def get_contact_points(endpoint):
     q = f"""
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-    SELECT distinct ?{URI}
-    WHERE {{
+    SELECT distinct ?{URI} ?g
+    WHERE {{ Graph ?g {{
         ?{URI} rdf:type {TYPE_CONTACT_POINT.n3()} ;
+        }}
     }}
     """
 
@@ -56,11 +58,12 @@ def get_contact_point_info(endpoint, cp_uri):
     PREFIX schema: <https://schema.org/>
     PREFIX vcard2006: <http://www.w3.org/2006/vcard/ns#>
 
-    SELECT distinct ({cp_uri.n3()} as ?{URI}) ?{PRED} ?{LABEL}
-    WHERE {{
+    SELECT distinct ({cp_uri.n3()} as ?{URI}) ?{PRED} ?{LABEL} ?g
+    WHERE {{  Graph ?g {{
         VALUES ?{PRED} {{schema:openingHours vcard2006:hasTelephone vcard2006:hasEmail}} 
         {cp_uri.n3()} rdf:type <http://www.w3.org/ns/dcat#ContactPoint> ;
-            ?{PRED} ?{LABEL} .         
+            ?{PRED} ?{LABEL} .     
+        }}    
     }}
     """
     # print(q)
@@ -76,11 +79,12 @@ def get_public_services(endpoint):
 	PREFIX cpsv: <http://purl.org/vocab/cpsv#>
 	PREFIX terms: <http://purl.org/dc/terms/>
 
-    SELECT distinct ?{URI} ?{TITLE} ?{DESCRIPTION}
-    WHERE {{
+    SELECT distinct ?{URI} ?{TITLE} ?{DESCRIPTION} ?g
+    WHERE {{  Graph ?g {{
         ?{URI} rdf:type {TYPE_PUBLICSERVICE.n3()} ;
         	terms:title ?{TITLE} ;
             terms:description ?{DESCRIPTION} . 
+        }}
     }}
     """
     # print(q)

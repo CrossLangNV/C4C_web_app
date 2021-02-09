@@ -24,31 +24,33 @@ import {NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
 import { DirectivesModule } from '../directives/directives.module';
 import {TableModule} from 'primeng/table';
 import {InputSwitchModule} from 'primeng/inputswitch';
+import {TabMenuModule} from 'primeng/tabmenu';
 
 @NgModule({
     declarations: [
         PsListComponent,
         TruncatePipe,
     ],
-  imports: [
-    SharedModule,
-    ChipsModule,
-    ToastModule,
-    TooltipModule,
-    OverlayPanelModule,
-    ConfirmDialogModule,
-    SharedModule,
-    CPSVAPRoutingModule,
-    DropdownModule,
-    FieldsetModule,
-    PanelModule,
-    MenuModule,
-    SelectButtonModule,
-    NgxSkeletonLoaderModule.forRoot(),
-    DirectivesModule,
-    TableModule,
-    InputSwitchModule,
-  ],
+    imports: [
+        SharedModule,
+        ChipsModule,
+        ToastModule,
+        TooltipModule,
+        OverlayPanelModule,
+        ConfirmDialogModule,
+        SharedModule,
+        CPSVAPRoutingModule,
+        DropdownModule,
+        FieldsetModule,
+        PanelModule,
+        MenuModule,
+        SelectButtonModule,
+        NgxSkeletonLoaderModule.forRoot(),
+        DirectivesModule,
+        TableModule,
+        InputSwitchModule,
+        TabMenuModule,
+    ],
   providers: [
     ConfirmationService,
     { provide: NgbDateAdapter, useClass: NgbDateNativeAdapter },
