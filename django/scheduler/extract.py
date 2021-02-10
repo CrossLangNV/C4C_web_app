@@ -22,7 +22,7 @@ from pycaprio.mappings import InceptionFormat, DocumentState
 from pycaprio import Pycaprio
 
 from glossary.models import AnnotationWorklog
-from cpsv.cpsv_rdf_call import get_contact_points, get_public_services, get_contact_point_info
+from cpsv.cpsv_rdf_call import get_contact_points, get_public_services, get_contact_point_info, get_graphs
 
 from cpsv.models import PublicService, ContactPoint
 
@@ -851,7 +851,7 @@ def export_all_user_data(website_id):
 @shared_task
 def export_public_services(website_id):
     website = Website.objects.get(pk=website_id)
-    public_services = get_public_services(RDF_FUSEKI_URL)
+    public_services = get_public_services(RDF_FUSEKI_URL, website.url)
 
     for ps in public_services:
         uri = str(ps['uri'])
@@ -868,7 +868,7 @@ def export_public_services(website_id):
 @shared_task
 def export_contact_points(website_id):
     website = Website.objects.get(pk=website_id)
-    contact_points = get_contact_points(RDF_FUSEKI_URL)
+    contact_points = get_contact_points(RDF_FUSEKI_URL, website.url)
 
     for cp in contact_points:
         uri = str(cp['uri'])
@@ -885,3 +885,15 @@ def export_contact_points(website_id):
                                                               'website_id': website.id})
         logger.info("ContactPoint: %s", obj[0].description)
 
+
+@shared_task
+def export_websites_from_rdf():
+    websites = get_graphs(RDF_FUSEKI_URL)
+
+    for g in websites:
+        graph = str(g['graph'])
+
+        obj = Website.objects.update_or_create(url=graph)
+        if len(obj[0].name) == 0:
+            obj[0].name = graph
+            obj[0].save()
