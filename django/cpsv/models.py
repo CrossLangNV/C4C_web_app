@@ -44,4 +44,10 @@ class ContactPoint(models.Model):
     website = models.ForeignKey(
         Website, related_name='cp_website', on_delete=models.CASCADE, null=True)
 
+    class Meta:
+        ordering = ['description']
+
+    def __str__(self):
+        return self.description
+
 

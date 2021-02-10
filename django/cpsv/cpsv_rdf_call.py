@@ -11,6 +11,7 @@ TITLE = "title"
 DESCRIPTION = 'description'
 PRED = "pred"
 LABEL = 'label'
+GRAPH = 'graph'
 
 
 def get_types(endpoint):
@@ -19,8 +20,8 @@ def get_types(endpoint):
     q = f"""
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-    SELECT distinct ?{OBJECT} ?g
-    WHERE {{  Graph ?g {{
+    SELECT distinct ?{OBJECT}
+    WHERE {{  Graph ?{GRAPH} {{
         ?subject rdf:type ?{OBJECT}
         }}
     }}
@@ -31,13 +32,19 @@ def get_types(endpoint):
     return l
 
 
-def get_contact_points(endpoint):
+def get_contact_points(endpoint, graph_uri=None):
+    q_filter = f"""
+    values ?{GRAPH} {{ {URIRef(graph_uri).n3()} }} 
+    """ if graph_uri is not None else ''
+
     q = f"""
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-    SELECT distinct ?{URI} ?g
-    WHERE {{ Graph ?g {{
-        ?{URI} rdf:type {TYPE_CONTACT_POINT.n3()} ;
+    SELECT distinct ?{URI} ?{GRAPH}
+    WHERE {{ 
+        {q_filter} 
+        Graph ?{GRAPH} {{
+            ?{URI} rdf:type {TYPE_CONTACT_POINT.n3()} ;
         }}
     }}
     """
@@ -49,20 +56,27 @@ def get_contact_points(endpoint):
     return l
 
 
-def get_contact_point_info(endpoint, cp_uri):
+def get_contact_point_info(endpoint, cp_uri,
+                           graph_uri=None):
     if not isinstance(cp_uri, URIRef):
         cp_uri = URIRef(cp_uri)
+
+    q_filter = f"""
+    values ?{GRAPH} {{ {URIRef(graph_uri).n3()} }} 
+    """ if graph_uri is not None else ''
 
     q = f"""
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
     PREFIX schema: <https://schema.org/>
     PREFIX vcard2006: <http://www.w3.org/2006/vcard/ns#>
 
-    SELECT distinct ({cp_uri.n3()} as ?{URI}) ?{PRED} ?{LABEL} ?g
-    WHERE {{  Graph ?g {{
-        VALUES ?{PRED} {{schema:openingHours vcard2006:hasTelephone vcard2006:hasEmail}} 
-        {cp_uri.n3()} rdf:type <http://www.w3.org/ns/dcat#ContactPoint> ;
-            ?{PRED} ?{LABEL} .     
+    SELECT distinct ({cp_uri.n3()} as ?{URI}) ?{PRED} ?{LABEL} ?{GRAPH}
+    WHERE {{  
+        {q_filter} 
+        Graph ?{GRAPH} {{
+            VALUES ?{PRED} {{schema:openingHours vcard2006:hasTelephone vcard2006:hasEmail}} 
+            {cp_uri.n3()} rdf:type <http://www.w3.org/ns/dcat#ContactPoint> ;
+                ?{PRED} ?{LABEL} .     
         }}    
     }}
     """
@@ -73,18 +87,42 @@ def get_contact_point_info(endpoint, cp_uri):
     return l
 
 
-def get_public_services(endpoint):
+def get_public_services(endpoint, graph_uri=None):
+    q_filter = f"""
+    values ?{GRAPH} {{ {URIRef(graph_uri).n3()} }} 
+    """ if graph_uri is not None else ''
+
     q = f"""
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 	PREFIX cpsv: <http://purl.org/vocab/cpsv#>
 	PREFIX terms: <http://purl.org/dc/terms/>
 
-    SELECT distinct ?{URI} ?{TITLE} ?{DESCRIPTION} ?g
-    WHERE {{  Graph ?g {{
-        ?{URI} rdf:type {TYPE_PUBLICSERVICE.n3()} ;
-        	terms:title ?{TITLE} ;
-            terms:description ?{DESCRIPTION} . 
+    SELECT distinct ?{URI} ?{TITLE} ?{DESCRIPTION} ?{GRAPH}
+    WHERE {{ 
+        {q_filter}
+        Graph ?{GRAPH} {{
+            ?{URI} rdf:type {TYPE_PUBLICSERVICE.n3()} ;
+                terms:title ?{TITLE} ;
+                terms:description ?{DESCRIPTION} . 
         }}
+    }}
+    """
+    # print(q)
+
+    l = shared_query_func(q, endpoint)
+
+    return l
+
+
+def get_graphs(endpoint):
+    q = f"""
+    # PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+	# PREFIX cpsv: <http://purl.org/vocab/cpsv#>
+	# PREFIX terms: <http://purl.org/dc/terms/>
+
+    SELECT distinct ?{GRAPH}
+    WHERE {{  
+        Graph ?{GRAPH} {{ }}
     }}
     """
     # print(q)
@@ -110,10 +148,5 @@ def shared_query_func(q, endpoint):
             {k: (URIRef(v['value']) if v.get('type') == 'uri' else Literal(v['value']))
              for k, v in result.items()
              })
-
-    # l = [
-    #     tuple(result[k]["value"] for k in tuple_keys) for result in results["results"]["bindings"]
-    #     #     result[OBJECT]["value"] for result in results["results"]["bindings"]
-    # ]
 
     return l
