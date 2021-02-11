@@ -43,8 +43,8 @@ import {RoAcceptanceState, RoAcceptanceStateAdapter} from "../../shared/models/r
 import {RoComment, RoCommentAdapter} from "../../shared/models/roComment";
 import { DjangoUser } from 'src/app/shared/models/django_user';
 import {DropdownOption} from '../../shared/models/DropdownOption';
-import {PublicServiceResults} from '../../shared/models/PublicService';
-import {ContactPointResults} from '../../shared/models/ContactPoint';
+import {PublicService, PublicServiceAdapter, PublicServiceResults} from '../../shared/models/PublicService';
+import {ContactPoint, ContactPointAdapter, ContactPointResults} from '../../shared/models/ContactPoint';
 
 @Injectable({
   providedIn: 'root',
@@ -70,6 +70,8 @@ export class ApiService {
     private conceptAcceptanceStateAdapter: ConceptAcceptanceStateAdapter,
     private conceptCommentAdapter: ConceptCommentAdapter,
     private roAdapter: RoAdapter,
+    private psAdapter: PublicServiceAdapter,
+    private cpAdapter: ContactPointAdapter,
     private roTagAdapter: RoTagAdapter,
     private roAcceptanceStateAdapter: RoAcceptanceStateAdapter,
     private roCommentAdapter: RoCommentAdapter,
@@ -794,5 +796,18 @@ export class ApiService {
     return this.http.post<ContactPointResults>(`${this.API_CPSV_URL}/rdf_contact_points${pageQuery}`, {});
 
   }
+
+  public getPs(id: string): Observable<PublicService> {
+    return this.http
+      .get<PublicService>(`${this.API_CPSV_URL}/ps/${id}`)
+      .pipe(map((item) => this.psAdapter.adapt(item)));
+  }
+
+  public getCp(id: string): Observable<ContactPoint> {
+    return this.http
+      .get<ContactPoint>(`${this.API_CPSV_URL}/cp/${id}`)
+      .pipe(map((item) => this.cpAdapter.adapt(item)));
+  }
+
 
 }

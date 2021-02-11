@@ -20,15 +20,17 @@ import { FieldsetModule } from 'primeng/fieldset';
 import {PanelModule} from 'primeng/panel';
 import {MenuModule} from 'primeng/menu';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import {NgxSkeletonLoaderModule} from "ngx-skeleton-loader";
+import {NgxSkeletonLoaderModule} from 'ngx-skeleton-loader';
 import { DirectivesModule } from '../directives/directives.module';
 import {TableModule} from 'primeng/table';
 import {InputSwitchModule} from 'primeng/inputswitch';
 import {TabMenuModule} from 'primeng/tabmenu';
+import {PsDetailComponent} from './ps-detail/ps-detail.component';
 
 @NgModule({
     declarations: [
         PsListComponent,
+        PsDetailComponent,
         TruncatePipe,
     ],
     imports: [
