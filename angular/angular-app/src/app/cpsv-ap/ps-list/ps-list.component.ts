@@ -171,4 +171,8 @@ export class PsListComponent implements OnInit {
       this.fetchContactPoints();
     }
   }
+
+  setIndex(index) {
+    this.selectedIndex = index;
+  }
 }

@@ -4,6 +4,7 @@ from django.shortcuts import render
 
 # Create your views here.
 from rest_framework import filters
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,7 +14,7 @@ from cpsv.cpsv_rdf_call import get_contact_points, get_public_services, get_cont
 
 import logging as logger
 
-from cpsv.models import PublicService,ContactPoint
+from cpsv.models import PublicService, ContactPoint
 
 from cpsv.serializers import PublicServiceSerializer, ContactPointSerializer
 
@@ -113,3 +114,11 @@ class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
         return Response(serializer.data)
 
 
+class PublicServiceDetailAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = PublicService.objects.all()
+    serializer_class = PublicServiceSerializer
+
+
+class ContactPointDetailAPIView(RetrieveUpdateDestroyAPIView):
+    queryset = ContactPoint.objects.all()
+    serializer_class = ContactPointSerializer

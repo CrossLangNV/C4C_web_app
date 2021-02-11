@@ -45,14 +45,6 @@
             {{ f.name }}
           </option>
         </select>
-        <div class="form-check m-1 pl-0 pt-1">
-              <span ngbTooltip="To be defined">
-                <p-inputSwitch
-                  (onChange)="filterResetPage()"
-                  [(ngModel)]="showBookmarked"
-                >Own</p-inputSwitch>
-              </span>
-        </div>
       </div>
       <div class="row">
         <div class="col">
@@ -98,7 +90,10 @@
         <ng-template pTemplate="body" let-ps>
           <tr>
             <td>
-              <a href="cpsv"> {{ ps.name || "(no name)" | truncate: [120, "..."] }}&nbsp;</a>
+              <a (click)="setIndex(ps.id)"
+                 [class.font-weight-bold]="selectedIndex === ps.id"
+                 [routerLink]="[ps.id]"
+              > {{ ps.name || "(no name)" | truncate: [120, "..."] }}&nbsp;</a>
             </td>
             <td>
               {{ ps.description || "(no description)" | truncate: [120, "..."] }}&nbsp;

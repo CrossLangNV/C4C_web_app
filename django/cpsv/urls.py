@@ -44,6 +44,7 @@ urlpatterns = [
     path('api/rdf_public_services', views.RdfPublicServicesAPIView.as_view(),
          name='rdf_contact_points_api_list'),
 
-
+    path('api/ps/<int:pk>', views.PublicServiceDetailAPIView.as_view(), name='ps_api_detail'),
+    path('api/cp/<int:pk>', views.ContactPointDetailAPIView.as_view(), name='cp_api_detail'),
 
 ]
