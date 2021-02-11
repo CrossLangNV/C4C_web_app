@@ -49,6 +49,9 @@ export class PsListComponent implements OnInit {
   resetIcon: IconDefinition = faStopCircle;
   filterActive = false;
 
+  psActive = true;
+  cpActive = false;
+
 
   constructor(
     private router: Router,
@@ -148,10 +151,13 @@ export class PsListComponent implements OnInit {
 
   filterResetPage() {
     this.offset = 0;
-    this.fetchPublicServices();
+    if (this.psActive) {
+      this.fetchPublicServices();
+    } else {
+      this.fetchContactPoints();
+    }
     this.router.navigate(['/cpsv']);
   }
-
 
   fetchPublicServicesLazy(event: LazyLoadEvent) {
     const sortOrder = event.sortOrder === 1 ? '' : '-';
@@ -165,10 +171,15 @@ export class PsListComponent implements OnInit {
     this.activeItem = tab.activeItem;
     this.collectionSize = 0;
 
+    this.router.navigate(['/cpsv']);
     if (tab.activeItem === this.items[0]) {
       this.fetchPublicServices();
+      this.psActive = true;
+      this.cpActive = false;
     } else {
       this.fetchContactPoints();
+      this.psActive = false;
+      this.cpActive = true;
     }
   }
 

@@ -1,8 +1,11 @@
 <div *ngIf="ps">
   <div class="jumbotron">
     <h6><b>Public Service:</b> <span style="font-weight: normal"> {{ ps.name }}</span></h6>
+    <br/>
     <div>
-      Description: {{ ps.description }}
+      <p> Description: {{ ps.description }} </p>
+      <p> Url: <a [href]="ps.identifier">{{ ps.identifier }}</a> </p>
+      <p> Concepts: {{ ps.concepts }} </p>
     </div>
   </div>
 </div>
