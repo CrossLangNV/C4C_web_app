@@ -54,7 +54,7 @@ class FullSiteSpider(CrawlSpider):
     def get_language_code(self, document_content):
         encoded_document = encode_to_base64(document_content)
         data = {"content": encoded_document}
-        language_code = requests.post(f"languagedetection:5000/language-id", json=data).json()['language-id']
+        language_code = requests.post(os.environ["LANGUAGE_DETECTION_URL"], json=data).json()['language-id']
         return language_code
 
 
