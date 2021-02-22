@@ -104,9 +104,10 @@ services:
       - c4c_postgres:/var/lib/postgresql/data
 
   docclass:
-    image: docker.crosslang.com/ctlg-manager/docclass:master-latest
-    ports:
-      - "5000:5000"
+    image: docker.crosslang.com/cefat4cities/classifier_app:latest
+    restart: always
+    networks:
+      - default
 
   c4c_minio:
     image: minio/minio
@@ -117,6 +118,12 @@ services:
       - ./secrets/django-docker.env
     volumes:
       - c4c_minio:/data
+    
+  languagedetection:
+    image: docker.crosslang.com/languagedetection
+    restart: always
+    networks:
+      - default
 
   tika:
     image: apache/tika
