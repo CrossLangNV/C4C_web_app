@@ -17,7 +17,8 @@ def get_dropdown_options(uri):
     elif uri == "http://purl.org/vocab/cpsv#isClassifiedBy":
         result = get_related_concepts()
 
-
+    else:
+        result = []
 
     return result
 
