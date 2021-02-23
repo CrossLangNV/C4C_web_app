@@ -15,7 +15,6 @@ import {
   NgbDateNativeAdapter,
 } from '@ng-bootstrap/ng-bootstrap';
 import { DropdownModule } from 'primeng/dropdown';
-import { TruncatePipe } from '../shared/pipelines/truncate';
 import { FieldsetModule } from 'primeng/fieldset';
 import {PanelModule} from 'primeng/panel';
 import {MenuModule} from 'primeng/menu';
@@ -31,7 +30,6 @@ import {PsDetailComponent} from './ps-detail/ps-detail.component';
     declarations: [
         PsListComponent,
         PsDetailComponent,
-        TruncatePipe,
     ],
     imports: [
         SharedModule,
