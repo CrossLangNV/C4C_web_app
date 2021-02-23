@@ -3,7 +3,7 @@ import os
 from django.shortcuts import render
 
 # Create your views here.
-from rest_framework import filters
+from rest_framework import filters, permissions
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
 from rest_framework.response import Response
@@ -86,6 +86,7 @@ class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
     serializer_class = PublicServiceSerializer
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ["name"]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, format=None, *args, **kwargs):
         q = PublicService.objects.all()
