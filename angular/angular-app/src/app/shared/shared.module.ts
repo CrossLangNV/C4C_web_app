@@ -8,12 +8,14 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { BreadcrumbComponent } from './breadcrumb-component/breadcrumb.component';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { TruncatePipe } from './pipelines/truncate';
 
 @NgModule({
   declarations: [
     LoginComponent,
     AlertComponent,
-    BreadcrumbComponent
+    BreadcrumbComponent,
+    TruncatePipe,
   ],
   imports: [
     CommonModule,
@@ -34,7 +36,8 @@ import { BreadcrumbModule } from 'primeng/breadcrumb';
     NgbModule,
     FontAwesomeModule,
     BreadcrumbModule,
-    BreadcrumbComponent
+    BreadcrumbComponent,
+    TruncatePipe,
   ]
 })
 export class SharedModule {}
