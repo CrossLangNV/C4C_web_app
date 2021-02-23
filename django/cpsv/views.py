@@ -18,13 +18,13 @@ from cpsv.models import PublicService, ContactPoint
 
 from cpsv.serializers import PublicServiceSerializer, ContactPointSerializer
 
-RDF_FUSEKI_URL = os.environ['RDF_FUSEKI_URL']
+RDF_FUSEKI_URL = os.environ["RDF_FUSEKI_URL"]
 
 
 class PaginationHandlerMixin(object):
     @property
     def paginator(self):
-        if not hasattr(self, '_paginator'):
+        if not hasattr(self, "_paginator"):
             if self.pagination_class is None:
                 self._paginator = None
             else:
@@ -45,8 +45,8 @@ class PaginationHandlerMixin(object):
 
 class SmallResultsSetPagination(LimitOffsetPagination):
     default_limit = 5
-    limit_query_param = 'rows'
-    offset_query_param = 'page'
+    limit_query_param = "rows"
+    offset_query_param = "page"
 
 
 class RdfContactPointsAPIView(APIView, PaginationHandlerMixin):
@@ -54,14 +54,14 @@ class RdfContactPointsAPIView(APIView, PaginationHandlerMixin):
     queryset = ContactPoint.objects.all()
     serializer_class = ContactPointSerializer
     filter_backends = [filters.OrderingFilter]
-    ordering_fields = ['description']
+    ordering_fields = ["description"]
 
     def post(self, request, format=None, *args, **kwargs):
         q = ContactPoint.objects.all()
-        keyword = self.request.GET.get('keyword', "")
+        keyword = self.request.GET.get("keyword", "")
 
         cp_ids = get_contact_points(RDF_FUSEKI_URL)
-        rdf_uris = [str(item['uri']) for item in cp_ids]
+        rdf_uris = [str(item["uri"]) for item in cp_ids]
         logger.info("rdf_uris: %s", rdf_uris)
 
         if rdf_uris:
@@ -74,7 +74,8 @@ class RdfContactPointsAPIView(APIView, PaginationHandlerMixin):
         page = self.paginate_queryset(q)
 
         serializer = self.get_paginated_response(
-            self.serializer_class(page, many=True, context={'request': request}).data)
+            self.serializer_class(page, many=True, context={"request": request}).data
+        )
 
         return Response(serializer.data)
 
@@ -84,17 +85,17 @@ class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
     queryset = PublicService.objects.all()
     serializer_class = PublicServiceSerializer
     filter_backends = [filters.OrderingFilter]
-    ordering_fields = ['name']
+    ordering_fields = ["name"]
 
     def post(self, request, format=None, *args, **kwargs):
         q = PublicService.objects.all()
-        keyword = self.request.GET.get('keyword', "")
-        website = self.request.GET.get('website', "")
+        keyword = self.request.GET.get("keyword", "")
+        website = self.request.GET.get("website", "")
 
         rdf_results = get_public_services(RDF_FUSEKI_URL)
         logger.info("rdf_results: %s", rdf_results)
 
-        rdf_uris = [str(item['uri']) for item in rdf_results]
+        rdf_uris = [str(item["uri"]) for item in rdf_results]
 
         if rdf_uris:
             q = q.filter(identifier__in=rdf_uris)
@@ -109,7 +110,8 @@ class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
         page = self.paginate_queryset(q)
 
         serializer = self.get_paginated_response(
-            self.serializer_class(page, many=True, context={'request': request}).data)
+            self.serializer_class(page, many=True, context={"request": request}).data
+        )
 
         return Response(serializer.data)
 
@@ -122,3 +124,19 @@ class PublicServiceDetailAPIView(RetrieveUpdateDestroyAPIView):
 class ContactPointDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = ContactPoint.objects.all()
     serializer_class = ContactPointSerializer
+
+
+class PublicServicesEntityOptionsAPIView(APIView):
+    queryset = PublicService.objects.none()
+
+    def get(self, request, format=None):
+
+        mock_data = [
+            "http://cefat4cities.com/public_services/hasContactPoint",
+            "http://cefat4cities.com/public_services/hasPublicOrganisation",
+            "http://cefat4cities.com/public_services/hasRelatedConcept",
+            "http://cefat4cities.com/public_services/hasBusinessEvent",
+            "http://cefat4cities.com/public_services/hasLifeEvent",
+        ]
+
+        return Response(mock_data)

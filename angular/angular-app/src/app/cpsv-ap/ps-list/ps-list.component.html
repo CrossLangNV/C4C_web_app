@@ -11,6 +11,29 @@
           </div>
         </div>
       </div>
+      <div *ngIf="contentLoaded" class="col" style="padding: 32px !important;">
+
+        <p-autoComplete *ngFor="let filter of availableItems"
+                        [suggestions]="roFilterResults"
+                        (completeMethod)="search(filter, $event)"
+                        [multiple]="true"
+                        forceSelection="false"
+                        field="name"
+                        dropdownMode="current"
+                        dropdown="true"
+                        emptyMessage="No results found"
+                        scrollHeight="300px"
+                        [placeholder]="getPlaceholder(filter)"
+                        minLength="0"
+                        (onSelect)="onChangeFilter(filter, $event, 'add')"
+                        (onKeyUp)="fetchPublicServices()"
+                        (onUnselect)="onChangeFilter(filter, $event, 'remove')"
+        ></p-autoComplete>
+
+        <br/><br/>
+        <button (click)="resetFilters()" label="Reset filters" pButton pRipple type="button" icon="pi pi-times" class="p-button-rounded p-button-danger p-button-outlined"></button>
+
+      </div>
       <div class="d-flex justify-content-between p-0">
         <div class="input-group input-group-sm m-1">
           <div class="input-group-prepend">
@@ -27,15 +50,6 @@
             (ngModelChange)="onSearch($event)"
           />
         </div>
-        <select
-          class="form-control form-control-sm m-1 col-2"
-          [(ngModel)]="filterType"
-          (change)="filterResetPage()"
-        >
-          <option *ngFor="let f of filters" [ngValue]="f.id">
-            {{ f.name }}
-          </option>
-        </select>
         <select
           class="form-control form-control-sm m-1 col-2"
           [(ngModel)]="website"

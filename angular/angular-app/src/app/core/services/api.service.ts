@@ -644,12 +644,6 @@ export class ApiService {
       .pipe(map((item) => this.roAdapter.adapt(item)));
   }
 
-  public fetchDropdowns(): Observable<RdfFilter[]> {
-    return this.http.get<RdfFilter[]>(
-      `${this.API_RO_URL}/ros/entity_map`
-    )
-  }
-
   // RO States/comments/tags
   public addRoTag(tag: RoTag): Observable<RoTag> {
     return this.http
@@ -807,6 +801,24 @@ export class ApiService {
     return this.http
       .get<ContactPoint>(`${this.API_CPSV_URL}/cp/${id}`)
       .pipe(map((item) => this.cpAdapter.adapt(item)));
+  }
+
+  public fetchDropdowns(): Observable<RdfFilter[]> {
+    return this.http.get<RdfFilter[]>(
+      `${this.API_CPSV_URL}/ps/entity_map`
+    )
+  }
+
+  public rdf_get_name_of_entity(entity) {
+    const entities = [
+      {value: 'http://cefat4cities.com/public_services/hasContactPoint', name: 'Contact Point'},
+      {value: 'http://cefat4cities.com/public_services/hasPublicOrganisation', name: 'Public Organisation'},
+      {value: 'http://cefat4cities.com/public_services/hasRelatedConcept', name: 'Related Concept'},
+      {value: 'http://cefat4cities.com/public_services/hasBusinessEvent', name: 'Business Event'},
+      {value: 'http://cefat4cities.com/public_services/hasLifeEvent', name: 'Life Event'},
+    ]
+
+    return entities.find(i => i.value === entity).name;
   }
 
 
