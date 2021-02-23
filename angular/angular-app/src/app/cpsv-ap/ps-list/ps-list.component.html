@@ -14,11 +14,11 @@
       <div *ngIf="contentLoaded" class="col" style="padding: 32px !important;">
 
         <p-autoComplete *ngFor="let filter of availableItems"
-                        [suggestions]="roFilterResults"
+                        [suggestions]="suggestions"
                         (completeMethod)="search(filter, $event)"
                         [multiple]="true"
                         forceSelection="false"
-                        field="name"
+                        field="label"
                         dropdownMode="current"
                         dropdown="true"
                         emptyMessage="No results found"
