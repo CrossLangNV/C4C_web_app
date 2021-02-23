@@ -8,6 +8,8 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from cpsv.rdf_call import get_dropdown_options
 from searchapp.models import Document
 
 from cpsv.cpsv_rdf_call import get_contact_points, get_public_services, get_contact_point_info
@@ -129,15 +131,34 @@ class ContactPointDetailAPIView(RetrieveUpdateDestroyAPIView):
 
 class PublicServicesEntityOptionsAPIView(APIView):
     queryset = PublicService.objects.none()
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
 
         mock_data = [
-            "http://cefat4cities.com/public_services/hasContactPoint",
-            "http://cefat4cities.com/public_services/hasPublicOrganisation",
-            "http://cefat4cities.com/public_services/hasRelatedConcept",
+            "http://www.w3.org/ns/dcat#hasContactPoint",
+            "http://data.europa.eu/m8g/hasCompetentAuthority",
+            "http://purl.org/vocab/cpsv#isClassifiedBy",
             "http://cefat4cities.com/public_services/hasBusinessEvent",
             "http://cefat4cities.com/public_services/hasLifeEvent",
         ]
 
         return Response(mock_data)
+
+
+class DropdownOptionsAPIView(APIView):
+    queryset = PublicService.objects.none()
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, format=None, *args, **kwargs):
+        uri_type_has = request.data["uri_type"]
+
+        values = get_dropdown_options(uri_type_has)
+
+        logger.info("values: %s", values)
+
+        # result = [{"name": a} for a in values]
+
+        return Response(values)
+
+

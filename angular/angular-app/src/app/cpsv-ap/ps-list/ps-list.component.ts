@@ -32,8 +32,8 @@ export class PsListComponent implements OnInit {
 
   availableItems: RdfFilter[]
   availableItemsQuery: Map<string, string>;
-
   selectedTags: Map<string, Array<string>>;
+  suggestions: string[];
 
   selected: string;
   collectionSize = 0;
@@ -66,6 +66,9 @@ export class PsListComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    this.availableItemsQuery = new Map<string, string>();
+    this.selectedTags = new Map<string, Array<string>>();
+
     this.authenticationService.currentDjangoUser.subscribe(
       (x) => (this.currentDjangoUser = x)
     );
@@ -209,5 +212,48 @@ export class PsListComponent implements OnInit {
 
   getPlaceholder(filter: RdfFilter) {
     return this.service.rdf_get_name_of_entity(filter)
+  }
+
+  search(filter: RdfFilter, event) {
+    this.service.fetchReportingObligationFiltersLazy(filter, event.query, this.selectedTags).subscribe(data => {
+      this.suggestions = data;
+
+      if (event.query === '') {
+        this.availableItemsQuery.delete(filter.toString())
+      } else {
+        this.availableItemsQuery.set(filter.toString(), event.value)
+      }
+      this.filterResetPage();
+    })
+  }
+
+  onChangeFilter(filter: RdfFilter, event, action) {
+    const filterKey = filter.toString()
+    const previousValues = this.selectedTags.get(filterKey)
+    const values = []
+
+    if (action === 'add') {
+      if (previousValues) {
+        previousValues.forEach(key => {
+          values.push(key)
+        })
+      }
+
+      if (!(values.includes(event.name))) {
+        values.push(event.name)
+      }
+
+      this.selectedTags.set(filterKey, values)
+    } else {
+      previousValues.pop()
+      // Check if it happens to be completely empty now
+      if (previousValues.length === 0) {
+        // this.selectedTags.set(filterKey, null)
+        this.selectedTags.delete(filterKey)
+      } else {
+        this.selectedTags.set(filterKey, previousValues)
+      }
+    }
+    this.fetchPublicServices()
   }
 }

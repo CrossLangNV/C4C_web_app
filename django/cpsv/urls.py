@@ -49,4 +49,6 @@ urlpatterns = [
 
     path('api/ps/entity_map', views.PublicServicesEntityOptionsAPIView.as_view(), name='ps_entity_options'),
 
+    path('api/dropdown_options', views.DropdownOptionsAPIView.as_view(), name='dropdown_public_services'),
+
 ]

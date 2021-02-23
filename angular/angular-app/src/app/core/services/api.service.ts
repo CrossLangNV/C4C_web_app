@@ -811,14 +811,32 @@ export class ApiService {
 
   public rdf_get_name_of_entity(entity) {
     const entities = [
-      {value: 'http://cefat4cities.com/public_services/hasContactPoint', name: 'Contact Point'},
-      {value: 'http://cefat4cities.com/public_services/hasPublicOrganisation', name: 'Public Organisation'},
-      {value: 'http://cefat4cities.com/public_services/hasRelatedConcept', name: 'Related Concept'},
+      {value: 'http://www.w3.org/ns/dcat#hasContactPoint', name: 'Contact Point'},
+      {value: 'http://data.europa.eu/m8g/hasCompetentAuthority', name: 'Competent Authority'},
+      {value: 'http://purl.org/vocab/cpsv#isClassifiedBy', name: 'Related Concept'},
       {value: 'http://cefat4cities.com/public_services/hasBusinessEvent', name: 'Business Event'},
       {value: 'http://cefat4cities.com/public_services/hasLifeEvent', name: 'Life Event'},
     ]
 
     return entities.find(i => i.value === entity).name;
+  }
+
+  public fetchReportingObligationFiltersLazy(
+    uriType: RdfFilter,
+    keyword: string,
+    rdfFilters: Map<string, Array<string>>,
+  ): Observable<string[]> {
+
+    const rdfFiltersMap = {};
+    rdfFilters.forEach((val: string[], key: string) => {
+      rdfFiltersMap[key] = val;
+    });
+
+    return this.http.post<string[]>(`${this.API_CPSV_URL}/dropdown_options`, {
+      uri_type: uriType,
+      keyword,
+      rdfFilters: rdfFiltersMap,
+    });
   }
 
 
