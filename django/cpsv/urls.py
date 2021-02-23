@@ -47,4 +47,6 @@ urlpatterns = [
     path('api/ps/<int:pk>', views.PublicServiceDetailAPIView.as_view(), name='ps_api_detail'),
     path('api/cp/<int:pk>', views.ContactPointDetailAPIView.as_view(), name='cp_api_detail'),
 
+    path('api/ps/entity_map', views.PublicServicesEntityOptionsAPIView.as_view(), name='ps_entity_options'),
+
 ]

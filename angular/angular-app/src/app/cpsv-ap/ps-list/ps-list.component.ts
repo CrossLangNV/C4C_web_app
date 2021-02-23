@@ -16,6 +16,7 @@ import {TabMenu, TabMenuModule} from 'primeng/tabmenu';
 import {MenuItem} from 'primeng/api';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {faStopCircle} from '@fortawesome/free-solid-svg-icons';
+import {RdfFilter} from '../../shared/models/rdfFilter';
 
 
 @Component({
@@ -25,9 +26,14 @@ import {faStopCircle} from '@fortawesome/free-solid-svg-icons';
 })
 export class PsListComponent implements OnInit {
   currentDjangoUser: DjangoUser;
-  contentLoaded = true;
+  contentLoaded = false;
   collapsed = true;
   publicServices: PublicService[];
+
+  availableItems: RdfFilter[]
+  availableItemsQuery: Map<string, string>;
+
+  selectedTags: Map<string, Array<string>>;
 
   selected: string;
   collectionSize = 0;
@@ -77,6 +83,7 @@ export class PsListComponent implements OnInit {
 
     this.fetchPublicServices();
     this.fetchWebsites();
+    this.fetchAvailableFilters();
 
     this.searchTermChanged
       .pipe(debounceTime(600), distinctUntilChanged())
@@ -130,7 +137,11 @@ export class PsListComponent implements OnInit {
     this.filterTag = '';
     this.filterType = '';
     this.website = '';
+    this.availableItems = [];
+    this.availableItemsQuery.clear();
+    this.selectedTags.clear();
     this.filterResetPage();
+    this.fetchPublicServices()
   }
 
   checkFilters() {
@@ -185,5 +196,18 @@ export class PsListComponent implements OnInit {
 
   setIndex(index) {
     this.selectedIndex = index;
+  }
+
+  fetchAvailableFilters() {
+    this.service
+      .fetchDropdowns()
+      .subscribe((results) => {
+        this.availableItems = results
+        this.contentLoaded = true;
+      })
+  }
+
+  getPlaceholder(filter: RdfFilter) {
+    return this.service.rdf_get_name_of_entity(filter)
   }
 }

@@ -26,6 +26,7 @@ import {TableModule} from 'primeng/table';
 import {InputSwitchModule} from 'primeng/inputswitch';
 import {TabMenuModule} from 'primeng/tabmenu';
 import {PsDetailComponent} from './ps-detail/ps-detail.component';
+import {AutoCompleteModule} from 'primeng/autocomplete';
 
 @NgModule({
     declarations: [
@@ -52,6 +53,7 @@ import {PsDetailComponent} from './ps-detail/ps-detail.component';
         TableModule,
         InputSwitchModule,
         TabMenuModule,
+        AutoCompleteModule,
     ],
   providers: [
     ConfirmationService,
