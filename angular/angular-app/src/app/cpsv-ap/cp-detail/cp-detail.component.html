@@ -1,0 +1,12 @@
+<div *ngIf="cp">
+  <div class="jumbotron">
+    <h6><b>Contact Point:</b> <span style="font-weight: normal"> {{ cp.description }}</span></h6>
+    <br/>
+    <div>
+      <p> Description: {{ cp.description }} </p>
+      <p> Url: <a [href]="cp.identifier">{{ cp.identifier }}</a> </p>
+    </div>
+  </div>
+</div>
+
+<p-toast position="top-center"></p-toast>
