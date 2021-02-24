@@ -156,21 +156,13 @@ export class PsListComponent implements OnInit {
       this.website !== '';
   }
 
-  fetchContactPoints() {
-
-  }
-
   onSearch(keyword: string) {
     this.searchTermChanged.next(keyword);
   }
 
   filterResetPage() {
     this.offset = 0;
-    if (this.psActive) {
-      this.fetchPublicServices();
-    } else {
-      this.fetchContactPoints();
-    }
+    this.fetchPublicServices();
     this.router.navigate(['/cpsv']);
   }
 
@@ -202,7 +194,7 @@ export class PsListComponent implements OnInit {
 
   fetchAvailableFilters() {
     this.service
-      .fetchDropdowns()
+      .fetchDropdowns('ps')
       .subscribe((results) => {
         this.availableItems = results
         this.contentLoaded = true;
@@ -210,11 +202,11 @@ export class PsListComponent implements OnInit {
   }
 
   getPlaceholder(filter: RdfFilter) {
-    return this.service.rdf_get_name_of_entity(filter)
+    return this.service.rdf_get_name_of_entity('ps', filter)
   }
 
   search(filter: RdfFilter, event) {
-    this.service.fetchReportingObligationFiltersLazy(filter, event.query, this.selectedTags).subscribe(data => {
+    this.service.fetchDropdownFilters('ps', filter, event.query, this.selectedTags).subscribe(data => {
       this.suggestions = data;
 
       if (event.query === '') {

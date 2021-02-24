@@ -1,27 +1,25 @@
+import abc
+import logging as logger
 import os
-
-from django.shortcuts import render
 
 # Create your views here.
 from rest_framework import filters, permissions
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
-from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from cpsv.rdf_call import get_dropdown_options
-from searchapp.models import Document
-
-from cpsv.cpsv_rdf_call import get_contact_points, get_public_services, get_contact_point_info
-from cpsv.rdf_call import get_public_service_uris_filter
-
-import logging as logger
-
+from cpsv.cpsv_rdf_call import get_contact_points
 from cpsv.models import PublicService, ContactPoint
-
+from cpsv.rdf_call import get_dropdown_options_for_public_services, get_dropdown_options_for_contact_points, \
+    get_contact_point_uris_filter
+from cpsv.rdf_call import get_public_service_uris_filter
 from cpsv.serializers import PublicServiceSerializer, ContactPointSerializer
 
 RDF_FUSEKI_URL = os.environ["RDF_FUSEKI_URL"]
+URI_IS_CLASSIFIED_BY = os.environ["URI_IS_CLASSIFIED_BY"]
+URI_HAS_COMPETENT_AUTHORITY = os.environ["URI_HAS_COMPETENT_AUTHORITY"]
+URI_HAS_CONTACT_POINT = os.environ["URI_HAS_CONTACT_POINT"]
 
 
 class PaginationHandlerMixin(object):
@@ -64,8 +62,12 @@ class RdfContactPointsAPIView(APIView, PaginationHandlerMixin):
         q = ContactPoint.objects.all()
         keyword = self.request.GET.get("keyword", "")
 
-        cp_ids = get_contact_points(RDF_FUSEKI_URL)
-        rdf_uris = [str(item["uri"]) for item in cp_ids]
+        dict_rdf_filters = request.data["rdfFilters"]
+        logger.info("dict_rdf_filters: %s", dict_rdf_filters)
+
+        rdf_uris = get_contact_point_uris_filter(
+            filter_public_service=dict_rdf_filters.get(URI_HAS_CONTACT_POINT)
+        )
         logger.info("rdf_uris: %s", rdf_uris)
 
         if rdf_uris:
@@ -104,9 +106,9 @@ class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
         #        rdf_uris = [str(item["uri"]) for item in rdf_results]
 
         rdf_uris = get_public_service_uris_filter(
-            filter_concepts=dict_rdf_filters.get('http://purl.org/vocab/cpsv#isClassifiedBy'),
-            filter_public_organization=dict_rdf_filters.get("http://data.europa.eu/m8g/hasCompetentAuthority"),
-            filter_contact_point=dict_rdf_filters.get("http://www.w3.org/ns/dcat#hasContactPoint")
+            filter_concepts=dict_rdf_filters.get(URI_IS_CLASSIFIED_BY),
+            filter_public_organization=dict_rdf_filters.get(URI_HAS_COMPETENT_AUTHORITY),
+            filter_contact_point=dict_rdf_filters.get(URI_HAS_CONTACT_POINT),
         )
         logger.info("rdf_uris: %s", rdf_uris)
 
@@ -139,23 +141,47 @@ class ContactPointDetailAPIView(RetrieveUpdateDestroyAPIView):
     serializer_class = ContactPointSerializer
 
 
-class PublicServicesEntityOptionsAPIView(APIView):
+class EntityOptionsAPIView(APIView, abc.ABC):
     queryset = PublicService.objects.none()
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
+        mock_data = self.get_mock_data()
+
+        return Response(mock_data)
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_mock_data():
+        pass
+
+
+class PublicServicesEntityOptionsAPIView(EntityOptionsAPIView):
+
+    @staticmethod
+    def get_mock_data():
         mock_data = [
-            "http://www.w3.org/ns/dcat#hasContactPoint",
-            "http://data.europa.eu/m8g/hasCompetentAuthority",
-            "http://purl.org/vocab/cpsv#isClassifiedBy",
+            URI_HAS_CONTACT_POINT,
+            URI_HAS_COMPETENT_AUTHORITY,
+            URI_IS_CLASSIFIED_BY,
             "http://cefat4cities.com/public_services/hasBusinessEvent",
             "http://cefat4cities.com/public_services/hasLifeEvent",
         ]
 
-        return Response(mock_data)
+        return mock_data
 
 
-class DropdownOptionsAPIView(APIView):
+class ContactPointsEntityOptionsAPIView(EntityOptionsAPIView):
+    @staticmethod
+    def get_mock_data():
+        mock_data = [
+            URI_HAS_CONTACT_POINT,
+        ]
+
+        return mock_data
+
+
+class DropdownOptionsAPIView(APIView, abc.ABC):
     queryset = PublicService.objects.none()
     permission_classes = [permissions.IsAuthenticated]
 
@@ -164,10 +190,25 @@ class DropdownOptionsAPIView(APIView):
         keyword = request.data["keyword"]
         dict_rdf_filters = request.data["rdfFilters"]
 
-        values = get_dropdown_options(uri_type_has)
-
-        # logger.info("values: %s", values)
-
-        # result = [{"name": a} for a in values]
+        values = self.get_values(uri_type_has)
 
         return Response(values)
+
+    @staticmethod
+    @abc.abstractmethod
+    def get_values(uri_type_has):
+        pass
+
+
+class DropdownOptionsPublicServicesAPIView(DropdownOptionsAPIView):
+    @staticmethod
+    def get_values(uri_type_has):
+        values = get_dropdown_options_for_public_services(uri_type_has)
+        return values
+
+
+class DropdownOptionsContactPointsAPIView(DropdownOptionsAPIView):
+    @staticmethod
+    def get_values(uri_type_has):
+        values = get_dropdown_options_for_contact_points(uri_type_has)
+        return values
