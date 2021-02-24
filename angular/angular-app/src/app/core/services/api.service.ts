@@ -738,7 +738,14 @@ export class ApiService {
     filterType: string,
     sortBy: string,
     website: string,
+    rdfFilters: Map<string, Array<string>>
   ): Observable<PublicServiceResults> {
+
+    const rdfFiltersMap = {};
+    rdfFilters.forEach((val: string[], key: string) => {
+      rdfFiltersMap[key] = val;
+    });
+
     var pageQuery = '?page=' + page;
     if (rows > 0) {
       pageQuery = pageQuery + '&rows=' + rows;
@@ -758,7 +765,9 @@ export class ApiService {
     if (website) {
       pageQuery = pageQuery + '&website=' + website;
     }
-    return this.http.post<PublicServiceResults>(`${this.API_CPSV_URL}/rdf_public_services${pageQuery}`, {});
+    return this.http.post<PublicServiceResults>(`${this.API_CPSV_URL}/rdf_public_services${pageQuery}`, {
+      rdfFilters: rdfFiltersMap
+    });
 
   }
 

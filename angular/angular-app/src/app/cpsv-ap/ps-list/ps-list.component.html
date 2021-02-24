@@ -11,7 +11,7 @@
           </div>
         </div>
       </div>
-      <div *ngIf="contentLoaded" class="col" style="padding: 32px !important;">
+      <div *ngIf="contentLoaded && activeItem == items[0]" class="col" style="padding: 32px !important;">
 
         <p-autoComplete *ngFor="let filter of availableItems"
                         [suggestions]="suggestions"
