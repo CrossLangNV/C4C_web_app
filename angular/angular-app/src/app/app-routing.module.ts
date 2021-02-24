@@ -42,6 +42,9 @@ const routes: Routes = [
     path: 'cp',
     component: CpListComponent,
     canActivate: [AuthGuard],
+    data: {
+      breadcrumb: 'CPSV-AP',
+    },
     children: [
       {
         path: ':cpId',
