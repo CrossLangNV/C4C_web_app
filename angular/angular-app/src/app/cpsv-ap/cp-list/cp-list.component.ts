@@ -115,13 +115,15 @@ export class CpListComponent implements OnInit {
   fetchContactPoints() {
     this.checkFilters();
     this.service
-      .getContactPoints(
+      .getRdfContactPoints(
         this.offset,
         this.rows,
         this.keyword,
         this.filterTag,
         this.filterType,
         this.sortBy,
+        this.website,
+        this.selectedTags
       ).subscribe((results) => {
       this.contactPoints = results.results;
       this.collectionSize = results.count;
@@ -186,7 +188,7 @@ export class CpListComponent implements OnInit {
 
   fetchAvailableFilters() {
     this.service
-      .fetchDropdowns()
+      .fetchDropdowns('cp')
       .subscribe((results) => {
         this.availableItems = results
         this.contentLoaded = true;
@@ -194,11 +196,11 @@ export class CpListComponent implements OnInit {
   }
 
   getPlaceholder(filter: RdfFilter) {
-    return this.service.rdf_get_name_of_entity(filter)
+    return this.service.rdf_get_name_of_entity('cp', filter)
   }
 
   search(filter: RdfFilter, event) {
-    this.service.fetchReportingObligationFiltersLazy(filter, event.query, this.selectedTags).subscribe(data => {
+    this.service.fetchDropdownFilters('cp', filter, event.query, this.selectedTags).subscribe(data => {
       this.suggestions = data;
 
       if (event.query === '') {

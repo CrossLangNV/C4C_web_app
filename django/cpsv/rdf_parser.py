@@ -5,7 +5,9 @@ from rdflib.term import Literal, URIRef
 
 from cpsv.open_linked_data.queries import get_public_services
 
+SUBJ = 'subj'
 PRED = 'pred'
+OBJ = 'obj'
 URI = "uri"
 LABEL = 'label'
 
@@ -69,6 +71,8 @@ class SPARQLPublicServicesProvider(SPARQLConnector):
                     ?object a ?type	. # Filters Literals
                 }}
             }}
+
+            ORDER BY ?{PRED}
         """
 
         l = self.query(q)
@@ -88,6 +92,8 @@ class SPARQLPublicServicesProvider(SPARQLConnector):
                     ?object a ?type	. # Filters Literals
                 }}
             }}
+
+            ORDER BY ?{PRED}
         """
 
         return l_pred
@@ -106,13 +112,15 @@ class SPARQLPublicServicesProvider(SPARQLConnector):
             PREFIX cpsv: <http://purl.org/vocab/cpsv#>
             PREFIX terms: <http://purl.org/dc/terms/>
             PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-            SELECT distinct  ?{URI}
+            SELECT distinct ?{URI}
             WHERE {{
                 Graph ?graph {{
                     ?ps rdf:type cpsv:PublicService ;
                        {has_uri.n3()} ?{URI} .
                 }}
             }}
+
+            ORDER BY ?{URI}
         """
 
         q_debug = """
@@ -158,6 +166,8 @@ class SPARQLPublicServicesProvider(SPARQLConnector):
                     ?{URI} skos:prefLabel ?{LABEL}
                 }}
             }}
+
+            ORDER BY ?{LABEL} ?{URI}
         """
 
         l = self.query(q)
@@ -186,6 +196,8 @@ class SPARQLPublicServicesProvider(SPARQLConnector):
                     ?{URI} skos:prefLabel ?{LABEL}
                 }}
             }}
+
+            ORDER BY ?{LABEL} ?{URI}
         """
 
         l = self.query(q)
@@ -242,7 +254,6 @@ class SPARQLPublicServicesProvider(SPARQLConnector):
 
         q_filter_public_org = _get_q_filter(VALUE_PO, filter_public_organization) if filter_public_organization else ''
 
-        # TODO
         q_filter_contact_point = _get_q_filter_uri(URI_CP, filter_contact_point) if filter_contact_point else ''
 
         q = f"""
@@ -253,7 +264,7 @@ class SPARQLPublicServicesProvider(SPARQLConnector):
             PREFIX cv: <http://data.europa.eu/m8g/>
             PREFIX dcat: <http://www.w3.org/ns/dcat#>
 
-            SELECT distinct ?{URI} # ?uri ?value
+            SELECT distinct ?{URI}
             WHERE {{
                 Graph ?graph {{
                     ?{URI} rdf:type cpsv:PublicService .
@@ -274,6 +285,7 @@ class SPARQLPublicServicesProvider(SPARQLConnector):
                     {q_filter_contact_point}
                 }}
             }}
+            ORDER BY ?{URI}
         """
 
         l = self.query(q)
@@ -298,10 +310,177 @@ class SPARQLPublicServicesProvider(SPARQLConnector):
                     ?uri rdf:type <http://purl.org/vocab/cpsv#PublicService> ;
                         ?pred ?object .
                     ?object a ?type	. # Filters Literals
-    				?object ?pred_link ?val
+                    ?object ?pred_link ?val
                 }
             }
+            ORDER BY ?pred_link ?pred
         """
 
         l = self.query(q_debug)
         return l
+
+
+class SPARQLContactPointProvider(SPARQLConnector):
+    def get_contact_point_uris(self) -> List[URIRef]:
+        """
+        :return: A list of URI's to the webpages, which are used as indices to the public services.
+        """
+
+        q = f"""
+            PREFIX dcat: <http://www.w3.org/ns/dcat#>
+
+            SELECT distinct ?{URI}
+            WHERE {{
+                Graph ?graph {{
+                    ?{URI} a dcat:ContactPoint .
+                }}
+            }}
+            ORDER BY ?{URI}
+        """
+
+        l = self.query(q)
+
+        l_uri = list(map(lambda d: d.get(URI), l))
+
+        return l_uri
+
+    def get_contact_point_info(self, uri):
+        """ Get all relevant info of a single contact point.
+        :param uri:
+        :return:
+        """
+
+        if not isinstance(uri, URIRef):
+            uri = URIRef(uri)
+
+        q_cp_as_sub = f"""
+            PREFIX dcat: <http://www.w3.org/ns/dcat#>
+
+            SELECT distinct ?{URI} ?{PRED} ?{OBJ}
+            WHERE {{
+                Graph ?graph {{
+                    Values ?{URI} {{ {uri.n3()} }}
+                    ?{URI} a dcat:ContactPoint .      
+                    ?{URI} ?{PRED} ?{OBJ}
+                }}
+            }}
+            ORDER BY ?{OBJ} ?{PRED}
+        """
+
+        q_cp_as_obj = f"""
+            PREFIX dcat: <http://www.w3.org/ns/dcat#>
+
+            SELECT distinct ?{SUBJ} ?{PRED} ?{URI}
+            WHERE {{
+                Graph ?graph {{
+                    Values ?{URI} {{ {uri.n3()} }}
+                    ?{URI} a dcat:ContactPoint .      
+                    ?{SUBJ} ?{PRED} ?{URI} .
+                }}
+            }}
+            ORDER BY ?{SUBJ} ?{PRED}
+        """
+
+        l_sub = self.query(q_cp_as_sub)
+
+        l_obj = self.query(q_cp_as_obj)
+
+        l = l_sub + l_obj
+        return l
+
+    def get_public_services(self, has_uri=URIRef('http://www.w3.org/ns/dcat#hasContactPoint')):
+        """ Public services can be used as the subject to filter contact points.
+        :param has_uri:
+        :return:
+        """
+
+        if not isinstance(has_uri, URIRef):
+            has_uri = URIRef(has_uri)
+
+        q_cp_as_obj = f"""
+            PREFIX dcat: <http://www.w3.org/ns/dcat#>
+            SELECT distinct ?{URI} ?{LABEL}
+            WHERE {{
+                Graph ?graph {{
+                    ?uri_cp a dcat:ContactPoint .      
+                    ?{URI} {has_uri.n3()} ?uri_cp .
+    				OPTIONAL{{
+                    	?{URI} <http://purl.org/dc/terms/title> ?{LABEL}
+                    }}
+                }}
+            }}
+            ORDER BY ?value
+        """
+
+        l = self.query(q_cp_as_obj)
+
+        return l
+
+    def get_contact_point_uris_filter(self,
+                                      filter_public_service: List[str] = []) -> List[URIRef]:
+        """
+        :return: A list of URI's of the contact pages.
+        """
+
+        VALUE_PS = 'value_ps'
+
+        def _get_q_filter(literal, l_f):
+            f_s = 'UCASE(?{literal}) = UCASE({value})'
+
+            if isinstance(l_f, str):
+                q_filter = f"""
+                        FILTER ({f_s.format(literal=literal, value=Literal(l_f).n3())})
+                    """
+            else:
+                l_q_filter = map(lambda s: f_s.format(literal=literal, value=Literal(s).n3()), l_f)
+
+                q_filter = f"""
+                    FILTER ({"||".join(l_q_filter)})
+                """
+
+            return q_filter
+
+        def _get_q_filter_uri(uri, l_f):
+            f_s = '?{uri} = {value}'
+
+            if isinstance(l_f, str):
+                q_filter = f"""
+                        FILTER ({f_s.format(uri=uri, value=URIRef(l_f).n3())})
+                    """
+            else:
+                l_q_filter = map(lambda s: f_s.format(uri=uri, value=URIRef(s).n3()), l_f)
+
+                q_filter = f"""
+                    FILTER ({"||".join(l_q_filter)})
+                """
+
+            return q_filter
+
+        q_filter_public_service = _get_q_filter(VALUE_PS, filter_public_service) if filter_public_service else ''
+
+        q = f"""
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            PREFIX cpsv: <http://purl.org/vocab/cpsv#>
+            PREFIX terms: <http://purl.org/dc/terms/>
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+            PREFIX cv: <http://data.europa.eu/m8g/>
+            PREFIX dcat: <http://www.w3.org/ns/dcat#>
+            SELECT distinct ?{URI}
+            WHERE {{
+                Graph ?graph {{
+                    ?{URI} a dcat:ContactPoint .
+                    OPTIONAL{{
+                        ?uri_ps dcat:hasContactPoint ?{URI} ;
+                            <http://purl.org/dc/terms/title> ?{VALUE_PS}
+                    }}
+                    {q_filter_public_service}
+                }}
+            }}
+            ORDER BY ?{URI}
+        """
+
+        l = self.query(q)
+
+        l_uri = list(map(lambda d: d.get(URI), l))
+
+        return l_uri
