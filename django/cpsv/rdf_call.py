@@ -41,3 +41,8 @@ def get_related_concepts(*args, **kwargs):
 
 def get_relations():
     return provider.get_relations()
+
+
+def get_public_service_uris_filter(*args, **kwargs):
+    return provider.get_public_service_uris_filter(*args, **kwargs)
+

@@ -13,6 +13,7 @@ from cpsv.rdf_call import get_dropdown_options
 from searchapp.models import Document
 
 from cpsv.cpsv_rdf_call import get_contact_points, get_public_services, get_contact_point_info
+from cpsv.rdf_call import get_public_service_uris_filter
 
 import logging as logger
 
@@ -95,10 +96,18 @@ class RdfPublicServicesAPIView(APIView, PaginationHandlerMixin):
         keyword = self.request.GET.get("keyword", "")
         website = self.request.GET.get("website", "")
 
-        rdf_results = get_public_services(RDF_FUSEKI_URL)
-        logger.info("rdf_results: %s", rdf_results)
+        dict_rdf_filters = request.data["rdfFilters"]
+        logger.info("dict_rdf_filters: %s", dict_rdf_filters)
 
-        rdf_uris = [str(item["uri"]) for item in rdf_results]
+        # rdf_results = get_public_services(RDF_FUSEKI_URL)
+        #        rdf_uris = [str(item["uri"]) for item in rdf_results]
+
+        rdf_uris = get_public_service_uris_filter(
+            filter_concepts=dict_rdf_filters.get('http://purl.org/vocab/cpsv#isClassifiedBy'),
+            filter_public_organization=dict_rdf_filters.get("http://data.europa.eu/m8g/hasCompetentAuthority"),
+            filter_contact_point=dict_rdf_filters.get("http://www.w3.org/ns/dcat#hasContactPoint")
+        )
+        logger.info("rdf_uris: %s", rdf_uris)
 
         if rdf_uris:
             q = q.filter(identifier__in=rdf_uris)
@@ -134,7 +143,6 @@ class PublicServicesEntityOptionsAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, format=None):
-
         mock_data = [
             "http://www.w3.org/ns/dcat#hasContactPoint",
             "http://data.europa.eu/m8g/hasCompetentAuthority",
@@ -152,13 +160,13 @@ class DropdownOptionsAPIView(APIView):
 
     def post(self, request, format=None, *args, **kwargs):
         uri_type_has = request.data["uri_type"]
+        keyword = request.data["keyword"]
+        dict_rdf_filters = request.data["rdfFilters"]
 
         values = get_dropdown_options(uri_type_has)
 
-        logger.info("values: %s", values)
+        # logger.info("values: %s", values)
 
         # result = [{"name": a} for a in values]
 
         return Response(values)
-
-

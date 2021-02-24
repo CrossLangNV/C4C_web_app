@@ -129,6 +129,7 @@ export class PsListComponent implements OnInit {
         this.filterType,
         this.sortBy,
         this.website,
+        this.selectedTags
       ).subscribe((results) => {
         this.publicServices = results.results;
         this.collectionSize = results.count;
@@ -239,8 +240,8 @@ export class PsListComponent implements OnInit {
         })
       }
 
-      if (!(values.includes(event.name))) {
-        values.push(event.name)
+      if (!(values.includes(event.label))) {
+        values.push(event.label)
       }
 
       this.selectedTags.set(filterKey, values)
