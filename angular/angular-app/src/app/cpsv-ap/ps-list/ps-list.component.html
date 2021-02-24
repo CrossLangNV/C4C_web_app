@@ -6,12 +6,11 @@
       <div class="row">
         <div class="col" style="padding: 32px !important;">
           <div>
-            <h4 *ngIf="activeItem == items[0]">Public services</h4>
-            <h4 *ngIf="activeItem == items[1]">Contact points</h4>
+            <h4>Public services</h4>
           </div>
         </div>
       </div>
-      <div *ngIf="contentLoaded && activeItem == items[0]" class="col" style="padding: 32px !important;">
+      <div *ngIf="contentLoaded" class="col" style="padding: 32px !important;">
 
         <p-autoComplete *ngFor="let filter of availableItems"
                         [suggestions]="suggestions"

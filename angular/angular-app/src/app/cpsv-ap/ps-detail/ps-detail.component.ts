@@ -52,10 +52,6 @@ export class PsDetailComponent implements OnInit {
     PsDetailSortableHeaderDirective
   >;
   ps: PublicService;
-  cp: ContactPoint;
-
-  psId = '';
-  cpId = '';
 
   deleteIcon: IconDefinition;
   currentDjangoUser: DjangoUser;
@@ -75,12 +71,6 @@ export class PsDetailComponent implements OnInit {
       (x) => (this.currentDjangoUser = x)
     );
 
-    this.getParameters();
-
-
-  }
-
-  getParameters() {
     this.route.paramMap
       .pipe(
         switchMap((params: ParamMap) =>
@@ -88,19 +78,7 @@ export class PsDetailComponent implements OnInit {
         )
       )
       .subscribe((ps) => {
-        this.cp = null;
         this.ps = ps;
-      })
-
-    this.route.paramMap
-      .pipe(
-        switchMap((params: ParamMap) =>
-          this.service.getCp(params.get('cpId'))
-        )
-      )
-      .subscribe((cp) => {
-        this.ps = null;
-        this.cp = cp;
       })
   }
 }

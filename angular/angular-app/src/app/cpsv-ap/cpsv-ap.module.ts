@@ -26,11 +26,15 @@ import {InputSwitchModule} from 'primeng/inputswitch';
 import {TabMenuModule} from 'primeng/tabmenu';
 import {PsDetailComponent} from './ps-detail/ps-detail.component';
 import {AutoCompleteModule} from 'primeng/autocomplete';
+import { CpListComponent } from './cp-list/cp-list.component';
+import { CpDetailComponent } from './cp-detail/cp-detail.component';
 
 @NgModule({
     declarations: [
         PsListComponent,
         PsDetailComponent,
+        CpListComponent,
+        CpDetailComponent,
     ],
     imports: [
         SharedModule,

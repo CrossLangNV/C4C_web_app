@@ -183,18 +183,16 @@ export class PsListComponent implements OnInit {
   }
 
   activateMenu(tab: TabMenu) {
-    this.activeItem = tab.activeItem;
-    this.collectionSize = 0;
+    // this.activeItem = tab.activeItem;
+    // this.collectionSize = 0;
 
-    this.router.navigate(['/cpsv']);
     if (tab.activeItem === this.items[0]) {
-      this.fetchPublicServices();
-      this.psActive = true;
-      this.cpActive = false;
+      this.router.navigate(['/cpsv']);
     } else {
-      this.fetchContactPoints();
-      this.psActive = false;
-      this.cpActive = true;
+      this.router.navigate(['/cp']);
+      // this.fetchContactPoints();
+      // this.psActive = false;
+      // this.cpActive = true;
     }
   }
 

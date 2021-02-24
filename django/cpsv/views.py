@@ -58,6 +58,7 @@ class RdfContactPointsAPIView(APIView, PaginationHandlerMixin):
     serializer_class = ContactPointSerializer
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ["description"]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, format=None, *args, **kwargs):
         q = ContactPoint.objects.all()
