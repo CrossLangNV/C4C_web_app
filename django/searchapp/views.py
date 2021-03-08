@@ -302,7 +302,7 @@ class SolrDocument(APIView):
 # This controller is only used for public
 class SolrDocumentSearch(APIView):
     queryset = Document.objects.none()
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, format=None):
         result = solr_search_website_paginated(core="documents",
