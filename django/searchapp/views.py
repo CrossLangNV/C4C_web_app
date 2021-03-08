@@ -25,7 +25,7 @@ from .serializers import AttachmentSerializer, DocumentSerializer, WebsiteSerial
     CommentSerializer, TagSerializer, BookmarkSerializer
 from .solr_call import solr_search_id, solr_search_paginated, solr_mlt, \
     solr_search_query_paginated_preanalyzed, solr_search_ids, solr_get_preanalyzed_for_doc, \
-    solr_search_query_with_doc_id_preanalyzed
+    solr_search_query_with_doc_id_preanalyzed, solr_search_website_paginated
 
 logger = logging.getLogger(__name__)
 workpath = os.path.dirname(os.path.abspath(__file__))
@@ -299,17 +299,16 @@ class SolrDocument(APIView):
         return Response(solr_document)
 
 
+# This controller is only used for public
 class SolrDocumentSearch(APIView):
     queryset = Document.objects.none()
+    permission_classes = [permissions.AllowAny]
 
-    def get(self, request, search_term, format=None):
-        result = solr_search_paginated(core="documents", term=search_term, page_number=request.GET.get('pageNumber', 1),
-                                       rows_per_page=request.GET.get(
-                                           'pageSize', 1),
-                                       ids_to_filter_on=request.GET.getlist(
-                                           'id'),
-                                       sort_by=request.GET.get('sortBy'),
-                                       sort_direction=request.GET.get('sortDirection'))
+    def post(self, request, format=None):
+        result = solr_search_website_paginated(core="documents",
+                                               q=request.data['query'],
+                                               page_number=request.GET.get('page', 1),
+                                               rows_per_page=request.GET.get('pageSize', 1))
         return Response(result)
 
 
