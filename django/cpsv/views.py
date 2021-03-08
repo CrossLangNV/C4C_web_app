@@ -3,6 +3,7 @@ import logging as logger
 import os
 
 # Create your views here.
+import requests
 from rest_framework import filters, permissions
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 from rest_framework.pagination import LimitOffsetPagination
@@ -11,8 +12,11 @@ from rest_framework.views import APIView
 
 from cpsv.cpsv_rdf_call import get_contact_points
 from cpsv.models import PublicService, ContactPoint
-from cpsv.rdf_call import get_dropdown_options_for_public_services, get_dropdown_options_for_contact_points, \
-    get_contact_point_uris_filter
+from cpsv.rdf_call import (
+    get_dropdown_options_for_public_services,
+    get_dropdown_options_for_contact_points,
+    get_contact_point_uris_filter,
+)
 from cpsv.rdf_call import get_public_service_uris_filter
 from cpsv.serializers import PublicServiceSerializer, ContactPointSerializer
 
@@ -65,9 +69,7 @@ class RdfContactPointsAPIView(APIView, PaginationHandlerMixin):
         dict_rdf_filters = request.data["rdfFilters"]
         logger.info("dict_rdf_filters: %s", dict_rdf_filters)
 
-        rdf_uris = get_contact_point_uris_filter(
-            filter_public_service=dict_rdf_filters.get(URI_HAS_CONTACT_POINT)
-        )
+        rdf_uris = get_contact_point_uris_filter(filter_public_service=dict_rdf_filters.get(URI_HAS_CONTACT_POINT))
         logger.info("rdf_uris: %s", rdf_uris)
 
         if rdf_uris:
@@ -157,7 +159,6 @@ class EntityOptionsAPIView(APIView, abc.ABC):
 
 
 class PublicServicesEntityOptionsAPIView(EntityOptionsAPIView):
-
     @staticmethod
     def get_mock_data():
         mock_data = [
@@ -212,3 +213,12 @@ class DropdownOptionsContactPointsAPIView(DropdownOptionsAPIView):
     def get_values(uri_type_has):
         values = get_dropdown_options_for_contact_points(uri_type_has)
         return values
+
+
+class FusekiDatasetAPIView(APIView):
+    queryset = PublicService.objects.none()
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        r = requests.get(RDF_FUSEKI_URL)
+        return Response(r.content)

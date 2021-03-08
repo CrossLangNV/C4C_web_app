@@ -37,10 +37,8 @@ urlpatterns = [
     path("api/rdf_public_services", views.RdfPublicServicesAPIView.as_view(), name="rdf_contact_points_api_list"),
     path("api/ps/<int:pk>", views.PublicServiceDetailAPIView.as_view(), name="ps_api_detail"),
     path("api/cp/<int:pk>", views.ContactPointDetailAPIView.as_view(), name="cp_api_detail"),
-
     path("api/ps/entity_map", views.PublicServicesEntityOptionsAPIView.as_view(), name="ps_entity_options"),
     path("api/cp/entity_map", views.ContactPointsEntityOptionsAPIView.as_view(), name="cp_entity_options"),
-
     path(
         "api/ps/dropdown_options",
         views.DropdownOptionsPublicServicesAPIView.as_view(),
@@ -49,4 +47,5 @@ urlpatterns = [
     path(
         "api/cp/dropdown_options", views.DropdownOptionsContactPointsAPIView.as_view(), name="dropdown_contact_points"
     ),
+    path("api/dataset", views.FusekiDatasetAPIView.as_view(), name="fuseki_dataset_api"),
 ]
