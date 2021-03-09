@@ -219,6 +219,9 @@ class FusekiDatasetAPIView(APIView):
     queryset = PublicService.objects.none()
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, format=None):
-        r = requests.get(RDF_FUSEKI_URL)
+    def post(self, request, format=None):
+
+        req_data = {"query": request.data["query"]}
+
+        r = requests.post(RDF_FUSEKI_URL, data=req_data)
         return Response(r.content)
