@@ -39,7 +39,7 @@ class FullSiteSpider(CrawlSpider):
                 "Expecting a 'url' property to be configured, pointing to the first page on the site")
         parsed_uri = urlparse(self.url)
         netloc = '{uri.netloc}'.format(uri=parsed_uri)
-        self.allowed_domains = ['.'.join(netloc.split('.')[-2:])]
+        self.allowed_domains = [parsed_uri.hostname]
         self.start_urls = ['{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)]
 
         self.website = kwargs.get('website')
