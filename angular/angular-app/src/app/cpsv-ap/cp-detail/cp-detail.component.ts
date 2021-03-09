@@ -1,16 +1,16 @@
-import { Component, OnInit, Directive, Input, Output, EventEmitter, ViewChildren, QueryList } from '@angular/core';
-import { ApiService } from 'src/app/core/services/api.service';
-import { ActivatedRoute, ParamMap } from '@angular/router';
-import { switchMap } from 'rxjs/operators';
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import {DjangoUser} from '../../shared/models/django_user';
-import {AuthenticationService} from '../../core/auth/authentication.service';
-import {MessageService, ConfirmationService} from 'primeng/api';
-import {ApiAdminService} from '../../core/services/api.admin.service';
+import {Component, Directive, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {PublicService} from '../../shared/models/PublicService';
 import {ContactPoint} from '../../shared/models/ContactPoint';
-
+import {IconDefinition} from '@fortawesome/fontawesome-svg-core';
+import {DjangoUser} from '../../shared/models/django_user';
+import {ActivatedRoute, ParamMap} from '@angular/router';
+import {ApiService} from '../../core/services/api.service';
+import {AuthenticationService} from '../../core/auth/authentication.service';
+import {ConfirmationService, MessageService} from 'primeng/api';
+import {ApiAdminService} from '../../core/services/api.admin.service';
+import {switchMap} from 'rxjs/operators';
 export type SortDirection = 'asc' | 'desc' | '';
+
 const rotate: { [key: string]: SortDirection } = {
   asc: 'desc',
   desc: '',
@@ -30,7 +30,7 @@ export interface SortEvent {
     '(click)': 'rotate()',
   },
 })
-export class PsDetailSortableHeaderDirective {
+export class CpDetailSortableHeaderDirective {
   @Input() sortable: string;
   @Input() direction: SortDirection = '';
   @Output() sortDetail = new EventEmitter<SortEvent>();
@@ -40,19 +40,18 @@ export class PsDetailSortableHeaderDirective {
     this.sortDetail.emit({ column: this.sortable, direction: this.direction });
   }
 }
-
 @Component({
-  selector: 'app-ps-detail',
-  templateUrl: './ps-detail.component.html',
-  styleUrls: ['./ps-detail.component.css'],
-  providers: [MessageService]
+  selector: 'app-cp-detail',
+  templateUrl: './cp-detail.component.html',
+  styleUrls: ['./cp-detail.component.css'],
+  providers: [MessageService],
 })
-export class PsDetailComponent implements OnInit {
-  @ViewChildren(PsDetailSortableHeaderDirective) headers: QueryList<
-    PsDetailSortableHeaderDirective
-  >;
-  ps: PublicService;
+export class CpDetailComponent implements OnInit {
 
+  @ViewChildren(CpDetailSortableHeaderDirective) headers: QueryList<
+    CpDetailSortableHeaderDirective
+    >;
+  cp: ContactPoint;
   deleteIcon: IconDefinition;
   currentDjangoUser: DjangoUser;
 
@@ -74,11 +73,11 @@ export class PsDetailComponent implements OnInit {
     this.route.paramMap
       .pipe(
         switchMap((params: ParamMap) =>
-          this.service.getPs(params.get('psId'))
+          this.service.getCp(params.get('cpId'))
         )
       )
-      .subscribe((ps) => {
-        this.ps = ps;
+      .subscribe((cp) => {
+        this.cp = cp;
       })
   }
 }

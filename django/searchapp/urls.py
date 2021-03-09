@@ -108,7 +108,7 @@ urlpatterns = [
     path('api/super', views.IsSuperUserAPIView.as_view(), name='super_api'),
 
     # Solr
-    path('api/solrdocument/search/<search_term>',
+    path('api/solrdocument/search',
          views.SolrDocumentSearch.as_view(), name='solr_document_search_api'),
 
     # Django + SOLR

@@ -1,4 +1,4 @@
-<p-tabMenu #tab [model]="items" (click)="activateMenu(tab)" [activeItem]="items[0]"></p-tabMenu>
+<p-tabMenu #tab [model]="items" (click)="activateMenu(tab)" [activeItem]="items[1]"></p-tabMenu>
 
 <div class="jumbotron p-1 m-2">
   <div>
@@ -6,7 +6,7 @@
       <div class="row">
         <div class="col" style="padding: 32px !important;">
           <div>
-            <h4>Public services</h4>
+            <h4>Contact points</h4>
           </div>
         </div>
       </div>
@@ -25,7 +25,7 @@
                         [placeholder]="getPlaceholder(filter)"
                         minLength="0"
                         (onSelect)="onChangeFilter(filter, $event, 'add')"
-                        (onKeyUp)="fetchPublicServices()"
+                        (onKeyUp)="fetchContactPoints()"
                         (onUnselect)="onChangeFilter(filter, $event, 'remove')"
         ></p-autoComplete>
 
@@ -66,32 +66,31 @@
             <div></div>
             <div>
               Results: <u>{{ collectionSize }}</u>
-              <span class="" *ngIf="filterActive">
-                    <fa-icon
-                      (click)="resetFilters()"
-                      class="p-2"
-                      ngbTooltip="Reset filters"
-                      [icon]="resetIcon"
-                    ></fa-icon>
-                  </span>
+<!--              <span class="" *ngIf="filterActive">-->
+<!--                    <fa-icon-->
+<!--                      (click)="resetFilters()"-->
+<!--                      class="p-2"-->
+<!--                      ngbTooltip="Reset filters"-->
+<!--                      [icon]="resetIcon"-->
+<!--                    ></fa-icon>-->
+<!--                  </span>-->
             </div>
           </div>
         </div>
       </div>
 
       <hr class="my-2" />
-      <!--Public Services -->
       <p-table *ngIf="activeItem == items[0]"
-        [value]="publicServices"
-        [paginator]="true"
-        [rows]="5"
-        [lazy]="true"
-        [rowHover]="true"
-        (onLazyLoad)="fetchPublicServicesLazy($event)"
-        [totalRecords]="collectionSize"
-        [showCurrentPageReport]="true"
-        [rowsPerPageOptions]="[5, 10, 50]"
-        class="table table-striped table-bordered table-hover">
+               [value]="contactPoints"
+               [paginator]="true"
+               [rows]="5"
+               [lazy]="true"
+               [rowHover]="true"
+               (onLazyLoad)="fetchContactPointsLazy($event)"
+               [totalRecords]="collectionSize"
+               [showCurrentPageReport]="true"
+               [rowsPerPageOptions]="[5, 10, 50]"
+               class="table table-striped table-bordered table-hover">
         <ng-template pTemplate="header">
           <tr>
             <th scope="col">Name</th>
@@ -100,22 +99,22 @@
             <th scope="col">State</th>
           </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-ps>
+        <ng-template pTemplate="body" let-cp>
           <tr>
             <td>
-              <a (click)="setIndex(ps.id)"
-                 [class.font-weight-bold]="selectedIndex === ps.id"
-                 [routerLink]="[ps.id]"
-              > {{ ps.name || "(no name)" | truncate: [120, "..."] }}&nbsp;</a>
+              <a (click)="setIndex(cp.id)"
+                 [class.font-weight-bold]="selectedIndex === cp.id"
+                 [routerLink]="[cp.id]"
+              > {{ cp.name || "(no name)" | truncate: [120, "..."] }}&nbsp;</a>
             </td>
             <td>
-              {{ ps.description || "(no description)" | truncate: [120, "..."] }}&nbsp;
+              {{ cp.description || "(no description)" | truncate: [120, "..."] }}&nbsp;
             </td>
             <td>
               <a target="_blank"
-                 href="{{ps.identifier}}">{{ ps.identifier || "(no url)" | truncate: [60, "..."] }}</a>&nbsp;
+                 href="{{cp.identifier}}">{{ cp.identifier || "(no url)" | truncate: [60, "..."] }}</a>&nbsp;
             </td>
-  <!--          <td>{{ps.state}}</td>-->
+            <!--          <td>{{ps.state}}</td>-->
             <td>
 
             </td>
