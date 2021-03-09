@@ -2,6 +2,8 @@ import { Routes, RouterModule } from '@angular/router';
 
 import { LoginComponent } from './shared/login-component/login.component';
 import { AuthGuard } from './core/guards/auth.guard';
+import {CpListComponent} from './cpsv-ap/cp-list/cp-list.component';
+import {CpDetailComponent} from './cpsv-ap/cp-detail/cp-detail.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -35,6 +37,20 @@ const routes: Routes = [
     loadChildren: () =>
       import('./cpsv-ap/cpsv-ap.module').then((m) => m.CPSVAPModule),
     canActivate: [AuthGuard],
+  },
+  {
+    path: 'cp',
+    component: CpListComponent,
+    canActivate: [AuthGuard],
+    data: {
+      breadcrumb: 'CPSV-AP',
+    },
+    children: [
+      {
+        path: ':cpId',
+        component: CpDetailComponent,
+      },
+    ],
   },
 
 

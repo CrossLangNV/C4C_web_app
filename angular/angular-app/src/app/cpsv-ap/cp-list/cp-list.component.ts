@@ -1,34 +1,29 @@
-import {
-  Component,
-  OnInit
-} from '@angular/core';
-import {Router} from "@angular/router";
-import {AuthenticationService} from "../../core/auth/authentication.service";
-import {DjangoUser} from "../../shared/models/django_user";
-
-import * as demoData from '../demo_data.json';
-import {PublicService} from '../../shared/models/PublicService';
-import {ApiService} from '../../core/services/api.service';
+import { Component, OnInit } from '@angular/core';
+import {DjangoUser} from '../../shared/models/django_user';
+import {RdfFilter} from '../../shared/models/rdfFilter';
 import {Subject} from 'rxjs';
+import {MenuItem} from 'primeng/api';
+import {IconDefinition} from '@fortawesome/fontawesome-svg-core';
+import {faStopCircle} from '@fortawesome/free-solid-svg-icons';
+import {Router} from '@angular/router';
+import {AuthenticationService} from '../../core/auth/authentication.service';
+import {ApiService} from '../../core/services/api.service';
 import {debounceTime, distinctUntilChanged} from 'rxjs/operators';
 import {LazyLoadEvent} from 'primeng/api/lazyloadevent';
-import {TabMenu, TabMenuModule} from 'primeng/tabmenu';
-import {MenuItem} from 'primeng/api';
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import {faStopCircle} from '@fortawesome/free-solid-svg-icons';
-import {RdfFilter} from '../../shared/models/rdfFilter';
-
+import {TabMenu} from 'primeng/tabmenu';
+import {ContactPoint} from '../../shared/models/ContactPoint';
 
 @Component({
-  selector: 'app-ps-list',
-  templateUrl: './ps-list.component.html',
-  styleUrls: ['./ps-list.component.css'],
+  selector: 'app-cp-list',
+  templateUrl: './cp-list.component.html',
+  styleUrls: ['./cp-list.component.css']
 })
-export class PsListComponent implements OnInit {
+export class CpListComponent implements OnInit {
+
   currentDjangoUser: DjangoUser;
   contentLoaded = false;
   collapsed = true;
-  publicServices: PublicService[];
+  contactPoints: ContactPoint[];
 
   availableItems: RdfFilter[]
   availableItemsQuery: Map<string, string>;
@@ -84,7 +79,6 @@ export class PsListComponent implements OnInit {
     ];
     this.activeItem = this.items[0];
 
-    this.fetchPublicServices();
     this.fetchWebsites();
     this.fetchAvailableFilters();
 
@@ -93,7 +87,7 @@ export class PsListComponent implements OnInit {
       .subscribe((model) => {
         this.keyword = model;
         this.offset = 0;
-        this.fetchPublicServices();
+        this.fetchContactPoints();
       });
 
 
@@ -118,10 +112,10 @@ export class PsListComponent implements OnInit {
     return groups.some(group => group.name === groupName);
   }
 
-  fetchPublicServices() {
+  fetchContactPoints() {
     this.checkFilters();
     this.service
-      .getRdfPublicServices(
+      .getRdfContactPoints(
         this.offset,
         this.rows,
         this.keyword,
@@ -131,8 +125,8 @@ export class PsListComponent implements OnInit {
         this.website,
         this.selectedTags
       ).subscribe((results) => {
-        this.publicServices = results.results;
-        this.collectionSize = results.count;
+      this.contactPoints = results.results;
+      this.collectionSize = results.count;
     });
   }
 
@@ -145,7 +139,7 @@ export class PsListComponent implements OnInit {
     this.availableItemsQuery.clear();
     this.selectedTags.clear();
     this.filterResetPage();
-    this.fetchPublicServices()
+    this.fetchContactPoints()
   }
 
   checkFilters() {
@@ -162,16 +156,16 @@ export class PsListComponent implements OnInit {
 
   filterResetPage() {
     this.offset = 0;
-    this.fetchPublicServices();
-    this.router.navigate(['/cpsv']);
+    this.fetchContactPoints();
+    this.router.navigate(['/cp']);
   }
 
-  fetchPublicServicesLazy(event: LazyLoadEvent) {
+  fetchContactPointsLazy(event: LazyLoadEvent) {
     const sortOrder = event.sortOrder === 1 ? '' : '-';
     this.sortBy = sortOrder + event.sortField;
     this.offset = event.first;
     this.rows = event.rows;
-    this.fetchPublicServices();
+    this.fetchContactPoints();
   }
 
   activateMenu(tab: TabMenu) {
@@ -194,7 +188,7 @@ export class PsListComponent implements OnInit {
 
   fetchAvailableFilters() {
     this.service
-      .fetchDropdowns('ps')
+      .fetchDropdowns('cp')
       .subscribe((results) => {
         this.availableItems = results
         this.contentLoaded = true;
@@ -202,11 +196,11 @@ export class PsListComponent implements OnInit {
   }
 
   getPlaceholder(filter: RdfFilter) {
-    return this.service.rdf_get_name_of_entity('ps', filter)
+    return this.service.rdf_get_name_of_entity('cp', filter)
   }
 
   search(filter: RdfFilter, event) {
-    this.service.fetchDropdownFilters('ps', filter, event.query, this.selectedTags).subscribe(data => {
+    this.service.fetchDropdownFilters('cp', filter, event.query, this.selectedTags).subscribe(data => {
       this.suggestions = data;
 
       if (event.query === '') {
@@ -245,6 +239,7 @@ export class PsListComponent implements OnInit {
         this.selectedTags.set(filterKey, previousValues)
       }
     }
-    this.fetchPublicServices()
+    this.fetchContactPoints()
   }
+
 }

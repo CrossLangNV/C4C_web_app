@@ -11,7 +11,6 @@ import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { ChartModule } from 'primeng/chart';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
-import { TruncatePipe } from '../shared/pipelines/truncate';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { SliderModule } from 'primeng/slider';
@@ -27,7 +26,6 @@ import { FieldsetModule } from 'primeng/fieldset';
     DocumentListComponent,
     NgbdSortableHeader,
     DocumentValidateComponent,
-    TruncatePipe,
   ],
   imports: [
     CommonModule,

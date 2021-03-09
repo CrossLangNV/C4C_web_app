@@ -15,7 +15,6 @@ import {
   NgbDateNativeAdapter,
 } from '@ng-bootstrap/ng-bootstrap';
 import { DropdownModule } from 'primeng/dropdown';
-import { TruncatePipe } from '../shared/pipelines/truncate';
 import { FieldsetModule } from 'primeng/fieldset';
 import {PanelModule} from 'primeng/panel';
 import {MenuModule} from 'primeng/menu';
@@ -26,33 +25,40 @@ import {TableModule} from 'primeng/table';
 import {InputSwitchModule} from 'primeng/inputswitch';
 import {TabMenuModule} from 'primeng/tabmenu';
 import {PsDetailComponent} from './ps-detail/ps-detail.component';
+import {AutoCompleteModule} from 'primeng/autocomplete';
+import { CpListComponent } from './cp-list/cp-list.component';
+import { CpDetailComponent } from './cp-detail/cp-detail.component';
+import {InputTextareaModule} from 'primeng/inputtextarea';
 
 @NgModule({
     declarations: [
         PsListComponent,
         PsDetailComponent,
-        TruncatePipe,
+        CpListComponent,
+        CpDetailComponent,
     ],
-    imports: [
-        SharedModule,
-        ChipsModule,
-        ToastModule,
-        TooltipModule,
-        OverlayPanelModule,
-        ConfirmDialogModule,
-        SharedModule,
-        CPSVAPRoutingModule,
-        DropdownModule,
-        FieldsetModule,
-        PanelModule,
-        MenuModule,
-        SelectButtonModule,
-        NgxSkeletonLoaderModule.forRoot(),
-        DirectivesModule,
-        TableModule,
-        InputSwitchModule,
-        TabMenuModule,
-    ],
+  imports: [
+    SharedModule,
+    ChipsModule,
+    ToastModule,
+    TooltipModule,
+    OverlayPanelModule,
+    ConfirmDialogModule,
+    SharedModule,
+    CPSVAPRoutingModule,
+    DropdownModule,
+    FieldsetModule,
+    PanelModule,
+    MenuModule,
+    SelectButtonModule,
+    NgxSkeletonLoaderModule.forRoot(),
+    DirectivesModule,
+    TableModule,
+    InputSwitchModule,
+    TabMenuModule,
+    AutoCompleteModule,
+    InputTextareaModule,
+  ],
   providers: [
     ConfirmationService,
     { provide: NgbDateAdapter, useClass: NgbDateNativeAdapter },

@@ -1,0 +1,18 @@
+<div *ngIf="cp">
+  <div class="jumbotron">
+    <h6><b>Contact Point:</b> <span style="font-weight: normal"> {{ cp.name || "(no name)" }}</span></h6>
+    <br/>
+    <div>
+      <p> Description: </p>
+      <textarea pInputTextarea
+                [(ngModel)]="cp.description"
+                disabled="disabled"
+                autoResize="true"
+                class="black_textarea"
+      ></textarea>
+      <p> Url: <a [href]="cp.identifier">{{ cp.identifier }}</a></p>
+    </div>
+  </div>
+</div>
+
+<p-toast position="top-center"></p-toast>

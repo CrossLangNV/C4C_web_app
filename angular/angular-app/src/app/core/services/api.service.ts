@@ -644,12 +644,6 @@ export class ApiService {
       .pipe(map((item) => this.roAdapter.adapt(item)));
   }
 
-  public fetchDropdowns(): Observable<RdfFilter[]> {
-    return this.http.get<RdfFilter[]>(
-      `${this.API_RO_URL}/ros/entity_map`
-    )
-  }
-
   // RO States/comments/tags
   public addRoTag(tag: RoTag): Observable<RoTag> {
     return this.http
@@ -744,7 +738,14 @@ export class ApiService {
     filterType: string,
     sortBy: string,
     website: string,
+    rdfFilters: Map<string, Array<string>>
   ): Observable<PublicServiceResults> {
+
+    const rdfFiltersMap = {};
+    rdfFilters.forEach((val: string[], key: string) => {
+      rdfFiltersMap[key] = val;
+    });
+
     var pageQuery = '?page=' + page;
     if (rows > 0) {
       pageQuery = pageQuery + '&rows=' + rows;
@@ -764,19 +765,28 @@ export class ApiService {
     if (website) {
       pageQuery = pageQuery + '&website=' + website;
     }
-    return this.http.post<PublicServiceResults>(`${this.API_CPSV_URL}/rdf_public_services${pageQuery}`, {});
-
+    return this.http.post<PublicServiceResults>(`${this.API_CPSV_URL}/rdf_public_services${pageQuery}`, {
+      rdfFilters: rdfFiltersMap
+    });
   }
 
 
-  public getContactPoints(
+  public getRdfContactPoints(
     page: number,
     rows: number,
     searchTerm: string,
     filterTag: string,
     filterType: string,
     sortBy: string,
+    website: string,
+    rdfFilters: Map<string, Array<string>>
   ): Observable<ContactPointResults> {
+
+    const rdfFiltersMap = {};
+    rdfFilters.forEach((val: string[], key: string) => {
+      rdfFiltersMap[key] = val;
+    });
+
     var pageQuery = '?page=' + page;
     if (rows > 0) {
       pageQuery = pageQuery + '&rows=' + rows;
@@ -793,8 +803,12 @@ export class ApiService {
     if (sortBy) {
       pageQuery = pageQuery + '&ordering=' + sortBy;
     }
-    return this.http.post<ContactPointResults>(`${this.API_CPSV_URL}/rdf_contact_points${pageQuery}`, {});
-
+    if (website) {
+      pageQuery = pageQuery + '&website=' + website;
+    }
+    return this.http.post<ContactPointResults>(`${this.API_CPSV_URL}/rdf_contact_points${pageQuery}`, {
+      rdfFilters: rdfFiltersMap
+    });
   }
 
   public getPs(id: string): Observable<PublicService> {
@@ -809,5 +823,51 @@ export class ApiService {
       .pipe(map((item) => this.cpAdapter.adapt(item)));
   }
 
+  public fetchDropdowns(
+    typename: string,
+  ): Observable<RdfFilter[]> {
+    return this.http.get<RdfFilter[]>(
+      `${this.API_CPSV_URL}/${typename}/entity_map`
+    )
+  }
+
+  public rdf_get_name_of_entity(typeName, entity) {
+    let entities = []
+
+    if (typeName === 'ps') {
+      entities = [
+        {value: 'http://www.w3.org/ns/dcat#hasContactPoint', name: 'Contact Point'},
+        {value: 'http://data.europa.eu/m8g/hasCompetentAuthority', name: 'Competent Authority'},
+        {value: 'http://purl.org/vocab/cpsv#isClassifiedBy', name: 'Related Concept'},
+        {value: 'http://cefat4cities.com/public_services/hasBusinessEvent', name: 'Business Event'},
+        {value: 'http://cefat4cities.com/public_services/hasLifeEvent', name: 'Life Event'},
+      ]
+    } else if (typeName === 'cp') {
+      entities = [
+        {value: 'http://www.w3.org/ns/dcat#hasContactPoint', name: 'Public Service'},
+      ]
+    }
+
+    return entities.find(i => i.value === entity).name;
+  }
+
+  public fetchDropdownFilters(
+    typeName: string,
+    uriType: RdfFilter,
+    keyword: string,
+    rdfFilters: Map<string, Array<string>>,
+  ): Observable<string[]> {
+
+    const rdfFiltersMap = {};
+    rdfFilters.forEach((val: string[], key: string) => {
+      rdfFiltersMap[key] = val;
+    });
+
+    return this.http.post<string[]>(`${this.API_CPSV_URL}/${typeName}/dropdown_options`, {
+      uri_type: uriType,
+      keyword,
+      rdfFilters: rdfFiltersMap,
+    });
+  }
 
 }
