@@ -8,6 +8,7 @@
 # C4C Web App
 
 ## UIMA
+
 Because the UIMA source code is in a separate Git submodule, execute the following command:
 `git submodule update --init`
 
@@ -23,14 +24,13 @@ Provide a `secrets/django-docker.env` and run with `docker-compose up -d` (see s
 
 Data for both PostgreSQL and Solr is persisted through named volumes.
 
-Create solr collection: 
+Create solr collection:
 
 `docker-compose exec solr bin/solr create -c archive`
 
 Configure Solr to have all the fields, run the following command in the solr directory:
 
 `./fields.sh`
-
 
 ### Django data
 
@@ -50,11 +50,9 @@ In your browser, navigate to `http://localhost:8000/admin/oauth2_provider/applic
 Go to the detail page of the searchapp app by clicking on it's id in the list of applications.
 In the user field, add the admin user.
 
-
 ### Solr data
 
 The Solr service is started by docker-compose and will create a core named `documents` if it doesn't exist yet.
-
 
 ### Django app
 
@@ -67,7 +65,6 @@ Put your unit test in a file that matches "test\*py"
 To run tests from module scheduler:
 
 `docker-compose exec django python manage.py test scheduler`
-
 
 ### Scrapy app
 
@@ -82,7 +79,6 @@ Then:
 Or:
 
 `scrapy crawl -a spider_date_start=01011953 -a spider_date_end=01011960 eurlex`
-
 
 ### Rancher
 
@@ -100,16 +96,17 @@ Open postgresql shell:
 
 Postgres:
 
-rancher kubectl exec -it postgres-5b5bbf9f65-5c8mv --namespace=fisma-ctlg-manager -- pg_dumpall -c -U django > dump_`date +%d-%m-%Y"_"%H_%M_%S`.sql
+rancher kubectl exec -it postgres-5b5bbf9f65-5c8mv --namespace=fisma-ctlg-manager -- pg*dumpall -c -U django > dump*`date +%d-%m-%Y"_"%H_%M_%S`.sql
 
 Solr:
 
-curl -k -v --user crosslang:***REMOVED*** "https://solr.dgfisma.crosslang.com/solr/documents/replication?command=backup"
-curl -k -v --user crosslang:***REMOVED*** "https://solr.dgfisma.crosslang.com/solr/files/replication?command=backup"
+curl -k -v --user crosslang:<pass> "https://solr.dgfisma.crosslang.com/solr/documents/replication?command=backup"
+curl -k -v --user crosslang:<pass> "https://solr.dgfisma.crosslang.com/solr/files/replication?command=backup"
 
 rancher kubectl cp fisma-ctlg-manager/solr-df687b79b-hrnmj:/var/solr solr-df687b79b-hrnmj
 
 ### How to get data in your local environment (updated 22/9/2020)
+
 - Go to http://localhost:8000/admin/searchapp/website/
 - Add the following websites for example `EURLEX` `SRB`
 - Select the websites and run each action seperately from `Scrape website` to `Extract terms`
