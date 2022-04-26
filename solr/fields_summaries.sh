@@ -32,6 +32,6 @@ JSON_DYNAMIC_FIELDS='{"add-dynamic-field": [
 ]
 }'
 
-curl -k -X POST --user crosslang:***REMOVED*** -H 'Content-type:application/json' --data-binary "$JSON" $SOLR_HOST/solr/$COLLECTION/schema
-curl -k -X POST --user crosslang:***REMOVED*** -H 'Content-type:application/json' --data-binary "$JSON_DYNAMIC_FIELDS" $SOLR_HOST/solr/$COLLECTION/schema
+curl -k -X POST --user crosslang:<pass> -H 'Content-type:application/json' --data-binary "$JSON" $SOLR_HOST/solr/$COLLECTION/schema
+curl -k -X POST --user crosslang:<pass> -H 'Content-type:application/json' --data-binary "$JSON_DYNAMIC_FIELDS" $SOLR_HOST/solr/$COLLECTION/schema
 curl -k $SOLR_HOST/solr/$COLLECTION/config -d '{"set-user-property": {"update.autoCreateFields":"false"}}'
